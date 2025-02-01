@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background Layer (the part that is not completed) -->
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle"
+            android:useLevel="false"
+            >
+            <corners android:radius="5dp" />
+            <solid android:color="#FF7F7F"/> <!-- Light red for the background -->
+        </shape>
+    </item>
+
+    <!-- Secondary Progress Layer (Optional) -->
+    <item android:id="@android:id/secondaryProgress">
+        <clip android:clipOrientation="horizontal">
+            <shape android:shape="rectangle">
+                <corners android:radius="5dp" />
+                <solid android:color="#FF7F7F"/> <!-- Light orange for secondary progress -->
+            </shape>
+        </clip>
+    </item>
+
+    <!-- Progress Layer (the completed part) -->
+    <item android:id="@android:id/progress">
+        <clip android:clipOrientation="horizontal">
+            <shape android:shape="rectangle">
+                <corners android:radius="5dp" />
+                <solid android:color="@android:color/holo_red_dark"/> <!-- Red for progress -->
+            </shape>
+        </clip>
+    </item>
+</layer-list>

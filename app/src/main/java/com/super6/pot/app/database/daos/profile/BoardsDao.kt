@@ -1,0 +1,26 @@
+package com.super6.pot.app.database.daos.profile
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import com.super6.pot.app.database.models.app.Board
+import kotlinx.coroutines.flow.Flow
+
+
+@Dao
+interface BoardsDao {
+    @Insert
+    suspend fun insertAllBoards(profile: List<Board>)
+
+    @Query("SELECT * FROM board ")
+    suspend fun getAllBoards(): List<Board>
+
+
+    @Query("SELECT * FROM board WHERE is_pinned= 1 ")
+    suspend fun getPinnedBoards(): List<Board>
+
+
+    @Query("SELECT * FROM  board ")
+    fun getAllBoardsFlow(): Flow<List<Board>>
+}
+

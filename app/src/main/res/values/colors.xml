@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+
+    <color name="colorPrimary">#00BFFF</color>
+    <color name="colorPrimaryDark">#1DA1F2</color>
+    <color name="colorAccent">#00BFFF</color>
+    <color name="notification_color">#00BFFF</color> <!-- Replace with your preferred color -->
+
+
+    <color name="color_primary">#00BFFF</color>
+    <color name="color_primary_dark">#1DA1F2</color>
+    <color name="color_accent">#00BFFF</color>
+
+</resources>

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "841124425720",
+    "project_id": "pot-app-5cebb",
+    "storage_bucket": "pot-app-5cebb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:841124425720:android:5d82be830f6b52ec77300d",
+        "android_client_info": {
+          "package_name": "com.super6.pot"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "841124425720-ha3m9rlld48j2le21s640a95313arpu9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRkff6oTdcbcSG4uqmULCWciELOH70jtE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "841124425720-ha3m9rlld48j2le21s640a95313arpu9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">Super6</string>
+
+
+
+    <string-array name="dropdown_status_chooser_items">
+        <item>Draft</item>
+        <item>Published</item>
+    </string-array>
+
+
+    <string-array name="dropdown_items">
+        <item>Technology</item>
+        <item>Agriculture</item>
+        <item>Finance</item>
+        <item>HealthCare</item>
+
+    </string-array>
+
+
+    <integer-array name="industry_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </integer-array>
+
+
+
+    <string-array name="country_items">
+        <item>INDIA</item>
+    </string-array>
+
+
+    <string-array name="country_values">
+        <item>IN</item>
+    </string-array>
+
+
+
+
+    <string name="default_notification_channel_id">general_announcements_channel</string>
+
+</resources>
