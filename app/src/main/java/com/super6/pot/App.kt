@@ -271,7 +271,7 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
                 getSharedPreferences("FCM_MESSAGE_PARTS", MODE_PRIVATE)
                     .edit().clear().apply()
                 withContext(Dispatchers.IO) {
-                    appDatabase.clearAllData()
+                    appDatabase.backupDatabase(applicationContext)
                 }
             }
         }
@@ -293,7 +293,7 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
 
             tokenManager.logout(method)
             withContext(Dispatchers.IO) {
-                appDatabase.clearAllData()
+                appDatabase.backupDatabase(applicationContext)
             }
             AppClient.clear()
             val intent = Intent(applicationContext, AuthActivity::class.java).apply {

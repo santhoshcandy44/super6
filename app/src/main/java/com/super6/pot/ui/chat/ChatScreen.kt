@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
+import com.super6.pot.ui.auth.viewmodels.LogInViewModel
 import com.super6.pot.ui.chat.viewmodels.ChatListViewModel
 import com.super6.pot.ui.chat.viewmodels.ChatViewModel
 import com.super6.pot.ui.chat.viewmodels.ItemType
@@ -23,6 +24,7 @@ fun ChatScreen(
     onPopBackStack: () -> Unit,
 
     ) {
+
 
 
     BackHandler {

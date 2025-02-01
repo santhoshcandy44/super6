@@ -1,10 +1,15 @@
 package com.super6.pot.app.database
 
 
+import android.content.Context
+import android.nfc.Tag
+import android.util.Log
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.super6.pot.api.models.service.GuestIndustryDao
 import com.super6.pot.api.models.service.Industry
+import com.super6.pot.app.CrashlyticsLogger
 import com.super6.pot.app.database.daos.chat.ChatUserDao
 import com.super6.pot.app.database.daos.chat.MessageDao
 import com.super6.pot.app.database.daos.profile.BoardsDao
@@ -34,6 +39,10 @@ import com.super6.pot.app.database.models.profile.UserLocation
 import com.super6.pot.app.database.models.profile.UserProfile
 import com.super6.pot.app.database.models.service.DraftPlan
 import com.super6.pot.app.database.models.service.DraftThumbnail
+import com.super6.pot.utils.LogUtils.TAG
+import kotlinx.coroutines.runBlocking
+import java.io.File
+import java.io.IOException
 
 
 @Database(
@@ -54,11 +63,14 @@ import com.super6.pot.app.database.models.service.DraftThumbnail
         Industry::class,
         MessageMediaMetadata::class,
         MessageProcessingData::class,
-    ], version = 78, exportSchema = true
+    ], version = 79, exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun boardsDao():BoardsDao
+
+
+
+    abstract fun boardsDao(): BoardsDao
 
     abstract fun userProfileDao(): UserProfileDao
     abstract fun userLocationDao(): UserLocationDao
@@ -73,13 +85,41 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun draftLocationDao(): DraftLocationDao
     abstract fun draftThumbnailDao(): DraftThumbnailDao
     abstract fun recentLocationDao(): RecentLocationDao
-    abstract fun guestIndustryDao():GuestIndustryDao
+    abstract fun guestIndustryDao(): GuestIndustryDao
 
-    fun clearAllData(){
+
+    fun backupDatabase(context: Context) {
+
+        // Path to the original Room database file
+        val dbFile = context.getDatabasePath("app_database")
+
+        // Backup location in the external storage
+        val backupFile = File(context.getExternalFilesDir("databases"), "backup_app_database.db")
+
+        try {
+            // Delete the original database file after successful backup
+            if (dbFile.exists()) {
+                // Copy the database to the backup file (overwrite if it exists)
+                dbFile.copyTo(backupFile, overwrite = true)
+                runBlocking {
+                    clearAllData()
+                }
+            }
+
+        } catch (e: IOException) {
+            e.printStackTrace()
+            CrashlyticsLogger.recordException(
+                e,
+                mapOf(
+                    "backup_error" to "true",
+                    "error_message" to (e.message ?: "Caused while backing up database")
+                )
+            )
+        }
+    }
+
+    private fun clearAllData() {
         clearAllTables()
     }
+
 }
-
-
-
-
