@@ -14,6 +14,7 @@ import com.super6.pot.app.database.daos.chat.MessageMediaMetaDataDao
 import com.super6.pot.app.database.daos.profile.RecentLocationDao
 import com.super6.pot.app.database.daos.service.DraftImageDao
 import com.super6.pot.api.auth.managers.socket.SocketManager
+import com.super6.pot.app.database.DatabaseSingleton
 import com.super6.pot.app.database.daos.chat.MessageProcessingDataDao
 import com.super6.pot.app.database.daos.chat.ChatUserDao
 import com.super6.pot.app.database.daos.profile.BoardsDao
@@ -73,18 +74,8 @@ object DatabaseModule {
     @Singleton
     @Provides
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(
-            context.applicationContext,
-            AppDatabase::class.java,
-            "app_database"
-        ).also {
-            // Enable fallback to destructive migration in case of schema changes
-            it.createFromAsset("database/external_database.db")
-            // Enable multi-instance invalidation for synchronized access
-            it.enableMultiInstanceInvalidation()
-        }.build()
+        return DatabaseSingleton.getDatabase(context)
     }
-
 
 
 

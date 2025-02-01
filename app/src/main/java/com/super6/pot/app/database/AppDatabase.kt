@@ -10,6 +10,7 @@ import androidx.room.RoomDatabase
 import com.super6.pot.api.models.service.GuestIndustryDao
 import com.super6.pot.api.models.service.Industry
 import com.super6.pot.app.CrashlyticsLogger
+import com.super6.pot.app.database.DatabaseSingleton.resetDataBase
 import com.super6.pot.app.database.daos.chat.ChatUserDao
 import com.super6.pot.app.database.daos.chat.MessageDao
 import com.super6.pot.app.database.daos.profile.BoardsDao
@@ -40,6 +41,9 @@ import com.super6.pot.app.database.models.profile.UserProfile
 import com.super6.pot.app.database.models.service.DraftPlan
 import com.super6.pot.app.database.models.service.DraftThumbnail
 import com.super6.pot.utils.LogUtils.TAG
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.IOException
@@ -104,6 +108,8 @@ abstract class AppDatabase : RoomDatabase() {
                 runBlocking {
                     clearAllData()
                 }
+                resetDataBase(context)
+
             }
 
         } catch (e: IOException) {
@@ -121,5 +127,54 @@ abstract class AppDatabase : RoomDatabase() {
     private fun clearAllData() {
         clearAllTables()
     }
+}
 
+
+object DatabaseSingleton {
+
+    // Singleton instance of the database
+    @Volatile
+    private var INSTANCE: AppDatabase? = null
+
+    // Function to get the database instance
+    fun getDatabase(
+        context: Context,
+        forceFallback: Boolean = false // Parameter to force a new instance
+    ): AppDatabase {
+        // If forceFallback is true, return a new instance and ignore the existing one
+        if (forceFallback) {
+            return initDatabaseInstance(context)
+        }
+
+        // Otherwise, return the existing singleton instance
+        return INSTANCE ?: synchronized(this) {
+            INSTANCE ?: initDatabaseInstance(context).also { INSTANCE = it }
+        }
+    }
+
+
+    fun resetDataBase(context: Context){
+        // Delete the existing database file
+        context.deleteDatabase("app_database")
+        INSTANCE = getDatabase(context, true)
+        CoroutineScope(Dispatchers.IO).launch{
+            INSTANCE?.boardsDao()?.getAllBoards()
+        }
+    }
+
+    // Helper function to create a new database instance
+    private fun initDatabaseInstance(
+        context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context.applicationContext,
+            AppDatabase::class.java,
+            "app_database"
+        ).apply {
+
+            // Prepopulate the database from an asset file
+            createFromAsset("database/external_database.db")
+            // Enable multi-instance invalidation
+            enableMultiInstanceInvalidation()
+        }.build()
+    }
 }
