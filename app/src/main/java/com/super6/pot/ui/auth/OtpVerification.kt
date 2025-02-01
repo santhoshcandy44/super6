@@ -83,8 +83,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.super6.pot.R
-import com.super6.pot.ui.NavigatorSubmitButton
 import com.super6.pot.ui.auth.viewmodels.EmailOTPVerificationViewModel
+import com.super6.pot.ui.utils.NavigatorSubmitButton
 import com.super6.pot.utils.LogUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow

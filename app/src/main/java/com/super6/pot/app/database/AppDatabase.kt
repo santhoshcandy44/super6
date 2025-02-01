@@ -2,8 +2,6 @@ package com.super6.pot.app.database
 
 
 import android.content.Context
-import android.nfc.Tag
-import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -13,34 +11,33 @@ import com.super6.pot.app.CrashlyticsLogger
 import com.super6.pot.app.database.DatabaseSingleton.resetDataBase
 import com.super6.pot.app.database.daos.chat.ChatUserDao
 import com.super6.pot.app.database.daos.chat.MessageDao
-import com.super6.pot.app.database.daos.profile.BoardsDao
-import com.super6.pot.app.database.daos.service.DraftImageDao
-import com.super6.pot.app.database.daos.service.DraftPlanDao
-import com.super6.pot.app.database.daos.service.DraftLocationDao
-import com.super6.pot.app.database.daos.service.DraftServiceDao
-import com.super6.pot.app.database.models.profile.UserIndustry
-import com.super6.pot.app.database.models.app.Board
-import com.super6.pot.app.database.models.service.DraftImage
-import com.super6.pot.app.database.models.service.DraftLocation
-import com.super6.pot.app.database.models.service.DraftService
 import com.super6.pot.app.database.daos.chat.MessageMediaMetaDataDao
 import com.super6.pot.app.database.daos.chat.MessageProcessingDataDao
 import com.super6.pot.app.database.daos.notification.NotificationDao
+import com.super6.pot.app.database.daos.profile.BoardsDao
 import com.super6.pot.app.database.daos.profile.RecentLocationDao
-import com.super6.pot.app.database.daos.profile.UserProfileDao
-import com.super6.pot.app.database.daos.service.DraftThumbnailDao
 import com.super6.pot.app.database.daos.profile.UserLocationDao
+import com.super6.pot.app.database.daos.profile.UserProfileDao
+import com.super6.pot.app.database.daos.service.DraftImageDao
+import com.super6.pot.app.database.daos.service.DraftLocationDao
+import com.super6.pot.app.database.daos.service.DraftPlanDao
+import com.super6.pot.app.database.daos.service.DraftServiceDao
+import com.super6.pot.app.database.daos.service.DraftThumbnailDao
+import com.super6.pot.app.database.models.app.Board
 import com.super6.pot.app.database.models.chat.ChatUser
 import com.super6.pot.app.database.models.chat.Message
 import com.super6.pot.app.database.models.chat.MessageMediaMetadata
 import com.super6.pot.app.database.models.chat.MessageProcessingData
 import com.super6.pot.app.database.models.notification.Notification
 import com.super6.pot.app.database.models.profile.RecentLocation
+import com.super6.pot.app.database.models.profile.UserIndustry
 import com.super6.pot.app.database.models.profile.UserLocation
 import com.super6.pot.app.database.models.profile.UserProfile
+import com.super6.pot.app.database.models.service.DraftImage
+import com.super6.pot.app.database.models.service.DraftLocation
 import com.super6.pot.app.database.models.service.DraftPlan
+import com.super6.pot.app.database.models.service.DraftService
 import com.super6.pot.app.database.models.service.DraftThumbnail
-import com.super6.pot.utils.LogUtils.TAG
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -70,8 +67,6 @@ import java.io.IOException
     ], version = 79, exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
-
-
 
 
     abstract fun boardsDao(): BoardsDao
@@ -128,7 +123,6 @@ abstract class AppDatabase : RoomDatabase() {
         clearAllTables()
     }
 }
-
 
 object DatabaseSingleton {
 

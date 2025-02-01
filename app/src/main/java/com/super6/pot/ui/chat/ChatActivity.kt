@@ -178,10 +178,7 @@ import com.super6.pot.app.database.models.chat.MessageMediaMetadata
 import com.super6.pot.app.database.models.chat.MessageWithReply
 import com.super6.pot.app.database.models.chat.ThumbnailLoader.getThumbnailBitmap
 import com.super6.pot.app.workers.getFileExtension
-import com.super6.pot.ui.ChatMessageLinkPreviewHeader
-import com.super6.pot.ui.ChatMessageLinkPreviewHeaderLoading
-import com.super6.pot.ui.ExpandableText
-import com.super6.pot.ui.ScrollBarConfig
+import com.super6.pot.ui.auth.ForgotPasswordScreen
 import com.super6.pot.ui.auth.navhost.noTransitionComposable
 import com.super6.pot.ui.chat.repos.ChatUserRepository
 import com.super6.pot.ui.chat.viewmodels.ChatActivityViewModel
@@ -199,8 +196,12 @@ import com.super6.pot.ui.main.MainActivity
 import com.super6.pot.ui.main.navhosts.routes.ChatWindow
 import com.super6.pot.ui.theme.AppTheme
 import com.super6.pot.ui.theme.customColorScheme
+import com.super6.pot.ui.utils.ChatMessageLinkPreviewHeader
+import com.super6.pot.ui.utils.ChatMessageLinkPreviewHeaderLoading
+import com.super6.pot.ui.utils.ExpandableText
 import com.super6.pot.ui.utils.SafeDrawingBox
-import com.super6.pot.ui.verticalScrollWithScrollbar
+import com.super6.pot.ui.utils.ScrollBarConfig
+import com.super6.pot.ui.utils.verticalScrollWithScrollbar
 import com.super6.pot.utils.LogUtils.TAG
 import com.super6.pot.utils.compressImageAsByteArray
 import dagger.hilt.android.AndroidEntryPoint
@@ -1832,7 +1833,6 @@ fun ChatContent(
                             .imePadding(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-
 
                         StringTextField(
                             value,

@@ -8,7 +8,6 @@ import android.os.Build
 import android.telephony.SmsManager
 import android.telephony.SubscriptionInfo
 import android.telephony.SubscriptionManager
-import android.telephony.TelephonyManager
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -65,7 +64,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
@@ -93,12 +91,12 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
-
 import com.super6.pot.R
-import com.super6.pot.api.models.service.Image
 import com.super6.pot.ui.chat.E2EEEMessageHeader
 import com.super6.pot.ui.chat.StateSyncingModifier
 import com.super6.pot.ui.theme.customColorScheme
+import com.super6.pot.ui.utils.ScrollBarConfig
+import com.super6.pot.ui.utils.verticalScrollWithScrollbar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow

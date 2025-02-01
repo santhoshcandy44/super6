@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -60,10 +61,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.super6.pot.R
-import com.super6.pot.ui.NavigatorSubmitButton
 import com.super6.pot.ui.auth.viewmodels.LogInViewModel
 import com.super6.pot.ui.dropUnlessResumedV2
 import com.super6.pot.ui.main.MainActivity
+import com.super6.pot.ui.utils.NavigatorSubmitButton
 import kotlinx.coroutines.launch
 
 @Composable
@@ -201,6 +202,7 @@ private fun LoginScreenContent(
     Surface(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 

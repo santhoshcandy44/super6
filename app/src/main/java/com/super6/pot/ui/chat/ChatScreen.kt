@@ -1,7 +1,6 @@
 package com.super6.pot.ui.chat
 
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -9,11 +8,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
-import com.super6.pot.ui.auth.viewmodels.LogInViewModel
+import com.super6.pot.ui.auth.ResetPasswordScreen
 import com.super6.pot.ui.chat.viewmodels.ChatListViewModel
 import com.super6.pot.ui.chat.viewmodels.ChatViewModel
 import com.super6.pot.ui.chat.viewmodels.ItemType
-import com.super6.pot.utils.LogUtils.TAG
 
 @Composable
 fun ChatScreen(

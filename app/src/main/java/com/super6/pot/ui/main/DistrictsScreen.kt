@@ -24,8 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.super6.pot.ui.NavigatorCard
 import com.super6.pot.ui.main.navhosts.routes.LocationChooser
+import com.super6.pot.ui.utils.NavigatorCard
 import com.super6.pot.ui.viewmodels.LocationViewModel
 
 

@@ -56,10 +56,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavController
 import com.super6.pot.R
-import com.super6.pot.ui.NavigatorSubmitButton
 import com.super6.pot.ui.auth.viewmodels.SwitchAccountTypeViewModel
 import com.super6.pot.ui.main.navhosts.routes.AccountAndProfileSettings
 import com.super6.pot.ui.main.viewmodels.AccountAndProfileSettingsViewModel
+import com.super6.pot.ui.utils.NavigatorSubmitButton
 
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
@@ -45,10 +48,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
-import com.super6.pot.ui.NavigatorSubmitButton
 import com.super6.pot.ui.manage.services.ErrorText
 import com.super6.pot.ui.auth.LoadingDialog
 import com.super6.pot.ui.profile.viewmodels.ChangePasswordViewModel
+import com.super6.pot.ui.utils.NavigatorSubmitButton
 import kotlinx.coroutines.launch
 
 
@@ -80,7 +83,7 @@ fun ChangePasswordScreen(
 
     val focusManager = LocalFocusManager.current
 
-    Box {
+    Box(modifier = Modifier.fillMaxSize().imePadding()){
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -166,9 +169,10 @@ fun ChangePasswordContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
+        horizontalAlignment = Alignment.Start,
     ) {
 
         Title(text = "Change Password")

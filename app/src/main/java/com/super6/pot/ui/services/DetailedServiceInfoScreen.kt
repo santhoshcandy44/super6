@@ -82,7 +82,6 @@ import com.super6.pot.api.models.service.Plan
 import com.super6.pot.api.models.service.PlanFeature
 import com.super6.pot.api.models.service.Service
 import com.super6.pot.app.database.models.chat.ChatUser
-import com.super6.pot.ui.ExpandableText
 import com.super6.pot.ui.ShimmerBox
 import com.super6.pot.ui.auth.AuthActivity
 import com.super6.pot.ui.auth.ForceWelcomeScreen
@@ -91,6 +90,7 @@ import com.super6.pot.ui.formatCurrency
 import com.super6.pot.ui.main.navhosts.routes.ServiceOwnerProfile
 import com.super6.pot.ui.services.bookmark.BookmarkedServicesViewModel
 import com.super6.pot.ui.theme.customColorScheme
+import com.super6.pot.ui.utils.ExpandableText
 import com.super6.pot.ui.viewmodels.ServicesViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
