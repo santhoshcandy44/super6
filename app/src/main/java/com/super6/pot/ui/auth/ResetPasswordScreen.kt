@@ -39,8 +39,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.super6.pot.ui.auth.viewmodels.ResetPasswordViewModel
-import com.super6.pot.ui.manage.services.ErrorText
 import com.super6.pot.ui.managers.UserSharedPreferencesManager
+import com.super6.pot.ui.services.manage.ErrorText
 import com.super6.pot.ui.utils.NavigatorSubmitButton
 import kotlinx.coroutines.launch
 

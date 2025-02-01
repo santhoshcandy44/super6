@@ -79,13 +79,13 @@ import com.super6.pot.app.database.models.service.DraftService
 import com.super6.pot.app.database.models.service.DraftState
 import com.super6.pot.ui.auth.LoadingDialog
 import com.super6.pot.ui.main.CreateServiceLocationBottomSheetScreen
-import com.super6.pot.ui.manage.services.viewmodels.ServicesWorkflowViewModel
 import com.super6.pot.ui.services.ValidatedPlan
 import com.super6.pot.ui.chat.MAX_IMAGES
 import com.super6.pot.ui.chat.createImagePartForUri
 import com.super6.pot.ui.chat.getFileExtensionFromImageFormat
 import com.super6.pot.ui.chat.isValidImageDimensions
 import com.super6.pot.ui.chat.isValidThumbnailDimensionsFormat
+import com.super6.pot.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull

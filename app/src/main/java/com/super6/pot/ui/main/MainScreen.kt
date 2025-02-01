@@ -70,10 +70,10 @@ import com.super6.pot.ui.chat.ChatScreen
 import com.super6.pot.ui.main.navhosts.BottomNavHost
 import com.super6.pot.ui.main.navhosts.routes.BottomBarScreen
 import com.super6.pot.ui.main.viewmodels.HomeViewModel
-import com.super6.pot.ui.manage.services.ManageServicesActivity
 import com.super6.pot.ui.managers.UserSharedPreferencesManager
 import com.super6.pot.ui.onboarding.ChooseIndustrySheet
 import com.super6.pot.ui.onboarding.GuestChooseIndustrySheet
+import com.super6.pot.ui.services.manage.ManageServicesActivity
 import com.super6.pot.ui.viewmodels.HomeActivityViewModel
 import com.super6.pot.ui.viewmodels.MoreViewModel
 import com.super6.pot.ui.viewmodels.NotificationViewModel

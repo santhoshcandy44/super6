@@ -10,18 +10,18 @@ import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.super6.pot.ui.manage.services.CreateServiceScreen
 import com.super6.pot.ui.auth.navhost.slideComposable
-import com.super6.pot.ui.manage.services.EditServiceThumbnailScreen
-import com.super6.pot.ui.manage.services.EditServiceImagesScreen
-import com.super6.pot.ui.manage.services.EditServiceInfoScreen
-import com.super6.pot.ui.manage.services.EditServiceLocationScreen
-import com.super6.pot.ui.manage.services.EditServicePlanScreen
-import com.super6.pot.ui.manage.services.ManagePublishedServicesScreen
-import com.super6.pot.ui.manage.services.ManageServicesScreen
-import com.super6.pot.ui.manage.services.rememberManageServicesCustomBottomNavController
-import com.super6.pot.ui.manage.services.viewmodels.ServicesWorkflowViewModel
-import com.super6.pot.ui.manage.services.viewmodels.PublishedServicesViewModel
+import com.super6.pot.ui.services.manage.CreateServiceScreen
+import com.super6.pot.ui.services.manage.EditServiceImagesScreen
+import com.super6.pot.ui.services.manage.EditServiceInfoScreen
+import com.super6.pot.ui.services.manage.EditServiceLocationScreen
+import com.super6.pot.ui.services.manage.EditServicePlanScreen
+import com.super6.pot.ui.services.manage.EditServiceThumbnailScreen
+import com.super6.pot.ui.services.manage.ManagePublishedServicesScreen
+import com.super6.pot.ui.services.manage.ManageServicesScreen
+import com.super6.pot.ui.services.manage.rememberManageServicesCustomBottomNavController
+import com.super6.pot.ui.services.manage.viewmodels.PublishedServicesViewModel
+import com.super6.pot.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 
 
 @Composable

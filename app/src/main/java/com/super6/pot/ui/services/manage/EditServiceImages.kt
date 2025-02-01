@@ -75,12 +75,12 @@ import coil3.size.Size
 import com.super6.pot.R
 import com.super6.pot.ui.ShimmerBox
 import com.super6.pot.ui.services.ThumbnailContainer
-import com.super6.pot.ui.manage.models.Container
-import com.super6.pot.ui.manage.services.viewmodels.PublishedServicesViewModel
 import com.super6.pot.utils.LogUtils.TAG
 import com.super6.pot.ui.chat.MAX_IMAGES
 import com.super6.pot.ui.chat.createImagePartForSingleUri
 import com.super6.pot.ui.chat.isValidImageDimensions
+import com.super6.pot.ui.services.manage.models.Container
+import com.super6.pot.ui.services.manage.viewmodels.PublishedServicesViewModel
 import kotlinx.coroutines.Job
 
 

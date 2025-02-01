@@ -299,23 +299,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             )
 
 
-        } catch (e: SocketConnectionException) {
-            fileId?.let {
-                socket.off("chat:fileTransferCompleted-${it}")
-                socket.off("chat:thumbnailTransferCompleted-${it}")
-            }
-
-            if (chunkIndex != -1L) {
-                socket.off("chat:mediaChunkAck-${fileId}-$chunkIndex")
-            }
-
-            if (thumbnailChunkIndex != -1L) {
-                socket.off("chat:mediaThumbnailChunkAck-${fileId}-${thumbnailChunkIndex}")
-            }
-
-            updateUploadState(messageId, FileUploadState.Retry("${e.message}"))
-            notificationManager.cancel(notificationId)
-            Result.retry()
         } catch (e: InvalidKeyVersionException) {
             updateUploadState(messageId, FileUploadState.Retry("SocketAuth: Invalid key version"))
             notificationManager.cancel(notificationId)
@@ -339,14 +322,41 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             uploadWorkerUtilRepository.updateLastSentThumbnailByteOffsetByMessageId(messageId, -1)
             Result.success()
         } catch (e: Exception) {
-            runBlocking {
-                updateUploadState(
-                    messageId,
-                    FileUploadState.Retry(e.message ?: "Caused by exception")
-                )
-                notificationManager.cancel(notificationId)  // Dismiss the notification by using the notificationId
+
+            when (e) {
+                is SocketConnectionException, is  UploadFailedException
+                -> {
+                    fileId?.let {
+                        socket.off("chat:fileTransferCompleted-${it}")
+                        socket.off("chat:thumbnailTransferCompleted-${it}")
+                    }
+
+                    if (chunkIndex != -1L) {
+                        socket.off("chat:mediaChunkAck-${fileId}-$chunkIndex")
+                    }
+
+                    if (thumbnailChunkIndex != -1L) {
+                        socket.off("chat:mediaThumbnailChunkAck-${fileId}-${thumbnailChunkIndex}")
+                    }
+
+                    updateUploadState(messageId, FileUploadState.Retry("${e.message}"))
+                    notificationManager.cancel(notificationId)
+                    return Result.retry()
+                }
+
+                else -> {
+                    runBlocking {
+                        updateUploadState(
+                            messageId,
+                            FileUploadState.Retry(e.message ?: "Caused by exception")
+                        )
+                        notificationManager.cancel(notificationId)  // Dismiss the notification by using the notificationId
+                    }
+                    return Result.failure()
+                }
             }
-            return Result.failure()
+
+
         } finally {
             finalizeSocket()
         }
@@ -603,17 +613,9 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                 if (chunkIndex >= lastSentChunkIndex) {
 
                                     if (socket.connected()) {
-                                        socket.emit("chat:sendFileChunk", JSONObject().apply {
-                                            put("file_id", fileId)
-                                            put("chunk_index", chunkIndex)
-                                            put("byte_offset", lastSentByteOffset)
-                                            put("data", chunk)
-                                        }, Ack {
-
-                                        })
-
 
                                         val chunkAcknowledged = CompletableDeferred<Unit>()
+
 
                                         // Wait for the chunk acknowledgment asynchronously
                                         socket.once("chat:mediaChunkAck-${fileId}-$chunkIndex") { args ->
@@ -655,6 +657,31 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                                 }
                                             }
                                         }
+
+
+                                        socket.emit("chat:sendFileChunk", JSONObject().apply {
+                                            put("file_id", fileId)
+                                            put("chunk_index", chunkIndex)
+                                            put("byte_offset", lastSentByteOffset)
+                                            put("data", chunk)
+                                        }, Ack {
+
+                                            val failedReason = it[0] as String
+
+                                            val sendFileChunkResponse = it[1] as JSONObject
+                                            val sendFileChunkResponseStatus =
+                                                sendFileChunkResponse.getString("status")
+
+                                            if (sendFileChunkResponseStatus == "MEDIA_TRANSFER_NOT_FOUND") {
+                                                onMessageSentCompleted.completeExceptionally(
+                                                    UploadFailedException(failedReason)
+                                                )
+                                                if (!chunkAcknowledged.isCompleted) {
+                                                    chunkAcknowledged.complete(Unit)
+                                                }
+                                            }
+                                        })
+
 
                                         // Suspend the current loop until chunk acknowledgment is received
                                         chunkAcknowledged.await()
@@ -781,7 +808,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             put("file_name", fileName)
             put("total_chunks", totalThumbnailChunks)
             put("byte_offset", byteOffset)
-            put("file_size", thumbnail.size )
+            put("file_size", thumbnail.size)
             put("extension", extension)
             put("content_type", contentType)
             put("width", width)
@@ -930,38 +957,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                             if (thumbnailChunkIndex >= lastSentThumbnailChunkIndex) {
                                 if (socket.connected()) {
 
-                                    socket.emit("chat:sendThumbnailChunk", JSONObject().apply {
-
-                                        put("sender_id", senderId)
-                                        put("recipient_id", recipientId)
-                                        put("message_id", messageId)
-                                        put("reply_id", replyId)
-                                        put("message", content)
-                                        put("type", if (replyId == -1L) "normal" else "reply")
-                                        put("category", category)
-                                        put("content_type", contentType)
-                                        put("file_id", fileId)
-                                        put("file_name", fileName)
-                                        put("extension", extension)
-                                        put("t_width", width)
-                                        put("t_height", height)
-                                        put("total_duration", totalDuration)
-
-                                        put("total_chunks", totalThumbnailChunks)
-
-                                        put("chunk_index", thumbnailChunkIndex)
-                                        put("byte_offset", lastSentByteOffset)
-                                        put("data", chunk)
-                                        put("chunk_size", THUMBNAIL_CHUNK_SIZE)
-
-                                        put("key_version", keyVersion)
-
-                                    }, Ack {
-
-                                    })
-
                                     val chunkAcknowledged = CompletableDeferred<Unit>()
-
 
                                     // Wait for acknowledgment of the chunk
                                     socket.once("chat:mediaThumbnailChunkAck-${fileId}-${thumbnailChunkIndex}") { args ->
@@ -1006,6 +1002,50 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                         }
 
                                     }
+
+
+                                    socket.emit("chat:sendThumbnailChunk", JSONObject().apply {
+
+                                        put("sender_id", senderId)
+                                        put("recipient_id", recipientId)
+                                        put("message_id", messageId)
+                                        put("reply_id", replyId)
+                                        put("message", content)
+                                        put("type", if (replyId == -1L) "normal" else "reply")
+                                        put("category", category)
+                                        put("content_type", contentType)
+                                        put("file_id", fileId)
+                                        put("file_name", fileName)
+                                        put("extension", extension)
+                                        put("t_width", width)
+                                        put("t_height", height)
+                                        put("total_duration", totalDuration)
+
+                                        put("total_chunks", totalThumbnailChunks)
+
+                                        put("chunk_index", thumbnailChunkIndex)
+                                        put("byte_offset", lastSentByteOffset)
+                                        put("data", chunk)
+                                        put("chunk_size", THUMBNAIL_CHUNK_SIZE)
+
+                                        put("key_version", keyVersion)
+
+                                    }, Ack {
+                                        val failedReason = it[0] as String
+
+                                        val sendFileChunkResponse = it[1] as JSONObject
+                                        val sendFileChunkResponseStatus =
+                                            sendFileChunkResponse.getString("status")
+
+                                        if (sendFileChunkResponseStatus == "MEDIA_TRANSFER_NOT_FOUND") {
+                                            onMessageSentFailed(failedReason)
+                                            if (!chunkAcknowledged.isCompleted) {
+                                                chunkAcknowledged.complete(Unit)
+                                            }
+                                        }
+                                    })
+
+
 
                                     chunkAcknowledged.await()
                                     thumbnailChunkIndex++ // Move to the next chunk

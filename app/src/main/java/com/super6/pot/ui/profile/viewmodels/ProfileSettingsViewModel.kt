@@ -21,10 +21,7 @@ import com.super6.pot.api.app.ProfileSettingsService
 import com.super6.pot.api.auth.services.CommonService
 import com.super6.pot.app.database.daos.profile.UserProfileDao
 import com.super6.pot.app.database.models.profile.UserProfileSettingsInfo
-import com.super6.pot.ui.manage.services.viewmodels.ServicesWorkflowViewModel
-import com.super6.pot.ui.onboarding.EditProfileAboutScreen
 import com.super6.pot.ui.profile.repos.UserProfileRepository
-import com.super6.pot.ui.services.CreateServiceViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers

@@ -48,9 +48,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
-import com.super6.pot.ui.manage.services.ErrorText
 import com.super6.pot.ui.auth.LoadingDialog
 import com.super6.pot.ui.profile.viewmodels.ChangePasswordViewModel
+import com.super6.pot.ui.services.manage.ErrorText
 import com.super6.pot.ui.utils.NavigatorSubmitButton
 import kotlinx.coroutines.launch
 

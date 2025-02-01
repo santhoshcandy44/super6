@@ -560,7 +560,20 @@ class MediaUploadWorker @AssistedInject constructor(
                                             put("byte_offset", lastSentByteOffset)
                                             put("data", chunk)
                                         }, Ack { args ->
+                                            val failedReason = it[0] as String
 
+                                            val sendFileChunkResponse = it[1] as JSONObject
+                                            val sendFileChunkResponseStatus =
+                                                sendFileChunkResponse.getString("status")
+
+                                            if (sendFileChunkResponseStatus == "MEDIA_TRANSFER_NOT_FOUND") {
+                                                onMessageSentCompleted.completeExceptionally(
+                                                    UploadFailedException(failedReason)
+                                                )
+                                                if (!chunkAcknowledged.isCompleted) {
+                                                    chunkAcknowledged.complete(Unit)
+                                                }
+                                            }
                                         })
 
                                         // Suspend the current loop until chunk acknowledgment is received

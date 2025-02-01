@@ -39,8 +39,8 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavController
 import com.super6.pot.api.models.service.EditableService
 import com.super6.pot.ui.dropUnlessResumedV2
-import com.super6.pot.ui.manage.services.viewmodels.ServicesWorkflowViewModel
-import com.super6.pot.ui.manage.services.viewmodels.PublishedServicesViewModel
+import com.super6.pot.ui.services.manage.viewmodels.PublishedServicesViewModel
+import com.super6.pot.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 import kotlinx.coroutines.launch
 
 

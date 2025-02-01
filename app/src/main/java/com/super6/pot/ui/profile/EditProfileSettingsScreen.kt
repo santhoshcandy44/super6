@@ -52,10 +52,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
-import com.super6.pot.ui.manage.services.ErrorText
 import com.super6.pot.R
 import com.super6.pot.ui.PlaceholderTransformation
 import com.super6.pot.ui.profile.viewmodels.ProfileSettingsViewModel
+import com.super6.pot.ui.services.manage.ErrorText
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody

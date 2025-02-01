@@ -11,7 +11,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.Navigator
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.DialogNavigator
-import com.super6.pot.ui.manage.services.navhost.ManageServicesRoutes
+import com.super6.pot.ui.services.manage.navhost.ManageServicesRoutes
 
 
 @Composable

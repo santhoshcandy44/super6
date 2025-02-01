@@ -34,10 +34,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.super6.pot.ui.auth.LoadingDialog
-import com.super6.pot.ui.manage.services.viewmodels.PublishedServicesViewModel
 import com.super6.pot.ui.chat.createImagePartForUri
 import com.super6.pot.ui.chat.getFileExtensionFromImageFormat
 import com.super6.pot.ui.chat.isValidThumbnailDimensionsFormat
+import com.super6.pot.ui.services.manage.viewmodels.PublishedServicesViewModel
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody

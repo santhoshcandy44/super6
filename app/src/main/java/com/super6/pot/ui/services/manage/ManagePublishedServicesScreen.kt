@@ -57,7 +57,7 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavHostController
 import com.super6.pot.R
 import com.super6.pot.ui.auth.LoadingDialog
-import com.super6.pot.ui.manage.services.viewmodels.PublishedServicesViewModel
+import com.super6.pot.ui.services.manage.viewmodels.PublishedServicesViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)

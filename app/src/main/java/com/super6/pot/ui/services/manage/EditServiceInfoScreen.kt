@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.super6.pot.ui.PlaceholderTransformation
 import com.super6.pot.ui.auth.LoadingDialog
-import com.super6.pot.ui.manage.services.viewmodels.PublishedServicesViewModel
+import com.super6.pot.ui.services.manage.viewmodels.PublishedServicesViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)

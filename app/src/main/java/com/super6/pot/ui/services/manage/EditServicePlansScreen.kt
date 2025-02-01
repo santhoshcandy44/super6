@@ -58,15 +58,15 @@ import com.super6.pot.api.models.service.EditablePlan
 import com.super6.pot.api.models.service.EditablePlanFeature
 import com.super6.pot.api.models.service.Plan
 import com.super6.pot.api.models.service.PlanFeature
-import com.super6.pot.ui.services.ValidatedPlan
 import com.super6.pot.ui.auth.LoadingDialog
-import com.super6.pot.ui.manage.services.viewmodels.PublishedServicesViewModel
+import com.super6.pot.ui.services.ValidatedPlan
+import com.super6.pot.ui.services.manage.viewmodels.PublishedServicesViewModel
 import java.math.BigDecimal
 
 
 @Composable
 fun EditServicePlanScreen(navHostController: NavHostController,  onPopBackStack:()-> Unit,
-                          viewModel:PublishedServicesViewModel
+                          viewModel: PublishedServicesViewModel
                           ) {
 
     val selectedService by viewModel.selectedService.collectAsState()

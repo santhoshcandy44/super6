@@ -37,7 +37,6 @@ import com.super6.pot.ui.main.navhosts.routes.Profile
 import com.super6.pot.ui.main.navhosts.routes.SwitchAccountType
 import com.super6.pot.ui.main.profile.ProfileScreen
 import com.super6.pot.ui.main.viewmodels.HomeViewModel
-import com.super6.pot.ui.manage.services.BookmarkedServicesActivity
 import com.super6.pot.ui.onboarding.ChooseIndustryScreen
 import com.super6.pot.ui.onboarding.EditProfileAboutScreen
 import com.super6.pot.ui.onboarding.GuestChooseIndustryScreen
@@ -50,6 +49,7 @@ import com.super6.pot.ui.dropUnlessResumedV2
 import com.super6.pot.ui.viewmodels.MoreViewModel
 import com.super6.pot.ui.viewmodels.NotificationViewModel
 import com.super6.pot.ui.profile.viewmodels.ProfileSettingsViewModel
+import com.super6.pot.ui.services.manage.BookmarkedServicesActivity
 
 
 @Composable
@@ -88,7 +88,7 @@ fun MainNavHost() {
                 },
                 onNavigateUpBookmarkedServices = {
 
-                    context.startActivity(Intent(context,BookmarkedServicesActivity::class.java).apply {
+                    context.startActivity(Intent(context, BookmarkedServicesActivity::class.java).apply {
                         flags =
                             Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                     })

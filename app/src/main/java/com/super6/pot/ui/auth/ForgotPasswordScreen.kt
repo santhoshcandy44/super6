@@ -45,7 +45,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.super6.pot.ui.auth.viewmodels.ForgotPasswordViewModel
 import com.super6.pot.ui.main.viewmodels.ForgotPasswordProtectedViewModel
-import com.super6.pot.ui.manage.services.ErrorText
+import com.super6.pot.ui.services.manage.ErrorText
 import com.super6.pot.ui.utils.NavigatorOutlinedCard
 import com.super6.pot.ui.utils.NavigatorSubmitButton
 import kotlinx.coroutines.delay

@@ -17,8 +17,8 @@ import com.super6.pot.ui.main.models.CurrentLocation
 import com.super6.pot.ui.main.navhosts.routes.Districts
 import com.super6.pot.ui.main.navhosts.routes.LocationChooser
 import com.super6.pot.ui.main.viewmodels.HomeViewModel
-import com.super6.pot.ui.manage.services.viewmodels.ServicesWorkflowViewModel
-import com.super6.pot.ui.manage.services.viewmodels.PublishedServicesViewModel
+import com.super6.pot.ui.services.manage.viewmodels.PublishedServicesViewModel
+import com.super6.pot.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 
 @Composable
 fun EditLocationBottomSheetScreen(

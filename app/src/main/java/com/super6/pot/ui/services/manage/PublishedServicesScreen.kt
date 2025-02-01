@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -26,8 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.super6.pot.api.models.service.EditableService
-import com.super6.pot.ui.manage.services.viewmodels.PublishedServicesViewModel
 import com.super6.pot.api.Utils.ResultError
+import com.super6.pot.ui.services.manage.viewmodels.PublishedServicesViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
