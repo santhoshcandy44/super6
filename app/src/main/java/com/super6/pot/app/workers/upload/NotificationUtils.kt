@@ -15,7 +15,7 @@ fun createUploadNotificationChannel(notificationManager:NotificationManager) {
     val channel = NotificationChannel(
         UPLOAD_CHANNEL_ID,
         "File Upload",
-        NotificationManager.IMPORTANCE_HIGH
+        NotificationManager.IMPORTANCE_LOW
     ).apply {
         description = "Notifications for file upload progress"
     }
@@ -36,7 +36,7 @@ fun sendUploadNotification(
         .setStyle(NotificationCompat.BigTextStyle().bigText("$message $progress%"))
         .setSmallIcon(android.R.drawable.stat_sys_upload)  // Replace with your icon
         .setProgress(100, progress, false)
-        .setPriority(NotificationCompat.PRIORITY_HIGH)  // Set priority to low
+        .setPriority(NotificationCompat.PRIORITY_LOW)  // Set priority to low
         .setShowWhen(false)
         .setSound(null)  // No sound
         .setVibrate(longArrayOf(0L))  // Disable vibration

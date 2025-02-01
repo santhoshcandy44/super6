@@ -34,11 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 
-
-
-
 private const val GENERAL_CHANNEL_ID = "general_channel"
-
 private const val CHAT_GROUP_ID = "chat_group"
 private const val CHAT_CHANNEL_ID = "chat_channel"
 
