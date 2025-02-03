@@ -1,5 +1,6 @@
 package com.super6.pot.ui.services.manage.viewmodels
 
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.super6.pot.api.app.AppClient
@@ -14,6 +15,7 @@ import com.super6.pot.api.models.service.toEditablePlan
 import com.super6.pot.api.models.service.toEditableService
 import com.super6.pot.api.Utils.Result
 import com.super6.pot.api.app.ManageServicesApiService
+import com.super6.pot.utils.LogUtils.TAG
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -243,6 +245,8 @@ class PublishedServiceRepository @Inject constructor() {
         size: Int,
         format: String
     ) {
+
+        Log.e(TAG,"${imageId}")
         // Create the new EditableImage
         val newImage = EditableImage(
             imageId = imageId,
@@ -263,10 +267,13 @@ class PublishedServiceRepository @Inject constructor() {
                             // Update existing image
                             this[index] = newImage
                         } else {
+                            Log.e(TAG,"Image added")
+
                             // Add new image
                             add(newImage)
                         }
                     }
+
                     service.copy(images = updatedImages) // Replace the images list
                 } else {
                     service // Keep the existing service unchanged
@@ -282,6 +289,7 @@ class PublishedServiceRepository @Inject constructor() {
                     // Update existing image
                     this[index] = newImage
                 } else {
+                    Log.e(TAG,"Image added 1")
                     // Add new image
                     add(newImage)
                 }

@@ -7,11 +7,13 @@ import android.database.Cursor
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -96,6 +98,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
@@ -122,6 +125,8 @@ import com.super6.pot.ui.chat.ChatUsersScreen
 import com.super6.pot.ui.chat.formatTimeSeconds
 import com.super6.pot.ui.getMiddleVideoThumbnail
 import com.super6.pot.ui.isUriExist
+import com.super6.pot.ui.main.MoreScreen
+import com.super6.pot.ui.services.manage.EditServiceImagesScreen
 import com.super6.pot.ui.theme.AppTheme
 import com.super6.pot.utils.LogUtils.TAG
 import dagger.hilt.android.AndroidEntryPoint
@@ -151,10 +156,22 @@ class TestActivity : ComponentActivity() {
             System.loadLibrary("native-lib")
         }
 
+
     }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val color = Color.Blue
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                color.toArgb(),
+                darkScrim = color.toArgb()
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
+                color.toArgb(),
+                darkScrim = color.toArgb()
+            ))
+
         super.onCreate(savedInstanceState)
 
         setContent {
@@ -179,7 +196,7 @@ class TestActivity : ComponentActivity() {
 
             AppTheme {
 
-                Surface(Modifier.safeDrawingPadding()) {
+              /*  Surface() {
                     Scaffold { cp ->
                         Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier
                             .fillMaxSize()
@@ -191,7 +208,7 @@ class TestActivity : ComponentActivity() {
 
                     }
                 }
-
+*/
 
 
               /*  Surface {

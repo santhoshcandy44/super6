@@ -95,14 +95,14 @@
         </activity>
 
         <activity
-            android:name=".ui.manage.services.ManageServicesActivity"
+            android:name=".ui.services.manage.ManageServicesActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
             />
 
 
         <activity
-            android:name=".ui.manage.services.BookmarkedServicesActivity"
+            android:name=".ui.services.manage.BookmarkedServicesActivity"
             android:exported="true"
             />
 

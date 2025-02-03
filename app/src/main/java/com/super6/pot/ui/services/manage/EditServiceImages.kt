@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -98,6 +99,7 @@ fun EditServiceImagesScreen(navHostController: NavHostController, onPopBackStack
     val editableService = requireNotNull(viewModel.selectedService.collectAsState().value) {
         "Selected service should not be null"
     }
+
 
 
     // Collect state from the ViewModel
@@ -216,17 +218,20 @@ fun EditServiceImagesScreen(navHostController: NavHostController, onPopBackStack
 
             if (errorMessage==null) {
 
-                if(container.image==null){
-                    val imagePart = createImagePartForSingleUri(
-                        context = context,
-                        uri = uri,
-                        isSingle = true
-                    ) {}
+                val imagePart = createImagePartForSingleUri(
+                    context = context,
+                    uri = uri,
+                    isSingle = true
+                ) {}
 
+                val imageId = container.image?.imageId ?: -1
+
+
+                if(imageId==-1){
                     editableService.let { nonNullableService ->
                         viewModel.onUploadImage(
                             userId, nonNullableService.serviceId,
-                            -1,
+                            imageId,
                             imagePart,
                             {
                                 it?.let { ongoingRequestJob ->
@@ -239,44 +244,38 @@ fun EditServiceImagesScreen(navHostController: NavHostController, onPopBackStack
                                 }
                             },
                             {
-                                it.apply {
-                                    viewModel.updateContainerImage(
-                                        container.containerId,
-                                        imageId = imageId,
-                                        imageUrl = imageUrl,
-                                        width = width,
-                                        height = height,
-                                        size = size,
-                                        format = format
-                                    )
-                                    viewModel.updateOrAddImage(
-                                        serviceId = editableService.serviceId,
-                                        imageId = imageId,
-                                        imageUrl = imageUrl,
-                                        width = width,
-                                        height = height,
-                                        size = size,
-                                        format = format
-                                    )
 
-                                }
+
+                                viewModel.updateContainerImage(
+                                    container.containerId,
+                                    imageId = it.imageId,
+                                    imageUrl = it.imageUrl,
+                                    width = it.width,
+                                    height = it.height,
+                                    size = it.size,
+                                    format = it.format
+                                )
+
+                                viewModel.updateOrAddImage(
+                                    serviceId = editableService.serviceId,
+                                    imageId = it.imageId,
+                                    imageUrl = it.imageUrl,
+                                    width = it.width,
+                                    height = it.height,
+                                    size = it.size,
+                                    format = it.format
+                                )
                             },
                             {
                                 viewModel.updateContainerState(container.containerId, it)
                             })
                     }
+
                 }else{
-
-                    val imagePart = createImagePartForSingleUri(
-                        context = context,
-                        uri = uri,
-                        isSingle = true
-                    ) {}
-
                     editableService.let { nonNullableService ->
                         viewModel.onUpdateImage(
                             userId, nonNullableService.serviceId,
-                            containers[refreshImageIndex].image?.imageId ?: -1,
+                            imageId,
                             imagePart,
                             {
                                 it?.let { ongoingRequestJob ->
@@ -286,38 +285,38 @@ fun EditServiceImagesScreen(navHostController: NavHostController, onPopBackStack
                                         ongoingRequestJob,
                                         visualUri
                                     )
-
                                 }
                             },
                             {
-                                it.apply {
-                                    viewModel.updateContainerImage(
-                                        container.containerId,
-                                        imageId = imageId,
-                                        imageUrl = imageUrl,
-                                        width = width,
-                                        height = height,
-                                        size = size,
-                                        format = format)
 
 
-                                    viewModel.updateOrAddImage(
-                                        serviceId = editableService.serviceId,
-                                        imageId = imageId,
-                                        imageUrl = imageUrl,
-                                        width = width,
-                                        height = height,
-                                        size = size,
-                                        format = format)
+                                viewModel.updateContainerImage(
+                                    container.containerId,
+                                    imageId = it.imageId,
+                                    imageUrl = it.imageUrl,
+                                    width = it.width,
+                                    height = it.height,
+                                    size = it.size,
+                                    format = it.format
+                                )
 
-                                }
+                                viewModel.updateOrAddImage(
+                                    serviceId = editableService.serviceId,
+                                    imageId = it.imageId,
+                                    imageUrl = it.imageUrl,
+                                    width = it.width,
+                                    height = it.height,
+                                    size = it.size,
+                                    format = it.format
+                                )
                             },
                             {
                                 viewModel.updateContainerState(container.containerId, it)
                             })
                     }
-
                 }
+
+
 
 
             } else {
@@ -587,7 +586,6 @@ fun ServiceImage(
                 ImageRequest.Builder(context)
                     .size(Size.ORIGINAL)
                     .data(imageUrl) // Use savedUrl.value here
-                    .placeholder(R.drawable.service_upload_images)
                     .error(R.drawable.image_loading_failed) // Set error image directly
                     .crossfade(true)
                     .build()

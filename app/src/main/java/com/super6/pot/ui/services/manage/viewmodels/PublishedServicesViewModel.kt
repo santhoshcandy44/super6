@@ -527,7 +527,6 @@ class PublishedServicesViewModel @Inject constructor(
             }
         } catch (t: Throwable) {
             t.printStackTrace()
-            Log.d(TAG, t.message.toString())
             Result.Error(t)
         }
     }
@@ -990,7 +989,6 @@ class PublishedServicesViewModel @Inject constructor(
             }
         } catch (t: Throwable) {
             t.printStackTrace()
-            Log.d(TAG, t.message.toString())
             Result.Error(t)
         }
 
@@ -1002,7 +1000,6 @@ class PublishedServicesViewModel @Inject constructor(
         viewModelScope.launch {
             _refreshImageIndex.value=index
         }
-        Log.e(TAG,"Image index is ${index}")
     }
 
     fun togglePickerLaunch() {
@@ -1067,11 +1064,6 @@ class PublishedServicesViewModel @Inject constructor(
                 error = null,
                 previewUri = previewImageUri ?: _editableContainers[index].previewUri
             )
-
-            Log.e(TAG, "UPDATED CONTAINER ongoing req")
-        } else {
-            Log.e(TAG, "Failed ongoing req")
-
         }
 
     }
@@ -1099,6 +1091,9 @@ class PublishedServicesViewModel @Inject constructor(
 
         // Check if the index is valid
         if (index != -1) {
+
+            Log.e(TAG, "Container added")
+
             // Update the specific container with a new EditableImage
             _editableContainers[index] = _editableContainers[index].copy(
                 image = EditableImage(
@@ -1298,9 +1293,8 @@ class PublishedServicesViewModel @Inject constructor(
                 when (val result =
                     uploadImage(userIdRequestBody, serviceId, imageIdRequestBody, imagePart)) {
                     is Result.Success -> {
-                        val resultData = Gson().fromJson(result.data.data, Image::class.java)
-                            .toEditableImage()
-                        onSuccess(resultData)
+                        onSuccess(Gson().fromJson(result.data.data, Image::class.java)
+                            .toEditableImage())
                     }
 
                     is Result.Error -> {
@@ -1343,6 +1337,8 @@ class PublishedServicesViewModel @Inject constructor(
                     is Result.Success -> {
                         val resultData = Gson().fromJson(result.data.data, Image::class.java)
                             .toEditableImage()
+
+
                         onSuccess(resultData)
                     }
 

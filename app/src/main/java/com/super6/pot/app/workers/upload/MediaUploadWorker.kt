@@ -57,6 +57,12 @@ class MediaUploadWorker @AssistedInject constructor(
 
 ) : CoroutineWorker(context, workerParams) {
 
+
+
+    companion object {
+        private const val CHUNK_SIZE = 1024 * 1024
+    }
+
     private val notificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -64,9 +70,6 @@ class MediaUploadWorker @AssistedInject constructor(
     private lateinit var socket: Socket
 
 
-    companion object {
-        private const val CHUNK_SIZE = 1024 * 1024
-    }
 
     private val notificationId = id.hashCode()
 
@@ -348,7 +351,7 @@ class MediaUploadWorker @AssistedInject constructor(
             uploadWorkerUtilRepository.insertOrUpdateMessageProcessingData(updatedData)
             byteOffset = uploadWorkerUtilRepository.getLastSentByteOffset(messageId)
             lastSentChunkIndex =
-                (byteOffset + VisualMediaUploadWorker.CHUNK_SIZE - 1) / VisualMediaUploadWorker.CHUNK_SIZE // Round up total chunks
+                (byteOffset + CHUNK_SIZE - 1) / CHUNK_SIZE // Round up total chunks
 
 
             // Retrieve the last sent chunk index and byte offset from persistent storage (i.e., resume point)

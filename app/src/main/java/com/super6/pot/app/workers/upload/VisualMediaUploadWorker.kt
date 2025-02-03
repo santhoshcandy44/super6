@@ -53,6 +53,13 @@ class VisualMediaUploadWorker @AssistedInject constructor(
     val socketManager: SocketManager
 ) : CoroutineWorker(context, workerParams) {
 
+
+    companion object {
+        private const val CHUNK_SIZE = 1024 * 1024
+        private const val THUMBNAIL_CHUNK_SIZE = 1024 * 1024
+    }
+
+
     // This will hold the notification ID (for notification updates)
     private val notificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -60,11 +67,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
     private lateinit var socket: Socket // Use the appropriate type for your socket
 
-    companion object {
-        const val CHUNK_SIZE = 1024 * 1024
-        const val THUMBNAIL_CHUNK_SIZE = 1024 * 1024
-
-    }
 
     private val notificationId = id.hashCode()
 
@@ -645,8 +647,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                                         updatedChunkIndex
                                                     )
 
-                                                    lastSentByteOffset =
-                                                        updatedSize // Increment by the size of the chunk received
+                                                    lastSentByteOffset = updatedSize // Increment by the size of the chunk received
 
                                                     uploadWorkerUtilRepository.updateLastSentByteOffsetByMessageId(
                                                         messageId,
@@ -657,6 +658,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                                 }
                                             }
                                         }
+
 
 
                                         socket.emit("chat:sendFileChunk", JSONObject().apply {
@@ -959,50 +961,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
                                     val chunkAcknowledged = CompletableDeferred<Unit>()
 
-                                    // Wait for acknowledgment of the chunk
-                                    socket.once("chat:mediaThumbnailChunkAck-${fileId}-${thumbnailChunkIndex}") { args ->
-
-                                        if (isStopped || isJobCompletableDeferred.isCompleted) {
-                                            return@once
-                                        }
-
-                                        val data = args[0] as? JSONObject
-
-                                        data?.let {
-
-                                            val updatedChunkIndex: Int = data.getInt("chunkIndex")
-                                            val updatedSize: Long = data.getLong("updatedSize")
-
-                                            // Update chunk index and the last sent chunk
-                                            CoroutineScope(Dispatchers.IO).launch {
-
-                                                val progress =
-                                                    ((updatedSize.toFloat() / totalLengthEncryptedFileAndThumbnail) * 100).toInt()
-
-
-                                                updateUploadState(
-                                                    messageId,
-                                                    FileUploadState.InProgress(progress)
-                                                )
-                                                uploadWorkerUtilRepository.updateLastSentThumbnailChunkIndexByMessageId(
-                                                    messageId,
-                                                    updatedChunkIndex
-                                                )
-                                                lastSentByteOffset = updatedSize
-                                                uploadWorkerUtilRepository.updateLastSentThumbnailByteOffsetByMessageId(
-                                                    messageId,
-                                                    lastSentByteOffset
-                                                )
-                                                // Acknowledge the chunk
-                                                onChunkAcknowledged(updatedChunkIndex)
-                                                chunkAcknowledged.complete(Unit)
-                                            }
-
-
-                                        }
-
-                                    }
-
 
                                     socket.emit("chat:sendThumbnailChunk", JSONObject().apply {
 
@@ -1046,6 +1004,50 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                     })
 
 
+
+                                    // Wait for acknowledgment of the chunk
+                                    socket.once("chat:mediaThumbnailChunkAck-${fileId}-${thumbnailChunkIndex}") { args ->
+
+                                        if (isStopped || isJobCompletableDeferred.isCompleted) {
+                                            return@once
+                                        }
+
+                                        val data = args[0] as? JSONObject
+
+                                        data?.let {
+
+                                            val updatedChunkIndex: Int = data.getInt("chunkIndex")
+                                            val updatedSize: Long = data.getLong("updatedSize")
+
+                                            // Update chunk index and the last sent chunk
+                                            CoroutineScope(Dispatchers.IO).launch {
+
+                                                val progress =
+                                                    ((updatedSize.toFloat() / totalLengthEncryptedFileAndThumbnail) * 100).toInt()
+
+
+                                                updateUploadState(
+                                                    messageId,
+                                                    FileUploadState.InProgress(progress)
+                                                )
+                                                uploadWorkerUtilRepository.updateLastSentThumbnailChunkIndexByMessageId(
+                                                    messageId,
+                                                    updatedChunkIndex
+                                                )
+                                                lastSentByteOffset = updatedSize
+                                                uploadWorkerUtilRepository.updateLastSentThumbnailByteOffsetByMessageId(
+                                                    messageId,
+                                                    lastSentByteOffset
+                                                )
+                                                // Acknowledge the chunk
+                                                onChunkAcknowledged(updatedChunkIndex)
+                                                chunkAcknowledged.complete(Unit)
+                                            }
+
+
+                                        }
+
+                                    }
 
                                     chunkAcknowledged.await()
                                     thumbnailChunkIndex++ // Move to the next chunk
