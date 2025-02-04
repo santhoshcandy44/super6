@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.Packaging
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
@@ -86,11 +88,25 @@ android {
             rootProject.layout.projectDirectory.file("stability_config.conf")
     }
 
+
     packaging {
+        // Exclude unnecessary resources like licenses
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+
+        // Force DEX files to be compressed (reduce APK size)
+        dex {
+            useLegacyPackaging = true  // Compress DEX files
+        }
+
+        // Force native libraries to be compressed (reduce APK size)
+        jniLibs {
+            useLegacyPackaging = true  // Compress native libraries
+        }
     }
+
+
 
     ndkVersion = "28.0.12674087 rc2"
 
