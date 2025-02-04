@@ -61,17 +61,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.BottomSheetValue.Expanded
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Scaffold
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.rememberBottomSheetState
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BasicAlertDialog
+
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -173,6 +170,7 @@ class TestActivity : ComponentActivity() {
             ))
 
         super.onCreate(savedInstanceState)
+
 
         setContent {
 
@@ -907,8 +905,7 @@ fun MediaItemVideo(media: MediaData) {
                                 it
                             )
                         }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error fetching thumbnail: ${e.message}")
+                    } catch (_: Exception) {
                         // Handle error if thumbnail creation fails
                     } finally {
                         isLoading = false  // Thumbnail loaded or failed

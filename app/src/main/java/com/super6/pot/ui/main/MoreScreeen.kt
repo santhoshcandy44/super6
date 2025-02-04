@@ -49,6 +49,7 @@ import com.super6.pot.R
 import com.super6.pot.ui.auth.AccountType
 import com.super6.pot.ui.dropUnlessResumedV2
 import com.super6.pot.ui.main.navhosts.routes.BottomBarScreen
+import com.super6.pot.ui.profile.viewmodels.ProfileViewModel
 import com.super6.pot.ui.shimmerLoadingAnimation
 import com.super6.pot.ui.theme.customColorScheme
 import com.super6.pot.ui.viewmodels.MoreViewModel
@@ -85,7 +86,6 @@ fun MoreScreen(
 
 
     BackHandler {
-
         if (isSheetExpanded) {
             collapseSheet()
         } else {

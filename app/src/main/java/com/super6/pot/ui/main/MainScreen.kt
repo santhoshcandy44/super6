@@ -42,7 +42,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -103,7 +102,7 @@ fun MainScreen(
     val userId = UserSharedPreferencesManager.userId
 
     val messageCount by viewModel.messageCount.collectAsState(0)
-    val notificationCount by viewModel.notificationCount.observeAsState(0)
+    val notificationCount by viewModel.notificationCount.collectAsState(0)
 
 
     // Remember the previous connection state with state preservation

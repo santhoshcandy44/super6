@@ -154,7 +154,6 @@ class PageSource(
     suspend fun refresh(userId: Long, query: String?) {
         if (isLoadingItems.value) {
             setRefreshingItems(false)
-            Log.e(TAG,"IsLoading items already")
             return
         }
         _isRefreshingItems.value = true

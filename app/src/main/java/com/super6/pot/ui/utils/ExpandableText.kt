@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.TextUnit
 import com.super6.pot.ui.theme.customColorScheme
 import com.super6.pot.utils.openUrlInCustomTab
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ExpandableText(
     text: String,

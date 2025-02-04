@@ -61,7 +61,7 @@ fun isValidImageDimensions(context: Context, uri: Uri): ImageValidationResult {
             isValidDimension = (width in MIN_WIDTH..MAX_WIDTH) && (height in MIN_HEIGHT..MAX_HEIGHT)
         }
     } catch (e: Exception) {
-        Log.e(TAG, "Error processing image: ${e.message}", e)
+        e.printStackTrace()
     } finally {
         // Close the input stream to avoid resource leaks
         inputStream?.close()
@@ -120,7 +120,7 @@ fun isValidThumbnailDimensionsFormat(context: Context, uri: Uri): ImageValidatio
         }
 
     } catch (e: Exception) {
-        Log.e(TAG, "Error processing image: ${e.message}", e)
+        e.printStackTrace()
     } finally {
         // Close the input stream to avoid resource leaks
         inputStream?.close()
@@ -141,7 +141,7 @@ fun isValidImageDimensionsByMetaData(width:Int, height: Int, format: String):  P
     try {
         isValidDimension = (width in MIN_WIDTH..MAX_WIDTH) && (height in MIN_HEIGHT..MAX_HEIGHT)
     } catch (e: Exception) {
-        Log.e(TAG, "Error processing image: ${e.message}", e)
+        e.printStackTrace()
     }
 
     // Return the validity status, width, height, and format as a data class
@@ -174,7 +174,7 @@ fun isValidThumbnailDimensionsByMetaData(width:Int, height: Int, format: String)
                 (height in MIN_HEIGHT..MAX_HEIGHT) &&
                 Math.abs(aspectRatio - desiredRatio) < tolerance
     } catch (e: Exception) {
-        Log.e(TAG, "Error processing image: ${e.message}", e)
+        e.printStackTrace()
     }
 
     // Return the validity status, the bitmap (if any), and the format

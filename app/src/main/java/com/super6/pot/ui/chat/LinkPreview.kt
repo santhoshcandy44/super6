@@ -26,7 +26,6 @@ suspend fun fetchLinkPreview(url: String): LinkPreviewData? = withContext(Dispat
 
     while (currentAttempt < maxRetries) {
         try {
-            Log.e(TAG, "JsoupUrl: $url (Attempt: ${currentAttempt + 1})")
 
             val startTime = System.currentTimeMillis()
             val userAgent =
@@ -51,9 +50,7 @@ suspend fun fetchLinkPreview(url: String): LinkPreviewData? = withContext(Dispat
             val imageUrl = document.select("meta[property=og:image]").attr("content")
                 .ifEmpty { document.select("meta[name=image]").attr("content").ifEmpty { null } }
 
-            val endTime = System.currentTimeMillis()
-            Log.e(TAG, "linkPreviewData: ${LinkPreviewData(title, description, imageUrl, url)}")
-            Log.e(TAG, "Elapsed: ${endTime - startTime} ms")
+
 
             return@withContext LinkPreviewData(title, description, imageUrl, url)
         } catch (e: Exception) {
@@ -61,10 +58,7 @@ suspend fun fetchLinkPreview(url: String): LinkPreviewData? = withContext(Dispat
             currentAttempt++
 
             if (currentAttempt < maxRetries) {
-                Log.e(TAG, "Retrying in ${retryDelay}ms...")
                 delay(retryDelay) // Delay before retrying
-            } else {
-                Log.e(TAG, "All retry attempts failed.")
             }
         }
     }

@@ -261,18 +261,18 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
                 networkConnectivityManager.unregisterNetworkCallback()
                 job?.cancel() // Cancel the coroutine job
                 job = null // Clear the job reference
-                AppClient.clear()
-                val intent = Intent(applicationContext, AuthActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                }
-                startActivity(intent)
-            } else {
                 UserSharedPreferencesManager.clear()
                 getSharedPreferences("FCM_MESSAGE_PARTS", MODE_PRIVATE)
                     .edit().clear().apply()
                 withContext(Dispatchers.IO) {
                     appDatabase.backupDatabase(applicationContext)
                 }
+
+                AppClient.clear()
+                val intent = Intent(applicationContext, AuthActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                startActivity(intent)
             }
         }
     }

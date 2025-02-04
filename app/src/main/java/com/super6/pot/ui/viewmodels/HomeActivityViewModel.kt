@@ -19,6 +19,7 @@ import com.super6.pot.ui.managers.NetworkConnectivityManager
 import com.super6.pot.utils.LogUtils.TAG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -49,7 +50,7 @@ class HomeActivityViewModel @Inject constructor(
 
     val messageCount = messageDao.countAllUnreadMessagesFlow()
 
-    val notificationCount: LiveData<Int> = notificationDao.countAllUnreadNotifications()
+    val notificationCount: Flow<Int> = notificationDao.countAllUnreadNotifications()
 
 
     private val _selectedIndustriesCount = MutableStateFlow<Int>(-1)

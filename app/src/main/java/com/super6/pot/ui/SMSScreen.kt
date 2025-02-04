@@ -219,9 +219,8 @@ class SmsViewModel @Inject constructor(@ApplicationContext val context:Context):
             }
 
             smsManager?.sendTextMessage(recipient, null, message, null, null)
-            Log.d("SmsViewModel", "SMS sent successfully to $recipient")
         } catch (e: Exception) {
-            Log.e("SmsViewModel", "Failed to send SMS: ${e.message}")
+            e.printStackTrace()
         }
     }
 

@@ -655,7 +655,6 @@ fun LocationBottomSheetContent(
                                         items(citySuggestions) { prediction ->
                                             // Extract the primary text (place name, e.g., city name)
                                             val cityName = prediction.getPrimaryText(null).toString()
-                                            Log.d(TAG, cityName)
 
                                             // Row for displaying city names
                                             Row(

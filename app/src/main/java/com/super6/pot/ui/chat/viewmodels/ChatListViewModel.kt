@@ -97,8 +97,6 @@ class ChatListViewModel @Inject constructor(
         val senderId = data.getLong("user_id")
         val status = data.getBoolean("online")
 
-        Log.e(TAG, "Chat user Online status $status")
-
         viewModelScope.launch {
             _userStates.value.find { it.chatUser.recipientId == senderId }?.let { userState ->
                 updateOnlineStatus(userState.chatUser.recipientId, status)

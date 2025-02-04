@@ -118,37 +118,31 @@ class LogInViewModel @Inject constructor(
         onSuccess: () -> Unit,
         onError: (String) -> Unit,
     ) {
-        viewModelScope.launch {
-
-
+        viewModelScope.launch{
             try {
                 _isLoading.value = true
                 when (val result = legacyEmailLogin(email, password)) {
                     is Result.Success -> {
                         val data = Gson().fromJson(result.data.data, LogInResponse::class.java)
                         (context.applicationContext as App).setIsInvalidSession(false)
-                        withContext(Dispatchers.IO) {
+                        withContext(Dispatchers.IO){
                             authRepository.updateProfileIfNeeded(data.userDetails)
                         }
                         authRepository.saveEmailSignInInfo(data.accessToken, data.refreshToken)
                         authRepository.saveUserId(data.userId)
                         onSuccess()  // Proceed to next step or navigate to OTP screen
                     }
-
                     is Result.Error -> {
                         errorMessage= mapExceptionToError(result.error).errorMessage
                         onError(errorMessage)
                     }
                 }
             } catch (t: Throwable) {
-                gsoErrorMessage = "Something went wrong"
-                onError(gsoErrorMessage)
-                t.printStackTrace()
+                errorMessage = "Something went wrong"
+                onError(errorMessage)
             } finally {
                 _isLoading.value = false
             }
-
-
         }
     }
 
@@ -184,9 +178,9 @@ class LogInViewModel @Inject constructor(
 
                 }
             } catch (t: Throwable) {
+                t.printStackTrace()
                 gsoErrorMessage = "Something Went Wrong"
                 onError(gsoErrorMessage)
-                t.printStackTrace()
             } finally {
                 _isLoading.value = false // Reset loading state
             }
@@ -224,11 +218,13 @@ class LogInViewModel @Inject constructor(
                 Result.Error(Exception(errorMessage))
             }
         } catch (t: Throwable) {
-
             Result.Error(t)
 
         }
     }
+
+
+
 
     fun onGoogleSignInOAuth(
         context: Context,

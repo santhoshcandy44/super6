@@ -207,7 +207,7 @@ class IsolatedChatActivityViewModel @Inject constructor(
                     /*      if (skipInitiallyCollectingItems) {
                               // Mark initial collection as done (once it's the first time collecting)
                               skipInitiallyCollectingItems = false
-                              Log.e(TAG, "Initial messages collection complete, skipping first fetch")
+
                               return@collect // Skip processing for initial load
                           }*/
 

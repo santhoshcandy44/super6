@@ -45,6 +45,7 @@ class ProfileViewModel @Inject constructor(
     val profileImageBitmap: StateFlow<Bitmap?> = _profileImageBitmap
 
     init {
+
         val savedUserProfile = savedStateHandle.get<String>("userProfile")
             ?.let { UserProfileSerializer.deserializeUserProfile(it) }
 

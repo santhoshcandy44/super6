@@ -1092,8 +1092,6 @@ class PublishedServicesViewModel @Inject constructor(
         // Check if the index is valid
         if (index != -1) {
 
-            Log.e(TAG, "Container added")
-
             // Update the specific container with a new EditableImage
             _editableContainers[index] = _editableContainers[index].copy(
                 image = EditableImage(

@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,7 +23,11 @@ import com.super6.pot.api.app.ProfileSettingsService
 import com.super6.pot.api.auth.services.CommonService
 import com.super6.pot.app.database.daos.profile.UserProfileDao
 import com.super6.pot.app.database.models.profile.UserProfileSettingsInfo
+import com.super6.pot.ui.main.viewmodels.AccountAndProfileSettingsViewModel
+import com.super6.pot.ui.profile.EditProfileFirstNameScreen
+import com.super6.pot.ui.profile.EditProfileLastNameScreen
 import com.super6.pot.ui.profile.repos.UserProfileRepository
+import com.super6.pot.utils.LogUtils.TAG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -83,8 +89,12 @@ class ProfileSettingsViewModel @Inject constructor(
                 _userProfile.value=it
                 updateUI(it)
             }
+
 */
+
             // Collect updates from the flow and update UI
+
+
             userProfileRepository.getUserProfileSettingsInfoFlow(userId).collectLatest { userProfile ->
                 _userProfile.value=userProfile
                 userProfile?.let { updateUI(it) }

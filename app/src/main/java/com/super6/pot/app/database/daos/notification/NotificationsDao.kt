@@ -18,7 +18,7 @@ interface NotificationDao {
     fun getAllNotifications(): Flow<List<Notification>>
 
     @Query("SELECT count(*) FROM notifications WHERE status='un_read'")
-    fun countAllUnreadNotifications(): LiveData<Int>
+    fun countAllUnreadNotifications(): Flow<Int>
 
     // Mark all notifications as read
     @Query("UPDATE notifications SET status = 'read'")

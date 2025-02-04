@@ -101,13 +101,9 @@ class AuthRepository @Inject constructor(
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         success(idToken)
-                        val email = task.result.user?.photoUrl
-
-                        Log.d(TAG, "Firebase sign in successful")
                         // Handle successful sign-in (e.g., navigate to another activity)
                     } else {
                         failure("Failed to sign in try again")
-                        Log.e(TAG, "Firebase sign-in failed: ${task.exception?.localizedMessage}")
                     }
                 }
 
@@ -115,25 +111,20 @@ class AuthRepository @Inject constructor(
             // Process the Google ID token credential as needed
         } catch (e: GetCredentialException) {
             failure("Failed to log in try again")
-            Log.e(TAG, "GetCredentialException: ${e.localizedMessage}")
         } catch (e: GoogleIdTokenParsingException) {
             failure("Failed to log in try again")
-            Log.e(TAG, "GoogleIdTokenParsingException: ${e.localizedMessage}")
         } catch (e: IOException) {
             // Handle network issues, such as no connectivity
             failure("Network error. Please check your internet connection and try again.")
-            Log.e(TAG, "IOException: ${e.localizedMessage}")
         } catch (e: Exception) {
             // Handle any other unexpected exceptions
             failure("An unexpected error occurred. Please try again.")
-            Log.e(TAG, "Exception: ${e.localizedMessage}")
         }
 
     }
 
 
     suspend fun updateProfileIfNeeded(userProfile: UserProfileInfo) {
-
         val existingLocation = userProfileDao.getUserProfileDetails(userProfile.userId)
             ?.userLocation
 
@@ -149,8 +140,7 @@ class AuthRepository @Inject constructor(
                 null
             }
 
-            val profileUpdatedAt =
-                if (updatedProfilePicUrl != null) userProfile.updatedAt else existingProfile?.updatedAt
+            val profileUpdatedAt = if (updatedProfilePicUrl != null) userProfile.updatedAt else existingProfile?.updatedAt
             val userProfileData =
                 createUserProfile(userProfile, updatedProfilePicUrl, profileUpdatedAt)
             userProfileDao.insert(userProfileData)
@@ -173,6 +163,7 @@ class AuthRepository @Inject constructor(
                 )
             }
         }
+
 
 
     }
@@ -222,7 +213,7 @@ class AuthRepository @Inject constructor(
             // Return the URI string with timestamp for cache invalidation
             Uri.fromFile(localFile).toString() + "?timestamp=" + System.currentTimeMillis()
         } catch (e: Exception) {
-            Log.e(TAG, "Error downloading/saving image: ${e.message}")
+            e.printStackTrace()
             null
         }
     }

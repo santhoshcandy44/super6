@@ -49,13 +49,11 @@ class NetworkConnectivityManager @Inject constructor(context: Context) {
                         isFirstConnection = false
                         return
                     } else {
-                        Log.d(TAG, "Connected to Internet")
                         CoroutineScope(Dispatchers.Main).launch{
                             _isConnectedEvent.emit(true)
                         }
                     }
                 } else {
-                    Log.d(TAG, "Not Connected to Internet: No internet")
                     isConnectedInternet = false
                     CoroutineScope(Dispatchers.Main).launch{
                         _isConnectedEvent.emit(false)
@@ -65,7 +63,6 @@ class NetworkConnectivityManager @Inject constructor(context: Context) {
 
             } ?: run {
 
-                Log.d(TAG, "Not Connected to Internet: NetworkCapabilities is null")
                 isConnectedInternet = false
                 CoroutineScope(Dispatchers.Main).launch {
                     _isConnectedEvent.emit(false)
@@ -77,7 +74,6 @@ class NetworkConnectivityManager @Inject constructor(context: Context) {
         override fun onLost(network: Network) {
             isConnectedInternet = false
             CoroutineScope(Dispatchers.Main).launch{
-                Log.d(TAG, "Not Connected to Internet: onLost")
                 _isConnectedEvent.emit(false)
             }
 
@@ -101,7 +97,6 @@ class NetworkConnectivityManager @Inject constructor(context: Context) {
         networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
 
         if (networkCapabilities == null) {
-            Log.d(TAG, "Initially Not Connected to Internet")
             isConnectedInternet = false
             CoroutineScope(Dispatchers.Main).launch {
                 _isConnectedEvent.emit(false)

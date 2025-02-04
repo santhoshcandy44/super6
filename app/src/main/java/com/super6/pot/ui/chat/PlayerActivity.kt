@@ -135,7 +135,6 @@ class PlayerActivity : ComponentActivity(){
 
         if(exoPlayer.isPlaying){
             exoPlayer.pause()
-            Log.e(TAG,"Exo player is paused")
         }
     }
 }

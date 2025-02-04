@@ -77,10 +77,8 @@ class ServicesWorkflowViewModel @Inject constructor(
     val refreshing: StateFlow<Boolean> get() = _refreshing
 
 
-
     private val _isDraftLoading = MutableStateFlow(false)
     val isDraftLoading: StateFlow<Boolean> get() = _isDraftLoading
-
 
 
     private val bitmapContainerFactory = BitmapContainerFactory()
@@ -90,7 +88,7 @@ class ServicesWorkflowViewModel @Inject constructor(
         val isLoading = _isLoading.asStateFlow()*/
 
     // Define MutableStateFlow for service fields
-    private val _status = MutableStateFlow<String>( "")
+    private val _status = MutableStateFlow<String>("")
     val status = _status.asStateFlow()
 
     // Define MutableStateFlow for service fields
@@ -479,7 +477,7 @@ class ServicesWorkflowViewModel @Inject constructor(
                 width = width,
                 height = height,
                 errorMessage = errorMessage
-                )
+            )
         } else {
 
             _thumbnailContainer.value = ThumbnailContainer(
@@ -533,7 +531,7 @@ class ServicesWorkflowViewModel @Inject constructor(
                     it.format
                 )
 
-                val errorMessage =when {
+                val errorMessage = when {
                     !result.first -> "Invalid Dimension"
                     !result.second -> "Invalid Format"
                     else -> null
@@ -555,7 +553,7 @@ class ServicesWorkflowViewModel @Inject constructor(
                     nonNullDraftThumbnail.height,
                     nonNullDraftThumbnail.format
                 )
-                val errorMessage =when {
+                val errorMessage = when {
                     !result.first -> "Invalid Dimension"
                     !result.second -> "Invalid Format"
                     else -> null
@@ -843,8 +841,7 @@ class ServicesWorkflowViewModel @Inject constructor(
                             height = draftImage.height
                         )
                     } catch (e: Exception) {
-                        // Handle any errors (e.g., file not found, I/O exception)
-                        Log.e("CacheError", "Error caching image: ${draftImage.path}", e)
+                        e.printStackTrace()
                         null
                     }
                 }
@@ -1012,8 +1009,7 @@ class ServicesWorkflowViewModel @Inject constructor(
                             height = draftImage.height
                         )
                     } catch (e: Exception) {
-                        // Handle any errors (e.g., file not found, I/O exception)
-                        Log.e("CacheError", "Error caching image: ${draftImage.path}", e)
+                        e.printStackTrace()
                         null
                     }
                 }
@@ -1134,7 +1130,6 @@ class ServicesWorkflowViewModel @Inject constructor(
             e.printStackTrace()
         }
     }
-
 
 
     fun onCreateService(
@@ -1259,7 +1254,7 @@ class ServicesWorkflowViewModel @Inject constructor(
         _longDescription.value = ""
         _thumbnailContainer.value = null
         _imageContainers.value = emptyList()
-        _industry.value=-1
+        _industry.value = -1
         _plans.value = emptyList()
         _country.value = ""
         _state.value = ""
@@ -1270,11 +1265,11 @@ class ServicesWorkflowViewModel @Inject constructor(
         _longDescriptionError.value = null
         _imageContainersError.value = null
         _plansError.value = null
-        _industryError.value= null
+        _industryError.value = null
         _countryError.value = null
         _stateError.value = null
         _selectedLocationError.value = null
-        _editableService.value=null
+        _editableService.value = null
 
     }
 

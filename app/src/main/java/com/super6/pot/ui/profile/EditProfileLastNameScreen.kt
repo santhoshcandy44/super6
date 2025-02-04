@@ -70,140 +70,136 @@ fun EditProfileLastNameScreen(
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
+    ) {
+        Scaffold(
 
-    AppTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding()
-        ) {
-            Scaffold(
-
-                topBar = {
-                    TopAppBar(
-                        title = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back Icon"
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Edit Last Name",
-                                    style = MaterialTheme.typography.titleMedium
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back Icon"
                                 )
                             }
-                        })
-                }
-
-            ) { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-
-
-                    OutlinedTextField(
-                        isError = lastNameError != null || lastName.length > 50,
-                        value = lastName,
-                        onValueChange = { viewModel.onLastNameChanged(it) },
-                        label = { Text("Last Name") },
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        maxLines = 1,
-                        singleLine = true,
-                        textStyle = TextStyle(fontSize = 14.sp),
-                        visualTransformation = if (lastName.isEmpty())
-                            PlaceholderTransformation(" ")
-                        else VisualTransformation.None
-                    )
-
-                    if (lastNameError != null || lastName.length > 50) {
-                        Text(
-                            text = "Limit: ${lastName.length}/${50}",
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(
-                                horizontal = 16.dp,
-                                vertical = 4.dp
-                            ) // Adjust padding as needed
-                        )
-                    }
-
-                    // Display error message if there's an error
-                    lastNameError?.let {
-
-                        Text(
-                            text = it,
-                            color = Color.Red,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(
-                                horizontal = 16.dp,
-                                vertical = 4.dp
-                            ) // Adjust padding as needed
-                        )
-
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Button(
-                        enabled = !isLoading,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colorResource(id = R.color.colorPrimary),
-                            disabledContainerColor = colorResource(id = R.color.colorPrimary)
-                        ),
-                        onClick = {
-                            if (viewModel.validateLastName()) {
-                                scope.launch {
-                                    focusManager.clearFocus()
-                                    delay(300)
-                                }
-                                viewModel.onUpdateLastName(userId, lastName, onSuccess = {
-                                    Toast.makeText(
-                                        context,
-                                        it,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    onNavigatePop()
-                                }) {
-                                    Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                        .show()
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        if (isLoading) {
-                            androidx.compose.material3.CircularProgressIndicator(
-                                color = Color.White, // Change this to any color you prefer
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(ButtonDefaults.IconSize),
-                            )
-
-                        } else {
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Update Last Name",
-                                color = Color.White,
-                                style = MaterialTheme.typography.bodyMedium
+                                text = "Edit Last Name",
+                                style = MaterialTheme.typography.titleMedium
                             )
                         }
-                    }
+                    })
+            }
+
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+
+
+                OutlinedTextField(
+                    isError = lastNameError != null || lastName.length > 50,
+                    value = lastName,
+                    onValueChange = { viewModel.onLastNameChanged(it) },
+                    label = { Text("Last Name") },
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    maxLines = 1,
+                    singleLine = true,
+                    textStyle = TextStyle(fontSize = 14.sp),
+                    visualTransformation = if (lastName.isEmpty())
+                        PlaceholderTransformation(" ")
+                    else VisualTransformation.None
+                )
+
+                if (lastNameError != null || lastName.length > 50) {
+                    Text(
+                        text = "Limit: ${lastName.length}/${50}",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(
+                            horizontal = 16.dp,
+                            vertical = 4.dp
+                        ) // Adjust padding as needed
+                    )
+                }
+
+                // Display error message if there's an error
+                lastNameError?.let {
+
+                    Text(
+                        text = it,
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(
+                            horizontal = 16.dp,
+                            vertical = 4.dp
+                        ) // Adjust padding as needed
+                    )
 
                 }
 
+                Spacer(Modifier.height(16.dp))
+
+                Button(
+                    enabled = !isLoading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorResource(id = R.color.colorPrimary),
+                        disabledContainerColor = colorResource(id = R.color.colorPrimary)
+                    ),
+                    onClick = {
+                        if (viewModel.validateLastName()) {
+                            scope.launch {
+                                focusManager.clearFocus()
+                                delay(300)
+                            }
+                            viewModel.onUpdateLastName(userId, lastName, onSuccess = {
+                                Toast.makeText(
+                                    context,
+                                    it,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                onNavigatePop()
+                            }) {
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    if (isLoading) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            color = Color.White, // Change this to any color you prefer
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(ButtonDefaults.IconSize),
+                        )
+
+                    } else {
+                        Text(
+                            text = "Update Last Name",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
 
             }
 
-            if (isLoading) {
-                LoadingDialog()
-            }
+
         }
 
+        if (isLoading) {
+            LoadingDialog()
+        }
     }
 
 

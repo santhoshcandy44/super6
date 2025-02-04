@@ -244,8 +244,6 @@ class ChatViewModel @Inject constructor(
         val status = data.getBoolean("online")
         val lastVisible = data.getString("last_active")
 
-        Log.e(TAG, "Online Status $status $lastVisible")
-
 
         viewModelScope.launch {
             if (sender == recipientId) {

@@ -127,11 +127,6 @@ fun IsolatedChatScreen(
                                 )
                             }
 
-                        } else {
-                            Log.e(
-                                TAG,
-                                "Skipping load, either the message ID is the same as the last loaded or message is null"
-                            )
                         }
                     }
                 }

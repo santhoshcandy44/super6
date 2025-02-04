@@ -525,14 +525,10 @@ private fun HomeContent(
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.layoutInfo }
             .collect { layoutInfo ->
-/*
-                Log.e(TAG, "lastLoadedItemPosition " + lastLoadedItemPosition.toString())
-*/
+
                 // Check if the last item is visible
                 val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index
-                /*
-                                Log.e(TAG, "lastVisibleItemIndex ${hasMoreItems}" + lastVisibleItemIndex.toString())
-                */
+
 
                 if (lastVisibleItemIndex != null
                     && lastVisibleItemIndex == items.size - 1

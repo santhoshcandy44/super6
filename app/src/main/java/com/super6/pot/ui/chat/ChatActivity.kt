@@ -6093,11 +6093,6 @@ fun BoxScope.UploadingMediaButton(
 ) {
 
 
-    LaunchedEffect(progressPercentage) {
-        Log.e(TAG, "Progress: $progressPercentage%")
-    }
-
-
 
 
     Box(

@@ -3,12 +3,10 @@ package com.super6.pot.app.database
 
 import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.super6.pot.api.models.service.GuestIndustryDao
 import com.super6.pot.api.models.service.Industry
 import com.super6.pot.app.CrashlyticsLogger
-import com.super6.pot.app.database.DatabaseSingleton.resetDataBase
 import com.super6.pot.app.database.daos.chat.ChatUserDao
 import com.super6.pot.app.database.daos.chat.MessageDao
 import com.super6.pot.app.database.daos.chat.MessageMediaMetaDataDao
@@ -38,10 +36,7 @@ import com.super6.pot.app.database.models.service.DraftLocation
 import com.super6.pot.app.database.models.service.DraftPlan
 import com.super6.pot.app.database.models.service.DraftService
 import com.super6.pot.app.database.models.service.DraftThumbnail
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import com.super6.pot.app.hilt.modules.DatabaseModule.clearDatabaseInstance
 import java.io.File
 import java.io.IOException
 
@@ -64,13 +59,13 @@ import java.io.IOException
         Industry::class,
         MessageMediaMetadata::class,
         MessageProcessingData::class,
-    ], version = 79, exportSchema = true
+    ], version = 79,
+    exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
 
     abstract fun boardsDao(): BoardsDao
-
     abstract fun userProfileDao(): UserProfileDao
     abstract fun userLocationDao(): UserLocationDao
     abstract fun messageDao(): MessageDao
@@ -87,7 +82,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun guestIndustryDao(): GuestIndustryDao
 
 
-    fun backupDatabase(context: Context) {
+   fun backupDatabase(context: Context) {
 
         // Path to the original Room database file
         val dbFile = context.getDatabasePath("app_database")
@@ -100,11 +95,10 @@ abstract class AppDatabase : RoomDatabase() {
             if (dbFile.exists()) {
                 // Copy the database to the backup file (overwrite if it exists)
                 dbFile.copyTo(backupFile, overwrite = true)
-                runBlocking {
-                    clearAllData()
-                }
-                resetDataBase(context)
-
+                clearAllData()
+                close()
+                context.deleteDatabase("app_database")
+                clearDatabaseInstance()
             }
 
         } catch (e: IOException) {
@@ -121,54 +115,5 @@ abstract class AppDatabase : RoomDatabase() {
 
     private fun clearAllData() {
         clearAllTables()
-    }
-}
-
-object DatabaseSingleton {
-
-    // Singleton instance of the database
-    @Volatile
-    private var INSTANCE: AppDatabase? = null
-
-    // Function to get the database instance
-    fun getDatabase(
-        context: Context,
-        forceFallback: Boolean = false // Parameter to force a new instance
-    ): AppDatabase {
-        // If forceFallback is true, return a new instance and ignore the existing one
-        if (forceFallback) {
-            return initDatabaseInstance(context)
-        }
-
-        // Otherwise, return the existing singleton instance
-        return INSTANCE ?: synchronized(this) {
-            INSTANCE ?: initDatabaseInstance(context).also { INSTANCE = it }
-        }
-    }
-
-
-    fun resetDataBase(context: Context){
-        // Delete the existing database file
-        context.deleteDatabase("app_database")
-        INSTANCE = getDatabase(context, true)
-        CoroutineScope(Dispatchers.IO).launch{
-            INSTANCE?.boardsDao()?.getAllBoards()
-        }
-    }
-
-    // Helper function to create a new database instance
-    private fun initDatabaseInstance(
-        context: Context): AppDatabase {
-        return Room.databaseBuilder(
-            context.applicationContext,
-            AppDatabase::class.java,
-            "app_database"
-        ).apply {
-
-            // Prepopulate the database from an asset file
-            createFromAsset("database/external_database.db")
-            // Enable multi-instance invalidation
-            enableMultiInstanceInvalidation()
-        }.build()
     }
 }

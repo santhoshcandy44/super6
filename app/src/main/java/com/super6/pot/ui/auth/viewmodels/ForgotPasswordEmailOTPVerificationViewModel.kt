@@ -88,7 +88,6 @@ class ForgotPasswordEmailOTPVerificationViewModel @Inject constructor(
                 }
             } catch (t: Throwable) {
                 t.printStackTrace()
-                Log.d(TAG, t.message.toString())
             } finally {
                 _loading.value = false
             }

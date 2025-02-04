@@ -90,7 +90,6 @@ class ForgotPasswordViewModel @Inject constructor() : ViewModel() {
                 }
             }catch (t:Throwable){
                 t.printStackTrace()
-                Log.e(TAG,t.message.toString())
             }finally {
                 _loadingState.value = false // Reset loading state
             }

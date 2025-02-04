@@ -206,10 +206,6 @@ fun EditProfileFirstNameScreen(
 
             }
 
-            if (isLoading) {
-                LoadingDialog()
-            }
-
         }
 
 

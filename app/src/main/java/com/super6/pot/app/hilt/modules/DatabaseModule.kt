@@ -1,6 +1,7 @@
 package com.super6.pot.app.hilt.modules
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -14,7 +15,6 @@ import com.super6.pot.app.database.daos.chat.MessageMediaMetaDataDao
 import com.super6.pot.app.database.daos.profile.RecentLocationDao
 import com.super6.pot.app.database.daos.service.DraftImageDao
 import com.super6.pot.api.auth.managers.socket.SocketManager
-import com.super6.pot.app.database.DatabaseSingleton
 import com.super6.pot.app.database.daos.chat.MessageProcessingDataDao
 import com.super6.pot.app.database.daos.chat.ChatUserDao
 import com.super6.pot.app.database.daos.profile.BoardsDao
@@ -27,6 +27,8 @@ import com.super6.pot.app.database.daos.service.DraftThumbnailDao
 import com.super6.pot.app.database.daos.service.DraftServiceDao
 import com.super6.pot.ui.profile.repos.UserProfileRepository
 import com.super6.pot.ui.managers.NetworkConnectivityManager
+import com.super6.pot.ui.viewmodels.MoreViewModel
+import com.super6.pot.utils.LogUtils.TAG
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -71,13 +73,50 @@ object DatabaseModule {
             MIGRATION_56_57
             )*/
 
-    @Singleton
+
+    @Volatile
+    private var INSTANCE: AppDatabase? = null
+
     @Provides
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
-        return DatabaseSingleton.getDatabase(context)
+        return INSTANCE ?: synchronized(this) {
+
+            val instance = Room.databaseBuilder(
+                context.applicationContext,
+                AppDatabase::class.java,
+                "app_database"
+            ).apply {
+
+                val dbFile = context.getDatabasePath("app_database")
+                if (!dbFile.exists()) {
+                    // Optional: Prepopulate the database
+                    createFromAsset("database/external_database.db")
+                }
+
+                addCallback(object : RoomDatabase.Callback() {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        super.onCreate(db)
+                        Log.e(TAG, "CREATING DATABASE ${db.path}")
+                    }
+                })
+                // Enable multi-instance invalidation (optional)
+                enableMultiInstanceInvalidation()
+            }.build()
+
+
+            if (!instance.isOpen) {
+                instance.openHelper.writableDatabase
+            }
+            INSTANCE = instance
+            instance
+        }
+
     }
 
-
+    // Optional: Clear the instance if needed
+    fun clearDatabaseInstance() {
+        INSTANCE = null
+    }
 
 
     @Provides
@@ -156,22 +195,9 @@ object DatabaseModule {
         return database.chatUserDao()
     }
 
-
     @Provides
     fun provideNotificationDao(database: AppDatabase): NotificationDao {
         return database.notificationDao()
-    }
-
-
-    @Provides
-    @Singleton
-    fun provideUserProfileRepository(
-        @ApplicationContext context: Context,
-        userProfileDao: UserProfileDao,
-        userLocationDao: UserLocationDao,
-
-        ): UserProfileRepository {
-        return UserProfileRepository(context, userProfileDao, userLocationDao)
     }
 
 }

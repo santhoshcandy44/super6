@@ -25,7 +25,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import javax.inject.Inject
 
-
 class UserProfileRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val userProfileDao: UserProfileDao,
@@ -101,7 +100,7 @@ class UserProfileRepository @Inject constructor(
 
 
                         } catch (e: Exception) {
-                            Log.e(TAG, "Error downloading/saving image: ${e.message}")
+                            e.printStackTrace()
                             e.printStackTrace()
                         }
 

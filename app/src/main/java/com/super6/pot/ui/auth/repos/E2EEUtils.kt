@@ -376,7 +376,6 @@ fun decryptFile(encryptedData: ByteArray): DecryptionFileStatus {
         val encryptedAESKeySize = 256  // Example size of RSA encrypted AES key (adjust as needed)
         val encryptedAESKey = encryptedData.copyOfRange(0, encryptedAESKeySize)
 
-        Log.e(TAG, encryptedAESKey.toString())
         val encryptedFileBytes = encryptedData.copyOfRange(encryptedAESKeySize, encryptedData.size)
 
         // Step 2: Decrypt the AES key using the recipient's RSA private key
@@ -431,7 +430,6 @@ fun decryptFile(encryptedFile: File, outputFile: File): DecryptionFileStatus {
                 while (input.read(buffer).also { bytesRead = it } != -1) {
                     val decryptedChunk = decryptAESFileWithAESKey(buffer.copyOf(bytesRead), decryptedAESKey)
                     fileOutputStream.write(decryptedChunk)
-                    Log.e(TAG,"Decryption")
                     fileOutputStream.flush()
                 }
             }

@@ -246,7 +246,6 @@ class PublishedServiceRepository @Inject constructor() {
         format: String
     ) {
 
-        Log.e(TAG,"${imageId}")
         // Create the new EditableImage
         val newImage = EditableImage(
             imageId = imageId,
@@ -267,7 +266,6 @@ class PublishedServiceRepository @Inject constructor() {
                             // Update existing image
                             this[index] = newImage
                         } else {
-                            Log.e(TAG,"Image added")
 
                             // Add new image
                             add(newImage)
@@ -289,7 +287,6 @@ class PublishedServiceRepository @Inject constructor() {
                     // Update existing image
                     this[index] = newImage
                 } else {
-                    Log.e(TAG,"Image added 1")
                     // Add new image
                     add(newImage)
                 }
