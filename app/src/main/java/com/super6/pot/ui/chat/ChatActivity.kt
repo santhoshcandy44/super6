@@ -10,7 +10,6 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -178,7 +177,6 @@ import com.super6.pot.app.database.models.chat.MessageMediaMetadata
 import com.super6.pot.app.database.models.chat.MessageWithReply
 import com.super6.pot.app.database.models.chat.ThumbnailLoader.getThumbnailBitmap
 import com.super6.pot.app.workers.getFileExtension
-import com.super6.pot.ui.auth.ForgotPasswordScreen
 import com.super6.pot.ui.auth.navhost.noTransitionComposable
 import com.super6.pot.ui.chat.repos.ChatUserRepository
 import com.super6.pot.ui.chat.viewmodels.ChatActivityViewModel
@@ -202,7 +200,6 @@ import com.super6.pot.ui.utils.ExpandableText
 import com.super6.pot.ui.utils.SafeDrawingBox
 import com.super6.pot.ui.utils.ScrollBarConfig
 import com.super6.pot.ui.utils.verticalScrollWithScrollbar
-import com.super6.pot.utils.LogUtils.TAG
 import com.super6.pot.utils.compressImageAsByteArray
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -4784,6 +4781,7 @@ fun ChatOtherImageMessageItem(
                                 viewModel.downloadMediaAndUpdateMessage(
                                     context.findActivity(),
                                     message.id,
+                                    message.senderId,
                                     it.fileDownloadUrl,
                                     it.fileCachePath,
                                     it
@@ -5025,6 +5023,7 @@ fun ChatOtherVideoMessageItem(
                                 viewModel.downloadMediaAndUpdateMessage(
                                     context.findActivity(),
                                     message.id,
+                                    message.senderId,
                                     it.fileDownloadUrl,
                                     it.fileCachePath,
                                     it
@@ -5229,6 +5228,7 @@ fun ChatOtherAudioMessageItem(
                                             viewModel.downloadMediaAndUpdateMessage(
                                                 context.findActivity(),
                                                 message.id,
+                                                message.senderId,
                                                 it.fileDownloadUrl,
                                                 it.fileCachePath,
                                                 it
@@ -5498,6 +5498,7 @@ fun ChatOtherFileMessageItem(
                                         viewModel.downloadMediaAndUpdateMessage(
                                             context.findActivity(),
                                             message.id,
+                                            message.senderId,
                                             fileMetadata.fileDownloadUrl,
                                             fileMetadata.fileCachePath,
                                             fileMetadata

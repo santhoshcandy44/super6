@@ -4,9 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
-import android.widget.Toast
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -23,11 +20,7 @@ import com.super6.pot.api.app.ProfileSettingsService
 import com.super6.pot.api.auth.services.CommonService
 import com.super6.pot.app.database.daos.profile.UserProfileDao
 import com.super6.pot.app.database.models.profile.UserProfileSettingsInfo
-import com.super6.pot.ui.main.viewmodels.AccountAndProfileSettingsViewModel
-import com.super6.pot.ui.profile.EditProfileFirstNameScreen
-import com.super6.pot.ui.profile.EditProfileLastNameScreen
 import com.super6.pot.ui.profile.repos.UserProfileRepository
-import com.super6.pot.utils.LogUtils.TAG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -254,7 +247,7 @@ class ProfileSettingsViewModel @Inject constructor(
 
         // Make the network request in the background using Retrofit
         val downloadImageResponse = CommonClient.rawInstance.create(CommonService::class.java)
-            .downloadImage(imageUrl)
+            .downloadMedia(imageUrl)
 
         // Write the downloaded image to the local file
         downloadImageResponse.byteStream().use { inputStream ->

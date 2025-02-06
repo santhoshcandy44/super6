@@ -1,39 +1,35 @@
 package com.super6.pot.app.hilt.modules
 
 import android.content.Context
-import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.super6.pot.App
 import com.super6.pot.api.auth.managers.TokenManager
+import com.super6.pot.api.auth.managers.socket.SocketManager
 import com.super6.pot.api.models.service.GuestIndustryDao
 import com.super6.pot.app.database.AppDatabase
+import com.super6.pot.app.database.daos.chat.ChatUserDao
 import com.super6.pot.app.database.daos.chat.MessageDao
 import com.super6.pot.app.database.daos.chat.MessageMediaMetaDataDao
-import com.super6.pot.app.database.daos.profile.RecentLocationDao
-import com.super6.pot.app.database.daos.service.DraftImageDao
-import com.super6.pot.api.auth.managers.socket.SocketManager
 import com.super6.pot.app.database.daos.chat.MessageProcessingDataDao
-import com.super6.pot.app.database.daos.chat.ChatUserDao
-import com.super6.pot.app.database.daos.profile.BoardsDao
-import com.super6.pot.app.database.daos.service.DraftPlanDao
 import com.super6.pot.app.database.daos.notification.NotificationDao
-import com.super6.pot.app.database.daos.profile.UserProfileDao
+import com.super6.pot.app.database.daos.profile.BoardsDao
+import com.super6.pot.app.database.daos.profile.RecentLocationDao
 import com.super6.pot.app.database.daos.profile.UserLocationDao
+import com.super6.pot.app.database.daos.profile.UserProfileDao
+import com.super6.pot.app.database.daos.service.DraftImageDao
 import com.super6.pot.app.database.daos.service.DraftLocationDao
-import com.super6.pot.app.database.daos.service.DraftThumbnailDao
+import com.super6.pot.app.database.daos.service.DraftPlanDao
 import com.super6.pot.app.database.daos.service.DraftServiceDao
-import com.super6.pot.ui.profile.repos.UserProfileRepository
+import com.super6.pot.app.database.daos.service.DraftThumbnailDao
 import com.super6.pot.ui.managers.NetworkConnectivityManager
-import com.super6.pot.ui.viewmodels.MoreViewModel
 import com.super6.pot.utils.LogUtils.TAG
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.util.concurrent.Executors
 import javax.inject.Singleton
 
 
@@ -79,34 +75,23 @@ object DatabaseModule {
 
     @Provides
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
-        return INSTANCE ?: synchronized(this) {
+        return  INSTANCE ?: synchronized(this) {
 
             val instance = Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "app_database"
             ).apply {
-
                 val dbFile = context.getDatabasePath("app_database")
                 if (!dbFile.exists()) {
                     // Optional: Prepopulate the database
                     createFromAsset("database/external_database.db")
                 }
-
-                addCallback(object : RoomDatabase.Callback() {
-                    override fun onCreate(db: SupportSQLiteDatabase) {
-                        super.onCreate(db)
-                        Log.e(TAG, "CREATING DATABASE ${db.path}")
-                    }
-                })
                 // Enable multi-instance invalidation (optional)
                 enableMultiInstanceInvalidation()
+
             }.build()
 
-
-            if (!instance.isOpen) {
-                instance.openHelper.writableDatabase
-            }
             INSTANCE = instance
             instance
         }
@@ -176,7 +161,11 @@ object DatabaseModule {
 
     @Provides
     fun provideUserProfileDao(database: AppDatabase): UserProfileDao {
-        return database.userProfileDao()
+        return  try {
+            database.userProfileDao()
+        }catch (e:Exception){
+            throw Exception("Error Database")
+        }
     }
 
     @Provides

@@ -6,7 +6,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.super6.pot.App
-import com.super6.pot.api.common.CommonClient
+import com.super6.pot.api.app.AppClient
 import com.super6.pot.app.database.models.chat.ChatMessageStatus
 import com.super6.pot.app.database.models.chat.ChatMessageType
 import com.super6.pot.app.database.daos.chat.MessageDao
@@ -38,7 +38,6 @@ import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
-import javax.inject.Inject
 
 
 @HiltWorker
@@ -95,8 +94,8 @@ class VisualMediaChatMessageProcessor @AssistedInject constructor(
             // Assuming socket connection and message processing can be done inside a coroutine
             socket = awaitConnectToSocket(socketManager, !App.isAppInForeground)
 
-            val responseBody = CommonClient.rawInstance.create(CommonService::class.java)
-                .downloadImage(thumbDownloadUrl)
+            val responseBody = AppClient.mediaDownloadInstance.create(CommonService::class.java)
+                .downloadMedia(thumbDownloadUrl)
 
             // Get the cache directory where the file should be stored
             val dir = context.getExternalFilesDir(null)

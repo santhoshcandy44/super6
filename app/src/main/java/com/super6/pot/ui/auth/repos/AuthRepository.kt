@@ -2,7 +2,6 @@ package com.super6.pot.ui.auth.repos
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
@@ -29,7 +28,6 @@ import com.super6.pot.app.database.models.profile.UserLocation
 import com.super6.pot.app.database.models.profile.UserProfile
 import com.super6.pot.app.database.daos.profile.UserLocationDao
 import com.super6.pot.ui.managers.UserSharedPreferencesManager
-import com.super6.pot.utils.LogUtils.TAG
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -197,7 +195,7 @@ class AuthRepository @Inject constructor(
             val localFile = File(profileDir, "profile_pic.jpg")
             // Make the network request in the background using Retrofit
             val response = CommonClient.rawInstance.create(CommonService::class.java)
-                .downloadImage(imageUrl)
+                .downloadMedia(imageUrl)
 
             // Write the downloaded image to the local file
             withContext(Dispatchers.IO) {

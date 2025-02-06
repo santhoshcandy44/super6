@@ -37,6 +37,9 @@ import com.super6.pot.app.database.models.service.DraftPlan
 import com.super6.pot.app.database.models.service.DraftService
 import com.super6.pot.app.database.models.service.DraftThumbnail
 import com.super6.pot.app.hilt.modules.DatabaseModule.clearDatabaseInstance
+import com.super6.pot.ui.profile.repos.UserProfileRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import java.io.File
 import java.io.IOException
 
@@ -96,7 +99,7 @@ abstract class AppDatabase : RoomDatabase() {
                 // Copy the database to the backup file (overwrite if it exists)
                 dbFile.copyTo(backupFile, overwrite = true)
                 clearAllData()
-                close()
+//                close()
                 context.deleteDatabase("app_database")
                 clearDatabaseInstance()
             }

@@ -8,14 +8,12 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import androidx.work.WorkManager
 import com.super6.pot.App
-import com.super6.pot.api.common.CommonClient
+import com.super6.pot.api.app.AppClient
 import com.super6.pot.app.database.models.chat.ChatMessageStatus
 import com.super6.pot.app.database.daos.chat.MessageDao
 import com.super6.pot.app.database.models.chat.MessageMediaMetadata
@@ -43,9 +41,7 @@ import com.super6.pot.app.workers.getFolderTypeByExtension
 import com.super6.pot.app.workers.helpers.MediaUploadWorkerHelper
 import com.super6.pot.app.workers.helpers.VisualMediaUploadWorkerHelper
 import com.super6.pot.app.workers.upload.models.FileUploadInfo
-import com.super6.pot.ui.managers.NetworkConnectivityManager
-import com.super6.pot.ui.viewmodels.HomeActivityViewModel
-import com.super6.pot.utils.LogUtils.TAG
+import com.super6.pot.utils.LogUtils
 import com.super6.pot.utils.compressImageAsByteArray
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -54,6 +50,7 @@ import io.socket.client.Socket
 import io.socket.emitter.Emitter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,7 +59,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -95,7 +94,6 @@ sealed class MediaDownloadState {
 
     @Serializable
     data object Downloaded : MediaDownloadState()
-
     @Serializable
     data object Failed : MediaDownloadState()
 }
@@ -671,11 +669,12 @@ class ChatViewModel @Inject constructor(
     fun downloadMediaAndUpdateMessage(
         context: Activity,
         messageId: Long,
+        senderId:Long,
         mediaDownloadUrl: String,
         cachedFileAbsPath: String?,
         fileMetadata: MessageMediaMetadata
     ) {
-        downloadJobs[messageId] = viewModelScope.launch {
+        downloadJobs[messageId] = viewModelScope.launch(Dispatchers.IO){
             updateDownloadState(messageId, MediaDownloadState.Started)
             try {
 
@@ -745,61 +744,94 @@ class ChatViewModel @Inject constructor(
                     }
 
 
-                    // Handle decryption after download (if needed)
+
+                    socket?.let { nonNullSocket ->
+                        if (nonNullSocket.connected()) {
+                            try {
+                                withTimeout(5000) { // Set timeout to 5 seconds
+                                    suspendCancellableCoroutine<Unit> { continuation ->
+                                        nonNullSocket.emit("chat:mediaStatus", JSONObject().apply {
+                                            put("status", "MEDIA_DOWNLOADED")
+                                            put("download_url", mediaDownloadUrl)
+                                            put("sender", senderId)
+                                            put("recipient_id", recipientId)
+                                            put("message_id", messageId) // Add the inserted message ID to JSON
+                                        }, Ack {
+                                            continuation.resume(Unit) { cause, value, context ->
+                                                // Acknowledgment received, log it
+                                            }
+                                        })
+                                    }
+                                }
 
 
-                    val mediaFile = getAppSpecificMediaFolder(context, originalFileName)
 
-                    withContext(Dispatchers.IO) {
-                        when (val decryptedFile = decryptFile(cachedFile, mediaFile)) {
-                            is DecryptionFileStatus.Success -> {
 
-                                // Cache the decrypted file
-                                decryptedFile.decryptedFile.let {
-                                    updateDownloadState(messageId, MediaDownloadState.Downloaded)
-                                    if (fileMetadata.fileMimeType.startsWith("image/")
-                                        || fileMetadata.fileMimeType.startsWith("video/") || fileMetadata.fileMimeType.startsWith(
-                                            "audio/"
-                                        )
-                                    ) {
-                                        repository.updateVisualMediaMessageDownloadedMediaInfo(
+                                val mediaFile = getAppSpecificMediaFolder(context, originalFileName)
+
+                                when (val decryptedFile = decryptFile(cachedFile, mediaFile)) {
+                                    is DecryptionFileStatus.Success -> {
+
+                                        // Cache the decrypted file
+                                        decryptedFile.decryptedFile.let {
+                                            updateDownloadState(messageId, MediaDownloadState.Downloaded)
+                                            if (fileMetadata.fileMimeType.startsWith("image/")
+                                                || fileMetadata.fileMimeType.startsWith("video/") || fileMetadata.fileMimeType.startsWith(
+                                                    "audio/"
+                                                )
+                                            ) {
+                                                repository.updateVisualMediaMessageDownloadedMediaInfo(
+                                                    messageId,
+                                                    it.absolutePath,
+                                                    null,
+                                                    fileMetadata
+                                                )
+                                            } else {
+                                                repository.updateMediaMessageDownloadedMediaInfo(
+                                                    messageId,
+                                                    it.absolutePath,
+                                                    null
+                                                )
+                                            }
+                                            cachedFile.delete()
+
+                                        }
+                                    }
+
+                                    is DecryptionFileStatus.DecryptionFailed -> {
+                                        mediaFile.delete()
+                                        cachedFile.delete()
+                                        repository.updateMessage(
                                             messageId,
-                                            it.absolutePath,
-                                            null,
-                                            fileMetadata
+                                            ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED
                                         )
-                                    } else {
-                                        repository.updateMediaMessageDownloadedMediaInfo(
+                                        updateDownloadState(messageId, MediaDownloadState.Failed)
+                                    }
+
+                                    is DecryptionFileStatus.UnknownError -> {
+                                        mediaFile.delete()
+                                        cachedFile.delete()
+                                        repository.updateMessage(
                                             messageId,
-                                            it.absolutePath,
-                                            null
+                                            ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN
                                         )
                                     }
-                                    cachedFile.delete()
-
                                 }
-                            }
 
-                            is DecryptionFileStatus.DecryptionFailed -> {
-                                mediaFile.delete()
-                                cachedFile.delete()
-                                repository.updateMessage(
-                                    messageId,
-                                    ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED
-                                )
+
+                            } catch (t: TimeoutCancellationException) {
+                                // Log timeout failure
+                                updateDownloadState(messageId, MediaDownloadState.Failed)
+                            } catch (e: Exception) {
+                                // Handle any unexpected errors
                                 updateDownloadState(messageId, MediaDownloadState.Failed)
                             }
-
-                            is DecryptionFileStatus.UnknownError -> {
-                                mediaFile.delete()
-                                cachedFile.delete()
-                                repository.updateMessage(
-                                    messageId,
-                                    ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN
-                                )
-                            }
+                        } else {
+                            // Socket not connected, update state as failed
+                            updateDownloadState(messageId, MediaDownloadState.Failed)
                         }
                     }
+
 
                     return@launch
                 }
@@ -870,64 +902,89 @@ class ChatViewModel @Inject constructor(
                 fileOutputStream.flush()
                 fileOutputStream.close()
 
-
                 val mediaFile = getAppSpecificMediaFolder(context, originalFileName)
+                socket?.let { nonNullSocket ->
+                    if (nonNullSocket.connected()) {
+                        try {
+                            withTimeout(5000) { // Set timeout to 5 seconds
+                                suspendCancellableCoroutine<Unit> { continuation ->
+                                    nonNullSocket.emit("chat:mediaStatus", JSONObject().apply {
+                                        put("status", "MEDIA_DOWNLOADED")
+                                        put("download_url", mediaDownloadUrl)
+                                        put("sender", senderId)
+                                        put("recipient_id", recipientId)
+                                        put("message_id", messageId) // Add the inserted message ID to JSON
+                                    }, Ack {
+                                        continuation.resume(Unit) { cause, value, context ->
+                                            // Acknowledgment received, log it
+                                        }
+                                    })
+                                }
+                            }
 
-                withContext(Dispatchers.IO) {
 
-                    when (val decryptedFile = decryptFile(destinationFile, mediaFile)) {
-                        is DecryptionFileStatus.Success -> {
+                            when (val decryptedFile = decryptFile(destinationFile, mediaFile)) {
+                                is DecryptionFileStatus.Success -> {
 
-                            // Cache the decrypted file
-                            decryptedFile.decryptedFile.let {
-                                updateDownloadState(messageId, MediaDownloadState.Downloaded)
-                                if (fileMetadata.fileMimeType.startsWith("image/")
-                                    || fileMetadata.fileMimeType.startsWith("video/")
-                                    || fileMetadata.fileMimeType.startsWith(
-                                        "audio/"
-                                    )
-                                ) {
-                                    repository.updateVisualMediaMessageDownloadedMediaInfo(
-                                        messageId,
-                                        it.absolutePath,
-                                        null,
-                                        fileMetadata
-                                    )
-                                } else {
-                                    repository.updateMediaMessageDownloadedMediaInfo(
-                                        messageId,
-                                        it.absolutePath,
-                                        null
-                                    )
+                                    // Cache the decrypted file
+                                    decryptedFile.decryptedFile.also {
+                                        updateDownloadState(messageId, MediaDownloadState.Downloaded)
+                                        if (fileMetadata.fileMimeType.startsWith("image/")
+                                            || fileMetadata.fileMimeType.startsWith("video/")
+                                            || fileMetadata.fileMimeType.startsWith(
+                                                "audio/"
+                                            )
+                                        ) {
+                                            repository.updateVisualMediaMessageDownloadedMediaInfo(
+                                                messageId,
+                                                it.absolutePath,
+                                                null,
+                                                fileMetadata
+                                            )
+                                        } else {
+                                            repository.updateMediaMessageDownloadedMediaInfo(
+                                                messageId,
+                                                it.absolutePath,
+                                                null
+                                            )
+                                        }
+
+                                        destinationFile.delete()
+
+                                    }
                                 }
 
+                                is DecryptionFileStatus.DecryptionFailed -> {
+                                    mediaFile.delete()
+                                    destinationFile.delete()
+                                    repository.updateMessage(
+                                        messageId,
+                                        ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED
+                                    )
+                                    updateDownloadState(messageId, MediaDownloadState.Failed)
+                                }
 
-
-                                destinationFile.delete()
-
+                                is DecryptionFileStatus.UnknownError -> {
+                                    mediaFile.delete()
+                                    destinationFile.delete()
+                                    repository.updateMessage(
+                                        messageId,
+                                        ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN
+                                    )
+                                }
                             }
-                        }
 
-                        is DecryptionFileStatus.DecryptionFailed -> {
-                            mediaFile.delete()
-                            destinationFile.delete()
-                            repository.updateMessage(
-                                messageId,
-                                ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED
-                            )
+                        } catch (t: TimeoutCancellationException) {
+                            // Log timeout failure
+                            updateDownloadState(messageId, MediaDownloadState.Failed)
+                        } catch (e: Exception) {
+                            // Handle any unexpected errors
                             updateDownloadState(messageId, MediaDownloadState.Failed)
                         }
-
-                        is DecryptionFileStatus.UnknownError -> {
-                            mediaFile.delete()
-                            destinationFile.delete()
-                            repository.updateMessage(
-                                messageId,
-                                ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN
-                            )
-                        }
+                    } else {
+                        // Socket not connected, update state as failed
+                        updateDownloadState(messageId, MediaDownloadState.Failed)
                     }
-
                 }
 
 
@@ -982,8 +1039,8 @@ class ChatViewModel @Inject constructor(
                 }
 
                 // Make the download request with the Range header
-                responseBody = CommonClient.rawInstance.create(CommonService::class.java)
-                    .downloadImageResponse(url, rangeHeader).body()
+                responseBody = AppClient.mediaDownloadInstance.create(CommonService::class.java)
+                    .downloadMediaResponse(url, rangeHeader).body()
 
 
                 return responseBody

@@ -14,7 +14,7 @@ interface CommonService{
     @Headers("Accept-Encoding: *")  // Avoid compression
     @Streaming  // Allows downloading the file in chunks, not loading it all in memory
     @GET
-    suspend fun downloadImage(
+    suspend fun downloadMedia(
         @Url imageUrl: String,
         @Header("Range") range: String? = null // Optional Range header
     ): ResponseBody
@@ -23,7 +23,7 @@ interface CommonService{
     @Headers("Accept-Encoding: *")  // Avoid compression
     @Streaming  // Allows downloading the file in chunks, not loading it all in memory
     @GET
-    suspend fun downloadImageResponse(
+    suspend fun downloadMediaResponse(
         @Url imageUrl: String,
         @Header("Range") range: String? = null // Optional Range header
     ): Response<ResponseBody>

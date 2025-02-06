@@ -1,7 +1,7 @@
 package com.super6.pot.app.workers.download
 
 import android.content.Context
-import com.super6.pot.api.common.CommonClient
+import com.super6.pot.api.app.AppClient
 import com.super6.pot.api.auth.services.CommonService
 import com.super6.pot.app.workers.getFolderTypeByExtension
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +15,7 @@ import java.nio.ByteBuffer
 
 
 suspend fun downloadMediaAndCache(context:Context, downloadUrl:String, originalFileName:String, extension:String):File{
-    val responseBody = CommonClient.rawInstance.create(CommonService::class.java).downloadImage(downloadUrl)
+    val responseBody = AppClient.mediaDownloadInstance.create(CommonService::class.java).downloadMedia(downloadUrl)
 
 
     val dir = context.getExternalFilesDir(null)

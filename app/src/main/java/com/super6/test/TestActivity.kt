@@ -114,12 +114,18 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
 import com.super6.pot.R
+import com.super6.pot.api.auth.managers.socket.SocketManager
+import com.super6.pot.api.auth.services.CommonService
+import com.super6.pot.app.database.AppDatabase
 import com.super6.pot.ui.SimCardInfo
 import com.super6.pot.ui.SimCardSubscription
+import com.super6.pot.ui.account.InvalidSessionActivity
+import com.super6.pot.ui.auth.AuthActivity
 import com.super6.pot.ui.chat.ChatActivity
 import com.super6.pot.ui.chat.ChatScreen
 import com.super6.pot.ui.chat.ChatUsersScreen
 import com.super6.pot.ui.chat.formatTimeSeconds
+import com.super6.pot.ui.chat.viewmodels.ChatViewModel
 import com.super6.pot.ui.getMiddleVideoThumbnail
 import com.super6.pot.ui.isUriExist
 import com.super6.pot.ui.main.MoreScreen
@@ -170,7 +176,6 @@ class TestActivity : ComponentActivity() {
             ))
 
         super.onCreate(savedInstanceState)
-
 
         setContent {
 

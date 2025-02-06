@@ -2,7 +2,6 @@ package com.super6.pot.ui.profile.repos
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import com.google.gson.Gson
 import com.super6.pot.api.app.AppClient
 import com.super6.pot.api.app.ProfileService
@@ -10,12 +9,12 @@ import com.super6.pot.api.auth.services.CommonService
 import com.super6.pot.api.common.CommonClient
 import com.super6.pot.api.common.errors.ErrorResponse
 import com.super6.pot.api.models.service.UserProfileInfo
+import com.super6.pot.app.database.AppDatabase
 import com.super6.pot.app.database.daos.profile.UserProfileDao
 import com.super6.pot.app.database.models.profile.UserLocation
 import com.super6.pot.app.database.models.profile.UserProfile
 import com.super6.pot.app.database.models.profile.UserProfileSettingsInfo
 import com.super6.pot.app.database.daos.profile.UserLocationDao
-import com.super6.pot.utils.LogUtils.TAG
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -30,10 +29,15 @@ class UserProfileRepository @Inject constructor(
     private val userProfileDao: UserProfileDao,
     private val userLocationDao: UserLocationDao
 ) {
+
+    @Inject
+    lateinit var appDatabase: AppDatabase
+
     // Method to fetch user profile
     suspend fun fetchUserProfile(userId: Long) {
 
         try {
+
             val response = AppClient.instance.create(ProfileService::class.java)
                 .getUserProfile(userId)
 
@@ -84,7 +88,7 @@ class UserProfileRepository @Inject constructor(
                             // Make the network request in the background using Retrofit
                             val downloadImageResponse = CommonClient.rawInstance.create(
                                 CommonService::class.java)
-                                .downloadImage(imageUrl)
+                                .downloadMedia(imageUrl)
 
                             // Write the downloaded image to the local file
                             withContext(Dispatchers.IO) {
