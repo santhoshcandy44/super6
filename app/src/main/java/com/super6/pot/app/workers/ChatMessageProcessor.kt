@@ -6,26 +6,25 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.super6.pot.App
-import com.super6.pot.app.database.models.chat.ChatMessageStatus
+import com.super6.pot.api.auth.managers.socket.SocketConnectionException
+import com.super6.pot.api.auth.managers.socket.SocketManager
+import com.super6.pot.app.database.daos.chat.ChatUserDao
 import com.super6.pot.app.database.daos.chat.MessageDao
 import com.super6.pot.app.database.daos.chat.MessageMediaMetaDataDao
-import com.super6.pot.app.database.models.chat.MessageMediaMetadata
 import com.super6.pot.app.database.daos.notification.NotificationDao
-import com.super6.pot.app.database.daos.profile.UserProfileDao
-import com.super6.pot.ui.auth.repos.DecryptionFileStatus
-import com.super6.pot.ui.auth.repos.DecryptionStatus
-import com.super6.pot.ui.auth.repos.decryptFile
-import com.super6.pot.ui.auth.repos.decryptMessage
-import com.super6.pot.api.auth.managers.socket.SocketManager
-import com.super6.pot.app.notifications.NotificationIdManager
-import com.super6.pot.api.auth.managers.socket.SocketConnectionException
-import com.super6.pot.app.database.daos.chat.ChatUserDao
+import com.super6.pot.app.database.models.chat.ChatMessageStatus
 import com.super6.pot.app.database.models.chat.ChatMessageType
 import com.super6.pot.app.database.models.chat.Message
+import com.super6.pot.app.database.models.chat.MessageMediaMetadata
+import com.super6.pot.app.notifications.NotificationIdManager
 import com.super6.pot.app.workers.download.downloadMediaAndCache
 import com.super6.pot.app.workers.helpers.ChatMessageHandlerWorkerHelper
+import com.super6.pot.components.utils.LogUtils
+import com.super6.pot.compose.ui.auth.repos.DecryptionFileStatus
+import com.super6.pot.compose.ui.auth.repos.DecryptionStatus
+import com.super6.pot.compose.ui.auth.repos.decryptFile
+import com.super6.pot.compose.ui.auth.repos.decryptMessage
 import com.super6.pot.database.services.buildAndShowChatNotification
-import com.super6.pot.utils.LogUtils
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.socket.client.Ack
@@ -33,6 +32,7 @@ import io.socket.client.Socket
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
@@ -44,25 +44,16 @@ import javax.inject.Inject
 class ChatMessageProcessor @AssistedInject constructor(
     @Assisted val context: Context,
     @Assisted workerParams: WorkerParameters,
+    val socketManager: SocketManager,
+    val notificationDao: NotificationDao,
+    val chatUserDao: ChatUserDao,
+    val messageDao: MessageDao,
+    val fileMetadataDao: MessageMediaMetaDataDao,
+
 ) : CoroutineWorker(context, workerParams) {
 
-    @Inject
-    lateinit var notificationDao: NotificationDao
 
-    @Inject
-    lateinit var chatUserDao: ChatUserDao
 
-    @Inject
-    lateinit var messageDao: MessageDao
-
-    @Inject
-    lateinit var fileMetadataDao: MessageMediaMetaDataDao
-
-    @Inject
-    lateinit var userProfileDao: UserProfileDao
-
-    @Inject
-    lateinit var socketManager: SocketManager
 
     private lateinit var socket: Socket // Use the appropriate type for your socket
 
@@ -195,128 +186,178 @@ class ChatMessageProcessor @AssistedInject constructor(
                 val totalDuration = fileMetadata.getLong("total_duration")
 
                 val cachedFile = downloadMediaAndCache(context, thumbDownloadUrl, originalFileName, extension)
-                // Handle decryption after download
-                val mediaFile = cacheThumbnailToAppSpecificFolder(
-                    context,
-                    originalFileName,
-                    if (contentType.startsWith("video/")) ".jpg" else extension,
-                    extension
-                )
 
-                when (val decryptionFileStatus = decryptFile(cachedFile, mediaFile)) {
 
-                    is DecryptionFileStatus.DecryptionFailed -> {
-                        cachedFile.delete()
 
-                        messageDao.insertMessageAndMetadata(
-                            Message(
-                                chatId = chatUser.chatId,
-                                senderId = senderId,
-                                recipientId = userId,
-                                content = encryptedMessage,
-                                timestamp = System.currentTimeMillis(),
-                                senderMessageId = messageId,
-                                replyId = replyId,
-                                status = ChatMessageStatus.SENDING,
-                                type = if (contentType.startsWith("image/")) {
-                                    ChatMessageType.IMAGE
-                                } else {
-                                    ChatMessageType.VIDEO
+                if(socket.connected()){
+
+
+                    try {
+
+                        var mediaFile : File? =null
+
+                        withTimeout(5000) { // Set timeout to 5 seconds
+                            suspendCancellableCoroutine<Unit> { continuation ->
+                                socket.emit("chat:mediaStatus", JSONObject().apply {
+                                    put("status", "MEDIA_DOWNLOADED")
+                                    put("download_url", thumbDownloadUrl)
+                                    put("sender", senderId)
+                                    put("recipient_id", userId)
+                                    put("message_id", messageId) // Add the inserted message ID to JSON
+                                }, Ack {
+
+                                    // Handle decryption after download
+                                    mediaFile =  cacheThumbnailToAppSpecificFolder(
+                                        context,
+                                        originalFileName,
+                                        if (contentType.startsWith("video/")) ".jpg" else extension,
+                                        extension
+                                    )
+
+                                    continuation.resume(Unit) { cause, value, context ->
+                                        // Acknowledgment received, log it
+                                    }
+                                })
+                            }
+                        }
+
+
+                        mediaFile?.let {
+                            when (val decryptionFileStatus = decryptFile(cachedFile, it)) {
+
+                                is DecryptionFileStatus.DecryptionFailed -> {
+                                    cachedFile.delete()
+                                    it.delete()
+
+                                    messageDao.insertMessageAndMetadata(
+                                        Message(
+                                            chatId = chatUser.chatId,
+                                            senderId = senderId,
+                                            recipientId = userId,
+                                            content = encryptedMessage,
+                                            timestamp = System.currentTimeMillis(),
+                                            senderMessageId = messageId,
+                                            replyId = replyId,
+                                            status = ChatMessageStatus.SENDING,
+                                            type = if (contentType.startsWith("image/")) {
+                                                ChatMessageType.IMAGE
+                                            } else {
+                                                ChatMessageType.VIDEO
+                                            }
+                                        ),
+                                        fileMetadataDao,
+                                        MessageMediaMetadata(
+                                            messageId = -1,
+                                            fileSize = fileSize,
+                                            fileMimeType = contentType,
+                                            fileExtension = extension,
+                                            originalFileName = originalFileName,
+                                            width = width,
+                                            height = height,
+                                            totalDuration = totalDuration,
+                                            fileDownloadUrl = downloadUrl,
+                                            fileThumbPath = null,
+                                            thumbData = null,
+                                        )
+                                    )
                                 }
-                            ),
-                            fileMetadataDao,
-                            MessageMediaMetadata(
-                                messageId = -1,
-                                fileSize = fileSize,
-                                fileMimeType = contentType,
-                                fileExtension = extension,
-                                originalFileName = originalFileName,
-                                width = width,
-                                height = height,
-                                totalDuration = totalDuration,
-                                fileDownloadUrl = downloadUrl,
-                                fileThumbPath = null,
-                                thumbData = null,
-                            )
-                        )
-                    }
 
-                    is DecryptionFileStatus.UnknownError -> {
-                        cachedFile.delete()
+                                is DecryptionFileStatus.UnknownError -> {
+                                    cachedFile.delete()
+                                    it.delete()
 
-                        messageDao.insertMessageAndMetadata(
-                            Message(
-                                chatId = chatUser.chatId,
-                                senderId = senderId,
-                                recipientId = userId,
-                                content = encryptedMessage,
-                                timestamp = System.currentTimeMillis(),
-                                senderMessageId = messageId,
-                                replyId = replyId,
-                                status = ChatMessageStatus.SENDING,
-                                type = if (contentType.startsWith("image/")) {
-                                    ChatMessageType.IMAGE
-                                } else {
-                                    ChatMessageType.VIDEO
-                                },
+                                    messageDao.insertMessageAndMetadata(
+                                        Message(
+                                            chatId = chatUser.chatId,
+                                            senderId = senderId,
+                                            recipientId = userId,
+                                            content = encryptedMessage,
+                                            timestamp = System.currentTimeMillis(),
+                                            senderMessageId = messageId,
+                                            replyId = replyId,
+                                            status = ChatMessageStatus.SENDING,
+                                            type = if (contentType.startsWith("image/")) {
+                                                ChatMessageType.IMAGE
+                                            } else {
+                                                ChatMessageType.VIDEO
+                                            },
 
-                                ),
-                            fileMetadataDao,
-                            MessageMediaMetadata(
-                                messageId = -1,
-                                fileSize = fileSize,
-                                fileMimeType = contentType,
-                                fileExtension = extension,
-                                originalFileName = originalFileName,
-                                width = width,
-                                height = height,
-                                totalDuration = totalDuration,
-                                fileDownloadUrl = downloadUrl,
-                                fileThumbPath = null,
-                                thumbData = null,
-                            )
-                        )
-                    }
-
-                    is DecryptionFileStatus.Success -> {
-
-                        cachedFile.delete()
-                        val outputFile = decryptionFileStatus.decryptedFile
-
-                        messageDao.insertMessageAndMetadata(
-                            Message(
-                                chatId = chatUser.chatId,
-                                senderId = senderId,
-                                recipientId = userId,
-                                content = encryptedMessage,
-                                timestamp = System.currentTimeMillis(),
-                                senderMessageId = messageId,
-                                replyId = replyId,
-                                status = ChatMessageStatus.SENDING,
-                                type = if (contentType.startsWith("image/")) {
-                                    ChatMessageType.IMAGE
-                                } else {
-                                    ChatMessageType.VIDEO
+                                            ),
+                                        fileMetadataDao,
+                                        MessageMediaMetadata(
+                                            messageId = -1,
+                                            fileSize = fileSize,
+                                            fileMimeType = contentType,
+                                            fileExtension = extension,
+                                            originalFileName = originalFileName,
+                                            width = width,
+                                            height = height,
+                                            totalDuration = totalDuration,
+                                            fileDownloadUrl = downloadUrl,
+                                            fileThumbPath = null,
+                                            thumbData = null,
+                                        )
+                                    )
                                 }
-                            ),
-                            fileMetadataDao,
-                            MessageMediaMetadata(
-                                messageId = -1,
-                                fileSize = fileSize,
-                                fileMimeType = contentType,
-                                fileExtension = extension,
-                                originalFileName = originalFileName,
-                                width = width,
-                                height = height,
-                                totalDuration = totalDuration,
-                                fileDownloadUrl = downloadUrl,
-                                fileThumbPath = outputFile.absolutePath,
-                                thumbData = outputFile.absolutePath,
-                            )
-                        )
 
+                                is DecryptionFileStatus.Success -> {
+
+                                    cachedFile.delete()
+
+                                    val outputFile = decryptionFileStatus.decryptedFile
+
+                                    messageDao.insertMessageAndMetadata(
+                                        Message(
+                                            chatId = chatUser.chatId,
+                                            senderId = senderId,
+                                            recipientId = userId,
+                                            content = encryptedMessage,
+                                            timestamp = System.currentTimeMillis(),
+                                            senderMessageId = messageId,
+                                            replyId = replyId,
+                                            status = ChatMessageStatus.SENDING,
+                                            type = if (contentType.startsWith("image/")) {
+                                                ChatMessageType.IMAGE
+                                            } else {
+                                                ChatMessageType.VIDEO
+                                            }
+                                        ),
+                                        fileMetadataDao,
+                                        MessageMediaMetadata(
+                                            messageId = -1,
+                                            fileSize = fileSize,
+                                            fileMimeType = contentType,
+                                            fileExtension = extension,
+                                            originalFileName = originalFileName,
+                                            width = width,
+                                            height = height,
+                                            totalDuration = totalDuration,
+                                            fileDownloadUrl = downloadUrl,
+                                            fileThumbPath = outputFile.absolutePath,
+                                            thumbData = outputFile.absolutePath,
+                                        )
+                                    )
+
+                                }
+                            }
+                           Result.failure()
+                        } ?: also {
+                            return Result.failure()
+                        }
+
+
+                    } catch (t: TimeoutCancellationException) {
+
+                        return Result.retry()
+                    } catch (e: Exception) {
+                        // Handle any unexpected errors
+                       return Result.failure()
                     }
+
+                }else{
+                    throw SocketConnectionException("Socket connect error")
                 }
+
 
             }
 
@@ -397,6 +438,7 @@ class ChatMessageProcessor @AssistedInject constructor(
 
 
             }
+
             else if (category.contains("others")) {
 
 
@@ -436,9 +478,7 @@ class ChatMessageProcessor @AssistedInject constructor(
             }
             else {
 
-                val decryptionStatus = decryptMessage(encryptedMessage)
-
-                when (decryptionStatus) {
+                when (val decryptionStatus = decryptMessage(encryptedMessage)) {
                     is DecryptionStatus.DecryptionFailed -> {
                         withContext(Dispatchers.IO) {
                             messageDao.insertMessage(

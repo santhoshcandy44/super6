@@ -14,7 +14,7 @@ import androidx.room.TypeConverters
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
-import com.super6.pot.utils.LogUtils.TAG
+import com.super6.pot.components.utils.LogUtils.TAG
 import kotlinx.serialization.Serializable
 
 

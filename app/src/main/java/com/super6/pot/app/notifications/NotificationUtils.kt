@@ -25,11 +25,12 @@ import coil3.request.allowHardware
 import coil3.toBitmap
 import com.super6.pot.R
 import com.super6.pot.app.database.models.chat.Message
-import com.super6.pot.ui.chat.ChatActivity
-import com.super6.pot.ui.getRoundedBitmap
-import com.super6.pot.ui.main.MainActivity
-import com.super6.pot.utils.LogUtils.TAG
-import com.super6.pot.utils.isMainActivityInStack
+import com.super6.pot.components.isMainActivityInStack
+
+import com.super6.pot.components.utils.LogUtils.TAG
+import com.super6.pot.compose.ui.chat.ChatActivity
+import com.super6.pot.compose.ui.getRoundedBitmap
+import com.super6.pot.compose.ui.main.MainActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

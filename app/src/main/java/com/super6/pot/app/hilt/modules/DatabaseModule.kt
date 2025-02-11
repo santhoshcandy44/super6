@@ -3,7 +3,6 @@ package com.super6.pot.app.hilt.modules
 import android.content.Context
 import android.util.Log
 import androidx.room.Room
-import com.super6.pot.App
 import com.super6.pot.api.auth.managers.TokenManager
 import com.super6.pot.api.auth.managers.socket.SocketManager
 import com.super6.pot.api.models.service.GuestIndustryDao
@@ -22,15 +21,14 @@ import com.super6.pot.app.database.daos.service.DraftLocationDao
 import com.super6.pot.app.database.daos.service.DraftPlanDao
 import com.super6.pot.app.database.daos.service.DraftServiceDao
 import com.super6.pot.app.database.daos.service.DraftThumbnailDao
-import com.super6.pot.ui.managers.NetworkConnectivityManager
-import com.super6.pot.utils.LogUtils.TAG
+import com.super6.pot.components.utils.LogUtils.TAG
+import com.super6.pot.compose.ui.main.HomeScreen
+import com.super6.pot.compose.ui.managers.NetworkConnectivityManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import java.util.concurrent.Executors
-import javax.inject.Singleton
 
 
 @Module
@@ -38,70 +36,40 @@ import javax.inject.Singleton
 object DatabaseModule {
 
 
-    @Provides
-    @Singleton
-    fun provideSocketManager(
-        @ApplicationContext context: Context,
-        tokenManager: TokenManager,
-        messageDao: MessageDao,
-        chatUserDao: ChatUserDao,
-        fileMetaDataDao: MessageMediaMetaDataDao
-    ): SocketManager {
-        return SocketManager(
-            (context.applicationContext) as App,
-            tokenManager,
-            messageDao,
-            fileMetaDataDao,
-            chatUserDao
-        )
-    }
-
-
-    @Provides
-    @Singleton
-    fun provideNetworkConnectivityManager(@ApplicationContext context: Context): NetworkConnectivityManager {
-        return NetworkConnectivityManager(context)
-    }
-
-
     /*  .addMigrations(MIGRATION_54_55,
             MIGRATION_55_56,
             MIGRATION_56_57
             )*/
 
-
     @Volatile
-    private var INSTANCE: AppDatabase? = null
+    var DATABASE_INSTANCE: AppDatabase? = null
+
+
 
     @Provides
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
-        return  INSTANCE ?: synchronized(this) {
+        val dbFile = context.getDatabasePath("app_database")
+        return DATABASE_INSTANCE.takeIf {
+            dbFile.exists()
+        } ?: synchronized(this) {
 
-            val instance = Room.databaseBuilder(
+            Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "app_database"
             ).apply {
-                val dbFile = context.getDatabasePath("app_database")
-                if (!dbFile.exists()) {
-                    // Optional: Prepopulate the database
-                    createFromAsset("database/external_database.db")
-                }
+                createFromAsset("database/external_database.db")
                 // Enable multi-instance invalidation (optional)
                 enableMultiInstanceInvalidation()
 
-            }.build()
-
-            INSTANCE = instance
-            instance
+            }.build().also {
+                DATABASE_INSTANCE = it
+            }
         }
 
     }
 
-    // Optional: Clear the instance if needed
-    fun clearDatabaseInstance() {
-        INSTANCE = null
-    }
+
 
 
     @Provides
@@ -161,11 +129,8 @@ object DatabaseModule {
 
     @Provides
     fun provideUserProfileDao(database: AppDatabase): UserProfileDao {
-        return  try {
-            database.userProfileDao()
-        }catch (e:Exception){
-            throw Exception("Error Database")
-        }
+        return database.userProfileDao()
+
     }
 
     @Provides

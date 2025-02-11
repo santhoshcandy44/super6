@@ -15,7 +15,7 @@ import com.super6.pot.app.database.models.chat.ChatUser
 import com.super6.pot.app.database.models.chat.ChatUserWithDetails
 import com.super6.pot.app.database.models.chat.PublicKeyVersion
 import com.super6.pot.app.database.models.service.converters.Converters
-import com.super6.pot.utils.LogUtils.TAG
+import com.super6.pot.components.utils.LogUtils.TAG
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 

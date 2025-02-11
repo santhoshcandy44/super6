@@ -2,6 +2,7 @@ package com.super6.pot.app.database
 
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.super6.pot.api.models.service.GuestIndustryDao
@@ -36,10 +37,6 @@ import com.super6.pot.app.database.models.service.DraftLocation
 import com.super6.pot.app.database.models.service.DraftPlan
 import com.super6.pot.app.database.models.service.DraftService
 import com.super6.pot.app.database.models.service.DraftThumbnail
-import com.super6.pot.app.hilt.modules.DatabaseModule.clearDatabaseInstance
-import com.super6.pot.ui.profile.repos.UserProfileRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import java.io.File
 import java.io.IOException
 
@@ -85,9 +82,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun guestIndustryDao(): GuestIndustryDao
 
 
-   fun backupDatabase(context: Context) {
+   suspend fun backupDatabase(context: Context) {
 
-        // Path to the original Room database file
+       // Path to the original Room database file
         val dbFile = context.getDatabasePath("app_database")
 
         // Backup location in the external storage
@@ -98,25 +95,27 @@ abstract class AppDatabase : RoomDatabase() {
             if (dbFile.exists()) {
                 // Copy the database to the backup file (overwrite if it exists)
                 dbFile.copyTo(backupFile, overwrite = true)
-                clearAllData()
-//                close()
-                context.deleteDatabase("app_database")
-                clearDatabaseInstance()
             }
+
+            formatAndCleanDatabase(context)
 
         } catch (e: IOException) {
             e.printStackTrace()
-            CrashlyticsLogger.recordException(
-                e,
-                mapOf(
+            CrashlyticsLogger.recordException(e, mapOf(
                     "backup_error" to "true",
-                    "error_message" to (e.message ?: "Caused while backing up database")
-                )
+                    "error_message" to (e.message ?: "Caused while backing up database"))
             )
         }
     }
 
-    private fun clearAllData() {
+
+    private  suspend fun formatAndCleanDatabase(context: Context){
+        clearAllData()
+/*        close()
+        context.deleteDatabase("app_database")*/
+    }
+
+    private suspend fun clearAllData() {
         clearAllTables()
     }
 }

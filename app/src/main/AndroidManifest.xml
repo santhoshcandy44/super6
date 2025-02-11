@@ -70,11 +70,12 @@
             android:resource="@color/notification_color"/>
 
         <activity
-            android:name=".ui.auth.AuthActivity"
+            android:name=".compose.ui.auth.AuthActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:configChanges="orientation"
             android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTask"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -83,56 +84,56 @@
         </activity>
 
 
-        <activity android:name=".ui.onboarding.OnBoardingActivity"
+        <activity android:name=".compose.ui.onboarding.OnBoardingActivity"
             android:exported="true"
 
             />
 
-        <activity android:name=".ui.main.MainActivity"
+        <activity android:name=".compose.ui.main.MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
 
         </activity>
 
         <activity
-            android:name=".ui.services.manage.ManageServicesActivity"
+            android:name=".compose.ui.services.manage.ManageServicesActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
             />
 
 
         <activity
-            android:name=".ui.services.manage.BookmarkedServicesActivity"
+            android:name=".compose.ui.services.manage.BookmarkedServicesActivity"
             android:exported="true"
             />
 
-        <activity android:name=".ui.chat.ChatActivity"
+        <activity android:name=".compose.ui.chat.ChatActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
             />
 
         <activity
-            android:name=".ui.chat.IsolatedChatActivity"
+            android:name=".compose.ui.chat.IsolatedChatActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
 
             />
 
 
-        <activity android:name=".ui.chat.PlayerActivity"
+        <activity android:name=".compose.ui.chat.PlayerActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|layoutDirection"
             android:theme="@style/Theme.PlayerActivity"
             />
 
-        <activity android:name=".ui.chat.ImagesSliderActivity"
+        <activity android:name=".compose.ui.chat.ImagesSliderActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|layoutDirection"
             android:theme="@style/Theme.PlayerActivity"
             />
 
 
-        <activity android:name=".ui.account.InvalidSessionActivity"
+        <activity android:name=".compose.ui.account.InvalidSessionActivity"
             android:exported="true"
             />
 

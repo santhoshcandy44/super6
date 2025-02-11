@@ -26,9 +26,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String" ,"DEBUG_BASE_URL","\"http://192.168.145.85:3000\"")
-        buildConfigField("String" ,"BASE_URL","\"http://192.168.145.85:3000\"")
+        buildConfigField("String" ,"BASE_URL","\"http://15.207.14.2:3000\"")
         buildConfigField("String" ,"DEBUG_SOCKET_BASE_URL","\"http://192.168.145.85:3080\"")
-        buildConfigField("String" ,"SOCKET_BASE_URL","\"http://192.168.145.85:3080\"")
+        buildConfigField("String" ,"SOCKET_BASE_URL","\"http://15.207.14.2:3080\"")
         buildConfigField("String" ,"REFERER","\"com.super6.pot.referer\"")
 
         vectorDrawables {

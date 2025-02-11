@@ -3,7 +3,6 @@ package com.super6.pot.app.workers.upload
 import android.app.NotificationManager
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.media3.common.util.UnstableApi
 import androidx.work.CoroutineWorker
@@ -15,12 +14,11 @@ import com.super6.pot.api.auth.managers.socket.SocketManager
 import com.super6.pot.app.database.models.chat.ChatMessageStatus
 import com.super6.pot.app.database.models.chat.MessageProcessingData
 import com.super6.pot.app.workers.awaitConnectToSocket
-import com.super6.pot.ui.chat.repos.ChatUserRepository
-import com.super6.pot.ui.chat.repos.UploadWorkerUtilRepository
-import com.super6.pot.ui.chat.viewmodels.FileUploadState
-import com.super6.pot.ui.chat.viewmodels.serializeFileUploadState
-import com.super6.pot.ui.managers.UserSharedPreferencesManager
-import com.super6.pot.utils.LogUtils.TAG
+import com.super6.pot.compose.ui.chat.repos.ChatUserRepository
+import com.super6.pot.compose.ui.chat.repos.UploadWorkerUtilRepository
+import com.super6.pot.compose.ui.chat.viewmodels.FileUploadState
+import com.super6.pot.compose.ui.chat.viewmodels.serializeFileUploadState
+import com.super6.pot.compose.ui.managers.UserSharedPreferencesManager
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.socket.client.Ack
@@ -52,6 +50,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
     private val uploadWorkerUtilRepository: UploadWorkerUtilRepository,
     val socketManager: SocketManager
 ) : CoroutineWorker(context, workerParams) {
+
 
 
     companion object {

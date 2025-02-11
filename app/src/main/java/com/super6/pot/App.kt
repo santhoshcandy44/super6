@@ -5,10 +5,8 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -20,22 +18,21 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
 import coil3.gif.AnimatedImageDecoder
-import coil3.gif.GifDecoder
 import coil3.imageLoader
 import coil3.request.CachePolicy
 import coil3.request.allowHardware
 import com.super6.pot.api.app.AppClient
-import com.super6.pot.api.common.CommonClient
 import com.super6.pot.api.auth.AuthClient
 import com.super6.pot.api.auth.managers.TokenManager
-import com.super6.pot.ui.auth.AuthActivity
-import com.super6.pot.ui.main.MainActivity
 import com.super6.pot.api.auth.managers.socket.SocketManager
+import com.super6.pot.api.common.CommonClient
 import com.super6.pot.app.AppExceptionHandler
 import com.super6.pot.app.database.AppDatabase
-import com.super6.pot.ui.managers.UserSharedPreferencesManager
-import com.super6.pot.ui.managers.NetworkConnectivityManager
-import com.super6.pot.utils.LogUtils.TAG
+import com.super6.pot.components.isAuthActivityInStack
+import com.super6.pot.compose.ui.auth.AuthActivity
+import com.super6.pot.compose.ui.main.MainActivity
+import com.super6.pot.compose.ui.managers.NetworkConnectivityManager
+import com.super6.pot.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,8 +65,11 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
     @Inject
     lateinit var appDatabase: AppDatabase
 
+
     @Inject
     lateinit var socketManager: SocketManager
+
+
 
     @Inject
     lateinit var networkConnectivityManager: NetworkConnectivityManager
@@ -120,11 +120,7 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
             .allowHardware(false)
             .components {
                 // Add appropriate decoder based on the Android version
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    add(AnimatedImageDecoder.Factory()) // Use ImageDecoder for Android P and above
-                } else {
-                    add(GifDecoder.Factory()) // Use GifDecoder for versions below Android P
-                }
+                add(AnimatedImageDecoder.Factory()) // Use ImageDecoder for Android P and above
             }
             .build()
 
@@ -148,6 +144,7 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
 
                 isAppInForeground = false
                 (applicationContext as App).destroySocketSocket()
+
             }
         })
 
@@ -254,25 +251,42 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
 
     suspend fun setIsInvalidSession(value: Boolean) {
         withContext(Dispatchers.Main) {
+
+            val userId = UserSharedPreferencesManager.userId
+            if(userId==-1L){
+                return@withContext
+            }
+
+            withContext(Dispatchers.IO) {
+                appDatabase.backupDatabase(applicationContext)
+            }
+
             UserSharedPreferencesManager.isInvalidSession = value
             if (value) {
                 WorkManager.getInstance(applicationContext).cancelAllWork()
                 socketManager.destroySocket()
+
                 networkConnectivityManager.unregisterNetworkCallback()
                 job?.cancel() // Cancel the coroutine job
                 job = null // Clear the job reference
                 UserSharedPreferencesManager.clear()
                 getSharedPreferences("FCM_MESSAGE_PARTS", MODE_PRIVATE)
                     .edit().clear().apply()
-                withContext(Dispatchers.IO) {
-                    appDatabase.backupDatabase(applicationContext)
-                }
+
 
                 AppClient.clear()
-                val intent = Intent(applicationContext, AuthActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                }
-                startActivity(intent)
+
+                startActivity(Intent(applicationContext, AuthActivity::class.java).apply {
+                    flags = if (!isAuthActivityInStack(applicationContext)) {
+                        // No existing task, clear everything
+                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    } else {
+                        // Task exists, bring to front without recreation
+                        Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                })
+
+
             }
         }
     }
@@ -282,6 +296,17 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
 
         // Navigate to AuthActivity
         withContext(Dispatchers.Main) {
+
+            val userId = UserSharedPreferencesManager.userId
+
+            if(userId==-1L){
+                return@withContext
+            }
+
+            withContext(Dispatchers.IO) {
+                appDatabase.backupDatabase(applicationContext)
+            }
+
             WorkManager.getInstance(applicationContext).cancelAllWork()
             socketManager.destroySocket()
             networkConnectivityManager.unregisterNetworkCallback()
@@ -290,17 +315,19 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
             UserSharedPreferencesManager.clear()
             getSharedPreferences("FCM_MESSAGE_PARTS", MODE_PRIVATE)
                 .edit().clear().apply()
-
             tokenManager.logout(method)
-            withContext(Dispatchers.IO) {
-                appDatabase.backupDatabase(applicationContext)
-            }
-            AppClient.clear()
-            val intent = Intent(applicationContext, AuthActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            }
 
-            startActivity(intent)
+            AppClient.clear()
+
+            startActivity( Intent(applicationContext, AuthActivity::class.java).apply {
+                flags = if (!isAuthActivityInStack(applicationContext)) {
+                    // No existing task, clear everything
+                    Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                } else {
+                    // Task exists, bring to front without recreation
+                    Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+            })
 
         }
 
@@ -315,11 +342,7 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
             .allowHardware(false)
             .components {
                 // Add appropriate decoder based on the Android version
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    add(AnimatedImageDecoder.Factory()) // Use ImageDecoder for Android P and above
-                } else {
-                    add(GifDecoder.Factory()) // Use GifDecoder for versions below Android P
-                }
+                add(AnimatedImageDecoder.Factory()) // Use ImageDecoder for Android P and above
             }
             .build()
     }

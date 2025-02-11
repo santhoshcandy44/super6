@@ -100,7 +100,6 @@ interface MessageDao {
     }
 
 
-    @Deprecated("Use robust update")
     @Query("UPDATE messages SET status = :status WHERE id = :messageId")
     suspend fun updateMessageStatus(messageId: Long, status: ChatMessageStatus)
 

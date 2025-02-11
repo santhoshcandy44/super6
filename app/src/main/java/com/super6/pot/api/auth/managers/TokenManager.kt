@@ -6,7 +6,7 @@ import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.google.firebase.auth.FirebaseAuth
-import com.super6.pot.utils.LogUtils.TAG
+import com.super6.pot.components.utils.LogUtils.TAG
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 

@@ -7,7 +7,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.super6.pot.api.app.ApiService
 import com.super6.pot.api.app.AppClient
-import com.super6.pot.ui.managers.UserSharedPreferencesManager
+import com.super6.pot.compose.ui.managers.UserSharedPreferencesManager
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 

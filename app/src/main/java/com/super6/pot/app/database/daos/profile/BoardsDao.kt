@@ -3,6 +3,7 @@ package com.super6.pot.app.database.daos.profile
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.super6.pot.app.database.models.app.Board
 import kotlinx.coroutines.flow.Flow
 
@@ -18,6 +19,10 @@ interface BoardsDao {
 
     @Query("SELECT * FROM board WHERE is_pinned= 1 ")
     suspend fun getPinnedBoards(): List<Board>
+
+
+    @Update
+    fun updateBoard(board: Board)
 
 
     @Query("SELECT * FROM  board ")

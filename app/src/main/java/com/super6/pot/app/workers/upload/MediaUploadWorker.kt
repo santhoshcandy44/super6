@@ -3,28 +3,21 @@ package com.super6.pot.app.workers.upload
 import android.app.NotificationManager
 import android.content.Context
 import android.net.Uri
-import android.util.Log
-import android.widget.Toast
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
-import androidx.work.Data
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.google.common.util.concurrent.ListenableFuture
 import com.super6.pot.App
 import com.super6.pot.api.auth.managers.socket.SocketConnectionException
 import com.super6.pot.api.auth.managers.socket.SocketManager
 import com.super6.pot.app.database.models.chat.ChatMessageStatus
 import com.super6.pot.app.database.models.chat.MessageProcessingData
 import com.super6.pot.app.workers.awaitConnectToSocket
-import com.super6.pot.app.workers.upload.VisualMediaUploadWorker.Companion
-import com.super6.pot.ui.chat.ChatUserEventsManager
-import com.super6.pot.ui.chat.repos.ChatUserRepository
-import com.super6.pot.ui.chat.repos.UploadWorkerUtilRepository
-import com.super6.pot.ui.chat.viewmodels.FileUploadState
-import com.super6.pot.ui.chat.viewmodels.serializeFileUploadState
-import com.super6.pot.ui.managers.UserSharedPreferencesManager
-import com.super6.pot.utils.LogUtils.TAG
+import com.super6.pot.compose.ui.chat.repos.ChatUserRepository
+import com.super6.pot.compose.ui.chat.repos.UploadWorkerUtilRepository
+import com.super6.pot.compose.ui.chat.viewmodels.FileUploadState
+import com.super6.pot.compose.ui.chat.viewmodels.serializeFileUploadState
+import com.super6.pot.compose.ui.managers.UserSharedPreferencesManager
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.socket.client.Ack
@@ -56,6 +49,7 @@ class MediaUploadWorker @AssistedInject constructor(
     val socketManager: SocketManager
 
 ) : CoroutineWorker(context, workerParams) {
+
 
 
 

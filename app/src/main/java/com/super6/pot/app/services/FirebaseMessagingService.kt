@@ -3,8 +3,8 @@ package com.super6.pot.app.services
 
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.super6.pot.ui.managers.UserSharedPreferencesManager
 import com.super6.pot.app.workers.helpers.SendFcmTokenWorkerHelper
+import com.super6.pot.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

@@ -6,8 +6,8 @@ import androidx.work.WorkerParameters
 import com.super6.pot.api.app.ApiService
 import com.super6.pot.api.app.AppClient
 import com.super6.pot.api.auth.models.PublicKeyRequest
-import com.super6.pot.ui.auth.repos.generateRSAKeyPair
-import com.super6.pot.ui.managers.UserSharedPreferencesManager
+import com.super6.pot.compose.ui.auth.repos.generateRSAKeyPair
+import com.super6.pot.compose.ui.managers.UserSharedPreferencesManager
 import java.security.PublicKey
 import java.util.Base64
 

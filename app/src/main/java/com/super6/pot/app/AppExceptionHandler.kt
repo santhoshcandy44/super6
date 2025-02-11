@@ -3,7 +3,7 @@ package com.super6.pot.app
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import com.super6.pot.utils.LogUtils.TAG
+import com.super6.pot.components.utils.LogUtils.TAG
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
