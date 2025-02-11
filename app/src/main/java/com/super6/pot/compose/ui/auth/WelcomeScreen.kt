@@ -65,7 +65,6 @@ fun WelcomeScreen(
                 }
             },
             modifier = Modifier.fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.9f))
         )
 
 
@@ -93,21 +92,18 @@ fun WelcomeScreen(
 
                     Text(
                         text = "Welcome to",
-                        fontSize = 32.sp,
-                        color = Color.White
+                        fontSize = 32.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Super6",
                         fontSize = 40.sp,
-                        color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Make your journey better than before with Pot platform.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White
+                        style = MaterialTheme.typography.bodyLarge
                     )
                 }
 
@@ -132,7 +128,6 @@ fun WelcomeScreen(
 
                     Text(
                         text = "Or",
-                        color = Color.White,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.align(Alignment.CenterVertically)
                     )
@@ -167,7 +162,6 @@ fun WelcomeScreen(
                             }
                         },
                         text = "Go as Guest",
-                        color = Color.White,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
