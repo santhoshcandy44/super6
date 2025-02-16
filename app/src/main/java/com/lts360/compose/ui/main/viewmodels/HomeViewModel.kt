@@ -2,7 +2,6 @@ package com.lts360.compose.ui.main.viewmodels
 
 
 import android.content.Context
-import android.widget.Toast
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,7 +10,6 @@ import com.google.gson.JsonObject
 import com.lts360.api.Utils.Result
 import com.lts360.api.Utils.mapExceptionToError
 import com.lts360.api.auth.managers.TokenManager
-import com.lts360.app.database.daos.profile.BoardsDao
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.app.database.models.profile.UserLocation
@@ -26,7 +24,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
@@ -36,9 +33,7 @@ class HomeViewModel @Inject constructor(
     val savedStateHandle: SavedStateHandle,
     val locationRepository: LocationRepository,
     userProfileDao: UserProfileDao,
-    tokenManager: TokenManager,
-    val boardsDao: BoardsDao
-) : ViewModel() {
+    tokenManager: TokenManager) : ViewModel() {
 
     val userId = UserSharedPreferencesManager.userId
     val signInMethod = tokenManager.getSignInMethod()
@@ -67,26 +62,7 @@ class HomeViewModel @Inject constructor(
     init {
 
         viewModelScope.launch (Dispatchers.IO){
-            val pinnedBoards = boardsDao.getPinnedBoards()
 
-            withContext(Dispatchers.Main){
-                if(pinnedBoards.isNotEmpty()){
-
-                    withContext(Dispatchers.IO){
-                        boardsDao.updateBoard(pinnedBoards[0].copy(boardName = "Service DO"))
-
-                    }
-
-
-                    Toast.makeText(context, pinnedBoards[0].boardName, Toast.LENGTH_SHORT)
-                        .show()
-
-                }else{
-                    Toast.makeText(context, "Boards empty", Toast.LENGTH_SHORT)
-                        .show()
-                }
-
-            }
 
 
             userProfileDao.getUserProfileDetailsFlow(userId).collectLatest { userProfileDetails ->

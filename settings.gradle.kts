@@ -31,4 +31,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Pot"
 include(":app")
- 
+include(":TestKmp")

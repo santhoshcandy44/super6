@@ -30,6 +30,7 @@ import com.lts360.app.AppExceptionHandler
 import com.lts360.app.database.AppDatabase
 import com.lts360.components.isAuthActivityInStack
 import com.lts360.compose.ui.auth.AuthActivity
+import com.lts360.compose.ui.auth.repos.AuthRepository
 import com.lts360.compose.ui.main.MainActivity
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager

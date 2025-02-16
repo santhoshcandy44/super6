@@ -12,7 +12,6 @@ import com.lts360.app.database.daos.chat.MessageDao
 import com.lts360.app.database.daos.chat.MessageMediaMetaDataDao
 import com.lts360.app.database.daos.chat.MessageProcessingDataDao
 import com.lts360.app.database.daos.notification.NotificationDao
-import com.lts360.app.database.daos.profile.BoardsDao
 import com.lts360.app.database.daos.profile.RecentLocationDao
 import com.lts360.app.database.daos.profile.UserLocationDao
 import com.lts360.app.database.daos.profile.UserProfileDao
@@ -58,13 +57,12 @@ import java.io.IOException
         Industry::class,
         MessageMediaMetadata::class,
         MessageProcessingData::class,
-    ], version = 79,
+    ], version = 1,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
 
-    abstract fun boardsDao(): BoardsDao
     abstract fun userProfileDao(): UserProfileDao
     abstract fun userLocationDao(): UserLocationDao
     abstract fun messageDao(): MessageDao
