@@ -14,11 +14,11 @@ plugins {
 }
 
 android {
-    namespace = "com.super6.pot"
+    namespace = "com.lts360"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.super6.pot"
+        applicationId = "com.lts360"
         minSdk = 28
         targetSdk = 35
         versionCode = 1
@@ -29,7 +29,7 @@ android {
         buildConfigField("String" ,"BASE_URL","\"http://15.207.14.2:3000\"")
         buildConfigField("String" ,"DEBUG_SOCKET_BASE_URL","\"http://192.168.145.85:3080\"")
         buildConfigField("String" ,"SOCKET_BASE_URL","\"http://15.207.14.2:3080\"")
-        buildConfigField("String" ,"REFERER","\"com.super6.pot.referer\"")
+        buildConfigField("String" ,"REFERER","\"referer.lts360.com\"")
 
         vectorDrawables {
             useSupportLibrary = true

@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "841124425720",
-    "project_id": "pot-app-5cebb",
-    "storage_bucket": "pot-app-5cebb.appspot.com"
+    "project_number": "300991981824",
+    "project_id": "lts360",
+    "storage_bucket": "lts360.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:841124425720:android:5d82be830f6b52ec77300d",
+        "mobilesdk_app_id": "1:300991981824:android:568f41fe2069d85fedabe5",
         "android_client_info": {
-          "package_name": "com.super6.pot"
+          "package_name": "com.lts360"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "841124425720-ha3m9rlld48j2le21s640a95313arpu9.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDRkff6oTdcbcSG4uqmULCWciELOH70jtE"
+          "current_key": "AIzaSyD6VVZdn3aIErtcladDirIdvtCY5MrKvgg"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "841124425720-ha3m9rlld48j2le21s640a95313arpu9.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

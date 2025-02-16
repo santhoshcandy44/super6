@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">Super6</string>
+    <string name="app_name">Lts360</string>
+    <string name="app_description">Latest End-to-End Services</string>
 
 
 
@@ -7,6 +8,7 @@
         <item>Draft</item>
         <item>Published</item>
     </string-array>
+
 
 
     <string-array name="dropdown_items">
@@ -36,8 +38,7 @@
         <item>IN</item>
     </string-array>
 
-
-
+    <string name="google_client_id">841124425720-of6bpub4q0evdncg3ttfob98r9jtg8n6.apps.googleusercontent.com</string>
 
     <string name="default_notification_channel_id">general_announcements_channel</string>
 

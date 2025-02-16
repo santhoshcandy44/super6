@@ -7,7 +7,7 @@
 extern "C"
 JNIEXPORT jobject JNICALL
 
-Java_com_super6_pot_ui_chat_ChatUtilNativeBaseActivity_createThumbnail(JNIEnv *env, jclass obj, jobject bitmapIn) {
+Java_com_lts360_compose_ui_chat_ChatUtilNativeBaseActivity_createThumbnail(JNIEnv *env, jclass obj, jobject bitmapIn) {
     AndroidBitmapInfo infoIn;
     void *pixels;
 

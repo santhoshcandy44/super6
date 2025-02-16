@@ -138,7 +138,7 @@
             />
 
 
-        <activity android:name="com.super6.test.TestActivity"
+        <activity android:name="com.lts360.test.TestActivity"
             android:exported="true"
             />
 
