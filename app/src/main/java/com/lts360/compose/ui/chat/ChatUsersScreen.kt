@@ -72,7 +72,7 @@ import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.app.workers.lastMessageTimestamp
 import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
 import com.lts360.compose.ui.chat.viewmodels.UserState
-import com.lts360.compose.ui.main.navhosts.routes.BottomBarScreen
+import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 
 
 @OptIn(
@@ -105,17 +105,17 @@ fun ChatUsersScreen(
             collapseSheet()
         } else {
             if (cleanedRoute in listOf(
-                    BottomBarScreen.Chats::class.qualifiedName.orEmpty(),
-                    BottomBarScreen.Notifications::class.qualifiedName.orEmpty(),
-                    BottomBarScreen.More::class.qualifiedName.orEmpty()
+                    BottomBar.Chats::class.qualifiedName.orEmpty(),
+                    BottomBar.Notifications::class.qualifiedName.orEmpty(),
+                    BottomBar.More::class.qualifiedName.orEmpty()
                 )
             ) {
 
                 // Navigate back to A and preserve its state
-                navController.navigate(BottomBarScreen.Home()) {
+                navController.navigate(BottomBar.Home()) {
                     launchSingleTop = true
                     restoreState = true
-                    popUpTo(BottomBarScreen.Home()) {
+                    popUpTo(BottomBar.Home()) {
                         saveState = true
                     }
                 }

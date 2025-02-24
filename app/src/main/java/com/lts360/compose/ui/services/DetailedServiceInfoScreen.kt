@@ -29,9 +29,9 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,9 +40,12 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -87,7 +90,7 @@ import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
 import com.lts360.compose.ui.main.navhosts.routes.ServiceOwnerProfile
-import com.lts360.compose.ui.services.bookmark.BookmarkedServicesViewModel
+import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
@@ -168,7 +171,7 @@ fun FeedUserDetailedServiceInfoScreen(
     navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpForceJoinNow: () -> Unit,
     servicesViewModel: ServicesViewModel,
-    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(navHostController.getBackStackEntry<ServiceOwnerProfile>()),
+    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navHostController.getBackStackEntry<ServiceOwnerProfile>() }),
 
 
     ) {
@@ -238,8 +241,8 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpForceJoinNow: () -> Unit,
-    servicesViewModel: BookmarkedServicesViewModel,
-    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(navHostController.getBackStackEntry<ServiceOwnerProfile>()),
+    servicesViewModel: BookmarksViewModel,
+    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navHostController.getBackStackEntry<ServiceOwnerProfile>() }),
 
 
     ) {
@@ -250,19 +253,20 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
     val signInMethod = viewModel.signInMethod
 
     val selectedItem by servicesViewModel.nestedServiceOwnerProfileSelectedItem.collectAsState()
-
+    val item = selectedItem
+    if(item !is Service) return
 
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
 
     DetailedServiceInfoContent(
         userId,
-        selectedItem,
+        item,
         onNavigateUpSlider,
         onNavigateUpForceJoinNow,
         {
 
-            selectedItem?.let {
+            item.let {
                 Button(
                     onClick = dropUnlessResumed {
 
@@ -303,13 +307,16 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
 
 
 
+
+
+
 @Composable
 fun BookmarkedDetailedServiceInfoScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpForceJoinNow: () -> Unit,
-    viewModel: BookmarkedServicesViewModel,
+    viewModel: BookmarksViewModel,
 ) {
 
     val userId = viewModel.userId
@@ -321,14 +328,17 @@ fun BookmarkedDetailedServiceInfoScreen(
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
 
+    val item = selectedItem
+    if(item !is Service) return
+
     DetailedServiceInfoContent(
         userId,
-        selectedItem,
+        item,
         onNavigateUpSlider,
         onNavigateUpForceJoinNow,
         {
 
-            selectedItem?.let {
+            item.let {
                 Button(
                     onClick = dropUnlessResumed {
                         if (job?.isActive == true) {
@@ -377,21 +387,26 @@ fun DetailedServiceInfoContent(
 ) {
 
 
-    val bottomSheetScaffoldState = androidx.compose.material.rememberBottomSheetScaffoldState()
+    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            SheetValue.Hidden,
+            skipHiddenState = false
+        )
+    )
 
     val coroutineScope = rememberCoroutineScope()
 
     val context = LocalContext.current
 
-    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == BottomSheetValue.Expanded) {
 
+    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
-            bottomSheetScaffoldState.bottomSheetState.collapse()
+            bottomSheetScaffoldState.bottomSheetState.hide()
         }
     }
 
 
-    androidx.compose.material.BottomSheetScaffold(
+    BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
             ForceWelcomeScreen(
@@ -415,12 +430,12 @@ fun DetailedServiceInfoContent(
 
                 }) {
                 coroutineScope.launch {
-                    bottomSheetScaffoldState.bottomSheetState.collapse()
+                    bottomSheetScaffoldState.bottomSheetState.hide()
                 }
             }
         },
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetGesturesEnabled = true, // Allow gestures to hide/show bottom sheet
+        sheetSwipeEnabled = true, // Allow gestures to hide/show bottom sheet
 
         topBar = {
             TopAppBar(

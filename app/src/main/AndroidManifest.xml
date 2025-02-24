@@ -103,7 +103,7 @@
 
 
         <activity
-            android:name=".compose.ui.services.manage.BookmarkedServicesActivity"
+            android:name=".compose.ui.bookmarks.BookmarksActivity"
             android:exported="true"
             />
 
@@ -138,8 +138,15 @@
             />
 
 
+        <activity android:name=".compose.ui.usedproducts.manage.UsedProductListingActivity"
+            android:windowSoftInputMode="adjustResize"
+
+            />
+
+
         <activity android:name="com.lts360.test.TestActivity"
             android:exported="true"
+            android:windowSoftInputMode="adjustResize"
             />
 
         <service
@@ -182,6 +189,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
 
 
 

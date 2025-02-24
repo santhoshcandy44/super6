@@ -10,6 +10,7 @@ import com.lts360.api.app.ProfileSettingsService
 import com.lts360.app.database.daos.profile.RecentLocationDao
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.app.database.models.profile.UserLocation
+import com.lts360.compose.ui.managers.LocationManager
 import javax.inject.Inject
 
 
@@ -26,6 +27,7 @@ class LocationRepository @Inject constructor(
 
     suspend fun insertRecentLocation(recentLocation: RecentLocation) {
         recentLocationDao.insert(recentLocation)
+        LocationManager
     }
 
 

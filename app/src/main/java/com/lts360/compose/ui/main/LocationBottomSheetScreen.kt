@@ -4,8 +4,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.BottomSheetValue
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -19,10 +20,13 @@ import com.lts360.compose.ui.main.navhosts.routes.LocationChooser
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
+import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
+import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditLocationBottomSheetScreen(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,
@@ -47,9 +51,10 @@ fun EditLocationBottomSheetScreen(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserLocationBottomSheetScreen(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,
@@ -77,9 +82,10 @@ fun UserLocationBottomSheetScreen(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateServiceLocationBottomSheetScreen(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,
@@ -106,17 +112,75 @@ fun CreateServiceLocationBottomSheetScreen(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateUsedProductListingLocationBottomSheetScreen(
+    bottomSheetValue: SheetValue? = null,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onDistrictSelected: (District, () -> Unit) -> Unit,
+    onPopUpLocationBottomSheet: () -> Unit,
+    usedProductsListingWorkflowViewModel: UsedProductsListingWorkflowViewModel,
+    locationStatesEnabled: Boolean = true,
+    isLoading: Boolean = false,
+) {
 
 
+    CreateUsedProductListingBottomSheetContent(
+        bottomSheetValue,
+        onCurrentLocationSelected,
+        onRecentLocationSelected,
+        onDistrictSelected,
+        onPopUpLocationBottomSheet,
+        locationStatesEnabled,
+        isLoading,
+        usedProductsListingWorkflowViewModel
+    )
+
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PublishedUsedProductListingLocationBottomSheetScreen(
+    bottomSheetValue: SheetValue? = null,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onDistrictSelected: (District, () -> Unit) -> Unit,
+    onPopUpLocationBottomSheet: () -> Unit,
+    usedProductsListingWorkflowViewModel: PublishedUsedProductsListingViewModel,
+    locationStatesEnabled: Boolean = true,
+    isLoading: Boolean = false,
+) {
+
+
+    PublishedUsedProductListingBottomSheetContent(
+        bottomSheetValue,
+        onCurrentLocationSelected,
+        onRecentLocationSelected,
+        onDistrictSelected,
+        onPopUpLocationBottomSheet,
+        locationStatesEnabled,
+        isLoading,
+        usedProductsListingWorkflowViewModel
+    )
+
+}
+
+
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnBoardUserLocationBottomSheetScreen(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,
     onPopUpLocationBottomSheet: () -> Unit,
     locationStatesEnabled: Boolean = true,
-    isLoading: Boolean = false,
+    isLoading: Boolean = false
 ) {
 
 
@@ -133,9 +197,10 @@ fun OnBoardUserLocationBottomSheetScreen(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserLocationBottomSheetContent(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,
@@ -201,9 +266,147 @@ fun UserLocationBottomSheetContent(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PublishedUsedProductListingBottomSheetContent(
+    bottomSheetValue: SheetValue? = null,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onDistrictSelected: (District, () -> Unit) -> Unit,
+    onPopUpLocationBottomSheet: () -> Unit,
+    locationStatesEnabled: Boolean = true,
+    isLoading: Boolean = false,
+    publishedUsedProductsListingViewModel: PublishedUsedProductsListingViewModel,
+) {
+    val bottomSheetNavController = rememberNavController()
+
+    Box {
+        Scaffold { contentPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+            ) {
+
+                NavHost(
+                    navController = bottomSheetNavController,
+                    startDestination = if (locationStatesEnabled)
+                        LocationChooser()
+                    else LocationChooser(
+                        false
+                    ),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    noTransitionComposable<LocationChooser> {
+
+                        PublishedUsedProductListingLocationBottomSheet(
+                            bottomSheetValue,
+                            onCloseClick = {
+                                onPopUpLocationBottomSheet()
+                            },
+                            onCurrentLocationSelected = onCurrentLocationSelected,
+                            onRecentLocationSelected = onRecentLocationSelected,
+                            onStateClick = {
+                                bottomSheetNavController.navigate(Districts)
+                            },
+                            publishedUsedProductsListingViewModel)
+                    }
+
+                    noTransitionComposable<Districts> {
+                        DistrictsScreen(bottomSheetNavController,
+                            isLoading,
+                            onDistrictSelected,{
+                                bottomSheetNavController.popBackStack()
+                            })
+                    }
+                }
+
+            }
+        }
+
+        if (isLoading) {
+            LoadingDialog()
+        }
+    }
+
+
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateUsedProductListingBottomSheetContent(
+    bottomSheetValue: SheetValue? = null,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onDistrictSelected: (District, () -> Unit) -> Unit,
+    onPopUpLocationBottomSheet: () -> Unit,
+    locationStatesEnabled: Boolean = true,
+    isLoading: Boolean = false,
+    usedProductsListingWorkflowViewModel: UsedProductsListingWorkflowViewModel,
+) {
+    val bottomSheetNavController = rememberNavController()
+
+    Box {
+        Scaffold { contentPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+            ) {
+
+                NavHost(
+                    navController = bottomSheetNavController,
+                    startDestination = if (locationStatesEnabled)
+                        LocationChooser()
+                    else LocationChooser(
+                        false
+                    ),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    noTransitionComposable<LocationChooser> {
+
+                        CreateUsedProductListingLocationBottomSheet(
+                            bottomSheetValue,
+                            onCloseClick = {
+                                onPopUpLocationBottomSheet()
+                            },
+                            onCurrentLocationSelected = onCurrentLocationSelected,
+                            onRecentLocationSelected = onRecentLocationSelected,
+                            onStateClick = {
+                                bottomSheetNavController.navigate(Districts)
+                            },
+                            usedProductsListingWorkflowViewModel)
+                    }
+
+                    noTransitionComposable<Districts> {
+                        DistrictsScreen(bottomSheetNavController,
+                            isLoading,
+                            onDistrictSelected,{
+                                bottomSheetNavController.popBackStack()
+                            })
+                    }
+                }
+
+            }
+        }
+
+        if (isLoading) {
+            LoadingDialog()
+        }
+    }
+
+
+}
+
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateServiceLocationBottomSheetContent(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,
@@ -269,9 +472,10 @@ fun CreateServiceLocationBottomSheetContent(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationBottomSheetContent(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,
@@ -332,9 +536,10 @@ fun LocationBottomSheetContent(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditLocationBottomSheetContent(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,

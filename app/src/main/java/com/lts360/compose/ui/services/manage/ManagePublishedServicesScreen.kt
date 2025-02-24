@@ -91,14 +91,15 @@ fun ManagePublishedServicesScreen(
     }
 
 
-    val sheetState = rememberModalBottomSheetState()
-
-    var bottomSheetState by rememberSaveable { mutableStateOf(false) }
-
 
     val context = LocalContext.current
 
     val isLoading by viewModel.isLoading.collectAsState()
+
+
+    val sheetState = rememberModalBottomSheetState()
+
+    var bottomSheetState by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(bottomSheetState) {
 

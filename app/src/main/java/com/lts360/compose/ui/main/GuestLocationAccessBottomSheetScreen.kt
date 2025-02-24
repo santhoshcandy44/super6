@@ -4,8 +4,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.BottomSheetValue
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -19,9 +20,10 @@ import com.lts360.compose.ui.main.navhosts.routes.LocationChooser
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnBoardGuestUserLocationAccessBottomSheetScreen(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,
@@ -82,9 +84,10 @@ fun OnBoardGuestUserLocationAccessBottomSheetScreen(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuestUserLocationAccessBottomSheetScreen(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,

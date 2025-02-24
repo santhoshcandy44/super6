@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,8 +24,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -58,18 +61,27 @@ fun EditServiceLocationScreen(navHostController: NavHostController, onPopBackSta
 
     val context = LocalContext.current
 
-    val bottomSheetScaffoldState = androidx.compose.material.rememberBottomSheetScaffoldState()
+
+
+    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            SheetValue.Hidden,
+            skipHiddenState = false
+        )
+    )
+
 
     val coroutineScope = rememberCoroutineScope()
 
-    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == BottomSheetValue.Expanded) {
+    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
-            bottomSheetScaffoldState.bottomSheetState.collapse()
+            bottomSheetScaffoldState.bottomSheetState.hide()
         }
     }
 
 
-    androidx.compose.material.BottomSheetScaffold(
+
+    BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
             EditLocationBottomSheetScreen(
@@ -87,7 +99,7 @@ fun EditServiceLocationScreen(navHostController: NavHostController, onPopBackSta
                     }
 
                     coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.collapse()
+                        bottomSheetScaffoldState.bottomSheetState.hide()
                     }
 
                 }, { recentLocation ->
@@ -103,7 +115,7 @@ fun EditServiceLocationScreen(navHostController: NavHostController, onPopBackSta
                     }
 
                     coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.collapse()
+                        bottomSheetScaffoldState.bottomSheetState.hide()
                     }
 
                 }, { district, callback ->
@@ -121,7 +133,7 @@ fun EditServiceLocationScreen(navHostController: NavHostController, onPopBackSta
                 },
                 {
                     coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.collapse()
+                        bottomSheetScaffoldState.bottomSheetState.hide()
                     }
                 },
                 locationStatesEnabled = false,
@@ -130,8 +142,7 @@ fun EditServiceLocationScreen(navHostController: NavHostController, onPopBackSta
 
         },
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetGesturesEnabled = false, // Allow gestures to hide/show bottom sheet
-//            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
     ) { innerPadding ->
 
         Box(modifier = Modifier.fillMaxSize()) {

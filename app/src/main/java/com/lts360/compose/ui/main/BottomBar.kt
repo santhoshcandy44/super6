@@ -1,5 +1,6 @@
 package com.lts360.compose.ui.main
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
@@ -12,6 +13,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,8 +24,10 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.R
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.dropUnlessResumedV2
-import com.lts360.compose.ui.main.navhosts.routes.BottomBarScreen
+import com.lts360.compose.ui.main.navhosts.routes.BottomBar
+import com.lts360.compose.ui.theme.AppTheme
 
 
 @Composable
@@ -67,23 +71,22 @@ fun BottomBar(
 
 
     NavigationBar(
-        tonalElevation = 3.dp,
-        containerColor = Color.Transparent,
+        tonalElevation = 0.dp,
     ) {
         bottomBarItems.forEachIndexed { _, item ->
 
             val screen = when (item.title) {
-                "Home" -> BottomBarScreen.Home()
-                "Chats" -> BottomBarScreen.Chats
-                "Notifications" -> BottomBarScreen.Notifications
-                "More" -> BottomBarScreen.More
+                "Home" -> BottomBar.Home()
+                "Chats" -> BottomBar.Chats
+                "Notifications" -> BottomBar.Notifications
+                "More" -> BottomBar.More
                 else -> throw IllegalArgumentException("Unknown screen")
             }
 
 
             val badgeCount = when (screen) {
-                BottomBarScreen.Chats -> messageCount
-                BottomBarScreen.Notifications -> notificationCount
+                BottomBar.Chats -> messageCount
+                BottomBar.Notifications -> notificationCount
                 else -> 0
             }
 
@@ -91,14 +94,12 @@ fun BottomBar(
                 signInMethod = signInMethod,
                 bottomBarItem = item,
                 screen = screen,
-                isSelected =if(screen is BottomBarScreen.Home)
-                    BottomBarScreen.NestedHome::class.qualifiedName.orEmpty()==cleanedRoute
+                isSelected =if(screen is BottomBar.Home)
+                    BottomBar.NestedServices::class.qualifiedName.orEmpty()==cleanedRoute
                             || screen::class.qualifiedName.orEmpty() == cleanedRoute else screen::class.qualifiedName.orEmpty() == cleanedRoute,
                 navController = navController,
                 badgeCount = badgeCount, // Pass badgeCount directly
-                onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet,
-
-                )
+                onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet)
         }
     }
 
@@ -109,7 +110,7 @@ fun BottomBar(
 fun RowScope.AddItem(
     signInMethod: String?,
     bottomBarItem: BottomBarItem,
-    screen: BottomBarScreen,
+    screen: BottomBar,
     isSelected: Boolean,
     navController: NavHostController,
     badgeCount: Int = 0, // Add badgeCount as a parameter
@@ -143,7 +144,7 @@ fun RowScope.AddItem(
                 }
             }
         },
-        selected = if ((signInMethod != null && signInMethod == "guest") && (screen is BottomBarScreen.Notifications || screen is BottomBarScreen.Chats)) {
+        selected = if ((signInMethod != null && signInMethod == "guest") && (screen is BottomBar.Notifications || screen is BottomBar.Chats)) {
             false
         } else {
             isSelected
@@ -153,12 +154,17 @@ fun RowScope.AddItem(
             selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
             unselectedIconColor = Color.Gray,
             selectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            unselectedTextColor = Color.Gray
+            unselectedTextColor = Color.Gray,
+            indicatorColor = Color.Transparent
+
         ),
 
         onClick = {
-            if ((signInMethod != null && signInMethod == "guest") && (screen is BottomBarScreen.Notifications || screen is BottomBarScreen.Chats)) {
+
+
+            if ((signInMethod != null && signInMethod == "guest") && (screen is BottomBar.Notifications || screen is BottomBar.Chats)) {
                 onNavigateUpWelcomeScreenSheet()
+
             } else {
 
                 dropUnlessResumedV2(lifecycleOwner) {

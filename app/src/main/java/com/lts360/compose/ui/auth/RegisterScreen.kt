@@ -59,6 +59,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.lts360.R
 import com.lts360.components.utils.openUrlInCustomTab
 import com.lts360.compose.ui.auth.viewmodels.RegisterViewModel
 import com.lts360.compose.ui.theme.customColorScheme
@@ -207,6 +208,8 @@ private fun RegisterContent(
     isClickable: Boolean,
 ) {
 
+    val context = LocalContext.current
+
 
     Surface(
         modifier = Modifier
@@ -335,7 +338,7 @@ private fun RegisterContent(
 
                     ) {
 
-                        onTermsAndConditionsClicked("https://saket.me/compose-custom-text-spans/")
+                        onTermsAndConditionsClicked(context.getString(R.string.terms_and_conditions))
                     }
                 ) {
                     append("Terms and Conditions")

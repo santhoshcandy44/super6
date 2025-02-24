@@ -25,7 +25,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.FlashOff
@@ -52,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import kotlinx.coroutines.launch
 
 
@@ -303,7 +303,7 @@ fun BoxScope.ActionControls(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (isTakingPhoto) {
-                                        CircularProgressIndicator(
+                                        CircularProgressIndicatorLegacy(
                                             modifier = Modifier.size(30.dp), // Circle inside the button
                                             color = Color.Red,
                                             strokeWidth = 3.dp
@@ -400,7 +400,7 @@ fun BoxScope.ActionControls(
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (isTakingPhoto) {
-                                    CircularProgressIndicator(
+                                    CircularProgressIndicatorLegacy(
                                         modifier = Modifier.size(30.dp), // Circle inside the button
                                         color = Color.Red,
                                         strokeWidth = 3.dp

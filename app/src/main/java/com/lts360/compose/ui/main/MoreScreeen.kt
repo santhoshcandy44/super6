@@ -49,7 +49,7 @@ import com.lts360.R
 import com.lts360.components.utils.openUrlInCustomTab
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.AccountType
-import com.lts360.compose.ui.main.navhosts.routes.BottomBarScreen
+import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.shimmerLoadingAnimation
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.viewmodels.MoreViewModel
@@ -62,7 +62,8 @@ fun MoreScreen(
     onAccountAndProfileSettingsNavigateUp: (String) -> Unit,
     onManageIndustriesAndInterestsNavigateUp: () -> Unit,
     onManageServiceNavigateUp: () -> Unit,
-    onNavigateUpBookmarkedServices: () -> Unit,
+    onManageSecondsNavigateUp: () -> Unit,
+    onNavigateUpBookmarks: () -> Unit,
     viewModel: MoreViewModel,
     onNavigateUpWelcomeScreenSheet: () -> Unit,
     onNavigateUpLogInSheet: () -> Unit,
@@ -89,17 +90,17 @@ fun MoreScreen(
             collapseSheet()
         } else {
             if (cleanedRoute in listOf(
-                    BottomBarScreen.Chats::class.qualifiedName.orEmpty(),
-                    BottomBarScreen.Notifications::class.qualifiedName.orEmpty(),
-                    BottomBarScreen.More::class.qualifiedName.orEmpty()
+                    BottomBar.Chats::class.qualifiedName.orEmpty(),
+                    BottomBar.Notifications::class.qualifiedName.orEmpty(),
+                    BottomBar.More::class.qualifiedName.orEmpty()
                 )
             ) {
 
                 // Navigate back to A and preserve its state
-                navController.navigate(BottomBarScreen.Home()) {
+                navController.navigate(BottomBar.Home()) {
                     launchSingleTop = true
                     restoreState = true
-                    popUpTo(BottomBarScreen.Home()) {
+                    popUpTo(BottomBar.Home()) {
                         saveState = true
                     }
                 }
@@ -376,10 +377,10 @@ fun MoreScreen(
 
                                 AccountManagementItem(
                                     iconRes = R.drawable.ic_bookmark,
-                                    text = "Bookmarked Services"
+                                    text = "Bookmarks"
                                 ) {
 
-                                    onNavigateUpBookmarkedServices()
+                                    onNavigateUpBookmarks()
 
                                 }
                                 AccountManagementItem(
@@ -413,6 +414,21 @@ fun MoreScreen(
                                             onManageServiceNavigateUp()
                                         }
                                     }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Column(
+                                        modifier = Modifier
+                                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor)
+                                    ) {
+                                        AccountManagementItem(
+                                            iconRes = R.drawable.ic_manage_seconds,
+                                            text = "Manage Seconds"
+                                        ) {
+                                            onManageSecondsNavigateUp()
+                                        }
+                                    }
+
                                 }
 
                             }
@@ -434,7 +450,7 @@ fun MoreScreen(
 
                                 try {
                                     val shareMessage = """
-        Super6 (Download It from PlayStore)
+        Lts360 (Download It from PlayStore)
 
         https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}
     """.trimIndent()
@@ -461,7 +477,7 @@ fun MoreScreen(
                                     Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
                                         putExtra(
                                             Intent.EXTRA_EMAIL,
-                                            arrayOf("mobiblogger95@gmail.com")
+                                            arrayOf(context.getString(R.string.help_and_support))
                                         )
                                         putExtra(
                                             Intent.EXTRA_SUBJECT,
@@ -490,7 +506,7 @@ fun MoreScreen(
                                 text = "Privacy Policy"
                             ) {
 
-                                openUrlInCustomTab(context, "https://www.super6.com")
+                                openUrlInCustomTab(context, context.getString(R.string.privacy_policy))
                             }
 
 

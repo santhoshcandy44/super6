@@ -1,9 +1,13 @@
 package com.lts360.compose.ui.main.navhosts
 
+import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
@@ -18,20 +22,33 @@ import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
 import com.lts360.compose.ui.main.HomeScreen
 import com.lts360.compose.ui.main.MoreScreen
 import com.lts360.compose.ui.main.NotificationScreen
-import com.lts360.compose.ui.main.navhosts.routes.BottomBarScreen
+import com.lts360.compose.ui.main.navhosts.routes.BottomBar
+import com.lts360.compose.ui.main.navhosts.routes.DetailedSeconds
+import com.lts360.compose.ui.main.navhosts.routes.DetailedSecondsFeedUser
+import com.lts360.compose.ui.main.navhosts.routes.DetailedSecondsFeedUserImagesSlider
 import com.lts360.compose.ui.main.navhosts.routes.DetailedService
-import com.lts360.compose.ui.main.navhosts.routes.FeedUserDetailedService
-import com.lts360.compose.ui.main.navhosts.routes.FeedUserImagesSliderDetailedService
-import com.lts360.compose.ui.main.navhosts.routes.ImagesSliderDetailedService
+import com.lts360.compose.ui.main.navhosts.routes.DetailedServiceFeedUser
+import com.lts360.compose.ui.main.navhosts.routes.DetailedServiceFeedUserImagesSlider
+import com.lts360.compose.ui.main.navhosts.routes.SecondsDetailedImagesSlider
+import com.lts360.compose.ui.main.navhosts.routes.SecondsOwnerProfile
+import com.lts360.compose.ui.main.navhosts.routes.ServiceDetailedImagesSlider
 import com.lts360.compose.ui.main.navhosts.routes.ServiceOwnerProfile
 import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.main.profile.ServiceOwnerProfileScreen
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
+import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.services.DetailedServiceScreen
 import com.lts360.compose.ui.services.FeedUserDetailedServiceInfoScreen
 import com.lts360.compose.ui.services.FeedUserImagesSliderScreen
 import com.lts360.compose.ui.services.ImagesSliderScreen
 import com.lts360.compose.ui.services.ServiceOwnerProfileViewModel
+import com.lts360.compose.ui.usedproducts.DetailedUsedProductListingScreen
+import com.lts360.compose.ui.usedproducts.FeedUserDetailedSecondsInfoScreen
+import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
+import com.lts360.compose.ui.usedproducts.manage.FeedUserSecondsImagesSliderScreen
+import com.lts360.compose.ui.usedproducts.manage.SecondsImagesSliderScreen
+import com.lts360.compose.ui.usedproducts.manage.SecondsServiceOwnerProfileScreen
+import com.lts360.compose.ui.usedproducts.manage.UsedProductListingActivity
 import com.lts360.compose.ui.viewmodels.MoreViewModel
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
@@ -56,27 +73,39 @@ fun BottomNavHost(
     collapseSheet: () -> Unit,
     onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {},
     onNavigateUpChatScreen: (ChatUser, Int, Long, String) -> Unit,
-    showChooseIndustriesSheet: () -> Unit
+    showChooseIndustriesSheet: () -> Unit,
+    onDockedFabAddNewSecondsChanged:(Boolean)-> Unit
+
 ) {
 
+
+    val context = LocalContext.current
 
     NavHost(
         modifier = modifier,
         navController = navController,
-        startDestination = BottomBarScreen.Home(),
+        startDestination = BottomBar.Home(),
     ) {
 
 
-        noTransitionComposable<BottomBarScreen.Home> { backstackEntry ->
+        noTransitionComposable<BottomBar.Home> { backstackEntry ->
 
-            val args = backstackEntry.toRoute<BottomBarScreen.Home>()
-
+            val args = backstackEntry.toRoute<BottomBar.Home>()
             val servicesViewModel: ServicesViewModel = hiltViewModel(key = args.key.toString())
+            val secondsViewmodel: SecondsViewmodel = hiltViewModel(key = "seconds_${args.key}")
+
+            LaunchedEffect(backstackEntry){
+                homeViewModel.setSearchQuery(args.submittedQuery ?: "")
+            }
+
 
             HomeScreen(
                 navController,
                 {
                     navController.navigate(DetailedService(args.key))
+                },
+                {
+                    navController.navigate(DetailedSeconds(args.key))
                 },
                 { serviceOwnerId ->
                     navController.navigate(
@@ -87,34 +116,53 @@ fun BottomNavHost(
                 { showChooseIndustriesSheet() },
                 { dropUnlessResumedV2(backstackEntry){navController.popBackStack()}},
                 homeViewModel,
-                servicesViewModel
+                servicesViewModel,
+                secondsViewmodel,
+                onDockedFabAddNewSecondsChanged
+
             )
         }
 
 
+        noTransitionComposable<BottomBar.NestedServices> { backstackEntry ->
 
-        noTransitionComposable<BottomBarScreen.NestedHome> { backstackEntry ->
 
-            val args = backstackEntry.toRoute<BottomBarScreen.NestedHome>()
+
+
+            val args = backstackEntry.toRoute<BottomBar.Home>()
+
+            LaunchedEffect(backstackEntry){
+                homeViewModel.setSearchQuery(args.submittedQuery ?: "")
+            }
+
 
             val servicesViewModel: ServicesViewModel = hiltViewModel(key = args.key.toString())
+            val secondsViewmodel: SecondsViewmodel = hiltViewModel(key = "seconds_${args.key}")
+
 
             HomeScreen(
                 navController,
                 {
                     navController.navigate(DetailedService(args.key))
                 },
+                {
+                    navController.navigate(DetailedSeconds(args.key))
+                },
                 { serviceOwnerId ->
                     navController.navigate(
                         ServiceOwnerProfile(serviceOwnerId, args.key),
-                        NavOptions.Builder().setLaunchSingleTop(true)
-                            .build()
+                        NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
                 },
                 { showChooseIndustriesSheet() },
                 { dropUnlessResumedV2(backstackEntry){navController.popBackStack()}},
                 homeViewModel,
-                servicesViewModel
+                servicesViewModel,
+                secondsViewmodel,
+                onDockedFabAddNewSecondsChanged,
+                args.onlySearchBar,
+                "Services",
+
             )
         }
 
@@ -124,10 +172,11 @@ fun BottomNavHost(
 
             val args = backStackEntry.toRoute<DetailedService>()
             val key = args.key
-
-            val parentBackStackEntry = if (key == 0) {
-                navController.getBackStackEntry<BottomBarScreen.Home>()
-            } else navController.getBackStackEntry<BottomBarScreen.NestedHome>()
+            val parentBackStackEntry = remember {
+                if (key == 0) {
+                    navController.getBackStackEntry<BottomBar.Home>()
+                } else navController.getBackStackEntry<BottomBar.NestedServices>()
+            }
 
             val viewModel: ServicesViewModel =
                 hiltViewModel(parentBackStackEntry, key = key.toString())
@@ -138,7 +187,7 @@ fun BottomNavHost(
                     key,
                     navController,
                     onNavigateUpSlider = {
-                        navController.navigate(ImagesSliderDetailedService(key, it))
+                        navController.navigate(ServiceDetailedImagesSlider(key, it))
                     }, navigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
                         onNavigateUpChatScreen(
                             chatUser,
@@ -154,18 +203,103 @@ fun BottomNavHost(
             }
         }
 
+        noTransitionComposable<BottomBar.NestedSeconds> { backstackEntry ->
 
-        slideComposable<ImagesSliderDetailedService> {
+            val args = backstackEntry.toRoute<BottomBar.NestedSeconds>()
+
+            val servicesViewModel: ServicesViewModel = hiltViewModel(key = args.key.toString())
+            val secondsViewmodel: SecondsViewmodel = hiltViewModel(key = "seconds_${args.key}")
+
+            LaunchedEffect(backstackEntry){
+                homeViewModel.setSearchQuery(args.submittedQuery ?: "")
+            }
 
 
-            val args = it.toRoute<ImagesSliderDetailedService>()
+            HomeScreen(
+                navController,
+                {
+                    navController.navigate(DetailedService(args.key))
+                },
+                {
+                    navController.navigate(DetailedSeconds(args.key))
+                },
+                { serviceOwnerId ->
+                    navController.navigate(
+                        ServiceOwnerProfile(serviceOwnerId, args.key),
+                        NavOptions.Builder().setLaunchSingleTop(true).build()
+                    )
+                },
+                { showChooseIndustriesSheet() },
+                { dropUnlessResumedV2(backstackEntry){navController.popBackStack()}},
+                homeViewModel,
+                servicesViewModel,
+                secondsViewmodel,
+                onDockedFabAddNewSecondsChanged,
+                args.onlySearchBar,
+                "Second Hands"
+            )
+        }
+
+
+
+        slideComposable<DetailedSeconds> { backStackEntry ->
+
+
+            val args = backStackEntry.toRoute<DetailedSeconds>()
+            val key = args.key
+
+            val parentBackStackEntry =  remember {
+                if (key == 0) {
+                    navController.getBackStackEntry<BottomBar.Home>()
+                } else navController.getBackStackEntry<BottomBar.NestedServices>()
+            }
+
+
+            val viewModel: SecondsViewmodel =
+                hiltViewModel(parentBackStackEntry, key = "seconds_${key}")
+            val selectedItem by viewModel.selectedItem.collectAsState()
+
+            selectedItem?.let {
+                DetailedUsedProductListingScreen(
+                    key,
+                    navController,
+                    onNavigateUpSlider = {
+                        navController.navigate(SecondsDetailedImagesSlider(key, it))
+                    }, navigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
+                        onNavigateUpChatScreen(
+                            chatUser,
+                            chatId,
+                            recipientId,
+                            UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
+                        )
+                    },
+                    {
+
+                    },
+                    {
+                            serviceOwnerId ->
+                        navController.navigate(
+                            SecondsOwnerProfile(serviceOwnerId, args.key),
+                            NavOptions.Builder().setLaunchSingleTop(true).build()
+                        )
+                    },
+                    viewModel
+                )
+            }
+        }
+
+
+        slideComposable<ServiceDetailedImagesSlider> {
+
+
+            val args = it.toRoute<ServiceDetailedImagesSlider>()
             val selectedImagePosition = args.selectedImagePosition
             val key = args.key
 
-            val parentBackStackEntry = if (key == 0) {
-                navController.getBackStackEntry<BottomBarScreen.Home>()
-            } else navController.getBackStackEntry<BottomBarScreen.NestedHome>()
-
+            val parentBackStackEntry = remember { if (key == 0) {
+                navController.getBackStackEntry<BottomBar.Home>()
+            } else navController.getBackStackEntry<BottomBar.NestedServices>()
+            }
             val viewModel: ServicesViewModel = hiltViewModel(
                 parentBackStackEntry,
                 key = key.toString()
@@ -184,12 +318,42 @@ fun BottomNavHost(
         }
 
 
+        slideComposable<SecondsDetailedImagesSlider> {
+
+
+            val args = it.toRoute<SecondsDetailedImagesSlider>()
+            val selectedImagePosition = args.selectedImagePosition
+            val key = args.key
+
+            val parentBackStackEntry = remember { if (key == 0) {
+                navController.getBackStackEntry<BottomBar.Home>()
+            } else navController.getBackStackEntry<BottomBar.NestedSeconds>()
+            }
+            val viewModel: SecondsViewmodel = hiltViewModel(
+                parentBackStackEntry,
+                key = "seconds_${key}"
+            )
+            val selectedItem by viewModel.selectedItem.collectAsState()
+
+            selectedItem?.let {
+                SecondsImagesSliderScreen(
+                    key,
+                    navController,
+                    selectedImagePosition,
+                    viewModel
+                ) { navController.popBackStack() }
+            }
+
+        }
+
         slideComposable<ServiceOwnerProfile> { backStackEntry ->
             val key = backStackEntry.toRoute<ServiceOwnerProfile>().key
 
-            val parentBackStackEntry = if (key == 0) {
-                navController.getBackStackEntry<BottomBarScreen.Home>()
-            } else navController.getBackStackEntry<BottomBarScreen.NestedHome>()
+            val parentBackStackEntry = remember{
+                if (key == 0) {
+                    navController.getBackStackEntry<BottomBar.Home>()
+                } else navController.getBackStackEntry<BottomBar.NestedServices>()
+            }
 
 
             val servicesViewModel: ServicesViewModel = hiltViewModel(
@@ -212,23 +376,113 @@ fun BottomNavHost(
 
                     },
                     {
-                        navController.navigate(FeedUserDetailedService(it))
+                        navController.navigate(DetailedServiceFeedUser(it))
                     }, servicesViewModel
                 )
             }
 
         }
 
+        slideComposable<SecondsOwnerProfile> { backStackEntry ->
+            val key = backStackEntry.toRoute<SecondsOwnerProfile>().key
 
-        slideComposable<FeedUserDetailedService> { backStackEntry ->
-            val args = backStackEntry.toRoute<FeedUserDetailedService>()
+            val parentBackStackEntry = remember {  if (key == 0) {
+                navController.getBackStackEntry<BottomBar.Home>()
+            } else navController.getBackStackEntry<BottomBar.NestedSeconds>()
+            }
+            val viewModel: SecondsViewmodel = hiltViewModel(
+                parentBackStackEntry,
+                key = "seconds_${key}"
+            )
+
+            val selectedItem by viewModel.selectedItem.collectAsState()
+
+            selectedItem?.let {
+                SecondsServiceOwnerProfileScreen(
+                    navController,
+                    key,
+                    onNavigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
+                        onNavigateUpChatScreen(
+                            chatUser,
+                            chatId,
+                            recipientId,
+                            UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
+                        )
+
+                    },
+                    {
+                        navController.navigate(DetailedSecondsFeedUser(it))
+                    }, viewModel
+                )
+            }
+
+        }
+
+        slideComposable<DetailedSecondsFeedUser> { backStackEntry ->
+            val args = backStackEntry.toRoute<DetailedSecondsFeedUser>()
 
             val key = args.key
 
-            val parentBackStackEntry = if (key == 0) {
-                navController.getBackStackEntry<BottomBarScreen.Home>()
-            } else navController.getBackStackEntry<BottomBarScreen.NestedHome>()
+            val parentBackStackEntry = remember {
+                if (key == 0) {
+                    navController.getBackStackEntry<BottomBar.Home>()
+                } else navController.getBackStackEntry<BottomBar.NestedSeconds>()
 
+            }
+
+            val viewmodel: SecondsViewmodel = hiltViewModel(
+                parentBackStackEntry,
+                key = "seconds_${key}"
+            )
+            val selectedItem by viewmodel.selectedItem.collectAsState()
+
+            selectedItem?.let {
+                FeedUserDetailedSecondsInfoScreen(
+                    navController,
+                    key,
+                    {
+                        navController.navigate(DetailedSecondsFeedUserImagesSlider(it))
+                    },
+                    { chatUser, chatId, recipientId, feedUserProfile ->
+
+                        onNavigateUpChatScreen(
+                            chatUser,
+                            chatId,
+                            recipientId,
+                            UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
+                        )
+
+                    }, {}, viewmodel
+                )
+            }
+
+
+        }
+
+        slideComposable<DetailedSecondsFeedUserImagesSlider> {
+
+            val selectedImagePosition =
+                it.toRoute<DetailedSecondsFeedUserImagesSlider>().selectedImagePosition
+            val viewmodel: SecondsOwnerProfileViewModel =
+                hiltViewModel(remember { navController.getBackStackEntry<SecondsOwnerProfile>() })
+
+            FeedUserSecondsImagesSliderScreen(
+                navController,
+                selectedImagePosition,
+                viewmodel
+            ) { navController.popBackStack() }
+        }
+
+
+        slideComposable<DetailedServiceFeedUser> { backStackEntry ->
+            val args = backStackEntry.toRoute<DetailedServiceFeedUser>()
+
+            val key = args.key
+
+            val parentBackStackEntry = remember{ if (key == 0) {
+                navController.getBackStackEntry<BottomBar.Home>()
+            } else navController.getBackStackEntry<BottomBar.NestedServices>()
+            }
 
             val servicesViewModel: ServicesViewModel = hiltViewModel(
                 parentBackStackEntry,
@@ -241,7 +495,7 @@ fun BottomNavHost(
                     navController,
                     key,
                     {
-                        navController.navigate(FeedUserImagesSliderDetailedService(it))
+                        navController.navigate(DetailedServiceFeedUserImagesSlider(it))
                     },
                     { chatUser, chatId, recipientId, feedUserProfile ->
 
@@ -259,13 +513,12 @@ fun BottomNavHost(
 
         }
 
-
-        slideComposable<FeedUserImagesSliderDetailedService> {
+        slideComposable<DetailedServiceFeedUserImagesSlider> {
 
             val selectedImagePosition =
-                it.toRoute<FeedUserImagesSliderDetailedService>().selectedImagePosition
+                it.toRoute<DetailedServiceFeedUserImagesSlider>().selectedImagePosition
             val serviceOwnerProfileViewModel: ServiceOwnerProfileViewModel =
-                hiltViewModel(navController.getBackStackEntry<ServiceOwnerProfile>())
+                hiltViewModel(remember { navController.getBackStackEntry<ServiceOwnerProfile>() })
 
             FeedUserImagesSliderScreen(
                 navController,
@@ -276,7 +529,7 @@ fun BottomNavHost(
 
 
 
-        noTransitionComposable<BottomBarScreen.Chats> {
+        noTransitionComposable<BottomBar.Chats> {
             ChatUsersScreen(
                 navController, { chatUser, chatId, recipientId, feedUserProfile ->
                     onNavigateUpChatScreen(
@@ -285,18 +538,6 @@ fun BottomNavHost(
                         recipientId,
                         UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
                     )
-                    /*
-                                        navController.navigate(ChatWindow(chatId, recipientId, null, UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)))
-                    */
-
-                    /*             context.startActivity(
-                                     Intent(context, ChatActivity::class.java)
-                                         .apply {
-                                             putExtra("from", "chat")
-                                             putExtra("chat_id", chatId)
-                                             putExtra("recipient_id", recipientId)
-                                             putExtra("feed_user_profile",UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile) )
-                                         })*/
                 }, isSheetExpanded,
                 collapseSheet,
                 chatListViewModel
@@ -305,7 +546,7 @@ fun BottomNavHost(
 
 
 
-        noTransitionComposable<BottomBarScreen.Notifications> {
+        noTransitionComposable<BottomBar.Notifications> {
             NotificationScreen(
                 navController,
                 isSheetExpanded,
@@ -314,7 +555,7 @@ fun BottomNavHost(
             )
         }
 
-        noTransitionComposable<BottomBarScreen.More> {
+        noTransitionComposable<BottomBar.More> {
             MoreScreen(navController, onProfileNavigateUp = {
                 onProfileNavigateUp()
             }, onAccountAndProfileSettingsNavigateUp = { accountType ->
@@ -323,7 +564,13 @@ fun BottomNavHost(
                 onManageIndustriesAndInterestsNavigateUp()
             }, onManageServiceNavigateUp = {
                 onManageServiceNavigateUp()
-            }, onNavigateUpBookmarkedServices = {
+            }, onManageSecondsNavigateUp = {
+                context.startActivity(Intent(context, UsedProductListingActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                })
+            },
+
+                onNavigateUpBookmarks = {
                 onNavigateUpBookmarkedServices()
             }, moreViewModel,
                 onNavigateUpWelcomeScreenSheet,

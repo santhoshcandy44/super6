@@ -8,6 +8,7 @@ import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface ApiService {
 
@@ -28,6 +29,10 @@ interface ApiService {
 
     @GET("api/app/serve/get-ee2ee-public-key")
     suspend fun getE2EEPublicToken(): Response<ResponseReply>
+
+
+    @GET("api/app/serve/user-bookmarks/{user_id}")
+    suspend fun getUserBookmarks(@Path("user_id") userId:Long): Response<ResponseReply>
 
 
 }

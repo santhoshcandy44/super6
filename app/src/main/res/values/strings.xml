@@ -38,7 +38,14 @@
         <item>IN</item>
     </string-array>
 
-    <string name="google_client_id">841124425720-of6bpub4q0evdncg3ttfob98r9jtg8n6.apps.googleusercontent.com</string>
+    <string name="privacy_policy">https://lts360.com/privacy-policy/</string>
+
+    <string name="terms_and_conditions">https://lts360.com/terms-and-conditions/</string>
+
+
+    <string name="help_and_support">support@lts360.com</string>
+
+    <string name="google_client_id">73553201616-i6g6eqfg6b4d5uhu2l37qlca0qq57r1k.apps.googleusercontent.com</string>
 
     <string name="default_notification_channel_id">general_announcements_channel</string>
 

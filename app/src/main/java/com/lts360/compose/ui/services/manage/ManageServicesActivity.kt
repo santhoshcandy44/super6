@@ -16,26 +16,14 @@ class ManageServicesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val data = intent
-
-        val isNavigateService = data.getBooleanExtra("navigate_service", false)
-        val serviceId = data.getLongExtra("service_id", -1)
-        val type = data.getStringExtra("type")
 
         setContent {
 
             AppTheme {
                 Surface {
                     SafeDrawingBox {
-                        if (isNavigateService && serviceId != -1L && type != null) {
-                            ManageServicesNavHost(ManageServicesRoutes.ManagePublishedService){
-                                this@ManageServicesActivity.finish()
-                            }
-
-                        } else {
-                            ManageServicesNavHost{
-                                this@ManageServicesActivity.finish()
-                            }
+                        ManageServicesNavHost{
+                            this@ManageServicesActivity.finish()
                         }
                     }
 

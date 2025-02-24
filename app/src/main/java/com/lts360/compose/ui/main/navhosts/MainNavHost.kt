@@ -30,7 +30,7 @@ import com.lts360.compose.ui.main.navhosts.routes.EditProfileAbout
 import com.lts360.compose.ui.main.navhosts.routes.EditProfileEmail
 import com.lts360.compose.ui.main.navhosts.routes.EditProfileFirstName
 import com.lts360.compose.ui.main.navhosts.routes.EditProfileLastName
-import com.lts360.compose.ui.main.navhosts.routes.MainScreen
+import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
 import com.lts360.compose.ui.main.navhosts.routes.PersonalSettings
 import com.lts360.compose.ui.main.navhosts.routes.Profile
 import com.lts360.compose.ui.main.navhosts.routes.SwitchAccountType
@@ -47,7 +47,8 @@ import com.lts360.compose.ui.profile.EditProfileFirstNameScreen
 import com.lts360.compose.ui.profile.EditProfileLastNameScreen
 import com.lts360.compose.ui.profile.EditProfileSettingsScreen
 import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
-import com.lts360.compose.ui.services.manage.BookmarkedServicesActivity
+import com.lts360.compose.ui.bookmarks.BookmarksActivity
+import com.lts360.compose.ui.usedproducts.manage.UsedProductListingActivity
 import com.lts360.compose.ui.viewmodels.MoreViewModel
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
 
@@ -70,9 +71,9 @@ fun MainNavHost() {
 
     NavHost(
         navController = navController,
-        startDestination = MainScreen.Main
+        startDestination = MainRoutes.Main
     ) {
-        slideComposableRoot<MainScreen.Main> {
+        slideComposableRoot<MainRoutes.Main> {
 
             MainScreen(
                 homeViewModel,
@@ -88,9 +89,8 @@ fun MainNavHost() {
                 },
                 onNavigateUpBookmarkedServices = {
 
-                    context.startActivity(Intent(context, BookmarkedServicesActivity::class.java).apply {
-                        flags =
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    context.startActivity(Intent(context, BookmarksActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                     })
 
                 },
@@ -106,6 +106,12 @@ fun MainNavHost() {
                             recipientId
                         )
                     )
+                }, onNavigateUpUsedProductListing = {
+
+                    context.startActivity(Intent(context, UsedProductListingActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    })
+
                 })
         }
 

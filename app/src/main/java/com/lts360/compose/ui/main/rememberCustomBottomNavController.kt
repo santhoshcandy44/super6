@@ -10,7 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.Navigator
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.DialogNavigator
-import com.lts360.compose.ui.main.navhosts.routes.BottomBarScreen
+import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 
 
 @Composable
@@ -48,11 +48,11 @@ private fun navControllerSaver(context: Context, lasEntry:String?): Saver<NavHos
                     ?.replace(Regex("\\?.*"), "")?.trim() // Optionally trim whitespace
 
                 val allowedScreens = listOf(
-                    BottomBarScreen.Home::class,
-                    BottomBarScreen.Chats::class,
-                    BottomBarScreen.Notifications::class,
-                    BottomBarScreen.More::class,
-                    BottomBarScreen.NestedHome::class
+                    BottomBar.Home::class,
+                    BottomBar.Chats::class,
+                    BottomBar.Notifications::class,
+                    BottomBar.More::class,
+                    BottomBar.NestedServices::class
                 )
 
                 // Step 2: Get the list of allowed screens' qualified names

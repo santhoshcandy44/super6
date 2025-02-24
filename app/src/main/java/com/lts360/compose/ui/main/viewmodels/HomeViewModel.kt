@@ -2,36 +2,51 @@ package com.lts360.compose.ui.main.viewmodels
 
 
 import android.content.Context
+import android.util.Log
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.google.gson.reflect.TypeToken
 import com.lts360.api.Utils.Result
 import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.app.AppClient
+import com.lts360.api.app.ManageServicesApiService
 import com.lts360.api.auth.managers.TokenManager
+import com.lts360.api.common.errors.ErrorResponse
+import com.lts360.api.common.responses.ResponseReply
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.app.database.models.profile.UserLocation
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.models.LocationRepository
+import com.lts360.compose.ui.main.models.SearchTerm
+import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.managers.LocationCoordinates
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val savedStateHandle: SavedStateHandle,
-    val locationRepository: LocationRepository,
+    private val locationRepository: LocationRepository,
     userProfileDao: UserProfileDao,
     tokenManager: TokenManager) : ViewModel() {
 
@@ -51,7 +66,6 @@ class HomeViewModel @Inject constructor(
     private val _selectedLocationGeo = MutableStateFlow<String?>(null)
     val selectedLocationGeo = _selectedLocationGeo.asStateFlow()
 
-
     private val _selectedLocation = MutableStateFlow<LocationCoordinates?>(null)
     val selectedLocation = _selectedLocation.asStateFlow()
 
@@ -59,12 +73,41 @@ class HomeViewModel @Inject constructor(
     var error = ""
 
 
+    private val submittedQuery = savedStateHandle.get<String?>("submittedQuery")
+
+
+    private val _searchQuery = MutableStateFlow(
+        if (submittedQuery != null) TextFieldValue(
+            text = submittedQuery,
+            selection = TextRange(0)
+        ) else TextFieldValue()
+    )
+    val searchQuery = _searchQuery.asStateFlow()
+
+
+
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching = _isSearching.asStateFlow()
+
+    private val _searchJob = MutableStateFlow<Job?>(null)
+    val searchJob = _searchJob.asStateFlow()
+
+
+    private val _isLazyLoading = MutableStateFlow(false)
+    val isLazyLoading = _isLazyLoading.asStateFlow()
+
+
+    private val _suggestions = MutableStateFlow<List<String>>(emptyList())
+    val suggestions = _suggestions.asStateFlow()
+
+
+
+
+
     init {
 
         viewModelScope.launch (Dispatchers.IO){
-
-
-
             userProfileDao.getUserProfileDetailsFlow(userId).collectLatest { userProfileDetails ->
                 userProfileDetails?.let { userProfileDetailsNonNull ->
 
@@ -84,22 +127,67 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
-
     }
 
 
-    fun setLocationType(locationType: String?) {
+
+    private fun setLocationType(locationType: String?) {
         _selectedLocationType.value = locationType
     }
 
-    fun setLocationGeo(locationGeo: String?) {
+    private fun setLocationGeo(locationGeo: String?) {
         _selectedLocationGeo.value = locationGeo
 
     }
 
-    fun setLocationCoordinates(locationCoordinates: LocationCoordinates) {
+    private fun setLocationCoordinates(locationCoordinates: LocationCoordinates) {
         _selectedLocation.value = locationCoordinates
     }
+
+
+    fun setSuggestions(suggestions: List<String>) {
+        _suggestions.value = suggestions
+    }
+
+
+    fun setSearching(isSearching: Boolean) {
+        _isSearching.value = isSearching
+    }
+
+
+    fun setSearchQuery(query: String) {
+        // Update the TextFieldValue with new query and move the cursor to the end
+        _searchQuery.value = TextFieldValue(
+            text = query,
+            selection = TextRange(query.length)
+        )
+
+    }
+
+
+
+    fun navigateToOverlay(navController: NavController, route: BottomBar) {
+
+        viewModelScope.launch {
+            collapseSearchAction()
+            navController.navigate(
+                route
+            )
+        }
+    }
+
+
+    fun collapseSearchAction(forceResetSearchText:Boolean=false) {
+        if (_isSearching.value) {
+            // Execute your collapse logic
+            setSuggestions(emptyList())
+            if(forceResetSearchText){
+                _searchQuery.value = TextFieldValue(text = "", selection = TextRange(0))
+            }
+            setSearching(false)
+        }
+    }
+
 
 
     fun setCurrentLocation(
@@ -240,5 +328,161 @@ class HomeViewModel @Inject constructor(
     }
 
 
+
+
+    fun onGetServiceSearchQuerySuggestions(userId: Long, query: String) {
+
+
+        if (signInMethod == "guest") {
+
+            _searchJob.value = viewModelScope.launch {
+                try {
+                    when (val result = getGuestServiceSearchQuerySuggestions(userId, query)) {
+                        is Result.Success -> {
+                            // Deserialize the search terms and set suggestions
+                            val searchTerms = Gson().fromJson(
+                                result.data.data,
+                                object : TypeToken<List<SearchTerm>>() {}.type
+                            ) as List<SearchTerm>
+                            setSuggestions(searchTerms.map { it.searchTerm })
+                        }
+
+                        is Result.Error -> {
+                            // Handle error
+                            setSuggestions(emptyList())
+//                            val errorMsg = mapExceptionToError(result.error).errorMessage
+                            // Optionally log the error message
+                        }
+                    }
+                } catch (t: Exception) {
+                    t.printStackTrace()
+                    if (t is CancellationException) {
+                        return@launch // Early return on cancellation
+                    }
+                    // Handle other exceptions
+                    setSuggestions(emptyList())
+                    // Optionally log the error
+                }
+            }
+
+        } else {
+            _searchJob.value = viewModelScope.launch {
+                try {
+                    when (val result = getServiceSearchQuerySuggestions(userId, query)) {
+                        is Result.Success -> {
+                            // Deserialize the search terms and set suggestions
+                            val searchTerms = Gson().fromJson(
+                                result.data.data,
+                                object : TypeToken<List<SearchTerm>>() {}.type
+                            ) as List<SearchTerm>
+                            setSuggestions(searchTerms.map { it.searchTerm })
+                        }
+
+                        is Result.Error -> {
+                            // Handle error
+                            setSuggestions(emptyList())
+//                            val errorMsg = mapExceptionToError(result.error).errorMessage
+                            // Optionally log the error message
+                        }
+                    }
+                } catch (t: Exception) {
+                    t.printStackTrace()
+                    if (t is CancellationException) {
+                        return@launch // Early return on cancellation
+                    }
+                    // Handle other exceptions
+                    setSuggestions(emptyList())
+                    // Optionally log the error
+                }
+            }
+
+        }
+
+    }
+
+
+    private suspend fun getGuestServiceSearchQuerySuggestions(
+        userId: Long,
+        query: String,
+    ): Result<ResponseReply> {
+
+
+        return try {
+            val response =
+                AppClient.instance.create(ManageServicesApiService::class.java)
+                    .guestSearchFilter(userId, query)
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.isSuccessful) {
+
+                    Result.Success(body)
+                } else {
+                    // Handle unsuccessful response
+                    setSuggestions(emptyList())
+                    val errorBody = response.errorBody()?.string()
+                    val errorMessage = try {
+                        Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                    } catch (e: Exception) {
+                        "An unknown error occurred"
+                    }
+                    Result.Error(Exception(errorMessage))
+                }
+            } else {
+                // Handle unsuccessful HTTP response
+                Result.Error(Exception("Failed to retrieve suggestions"))
+            }
+        } catch (e: Exception) {
+            // Handle exceptions
+            if (e is CancellationException) {
+                throw e // Re-throw the cancellation exception
+            }
+            Result.Error(e)
+        }
+    }
+
+
+    private suspend fun getServiceSearchQuerySuggestions(
+        userId: Long,
+        query: String,
+    ): Result<ResponseReply> {
+        return try {
+            val response =
+                AppClient.instance.create(ManageServicesApiService::class.java)
+                    .searchFilter(userId, query)
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.isSuccessful) {
+
+                    Result.Success(body)
+                } else {
+                    // Handle unsuccessful response
+                    setSuggestions(emptyList())
+                    val errorBody = response.errorBody()?.string()
+                    val errorMessage = try {
+                        Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                    } catch (e: Exception) {
+                        "An unknown error occurred"
+                    }
+                    Result.Error(Exception(errorMessage))
+                }
+            } else {
+                // Handle unsuccessful HTTP response
+                Result.Error(Exception("Failed to retrieve suggestions"))
+            }
+        } catch (e: Exception) {
+            // Handle exceptions
+            if (e is CancellationException) {
+                throw e // Re-throw the cancellation exception
+            }
+            Result.Error(e)
+        }
+    }
+
+
+    fun clearJob() {
+        _searchJob.value = null
+    }
 
 }

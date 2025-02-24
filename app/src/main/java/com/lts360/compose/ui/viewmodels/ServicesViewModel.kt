@@ -12,7 +12,9 @@ import com.lts360.api.Utils.Result
 import com.lts360.api.Utils.mapExceptionToError
 import com.lts360.api.app.AppClient
 import com.lts360.api.app.ManageServicesApiService
+import com.lts360.api.auth.AuthClient
 import com.lts360.api.auth.managers.TokenManager
+import com.lts360.api.auth.services.AuthService
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.FeedUserProfileInfo
@@ -23,8 +25,8 @@ import com.lts360.app.database.daos.profile.UserLocationDao
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
-import com.lts360.compose.ui.main.models.SearchTerm
-import com.lts360.compose.ui.main.navhosts.routes.BottomBarScreen
+import com.lts360.compose.ui.main.models.ServiceReview
+import com.lts360.compose.ui.main.models.ServiceReviewReply
 import com.lts360.compose.ui.main.viewmodels.PageSource
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
@@ -136,51 +138,23 @@ class ServicesViewModel @Inject constructor(
     val tokenManager: TokenManager,
     val chatUserRepository: ChatUserRepository,
     networkConnectivityManager: NetworkConnectivityManager,
-    ) : ViewModel() {
+) : ViewModel() {
 
+    val submittedQuery = savedStateHandle.get<String?>("submittedQuery")
     val onlySearchBar = savedStateHandle.get<Boolean>("onlySearchBar") ?: false
-    private val submittedQuery = savedStateHandle.get<String?>("submittedQuery")
-    private val key = savedStateHandle.get<Int>("key")?: 0
+    private val key = savedStateHandle.get<Int>("key") ?: 0
 
     val userId = UserSharedPreferencesManager.userId
 
     val connectivityManager = networkConnectivityManager
 
 
-    private val _searchQuery = MutableStateFlow(
-        if (submittedQuery != null) TextFieldValue(
-            text = submittedQuery,
-            selection = TextRange(0)
-        ) else TextFieldValue()
-    )
-    val searchQuery = _searchQuery.asStateFlow()
-
-
-    private val _searchOldQuery = MutableStateFlow(submittedQuery)
-    private val searchOldQuery = _searchOldQuery.asStateFlow()
-
-
-    private val _isSearching = MutableStateFlow(false)
-    val isSearching = _isSearching.asStateFlow()
-
-
-
-    private val _isLazyLoading = MutableStateFlow(false)
-    val isLazyLoading = _isLazyLoading.asStateFlow()
-
-
-    private val _suggestions = MutableStateFlow<List<String>>(emptyList())
-    val suggestions = _suggestions.asStateFlow()
 
     private val _selectedItem = MutableStateFlow<Service?>(null)
     val selectedItem = _selectedItem.asStateFlow()
 
 
-    private val _searchJob = MutableStateFlow<Job?>(null)
-    val searchJob = _searchJob.asStateFlow()
-
-
-    private  val _lastLoadedItemPosition = MutableStateFlow(-1)
+    private val _lastLoadedItemPosition = MutableStateFlow(-1)
     val lastLoadedItemPosition = _lastLoadedItemPosition.asStateFlow()
 
 
@@ -215,7 +189,7 @@ class ServicesViewModel @Inject constructor(
     val isValidSignInMethodFeaturesEnabled = tokenManager.isValidSignInMethodFeaturesEnabled()
 
 
-   private var loadingItemsJob: Job? = null
+    private var loadingItemsJob: Job? = null
 
     private val _nestedServiceOwnerProfileSelectedItem = MutableStateFlow<Service?>(null)
     val nestedServiceOwnerProfileSelectedItem = _nestedServiceOwnerProfileSelectedItem.asStateFlow()
@@ -229,8 +203,6 @@ class ServicesViewModel @Inject constructor(
                 launch {
 
 
-
-
                     val userLocation = guestUserLocationDao.getLocation(userId)
                     val selectedIndustries = if (onlySearchBar) {
                         emptyList()
@@ -241,7 +213,7 @@ class ServicesViewModel @Inject constructor(
                     if (userLocation != null) {
                         pageSource.guestNextPage(
                             userId,
-                            _searchQuery.value.text,
+                            submittedQuery,
                             selectedIndustries,
                             userLocation.latitude,
                             userLocation.longitude
@@ -249,7 +221,7 @@ class ServicesViewModel @Inject constructor(
                     } else {
                         pageSource.guestNextPage(
                             userId,
-                            _searchQuery.value.text,
+                            submittedQuery,
                             selectedIndustries
                         )
                     }
@@ -265,7 +237,7 @@ class ServicesViewModel @Inject constructor(
             loadingItemsJob = viewModelScope.launch {
 
                 launch {
-                    pageSource.nextPage(userId, _searchQuery.value.text)
+                    pageSource.nextPage(userId, submittedQuery)
                 }.join()
 
             }
@@ -273,6 +245,7 @@ class ServicesViewModel @Inject constructor(
     }
 
 
+    fun getKey() = key
 
     // Method to update the position
     fun updateLastLoadedItemPosition(newPosition: Int) {
@@ -298,11 +271,11 @@ class ServicesViewModel @Inject constructor(
                 }
                 if (userLocation != null) {
                     pageSource.guestNextPage(
-                        userId, _searchQuery.value.text, selectedIndustries, userLocation.latitude,
+                        userId, query, selectedIndustries, userLocation.latitude,
                         userLocation.longitude
                     )
                 } else {
-                    pageSource.guestNextPage(userId, _searchQuery.value.text, selectedIndustries)
+                    pageSource.guestNextPage(userId, query, selectedIndustries)
                 }
             }
         } else {
@@ -328,14 +301,14 @@ class ServicesViewModel @Inject constructor(
                 if (userLocation != null) {
                     pageSource.guestRefresh(
                         userId,
-                        _searchQuery.value.text,
+                        query,
                         selectedIndustries,
                         userLocation.latitude,
                         userLocation.longitude
                     )
 
                 } else {
-                    pageSource.guestRefresh(userId, _searchQuery.value.text, selectedIndustries)
+                    pageSource.guestRefresh(userId, query, selectedIndustries)
                 }
             }
         } else {
@@ -371,13 +344,13 @@ class ServicesViewModel @Inject constructor(
                 if (userLocation != null) {
                     pageSource.guestRetry(
                         userId,
-                        _searchQuery.value.text,
+                        query,
                         selectedIndustries,
                         userLocation.latitude,
                         userLocation.longitude
                     )
                 } else {
-                    pageSource.guestRetry(userId, _searchQuery.value.text, selectedIndustries)
+                    pageSource.guestRetry(userId, query, selectedIndustries)
                 }
 
             }
@@ -389,66 +362,349 @@ class ServicesViewModel @Inject constructor(
     }
 
 
-    fun clearJob() {
-        _searchJob.value = null
-    }
 
 
-    fun navigateToOverlay(navController: NavController) {
-
-        viewModelScope.launch {
-            navController.navigate(BottomBarScreen.NestedHome(key + 1, _searchQuery.value.text, true))
-            delay(100)
-            collapseSearchAction()
-        }
-    }
 
 
-    fun collapseSearchAction() {
-        if (_isSearching.value) {
-            // Execute your collapse logic
-            setSuggestions(emptyList())
-            val oldQuery = searchOldQuery.value // Safe access to old query
-            if (!oldQuery.isNullOrEmpty()) {
-                setSubmitSearchQuery(oldQuery)
-            } else {
-                setSubmitSearchQuery("")
-            }
-            setSearching(false)
-        }
-    }
 
 
-    private fun setSubmitSearchQuery(query: String) {
-        // Update the TextFieldValue with new query and move the cursor to the end
-        _searchQuery.value = TextFieldValue(text = query, selection = TextRange(0))
-    }
-
-    fun setSearchQuery(query: String) {
-
-        // Update the TextFieldValue with new query and move the cursor to the end
-        _searchQuery.value = TextFieldValue(
-            text = query,
-            selection = TextRange(query.length)
-        )
-
-    }
 
 
-    fun setSearching(isSearching: Boolean) {
-        _isSearching.value = isSearching
-    }
-
-
-    fun setSuggestions(suggestions: List<String>) {
-        _suggestions.value = suggestions
-    }
 
     fun setSelectedItem(item: Service?) {
         _selectedItem.value = item
         /*item?.let {
             savedStateHandle["selected_item"] = item.serviceId
         }*/
+    }
+
+
+    private val _isReviewsLoading = MutableStateFlow<Boolean>(false)
+    val isReviewsLoading = _isReviewsLoading.asStateFlow()
+
+
+    private val _isReviewsReplyLoading = MutableStateFlow<Boolean>(false)
+    val isReviewsReplyLoading = _isReviewsReplyLoading.asStateFlow()
+
+
+    private val _selectedCommentId = MutableStateFlow<Int>(-1)
+    val selectedCommentId = _selectedCommentId.asStateFlow()
+
+    private val _selectedReviews = MutableStateFlow<List<ServiceReview>>(emptyList())
+    val selectedReviews = _selectedReviews.asStateFlow()
+
+
+    private val _selectedReviewReplies = MutableStateFlow<List<ServiceReviewReply>>(emptyList())
+    val selectedReviewReplies = _selectedReviewReplies.asStateFlow()
+
+
+    fun loadReViewsSelectedItem(
+        service: Service,
+
+        ) {
+
+        viewModelScope.launch {
+            _selectedItem.value = service
+
+            _isReviewsLoading.value = true
+
+            try {
+                when (val result = loadSelectedServiceReviews(userId, service)) {
+                    is Result.Success -> {
+
+                        // Deserialize the search terms and set suggestions
+                        val serviceReviews = Gson().fromJson(
+                            result.data.data,
+                            object : TypeToken<List<ServiceReview>>() {}.type
+                        ) as List<ServiceReview>
+
+                        _selectedReviews.value = serviceReviews
+
+                    }
+
+                    is Result.Error -> {
+                        // Handle error
+                        error = mapExceptionToError(result.error).errorMessage
+                        // Optionally log the error message
+                    }
+                }
+            } catch (t: Exception) {
+                error = "Something Went Wrong"
+
+            } finally {
+                _isReviewsLoading.value = false
+            }
+        }
+    }
+
+
+    private suspend fun loadSelectedServiceReviews(
+        userId: Long,
+        item: Service,
+    ): Result<ResponseReply> {
+
+
+        return try {
+            val response = AuthClient.instance.create(AuthService::class.java)
+                .getReviewsByServiceId(
+                    item.serviceId
+                )
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.isSuccessful) {
+                    Result.Success(body)
+
+                } else {
+                    val errorMessage = "Failed, try again later..."
+                    Result.Error(Exception(errorMessage))
+                }
+
+
+            } else {
+
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = try {
+                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                } catch (e: Exception) {
+                    "An unknown error occurred"
+                }
+                Result.Error(Exception(errorMessage))
+            }
+
+        } catch (t: Exception) {
+            Result.Error(t)
+        }
+    }
+
+
+    fun loadReViewRepliesSelectedItem(
+        serviceReview: ServiceReview,
+    ) {
+
+        viewModelScope.launch {
+
+            _isReviewsReplyLoading.value = true
+
+            _selectedCommentId.value = serviceReview.id
+
+            try {
+                when (val result = loadSelectedServiceReviewReplies(userId, serviceReview)) {
+                    is Result.Success -> {
+
+                        // Deserialize the search terms and set suggestions
+                        val serviceReviews = Gson().fromJson(
+                            result.data.data,
+                            object : TypeToken<List<ServiceReviewReply>>() {}.type
+                        ) as List<ServiceReviewReply>
+
+                        _selectedReviewReplies.value = serviceReviews
+
+                    }
+
+                    is Result.Error -> {
+                        // Handle error
+                        error = mapExceptionToError(result.error).errorMessage
+                        // Optionally log the error message
+                    }
+                }
+            } catch (t: Exception) {
+                error = "Something Went Wrong"
+
+            } finally {
+
+                _isReviewsReplyLoading.value = false
+            }
+        }
+    }
+
+
+    private suspend fun loadSelectedServiceReviewReplies(
+        userId: Long,
+        serviceReview: ServiceReview,
+    ): Result<ResponseReply> {
+
+
+        return try {
+            val response = AuthClient.instance.create(AuthService::class.java)
+                .getReplyReviewsByCommentId(
+                    serviceReview.id
+                )
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.isSuccessful) {
+                    Result.Success(body)
+
+                } else {
+                    val errorMessage = "Failed, try again later..."
+                    Result.Error(Exception(errorMessage))
+                }
+
+
+            } else {
+
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = try {
+                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                } catch (e: Exception) {
+                    "An unknown error occurred"
+                }
+                Result.Error(Exception(errorMessage))
+            }
+
+        } catch (t: Exception) {
+            Result.Error(t)
+        }
+    }
+
+
+    // StateFlow for tracking the review posting status
+    private val _isReviewPosting = MutableStateFlow(false)
+    val isReviewPosting = _isReviewPosting.asStateFlow()
+
+
+    fun insertReview(serviceId: Long, userId: Long, reviewText: String) {
+        viewModelScope.launch {
+            _isReviewPosting.value = true
+
+            try {
+                // Insert review
+                when (val result = insertReviewApiCall(serviceId, userId, reviewText)) {
+                    is Result.Success -> {
+
+
+                        val insertedReview = Gson().fromJson<ServiceReview>(
+                            result.data.data,
+                            ServiceReview::class.java
+                        )
+
+                        _selectedReviews.value = _selectedReviews.value.toMutableList()
+                            .apply {
+                                add(0, insertedReview)
+                            }
+
+                        // Handle success, maybe update the UI with the inserted review ID
+                    }
+
+                    is Result.Error -> {
+                        // Handle error, show error message to the user
+                        error = mapExceptionToError(result.error).errorMessage
+
+
+                    }
+                }
+            } catch (t: Exception) {
+                error = "Something went wrong while posting the review."
+            } finally {
+                _isReviewPosting.value = false
+            }
+        }
+    }
+
+    private suspend fun insertReviewApiCall(
+        serviceId: Long,
+        userId: Long,
+        reviewText: String
+    ): Result<ResponseReply> {
+        return try {
+            val response = AuthClient.instance.create(AuthService::class.java)
+                .insertReview(serviceId, userId, reviewText)
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.isSuccessful) {
+                    Result.Success(body)
+                } else {
+                    val errorMessage = "Failed, try again later..."
+                    Result.Error(Exception(errorMessage))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = try {
+                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                } catch (e: Exception) {
+                    "An unknown error occurred"
+                }
+                Result.Error(Exception(errorMessage))
+            }
+
+        } catch (t: Exception) {
+            Result.Error(t)
+        }
+    }
+
+
+    // StateFlow for tracking the reply posting status
+    private val _isReplyPosting = MutableStateFlow(false)
+    val isReplyPosting = _isReplyPosting.asStateFlow()
+
+
+    fun insertReply(commentId: Int, userId: Long, replyText: String, replyToUserId: Long?) {
+        viewModelScope.launch {
+            _isReplyPosting.value = true
+
+            try {
+                // Insert reply
+                when (val result =
+                    insertReplyApiCall(commentId, userId, replyText, replyToUserId)) {
+                    is Result.Success -> {
+
+
+                        val insertedReply = Gson().fromJson<ServiceReviewReply>(
+                            result.data.data,
+                            ServiceReviewReply::class.java
+                        )
+
+                        _selectedReviewReplies.value = _selectedReviewReplies.value.toMutableList()
+                            .apply {
+                                add(0, insertedReply)
+                            }
+
+                    }
+
+                    is Result.Error -> {
+                        // Handle error, show error message to the user
+                        error = mapExceptionToError(result.error).errorMessage
+                    }
+                }
+            } catch (t: Exception) {
+                error = "Something went wrong while posting the reply."
+            } finally {
+                _isReplyPosting.value = false
+            }
+        }
+    }
+
+    private suspend fun insertReplyApiCall(
+        commentId: Int,
+        userId: Long,
+        replyText: String,
+        replyToUserId: Long?
+    ): Result<ResponseReply> {
+        return try {
+            val response = AuthClient.instance.create(AuthService::class.java)
+                .insertReply(commentId, userId, replyText, replyToUserId)
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.isSuccessful) {
+                    Result.Success(body)
+                } else {
+                    val errorMessage = "Failed, try again later..."
+                    Result.Error(Exception(errorMessage))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = try {
+                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                } catch (e: Exception) {
+                    "An unknown error occurred"
+                }
+                Result.Error(Exception(errorMessage))
+            }
+
+        } catch (t: Exception) {
+            Result.Error(t)
+        }
     }
 
 
@@ -595,155 +851,6 @@ class ServicesViewModel @Inject constructor(
     }
 
 
-    fun onGetSearchQuerySuggestions(userId: Long, query: String) {
-
-
-        if (signInMethod == "guest") {
-
-            _searchJob.value = viewModelScope.launch {
-                try {
-                    when (val result = getGuestSearchQuerySuggestions(userId, query)) {
-                        is Result.Success -> {
-                            // Deserialize the search terms and set suggestions
-                            val searchTerms = Gson().fromJson(
-                                result.data.data,
-                                object : TypeToken<List<SearchTerm>>() {}.type
-                            ) as List<SearchTerm>
-                            setSuggestions(searchTerms.map { it.searchTerm })
-                        }
-
-                        is Result.Error -> {
-                            // Handle error
-                            setSuggestions(emptyList())
-//                            val errorMsg = mapExceptionToError(result.error).errorMessage
-                            // Optionally log the error message
-                        }
-                    }
-                } catch (t: Exception) {
-                    t.printStackTrace()
-                    if (t is CancellationException) {
-                        return@launch // Early return on cancellation
-                    }
-                    // Handle other exceptions
-                    setSuggestions(emptyList())
-                    // Optionally log the error
-                }
-            }
-
-        } else {
-            _searchJob.value = viewModelScope.launch {
-                try {
-                    when (val result = getSearchQuerySuggestions(userId, query)) {
-                        is Result.Success -> {
-                            // Deserialize the search terms and set suggestions
-                            val searchTerms = Gson().fromJson(
-                                result.data.data,
-                                object : TypeToken<List<SearchTerm>>() {}.type
-                            ) as List<SearchTerm>
-                            setSuggestions(searchTerms.map { it.searchTerm })
-                        }
-
-                        is Result.Error -> {
-                            // Handle error
-                            setSuggestions(emptyList())
-//                            val errorMsg = mapExceptionToError(result.error).errorMessage
-                            // Optionally log the error message
-                        }
-                    }
-                } catch (t: Exception) {
-                    t.printStackTrace()
-                    if (t is CancellationException) {
-                        return@launch // Early return on cancellation
-                    }
-                    // Handle other exceptions
-                    setSuggestions(emptyList())
-                    // Optionally log the error
-                }
-            }
-
-        }
-
-    }
-
-
-    private suspend fun getGuestSearchQuerySuggestions(
-        userId: Long,
-        query: String,
-    ): Result<ResponseReply> {
-
-
-        return try {
-            val response =
-                AppClient.instance.create(ManageServicesApiService::class.java)
-                    .guestSearchFilter(userId, query)
-
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null && body.isSuccessful) {
-
-                    Result.Success(body)
-                } else {
-                    // Handle unsuccessful response
-                    setSuggestions(emptyList())
-                    val errorBody = response.errorBody()?.string()
-                    val errorMessage = try {
-                        Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                    } catch (e: Exception) {
-                        "An unknown error occurred"
-                    }
-                    Result.Error(Exception(errorMessage))
-                }
-            } else {
-                // Handle unsuccessful HTTP response
-                Result.Error(Exception("Failed to retrieve suggestions"))
-            }
-        } catch (e: Exception) {
-            // Handle exceptions
-            if (e is CancellationException) {
-                throw e // Re-throw the cancellation exception
-            }
-            Result.Error(e)
-        }
-    }
-
-
-    private suspend fun getSearchQuerySuggestions(
-        userId: Long,
-        query: String,
-    ): Result<ResponseReply> {
-        return try {
-            val response =
-                AppClient.instance.create(ManageServicesApiService::class.java)
-                    .searchFilter(userId, query)
-
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null && body.isSuccessful) {
-
-                    Result.Success(body)
-                } else {
-                    // Handle unsuccessful response
-                    setSuggestions(emptyList())
-                    val errorBody = response.errorBody()?.string()
-                    val errorMessage = try {
-                        Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                    } catch (e: Exception) {
-                        "An unknown error occurred"
-                    }
-                    Result.Error(Exception(errorMessage))
-                }
-            } else {
-                // Handle unsuccessful HTTP response
-                Result.Error(Exception("Failed to retrieve suggestions"))
-            }
-        } catch (e: Exception) {
-            // Handle exceptions
-            if (e is CancellationException) {
-                throw e // Re-throw the cancellation exception
-            }
-            Result.Error(e)
-        }
-    }
 
 
     fun formatDistance(distance: Double?): String {
@@ -764,19 +871,18 @@ class ServicesViewModel @Inject constructor(
         return withContext(Dispatchers.IO) {
 
             // If chat user exists, update selected values
-                chatUserDao.getChatUserByRecipientId(userProfile.userId) ?: run {
+            chatUserDao.getChatUserByRecipientId(userProfile.userId) ?: run {
                 val newChatUser = ChatUser(
                     userId = userId,
                     recipientId = userProfile.userId,
                     timestamp = System.currentTimeMillis(),
-                    userProfile = userProfile.copy(isOnline = false))
+                    userProfile = userProfile.copy(isOnline = false)
+                )
                 newChatUser.copy(chatId = chatUserDao.insertChatUser(newChatUser).toInt())
             }
 
         }
     }
-
-
 
 
 }

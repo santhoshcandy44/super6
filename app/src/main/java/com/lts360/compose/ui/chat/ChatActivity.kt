@@ -188,6 +188,7 @@ import com.lts360.compose.ui.chat.viewmodels.FileUploadState
 import com.lts360.compose.ui.chat.viewmodels.MediaDownloadState
 import com.lts360.compose.ui.chat.viewmodels.deserializeFileUploadState
 import com.lts360.compose.ui.chat.viewmodels.factories.ChatActivityViewModelFactory
+import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.main.MainActivity
 import com.lts360.compose.ui.main.navhosts.routes.ChatWindow
 import com.lts360.compose.ui.theme.AppTheme
@@ -5995,7 +5996,7 @@ fun BoxScope.PreLoadingMediaButton(onCancel: () -> Unit) {
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box {
-                androidx.compose.material.CircularProgressIndicator(
+                CircularProgressIndicatorLegacy(
                     strokeCap = StrokeCap.Square,
                     strokeWidth = 2.dp,
                     modifier = Modifier.size(32.dp)

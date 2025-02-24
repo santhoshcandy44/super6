@@ -588,6 +588,8 @@ fun PriceAndUnitSpinner(
     units: List<String>,
     onValidate: Boolean = false,
 ) {
+
+
     var expanded by remember { mutableStateOf(false) }
 
 

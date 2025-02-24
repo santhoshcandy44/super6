@@ -29,17 +29,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -72,6 +73,8 @@ import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 import com.lts360.compose.ui.theme.customColorScheme
+import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
+import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.compose.ui.viewmodels.LocationViewModel
 
 import kotlinx.serialization.Serializable
@@ -195,9 +198,59 @@ private fun SearchTextField(
 
 
 
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PublishedUsedProductListingLocationBottomSheet(
+    bottomSheetValue: SheetValue? = null,
+    onCloseClick: () -> Unit,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onStateClick: (String) -> Unit = {},
+    publishedUsedProductsListingViewModel: PublishedUsedProductsListingViewModel,
+) {
+
+    val selectedLocationGeo by publishedUsedProductsListingViewModel.selectedLocation.collectAsState()
+
+    LocationBottomSheetContent(
+        bottomSheetValue,
+        onCloseClick,
+        selectedLocationGeo?.geo,
+        onCurrentLocationSelected,
+        onRecentLocationSelected,
+        onStateClick)
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateUsedProductListingLocationBottomSheet(
+    bottomSheetValue: SheetValue? = null,
+    onCloseClick: () -> Unit,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onStateClick: (String) -> Unit = {},
+    usedProductsListingWorkflowViewModel: UsedProductsListingWorkflowViewModel,
+) {
+
+    val selectedLocationGeo by usedProductsListingWorkflowViewModel.selectedLocation.collectAsState()
+
+    LocationBottomSheetContent(
+        bottomSheetValue,
+        onCloseClick,
+        selectedLocationGeo?.geo,
+        onCurrentLocationSelected,
+        onRecentLocationSelected,
+        onStateClick)
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateServiceLocationBottomSheet(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCloseClick: () -> Unit,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
@@ -218,9 +271,10 @@ fun CreateServiceLocationBottomSheet(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserLocationBottomSheet(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCloseClick: () -> Unit,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
@@ -241,9 +295,10 @@ fun UserLocationBottomSheet(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuestUserLocationBottomSheet(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCloseClick: () -> Unit,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
@@ -265,9 +320,10 @@ fun GuestUserLocationBottomSheet(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationBottomSheet(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCloseClick: () -> Unit,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
@@ -285,9 +341,10 @@ fun LocationBottomSheet(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditLocationBottomSheet(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCloseClick: () -> Unit,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
@@ -307,9 +364,10 @@ fun EditLocationBottomSheet(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationBottomSheetContent(
-    bottomSheetValue: BottomSheetValue? = null,
+    bottomSheetValue: SheetValue? = null,
     onCloseClick: () -> Unit,
     selectedLocationGeo:String?,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
@@ -321,7 +379,7 @@ fun LocationBottomSheetContent(
     if (bottomSheetValue != null) {
 
         LaunchedEffect(bottomSheetValue) {
-            if (bottomSheetValue == BottomSheetValue.Collapsed) {
+            if (bottomSheetValue == SheetValue.Hidden) {
                 locationViewModel.removeLocationUpdates()
             }
         }

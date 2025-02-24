@@ -4,13 +4,45 @@ import com.lts360.api.common.responses.ResponseReply
 import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
+import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Path
+import retrofit2.http.Query
 
 
 interface AuthService {
 
 
+    // GET request to fetch reviews by service ID (service_id in the path)
+    @GET("display-reviews/{service_id}")
+    suspend fun getReviewsByServiceId(
+        @Path("service_id") serviceId: Long
+    ): Response<ResponseReply>  // This will return the response containing reviews
+
+    @FormUrlEncoded
+    @POST("insert-review")
+    suspend fun insertReview(
+        @Field("serviceId") serviceId: Long,
+        @Field("userId") userId: Long,
+        @Field("text") reviewText: String
+    ): Response<ResponseReply>
+
+    @FormUrlEncoded
+    @POST("insert-review-reply")
+    suspend fun insertReply(
+        @Field("commentId") commentId: Int,
+        @Field("userId") userId: Long,
+        @Field("text") replyText: String,
+        @Field("replyToUserId") replyToUserId: Long? // Optional
+    ): Response<ResponseReply>
+
+
+    // GET request to fetch reviews by service ID (service_id in the path)
+    @GET("display-replies/{comment_id}")
+    suspend fun getReplyReviewsByCommentId(
+        @Path("comment_id") commentId: Int
+    ): Response<ResponseReply>  // This will return the response containing reviews
 
     @FormUrlEncoded
     @POST("api/auth/register")

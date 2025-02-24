@@ -54,7 +54,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.R
 import com.lts360.app.database.models.notification.Notification
-import com.lts360.compose.ui.main.navhosts.routes.BottomBarScreen
+import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
 import com.lts360.compose.ui.viewmodels.NotificationViewModel.Companion.getTimeAgo
 
@@ -86,15 +86,15 @@ fun NotificationScreen(navController: NavHostController,
             collapseSheet()
         } else {
             if (cleanedRoute in listOf(
-                    BottomBarScreen.Chats::class.qualifiedName.orEmpty(),
-                    BottomBarScreen.Notifications::class.qualifiedName.orEmpty(),
-                    BottomBarScreen.More::class.qualifiedName.orEmpty())) {
+                    BottomBar.Chats::class.qualifiedName.orEmpty(),
+                    BottomBar.Notifications::class.qualifiedName.orEmpty(),
+                    BottomBar.More::class.qualifiedName.orEmpty())) {
 
                 // Navigate back to A and preserve its state
-                navController.navigate(BottomBarScreen.Home()) {
+                navController.navigate(BottomBar.Home()) {
                     launchSingleTop = true
                     restoreState = true
-                    popUpTo(BottomBarScreen.Home()) {
+                    popUpTo(BottomBar.Home()) {
                         saveState = true
                     }
                 }
@@ -126,7 +126,6 @@ fun NotificationScreen(navController: NavHostController,
 
 
     LaunchedEffect(bottomSheetValue) {
-
         if (bottomSheetValue) {
             sheetState.expand()
         } else {

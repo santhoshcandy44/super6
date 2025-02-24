@@ -12,12 +12,10 @@ import kotlinx.serialization.json.Json
 
 
 @Serializable
-sealed class MainScreen  {
+sealed class MainRoutes  {
     @Serializable
-    data object Main : MainScreen()
+    data object Main : MainRoutes()
 }
-
-
 
 
 @Serializable
@@ -38,16 +36,30 @@ data class SwitchAccountType(val accountType: AccountType)
 @Serializable
 data class DetailedService(val key: Int)
 
+
+
+
 @Serializable
-data class FeedUserDetailedService(val key: Int=-1)
+data class DetailedSeconds(val key: Int)
+@Serializable
+data class DetailedServiceFeedUser(val key: Int=-1)
+@Serializable
+data class  DetailedSecondsFeedUser(val key: Int=-1)
+
 
 
 @Serializable
 data object BookmarkedDetailedService
 
 @Serializable
-data class BookmarkedImagesSliderDetailedService(val selectedImagePosition: Int)
+data object BookmarkedDetailedUsedProductListing
 
+@Serializable
+data class BookmarkedDetailedServiceImagesSlider(val selectedImagePosition: Int)
+
+
+@Serializable
+data class BookmarkedDetailedUsedProductListingImagesSlider(val selectedImagePosition: Int)
 
 @Serializable
 data object BookmarkedServices
@@ -65,12 +77,21 @@ data class ServiceOwnerProfile(val serviceOwnerId: Long, val key: Int = -1)
 
 
 @Serializable
-data class ImagesSliderDetailedService(val key: Int, val selectedImagePosition: Int)
+data class SecondsOwnerProfile(val serviceOwnerId: Long, val key: Int = -1)
+
+@Serializable
+data class ServiceDetailedImagesSlider(val key: Int, val selectedImagePosition: Int)
 
 
 @Serializable
-data class FeedUserImagesSliderDetailedService(val selectedImagePosition: Int)
+data class SecondsDetailedImagesSlider(val key: Int, val selectedImagePosition: Int)
 
+@Serializable
+data class DetailedServiceFeedUserImagesSlider(val selectedImagePosition: Int)
+
+
+@Serializable
+data class DetailedSecondsFeedUserImagesSlider(val selectedImagePosition: Int)
 
 @Serializable
 data object PersonalSettings

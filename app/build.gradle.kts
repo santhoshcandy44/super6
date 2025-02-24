@@ -25,10 +25,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String" ,"DEBUG_BASE_URL","\"http://192.168.145.85:3000\"")
-        buildConfigField("String" ,"BASE_URL","\"https://api.lts360.com:3000\"")
-        buildConfigField("String" ,"DEBUG_SOCKET_BASE_URL","\"http://192.168.145.85:3080\"")
-        buildConfigField("String" ,"SOCKET_BASE_URL","\"https://api.lts360.com:3080\"")
+        buildConfigField("String" ,"DEBUG_BASE_URL","\"http://192.168.68.85:3000\"")
+        buildConfigField("String" ,"BASE_URL","\"http://192.168.68.85:3000\"")
+        buildConfigField("String" ,"DEBUG_SOCKET_BASE_URL","\"http://192.168.68.85:3080\"")
+        buildConfigField("String" ,"SOCKET_BASE_URL","\"http://192.168.68.85:3080\"")
         buildConfigField("String" ,"REFERER","\"referer.lts360.com\"")
 
         vectorDrawables {
@@ -147,7 +147,6 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
 
-    implementation(libs.androidx.material)
     implementation(libs.material3)
     implementation(libs.androidx.material.icons.extended) // or latest version
 

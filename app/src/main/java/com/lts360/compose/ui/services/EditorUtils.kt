@@ -1,17 +1,6 @@
 package com.lts360.compose.ui.services
 
-import android.content.Context
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import com.lts360.api.models.service.EditablePlan
-import com.lts360.app.database.daos.service.DraftImageDao
-import com.lts360.app.database.daos.service.DraftLocationDao
-import com.lts360.app.database.daos.service.DraftPlanDao
-import com.lts360.app.database.daos.service.DraftServiceDao
-import com.lts360.app.database.daos.service.DraftThumbnailDao
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
 
 
 class BitmapContainerFactory {
@@ -60,18 +49,5 @@ data class ValidatedPlan(
 
 
 
-@HiltViewModel
-class CreateServiceViewModel @Inject constructor(
-    @ApplicationContext context: Context,
-    private val draftServiceDao: DraftServiceDao,
-    private val draftLocationDao: DraftLocationDao,
-    private val draftPlansDao: DraftPlanDao,
-    private val draftImagesDao: DraftImageDao,
-    private val draftThumbnailDao: DraftThumbnailDao,
-    savedStateHandle: SavedStateHandle,
-) : ViewModel() {
-
-
-}
 
 

@@ -5,6 +5,7 @@ import com.lts360.api.auth.managers.CriticalListener
 import com.lts360.api.auth.managers.RefreshTokenManager
 import com.lts360.api.auth.managers.RetryListener
 import com.lts360.api.auth.managers.TokenManager
+import com.lts360.api.models.service.Service
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -155,7 +156,7 @@ class AuthInterceptor @Inject constructor(
                     runBlocking {
                         mutex.withLock {
                             if (isFirstJob) {
-                                if (childJob.isCancelled) {
+                                if (childJob.isCancelled ) {
                                     if (response.code == 401) {
                                         app.setIsInvalidSession(true)
                                         throw IOException("Unexpected behaviour")

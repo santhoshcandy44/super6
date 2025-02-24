@@ -11,11 +11,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.BottomSheetValue
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,6 +42,7 @@ import com.lts360.compose.ui.onboarding.viewmodels.LocationAccessViewModel
 import kotlinx.coroutines.launch
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationAccessScreen(
     type: String,
@@ -50,12 +55,16 @@ fun LocationAccessScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    val bottomSheetScaffoldState = androidx.compose.material.rememberBottomSheetScaffoldState()
+    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            SheetValue.Hidden,
+            skipHiddenState = false
+        )
+    )
 
-
-    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == BottomSheetValue.Expanded) {
+    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
-            bottomSheetScaffoldState.bottomSheetState.collapse()
+            bottomSheetScaffoldState.bottomSheetState.hide()
         }
     }
 
@@ -66,7 +75,7 @@ fun LocationAccessScreen(
     val context = LocalContext.current
 
 
-    androidx.compose.material.BottomSheetScaffold(
+    BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
             if (type == "guest") {
@@ -116,7 +125,7 @@ fun LocationAccessScreen(
 
                     {
                         coroutineScope.launch {
-                            bottomSheetScaffoldState.bottomSheetState.collapse()
+                            bottomSheetScaffoldState.bottomSheetState.hide()
                         }
                     })
             } else {
@@ -168,7 +177,7 @@ fun LocationAccessScreen(
                     },
                     {
                         coroutineScope.launch {
-                            bottomSheetScaffoldState.bottomSheetState.collapse()
+                            bottomSheetScaffoldState.bottomSheetState.hide()
                         }
                     },
                     isLoading = isLoading
@@ -177,7 +186,7 @@ fun LocationAccessScreen(
 
         },
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetGesturesEnabled = false, // Allow gestures to hide/show bottom sheet
+        sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     ) { innerPadding ->
 

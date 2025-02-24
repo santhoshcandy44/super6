@@ -40,9 +40,12 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.size.Size
 import com.lts360.api.models.service.Service
-import com.lts360.compose.ui.services.bookmark.BookmarkedServicesViewModel
+import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import kotlinx.coroutines.launch
+
+
+
 
 
 @Composable
@@ -79,17 +82,20 @@ fun FeedUserImagesSliderScreen(
 fun BookmarkedImagesSliderScreen(
     navHostController: NavHostController,
     selectedImagePosition: Int,
-    viewModel: BookmarkedServicesViewModel,
+    viewModel: BookmarksViewModel,
     onPopBackStack:()-> Unit
 
 ) {
 
-
-
     val selectedService by viewModel.selectedItem.collectAsState()
-    ImagesSliderScreenContent(selectedService, selectedImagePosition, onPopBackStack)
+    val item = selectedService
+    if(item !is Service) return
+    ImagesSliderScreenContent(item, selectedImagePosition, onPopBackStack)
 
 }
+
+
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -147,7 +153,7 @@ fun ImagesSliderScreenContent(selectedService: Service?, selectedImagePosition: 
 
 
 @Composable
-private fun ImageSlider(current: Int, images: List<String>) {
+fun ImageSlider(current: Int, images: List<String>) {
 
 
     val coroutineScope = rememberCoroutineScope()

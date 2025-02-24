@@ -42,11 +42,6 @@ class PublishedServiceRepository @Inject constructor() {
     }
 
 
-
-    fun setPublishedServices(items: List<EditableService>){
-        _publishedServices.value=items
-    }
-
     fun setSelectedItem(serviceId: Long) {
 
         val index = _publishedServices.value.indexOfFirst {

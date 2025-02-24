@@ -40,13 +40,10 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
     val publishedServicesViewModel: PublishedServicesViewModel =  hiltViewModel()
 
 
-    // Define the AnimatedNavHost
     NavHost(
         navController = navController,
         startDestination = defaultValue
     ) {
-        // Entry Screen
-
 
         slideComposable<ManageServicesRoutes.ManageServices> {
             ManageServicesScreen(
@@ -61,7 +58,6 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
                 },onFinishActivity,
                 draftServicesViewModel,
                 publishedServicesViewModel)
-
         }
 
         slideComposable<ManageServicesRoutes.CreateService> {

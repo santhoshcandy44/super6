@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.compose.transformations.PlaceholderTransformation
+import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
 import com.lts360.compose.ui.services.manage.ErrorText
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -284,7 +285,7 @@ fun EditProfileSettingsScreen(
 
                         if (isProfilePicLoading) {
 
-                            androidx.compose.material.CircularProgressIndicator(
+                            CircularProgressIndicatorLegacy(
                                 modifier = Modifier.align(Alignment.Center),
                                 color = MaterialTheme.colorScheme.primary)
 
@@ -414,7 +415,7 @@ fun EditProfileSettingsScreen(
 
                 }
             }?:run {
-                androidx.compose.material.CircularProgressIndicator(
+                CircularProgressIndicatorLegacy(
                     modifier = Modifier.align(Alignment.Center),
                     color = MaterialTheme.colorScheme.primary)
             }

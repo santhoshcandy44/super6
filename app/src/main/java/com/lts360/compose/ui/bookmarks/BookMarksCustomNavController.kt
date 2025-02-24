@@ -1,4 +1,4 @@
-package com.lts360.compose.ui.services.manage
+package com.lts360.compose.ui.bookmarks
 
 import android.content.Context
 import android.os.Bundle
@@ -15,7 +15,7 @@ import com.lts360.compose.ui.main.navhosts.routes.BookmarkedServices
 
 
 @Composable
-fun rememberBookMarkedServicesCustomBottomNavController(
+fun rememberBookMarksCustomBottomNavController(
     lastEntry:String?,
     vararg navigators: Navigator<out NavDestination>,
 ): NavHostController {

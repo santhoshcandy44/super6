@@ -77,3 +77,43 @@ data class EditableService(
     @SerializedName("short_code")
     val shortCode: String?=null)
 
+
+
+
+@Serializable
+data class EditableUsedProductListing(
+    @SerializedName("product_id")
+    val productId: Long,
+
+    @SerializedName("name")
+    val name: String,
+
+    @SerializedName("description")
+    val description: String,
+
+    @SerializedName("country")
+    val country: String?,
+
+    @SerializedName("state")
+    val state: String?,
+
+    @SerializedName("status")
+    val status: String,
+
+    @SerializedName("images")
+    var images: List<EditableImage>,
+
+    @SerializedName("price")
+    var price: Double,
+
+    @SerializedName("price_unit")
+    var priceUnit: String,
+
+    @SerializedName("location")
+    var location: EditableLocation?=null,
+
+    @SerializedName("short_code")
+    val shortCode: String?=null)
+
+
+

@@ -10,6 +10,8 @@ import android.os.Build
 import android.view.View
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import java.util.Currency
+import java.util.concurrent.TimeUnit
 
 
 fun enterFullScreenMode(activity: Activity) {
@@ -75,5 +77,34 @@ fun getRoundedBitmap(bitmap: Bitmap): Bitmap {
 }
 
 
+
+fun serviceReviewsFormatTimestamp(timestamp: Long): String {
+    val currentTime = System.currentTimeMillis()
+    val difference = currentTime - timestamp
+
+    val seconds = TimeUnit.MILLISECONDS.toSeconds(difference)
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(difference)
+    val hours = TimeUnit.MILLISECONDS.toHours(difference)
+    val days = TimeUnit.MILLISECONDS.toDays(difference)
+    val years = days / 365
+
+    return when {
+        seconds < 60 -> "Just now"
+        minutes < 60 -> "$minutes minute${if (minutes > 1) "s" else ""} ago"
+        hours < 24 -> "$hours hour${if (hours > 1) "s" else ""} ago"
+        days < 365 -> "$days day${if (days > 1) "s" else ""} ago"
+        else -> "$years year${if (years > 1) "s" else ""} ago"
+    }
+}
+
+
+
+fun getCurrencySymbol(priceUnit: String): String {
+    return try {
+        Currency.getInstance(priceUnit).symbol
+    } catch (e: IllegalArgumentException) {
+        priceUnit // Return the unit itself if invalid (fallback)
+    }
+}
 
 

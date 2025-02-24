@@ -27,13 +27,12 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,9 +47,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -240,17 +242,21 @@ fun CreateServiceScreen(
     }
 
 
-    val bottomSheetScaffoldState = androidx.compose.material.rememberBottomSheetScaffoldState()
-
+    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            SheetValue.Hidden,
+            skipHiddenState = false
+        )
+    )
     val coroutineScope = rememberCoroutineScope()
 
-    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == BottomSheetValue.Expanded) {
+    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
-            bottomSheetScaffoldState.bottomSheetState.collapse()
+            bottomSheetScaffoldState.bottomSheetState.hide()
         }
     }
 
-    androidx.compose.material.BottomSheetScaffold(
+    BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
             CreateServiceLocationBottomSheetScreen(
@@ -265,7 +271,7 @@ fun CreateServiceScreen(
                     )
 
                     coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.collapse()
+                        bottomSheetScaffoldState.bottomSheetState.hide()
                     }
                 }, {
 
@@ -279,7 +285,7 @@ fun CreateServiceScreen(
                     )
 
                     coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.collapse()
+                        bottomSheetScaffoldState.bottomSheetState.hide()
                     }
 
                 }, { district, callback ->
@@ -297,7 +303,7 @@ fun CreateServiceScreen(
                 },
                 {
                     coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.collapse()
+                        bottomSheetScaffoldState.bottomSheetState.hide()
                     }
                 },
                 viewModel,
@@ -307,7 +313,7 @@ fun CreateServiceScreen(
 
         },
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetGesturesEnabled = false, // Allow gestures to hide/show bottom sheet
+        sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     ) { _ ->
 
@@ -554,33 +560,6 @@ fun CreateServiceScreen(
                                         style = MaterialTheme.typography.titleMedium
                                     )
 
-                                    // Location TextField
-                                    OutlinedTextField(
-                                        readOnly = true,
-                                        value = selectedLocation?.geo ?: "",
-                                        onValueChange = { /* Handle location change */ },
-                                        label = { Text("Location") },
-                                        trailingIcon = {
-
-                                            IconButton(onClick = {
-                                                coroutineScope.launch {
-                                                    bottomSheetScaffoldState.bottomSheetState.expand()
-                                                }
-                                            }) {
-                                                Icon(
-                                                    Icons.AutoMirrored.Filled.RotateLeft,
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp)
-                                    )
-
-                                    selectedLocationError?.let {
-                                        ErrorText(it)
-                                    }
 
                                 }
                             }

@@ -21,19 +21,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -64,7 +67,7 @@ import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
 import com.lts360.compose.ui.main.navhosts.routes.ServiceOwnerProfile
 import com.lts360.compose.ui.services.ServiceOwnerProfileViewModel
-import com.lts360.compose.ui.services.bookmark.BookmarkedServicesViewModel
+import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -132,7 +135,7 @@ fun BookmarkedServiceOwnerProfileScreen(
         Int, Long, FeedUserProfileInfo
     ) -> Unit,
     onNavigateUpDetailedService: () -> Unit,
-    servicesViewModel: BookmarkedServicesViewModel
+    servicesViewModel: BookmarksViewModel
 ) {
 
 
@@ -143,9 +146,13 @@ fun BookmarkedServiceOwnerProfileScreen(
 
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
 
-    ServiceOwnerProfileScreenContent(selectedParentService, navHostController, {
+    val item = selectedParentService
 
-        selectedParentService?.let { nonNullSelectedService ->
+    if(item !is Service) return
+
+    ServiceOwnerProfileScreenContent(item, navHostController, {
+
+        item.let { nonNullSelectedService ->
 
             if (job?.isActive == true) {
                 return@ServiceOwnerProfileScreenContent
@@ -204,12 +211,17 @@ fun ServiceOwnerProfileScreenContent(
 
     val coroutineScope = rememberCoroutineScope()
 
-    val bottomSheetScaffoldState = androidx.compose.material.rememberBottomSheetScaffoldState()
+    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            SheetValue.Hidden,
+            skipHiddenState = false
+        )
+    )
 
 
-    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == BottomSheetValue.Expanded) {
+    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
-            bottomSheetScaffoldState.bottomSheetState.collapse()
+            bottomSheetScaffoldState.bottomSheetState.hide()
         }
     }
 
@@ -238,7 +250,7 @@ fun ServiceOwnerProfileScreenContent(
 
 
 
-    androidx.compose.material.BottomSheetScaffold(
+    BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
             ForceWelcomeScreen(
@@ -261,12 +273,12 @@ fun ServiceOwnerProfileScreenContent(
 
                 }) {
                 coroutineScope.launch {
-                    bottomSheetScaffoldState.bottomSheetState.collapse()
+                    bottomSheetScaffoldState.bottomSheetState.hide()
                 }
             }
         },
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetGesturesEnabled = true, // Allow gestures to hide/show bottom sheet
+        sheetSwipeEnabled = true, // Allow gestures to hide/show bottom sheet
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     ) { innerPadding ->
 

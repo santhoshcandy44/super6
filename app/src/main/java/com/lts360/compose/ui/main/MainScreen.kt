@@ -26,18 +26,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.BottomSheetValue
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -67,7 +78,7 @@ import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
 import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
 import com.lts360.compose.ui.main.navhosts.BottomNavHost
-import com.lts360.compose.ui.main.navhosts.routes.BottomBarScreen
+import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.onboarding.ChooseIndustrySheet
@@ -80,6 +91,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     homeViewModel: HomeViewModel,
@@ -92,10 +104,9 @@ fun MainScreen(
     onManageIndustriesAndInterestsNavigateUp: (Long, String?) -> Unit,
     onNavigateUpBookmarkedServices: () -> Unit,
     onNavigateUpGuestManageIndustriesAndInterests: () -> Unit,
-    onNavigateUpChatWindow:(ChatUser, Int, Long, String)-> Unit
+    onNavigateUpChatWindow: (ChatUser, Int, Long, String) -> Unit,
+    onNavigateUpUsedProductListing:()-> Unit
 ) {
-
-
 
 
     val userId = UserSharedPreferencesManager.userId
@@ -120,14 +131,18 @@ fun MainScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    val bottomSheetScaffoldState = androidx.compose.material.rememberBottomSheetScaffoldState()
+    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            SheetValue.Hidden,
+            skipHiddenState = false
+        ))
 
     val selectedIndustriesCount by viewModel.selectedIndustriesCount.collectAsState()
 
 
-    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == BottomSheetValue.Expanded) {
+    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
-            bottomSheetScaffoldState.bottomSheetState.collapse()
+            bottomSheetScaffoldState.bottomSheetState.hide()
         }
     }
 
@@ -137,8 +152,8 @@ fun MainScreen(
     var isSheetIsClosedAlready by rememberSaveable { mutableStateOf(false) }
 
     // Monitor the bottom sheet state to reset 'welcome' when the sheet is collapsed
-    LaunchedEffect(bottomSheetScaffoldState.bottomSheetState.isCollapsed) {
-        if (bottomSheetScaffoldState.bottomSheetState.isCollapsed) {
+    LaunchedEffect(bottomSheetScaffoldState.bottomSheetState.currentValue) {
+        if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
             if (sheetContent.isNotEmpty()) {
                 isSheetIsClosedAlready = true
             }
@@ -191,10 +206,7 @@ fun MainScreen(
     }
 
 
-
     if (signInMethod == "guest") {
-
-// Trigger state change based on selectedIndustriesCount
         LaunchedEffect(selectedIndustriesCount) {
             if (selectedIndustriesCount == 0 && !viewModel.isIndustriesSheetDismissed() && !isSheetIsClosedAlready) {
                 // Set the sheet content to "industries"
@@ -202,34 +214,26 @@ fun MainScreen(
             }
         }
     }
-// Expand the sheet after sheetContent is updated
+
     LaunchedEffect(sheetContent) {
         // Check if the content is either "industries" or "welcome"
         if (sheetContent == "guest_industries" || sheetContent == "valid_user_industries" || sheetContent == "welcome") {
             // Expand the sheet
             bottomSheetScaffoldState.bottomSheetState.expand()
         }
-
     }
 
-/*
-    val navController = homeViewModel.navController
-*/
-
-
-
-    var lastEntry by rememberSaveable{ mutableStateOf<String?>(null) }
+    var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
 
     val navController = rememberCustomBottomNavController(lastEntry)
 
 
-
     val allowedScreens = listOf(
-        BottomBarScreen.Home::class,
-        BottomBarScreen.NestedHome::class,
-        BottomBarScreen.Chats::class,
-        BottomBarScreen.Notifications::class,
-        BottomBarScreen.More::class
+        BottomBar.Home::class,
+        BottomBar.NestedServices::class,
+        BottomBar.Chats::class,
+        BottomBar.Notifications::class,
+        BottomBar.More::class
     )
 
     // Step 2: Get the list of allowed screens' qualified names
@@ -247,9 +251,16 @@ fun MainScreen(
     // Step 5: Collect the bottom navigation visibility state from the ViewModel
     val bottomNavVisibility by viewModel.bottomNavVisibility.collectAsState()
 
+
+
+    var isHomeScreen by rememberSaveable{
+        mutableStateOf(false)
+    }
+
+
+
     // Step 6: Use LaunchedEffect to update the visibility of the bottom bar based on the route
     LaunchedEffect(currentBackStackEntry) {
-
         // Step 3: Get the current route and clean it (remove path and query parameters)
         val currentRoute = currentBackStackEntry?.destination?.route
 
@@ -264,15 +275,20 @@ fun MainScreen(
         if (cleanedRoute != null) {
             viewModel.updateBottomNavVisibility(isAllowedBottomBar)
         }
+
+        isHomeScreen = cleanedRoute != null && allowedScreens[0].qualifiedName.orEmpty() == cleanedRoute
     }
 
+    var dockedFloatingActionButtonVisibility by rememberSaveable { mutableStateOf(false) } // Initially hidden
 
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
+    ) {
 
-    Box(modifier = Modifier.fillMaxSize().imePadding()) {
-
-        androidx.compose.material.BottomSheetScaffold(
-            scaffoldState = bottomSheetScaffoldState,
+        BottomSheetScaffold(
             sheetContent = {
 
                 if (sheetContent == "guest_industries" && selectedIndustriesCount == 0) {
@@ -281,17 +297,15 @@ fun MainScreen(
                         GuestChooseIndustrySheet(onDismissed = {
                             viewModel.setIndustriesSheetDismissed()
                             coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.collapse()
+                                bottomSheetScaffoldState.bottomSheetState.hide()
                             }
                         }) {
                             viewModel.setIndustriesSheetDismissed()
                             coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.collapse()
-
+                                bottomSheetScaffoldState.bottomSheetState.hide()
                             }
                         }
                     }
-
 
                 }
 
@@ -300,11 +314,11 @@ fun MainScreen(
                         ChooseIndustrySheet(onDismissed = {
                             viewModel.setIndustriesSheetDismissed()
                             coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.collapse()
+                                bottomSheetScaffoldState.bottomSheetState.hide()
                             }
                         }) {
                             coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.collapse()
+                                bottomSheetScaffoldState.bottomSheetState.hide()
                             }
                             onManageIndustriesAndInterestsNavigateUp(userId, "update_industries")
                         }
@@ -332,38 +346,53 @@ fun MainScreen(
 
                         }) {
                         coroutineScope.launch {
-                            bottomSheetScaffoldState.bottomSheetState.collapse()
+                            bottomSheetScaffoldState.bottomSheetState.hide()
                         }
                     }
                 }
 
             },
+            scaffoldState = bottomSheetScaffoldState,
             sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-            sheetGesturesEnabled = true, // Allow gestures to hide/show bottom sheet
-//            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            sheetDragHandle = null,
+            sheetSwipeEnabled = true, // Allow gestures to hide/show bottom sheet
         ) { innerPadding ->
 
 
+
             Scaffold(
+                floatingActionButton = {
+
+                    if (isHomeScreen && dockedFloatingActionButtonVisibility) {
+                        FloatingActionButton(onNavigateUpUsedProductListing,
+                            shape = CircleShape,
+                            modifier = Modifier.offset(y = 50.dp),
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp)) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                        }
+                    }
+                },
+
+                floatingActionButtonPosition = FabPosition.Center,
+
                 bottomBar = {
 
 
-                if (bottomNavVisibility) {
-                    BottomBar(
-                        navController,
-                        signInMethod,
+                    if (bottomNavVisibility) {
+                        BottomBar(
+                            navController,
+                            signInMethod,
 //                    scrollBehavior,
-                        messageCount,
-                        notificationCount,
-                        {
-                            sheetContent = "welcome"
+                            messageCount,
+                            notificationCount,
+                            {
+                                sheetContent = "welcome"
+                            }
+                        )
+                    }
 
-                        }
-                    )
-                }
 
-
-            }) { contentPadding ->
+                }) { contentPadding ->
 
                 BottomNavHost(
                     homeViewModel,
@@ -393,7 +422,6 @@ fun MainScreen(
                     onNavigateUpBookmarkedServices = {
                         onNavigateUpBookmarkedServices()
                     },
-
                     {
                         sheetContent = "welcome"
                     },
@@ -407,10 +435,10 @@ fun MainScreen(
                             })
 
                     },
-                    (bottomSheetScaffoldState.bottomSheetState.isExpanded),
+                    (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded),
                     {
                         coroutineScope.launch {
-                            bottomSheetScaffoldState.bottomSheetState.collapse()
+                            bottomSheetScaffoldState.bottomSheetState.hide()
                         }
                     },
                     {
@@ -422,40 +450,40 @@ fun MainScreen(
                         if (!isSheetIsClosedAlready) {
                             sheetContent = "valid_user_industries"
                         }
+                    },{
+                        dockedFloatingActionButtonVisibility = it
                     })
             }
 
-
-        }
-
-
-        // Check if isConnected has a value
-        isConnected?.let { connectionState ->
+            // Check if isConnected has a value
+            isConnected?.let { connectionState ->
 
 
-            when {
-                connectionState && !wasConnected -> {
-                    ShowFloatingViewConnectionAvailable {
-                        wasConnected = true
-                        isDismissed = false
+                when {
+                    connectionState && !wasConnected -> {
+                        ShowFloatingViewConnectionAvailable {
+                            wasConnected = true
+                            isDismissed = false
+                        }
+
+                        // If currently connected and previously was not connected
+
                     }
 
-                    // If currently connected and previously was not connected
+                    !connectionState && !isDismissed -> {
+                        // If currently disconnected
+                        ShowFloatingViewInternetDisconnected(
+                            onDismiss = { /* Handle dismiss logic here */
+                                isDismissed = true
+                            }
+                        )
+                        wasConnected = false
 
+                    }
+                    // If already connected, do nothing
                 }
-
-                !connectionState && !isDismissed -> {
-                    // If currently disconnected
-                    ShowFloatingViewInternetDisconnected(
-                        onDismiss = { /* Handle dismiss logic here */
-                            isDismissed = true
-                        }
-                    )
-                    wasConnected = false
-
-                }
-                // If already connected, do nothing
             }
+
         }
 
     }
