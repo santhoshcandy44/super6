@@ -79,9 +79,10 @@ fun ServiceOwnerProfileScreen(
     key: Int,
     onNavigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpDetailedService: (Int) -> Unit,
-    servicesViewModel: ServicesViewModel
+    servicesViewModel: ServicesViewModel,
+    viewModel: ServiceOwnerProfileViewModel
 
-) {
+    ) {
 
 
     val userId = servicesViewModel.userId
@@ -91,12 +92,12 @@ fun ServiceOwnerProfileScreen(
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
 
-    ServiceOwnerProfileScreenContent(
+    ServiceOwnerProfileContent(
         selectedParentService,
         navHostController,
         {
             if (job?.isActive == true) {
-                return@ServiceOwnerProfileScreenContent
+                return@ServiceOwnerProfileContent
             }
 
             job = scope.launch {
@@ -121,7 +122,8 @@ fun ServiceOwnerProfileScreen(
         },
         {
             navHostController.popBackStack()
-        }
+        },
+        viewModel
     )
 
 }
@@ -135,8 +137,10 @@ fun BookmarkedServiceOwnerProfileScreen(
         Int, Long, FeedUserProfileInfo
     ) -> Unit,
     onNavigateUpDetailedService: () -> Unit,
-    servicesViewModel: BookmarksViewModel
-) {
+    servicesViewModel: BookmarksViewModel,
+    viewModel: ServiceOwnerProfileViewModel,
+
+    ) {
 
 
 
@@ -150,12 +154,12 @@ fun BookmarkedServiceOwnerProfileScreen(
 
     if(item !is Service) return
 
-    ServiceOwnerProfileScreenContent(item, navHostController, {
+    ServiceOwnerProfileContent(item, navHostController, {
 
         item.let { nonNullSelectedService ->
 
             if (job?.isActive == true) {
-                return@ServiceOwnerProfileScreenContent
+                return@ServiceOwnerProfileContent
             }
 
             job = scope.launch {
@@ -174,12 +178,12 @@ fun BookmarkedServiceOwnerProfileScreen(
         }
 
     }, {
-        servicesViewModel.setNestedServiceOwnerProfileSelectedItem(it)
         onNavigateUpDetailedService()
     } ,
         {
             navHostController.popBackStack()
-        }
+        },
+        viewModel
     )
 
 }
@@ -187,13 +191,13 @@ fun BookmarkedServiceOwnerProfileScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ServiceOwnerProfileScreenContent(
+fun ServiceOwnerProfileContent(
     selectedParentService: Service?,
     navHostController: NavHostController,
     onNavigateUpChat: () -> Unit,
     onNavigateUpDetailedService: (Service) -> Unit,
     onPopBackStack: () -> Unit,
-    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(navHostController.getBackStackEntry<ServiceOwnerProfile>()),
+    viewModel: ServiceOwnerProfileViewModel,
 ) {
 
 
@@ -251,6 +255,7 @@ fun ServiceOwnerProfileScreenContent(
 
 
     BottomSheetScaffold(
+        sheetDragHandle = null,
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
             ForceWelcomeScreen(
@@ -480,7 +485,7 @@ fun ServiceOwnerProfileScreenContent(
                                         painter = if (nonNullSelectedItem.isBookmarked) painterResource(
                                             R.drawable.ic_bookmarked
                                         ) else painterResource(
-                                            R.drawable.ic_bookmark
+                                            R.drawable.ic_dark_bookmark
                                         ),
                                         contentDescription = "Bookmark",
                                         modifier = Modifier.size(24.dp),

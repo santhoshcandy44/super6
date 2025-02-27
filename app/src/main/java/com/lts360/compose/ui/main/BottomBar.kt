@@ -1,8 +1,8 @@
 package com.lts360.compose.ui.main
 
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -13,8 +13,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -24,10 +24,9 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.R
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.dropUnlessResumedV2
+import com.lts360.compose.ui.NoRippleInteractionSource
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
-import com.lts360.compose.ui.theme.AppTheme
 
 
 @Composable
@@ -42,21 +41,11 @@ fun BottomBar(
 
 
     val bottomBarItems = listOf(
-        BottomBarItem(title = "Home", icon = R.drawable.ic_home),
-        BottomBarItem(title = "Chats", icon = R.drawable.ic_chats),
-        BottomBarItem(title = "Notifications", icon = R.drawable.ic_notifications),
-        BottomBarItem(title = "More", icon = R.drawable.ic_more)
+        BottomBarItem(title = "Home", selectedIcon = R.drawable.ic_filled_home, unSelectedIcon = R.drawable.ic_outlined_home),
+        BottomBarItem(title = "Chats", selectedIcon = R.drawable.ic_filled_chats, unSelectedIcon = R.drawable.ic_outlined_chats),
+        BottomBarItem(title = "Notifications", selectedIcon = R.drawable.ic_filled_notification , unSelectedIcon = R.drawable.ic_outlined_notification),
+        BottomBarItem(title = "More", selectedIcon = R.drawable.ic_filled_more, unSelectedIcon = R.drawable.ic_outlined_more)
     )
-
-
-    // Setting up the scroll behavior
-
-
-    /*    BottomAppBar(
-            scrollBehavior = scrollBehavior
-        ){
-
-        }*/
 
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -72,6 +61,7 @@ fun BottomBar(
 
     NavigationBar(
         tonalElevation = 0.dp,
+        modifier = Modifier.height(56.dp)
     ) {
         bottomBarItems.forEachIndexed { _, item ->
 
@@ -124,6 +114,7 @@ fun RowScope.AddItem(
 
 
     NavigationBarItem(
+        interactionSource = remember { NoRippleInteractionSource() },
         icon = {
 
             Box(modifier = Modifier.padding(4.dp)) {
@@ -137,10 +128,18 @@ fun RowScope.AddItem(
                         }
                     }
                 ) {
-                    Icon(
-                        painter = painterResource(bottomBarItem.icon),
-                        contentDescription = "Navigation Icon"
-                    )
+                    if(isSelected){
+                        Icon(
+                            painter = painterResource(bottomBarItem.selectedIcon),
+                            contentDescription = "Navigation Icon"
+                        )
+                    }else{
+                        Icon(
+                            painter = painterResource(bottomBarItem.unSelectedIcon),
+                            contentDescription = "Navigation Icon"
+                        )
+                    }
+
                 }
             }
         },
@@ -151,9 +150,9 @@ fun RowScope.AddItem(
         },
 
         colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            selectedIconColor = MaterialTheme.colorScheme.onSurface,
             unselectedIconColor = Color.Gray,
-            selectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            selectedTextColor = MaterialTheme.colorScheme.onSurface,
             unselectedTextColor = Color.Gray,
             indicatorColor = Color.Transparent
 
@@ -184,4 +183,4 @@ fun RowScope.AddItem(
     )
 }
 
-data class BottomBarItem(val title: String, val icon: Int)
+data class BottomBarItem(val title: String, val unSelectedIcon: Int, val selectedIcon:Int)

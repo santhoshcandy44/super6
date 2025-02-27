@@ -402,6 +402,11 @@ class PublishedServicesViewModel @Inject constructor(
     }
 
 
+    fun isSelectedServiceNull():Boolean{
+        return repository.selectedService.value==null
+    }
+
+
     // Function to update service info by serviceId and add new details (title, shortDesc, longDesc)
     private fun updateServiceInfo(
         serviceId: Long,

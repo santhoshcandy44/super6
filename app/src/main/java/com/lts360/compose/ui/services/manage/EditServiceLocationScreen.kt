@@ -142,7 +142,8 @@ fun EditServiceLocationScreen(navHostController: NavHostController, onPopBackSta
 
         },
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
+        sheetSwipeEnabled = false // Allow gestures to hide/show bottom sheet
+
     ) { innerPadding ->
 
         Box(modifier = Modifier.fillMaxSize()) {

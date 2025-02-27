@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
+import androidx.navigation.NavController
 import com.lts360.R
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.components.findActivity
@@ -73,6 +74,7 @@ import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 import com.lts360.compose.ui.theme.customColorScheme
+import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.compose.ui.viewmodels.LocationViewModel
@@ -93,20 +95,6 @@ data class District(
     val coordinates: Coordinates,
 )
 
-object DistrictsSerialization {
-    // Function to serialize a list of EditableService objects to a JSON string
-    fun serializeDistrictList(serviceList: List<District>): String {
-        return Json.encodeToString(serviceList)  // The default serializer for the List type is automatically used
-    }
-
-    // Function to deserialize a JSON string back to a list of EditableService objects
-    fun deserializeDistrictList(serviceListString: String): List<District> {
-        return Json.decodeFromString(serviceListString)
-    }
-
-}
-
-
 @Serializable
 data class Coordinates(
     val latitude: Double,
@@ -122,81 +110,6 @@ data class StateModel(
 )
 
 
-@Composable
-private fun SearchTextField(
-    value: String,
-    state: TextFieldState,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    // and other arguments you want to delegate
-) {
-
-    // This is effectively a rememberUpdatedState, but it combines the updated state (text) with
-    // some state that is preserved across updates (selection).
-    var valueWithSelection by remember {
-        mutableStateOf(
-            TextFieldValue(
-                text = value,
-                selection = TextRange(value.length)
-            )
-        )
-    }
-
-    valueWithSelection = valueWithSelection.copy(text = value)
-
-
-    // EditText for message input
-    BasicTextField(
-        state = state,
-//                    onValueChange = { viewModel.onMessageValueChange(it) },
-        textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onSurface),
-        modifier = modifier.then(
-            StateSyncingModifier(
-                state = state,
-                value = valueWithSelection,
-                onValueChanged = {
-                    // Don't fire the callback if only the selection/cursor changed.
-                    if (it.text != valueWithSelection.text) {
-                        onValueChange(it.text)
-                    }
-                    valueWithSelection = it
-                },
-                writeSelectionFromTextFieldValue = false
-            )
-                .background(
-                    MaterialTheme.customColorScheme.searchBarColor,
-                )
-                .heightIn(min = 40.dp)
-                .padding(vertical = 8.dp, horizontal = 16.dp)
-        ),
-        lineLimits = TextFieldLineLimits.SingleLine,
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-        decorator = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.CenterStart
-
-            ) {
-                Box(
-                    modifier = Modifier.padding(end = 8.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (state.text.isEmpty()) {
-                        Text(
-                            "Search City/Town",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                    it()
-                }
-            }
-        })
-
-
-}
-
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -207,7 +120,7 @@ fun PublishedUsedProductListingLocationBottomSheet(
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onStateClick: (String) -> Unit = {},
-    publishedUsedProductsListingViewModel: PublishedUsedProductsListingViewModel,
+    publishedUsedProductsListingViewModel: PublishedUsedProductsListingViewModel
 ) {
 
     val selectedLocationGeo by publishedUsedProductsListingViewModel.selectedLocation.collectAsState()
@@ -776,7 +689,7 @@ fun RecentlyUsedLocationItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            painter = painterResource(id = R.drawable.ic_location), // use your location icon
+            painter = painterResource(MaterialTheme.icons.location), // use your location icon
             contentDescription = "Location Icon",
             modifier = Modifier.size(24.dp),
             tint = Color.Unspecified

@@ -61,6 +61,7 @@ import com.lts360.api.models.service.PlanFeature
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.services.ValidatedPlan
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
+import com.lts360.compose.ui.theme.icons
 import java.math.BigDecimal
 
 
@@ -220,7 +221,7 @@ private fun EditServicePlanContent(
                             .padding(vertical = 8.dp)
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_add),
+                            painter = painterResource(MaterialTheme.icons.add),
                             contentDescription = "Add Plan",
                             modifier = Modifier.padding(end = 8.dp)
                         )

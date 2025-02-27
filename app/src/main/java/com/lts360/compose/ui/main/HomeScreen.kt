@@ -27,13 +27,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -43,7 +42,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -55,7 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.lts360.components.utils.LogUtils.TAG
+import androidx.navigation.compose.rememberNavController
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
@@ -66,7 +64,6 @@ import com.lts360.compose.ui.usedproducts.SecondsScreen
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,7 +89,7 @@ fun HomeScreen(
 
     val pagerState = rememberPagerState(
         initialPageIndex,
-        pageCount = { boards.size })
+        pageCount = { boards.size})
 
 
     val userId = viewModel.userId
@@ -143,13 +140,10 @@ fun HomeScreen(
 
 
     val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val bottomSheetNavController = rememberNavController()
 
 
-    BackHandler(modalBottomSheetState.currentValue == SheetValue.Expanded) {
-        coroutineScope.launch {
-            modalBottomSheetState.hide()
-        }
-    }
+
 
 
     val context = LocalContext.current
@@ -177,46 +171,48 @@ fun HomeScreen(
                 })
         ) {
 
+
+
             AnimatedVisibility(
                 visible = showTopBar.value,
                 enter = fadeIn(),  // Optional fade-in for showing
                 exit = fadeOut()   // Optional fade-out for hiding
             ) {
 
-                TopAppBar(
-                    modifier = Modifier
-                        .onGloballyPositioned { coordinates ->
-                            topBarBarHeight.floatValue = coordinates.size.height.toFloat()
-                        },
-//                    scrollBehavior = scrollBehavior,
-                    title = {
-                        Row(
-                            modifier = Modifier.padding(end = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                "Lts360", fontSize = 22.sp, fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                            LocationWrapper(location = selectedLocationGeo) {
-                                coroutineScope.launch {
-                                    modalBottomSheetState.expand()
-                                }
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates ->
+                        topBarBarHeight.floatValue = coordinates.size.height.toFloat()
+                    }, verticalArrangement = Arrangement.Center) {
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 16.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "Lts360", fontSize = 22.sp, fontWeight = FontWeight.Medium,
+                        )
+                        LocationWrapper(location = selectedLocationGeo) {
+                            coroutineScope.launch {
+                                modalBottomSheetState.expand()
                             }
                         }
-                    })
+                    }
+                }
+
+
             }
 
 
+            Spacer(Modifier.height(8.dp))
 
             if (onlySearchBar) {
 
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp)
-                        .background(Color.Transparent),
+                        .fillMaxWidth(),
                     shadowElevation = 0.dp
                 ) {
 
@@ -240,7 +236,10 @@ fun HomeScreen(
                                             query.text
                                         )
                                     } else if (boards[pagerState.currentPage] == "Second Hands") {
-
+                                        viewModel.onGetUsedProductListingSearchQuerySuggestions(
+                                            userId,
+                                            query.text
+                                        )
 
                                     }
 
@@ -323,8 +322,7 @@ fun HomeScreen(
 
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
+                        .fillMaxWidth(),
                     shadowElevation = 0.dp
                 ) {
 
@@ -356,7 +354,10 @@ fun HomeScreen(
                                         )
                                     } else if (boards[pagerState.currentPage] == "Second Hands") {
 
-
+                                        viewModel.onGetUsedProductListingSearchQuerySuggestions(
+                                            userId,
+                                            query.text
+                                        )
                                     }
 
                                 }
@@ -521,7 +522,7 @@ fun HomeScreen(
                                                                 navController,
                                                                 BottomBar.NestedServices(
                                                                     servicesViewModel.getKey()+1,
-                                                                    searchQuery.text,
+                                                                    it,
                                                                     true
 
                                                                 )
@@ -531,7 +532,7 @@ fun HomeScreen(
                                                                 navController,
                                                                 BottomBar.NestedSeconds(
                                                                     servicesViewModel.getKey()+1,
-                                                                    searchQuery.text,
+                                                                    it,
                                                                     true
 
                                                                 )
@@ -580,12 +581,6 @@ fun HomeScreen(
 
         }
 
-
-
-
-
-
-
         if (modalBottomSheetState.currentValue == SheetValue.Expanded) {
             ModalBottomSheet(
                 {
@@ -594,10 +589,22 @@ fun HomeScreen(
                     }
                 },
                 dragHandle = null,
+                sheetGesturesEnabled=false,
                 shape = RectangleShape,
                 sheetState = modalBottomSheetState,
-                modifier = Modifier.safeDrawingPadding()
+                modifier = Modifier.safeDrawingPadding(),
+                properties = ModalBottomSheetProperties(shouldDismissOnBackPress=false)
+
             ) {
+
+                BackHandler(modalBottomSheetState.currentValue == SheetValue.Expanded) {
+
+                    if(bottomSheetNavController.previousBackStackEntry==null){
+                        coroutineScope.launch {
+                            modalBottomSheetState.hide()
+                        }
+                    }
+                }
 
 
                 if (signInMethod == "guest") {
@@ -653,9 +660,11 @@ fun HomeScreen(
                     )
 
 
-                } else {
+                }
+                else {
 
                     UserLocationBottomSheetScreen(
+                        bottomSheetNavController,
                         modalBottomSheetState.currentValue,
                         { currentLocation ->
                             viewModel.setCurrentLocation(currentLocation, {
@@ -719,7 +728,6 @@ fun HomeScreen(
             }
 
         }
-
 
     }
 

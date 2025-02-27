@@ -357,7 +357,7 @@ private fun ManagePublishedServicesContent(
         ServiceOptionCard(
             title = "Service Location Info",
             description = "Manage service location info.",
-            icon = R.drawable.ic_location_light,
+            icon = R.drawable.ic_light_location,
             cardBackgroundColor = MaterialTheme.colorScheme.secondary,
 
             onClick = onManageServiceLocationClick

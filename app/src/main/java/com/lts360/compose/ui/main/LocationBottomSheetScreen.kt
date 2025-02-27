@@ -9,6 +9,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.lts360.app.database.models.profile.RecentLocation
@@ -54,6 +55,7 @@ fun EditLocationBottomSheetScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserLocationBottomSheetScreen(
+    navHostController: NavHostController,
     bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
@@ -61,11 +63,11 @@ fun UserLocationBottomSheetScreen(
     onPopUpLocationBottomSheet: () -> Unit,
     homeViewModel: HomeViewModel,
     locationStatesEnabled: Boolean = true,
-    isLoading: Boolean = false,
-) {
+    isLoading: Boolean = false) {
 
 
     UserLocationBottomSheetContent(
+        navHostController,
         bottomSheetValue,
         onCurrentLocationSelected,
         onRecentLocationSelected,
@@ -142,7 +144,7 @@ fun CreateUsedProductListingLocationBottomSheetScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PublishedUsedProductListingLocationBottomSheetScreen(
+fun ManagePublishedUsedProductListingLocationBottomSheetScreen(
     bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
@@ -166,9 +168,6 @@ fun PublishedUsedProductListingLocationBottomSheetScreen(
     )
 
 }
-
-
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -200,6 +199,7 @@ fun OnBoardUserLocationBottomSheetScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserLocationBottomSheetContent(
+    bottomSheetNavController:NavHostController,
     bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
@@ -207,9 +207,8 @@ fun UserLocationBottomSheetContent(
     onPopUpLocationBottomSheet: () -> Unit,
     locationStatesEnabled: Boolean = true,
     isLoading: Boolean = false,
-    homeViewModel: HomeViewModel,
+    homeViewModel: HomeViewModel
 ) {
-    val bottomSheetNavController = rememberNavController()
 
     Box {
         Scaffold { contentPadding ->

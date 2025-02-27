@@ -9,12 +9,12 @@ import com.lts360.api.Utils.Result
 import com.lts360.api.Utils.ResultError
 import com.lts360.api.Utils.mapExceptionToError
 import com.lts360.api.app.AppClient
-import com.lts360.api.app.ManageServicesApiService
 import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.EditableLocation
 import com.lts360.api.models.service.EditableUsedProductListing
+import com.lts360.api.models.service.UsedProductListing
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.services.manage.models.CombinedContainer
 import com.lts360.compose.ui.services.manage.models.CombinedContainerFactory
@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.Currency
 import java.util.Locale
 import javax.inject.Inject
@@ -71,8 +70,6 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
 
     private val _priceUnitError = MutableStateFlow<String?>(null)
     val priceUnitError = _priceUnitError.asStateFlow()
-
-
 
 
     private val _selectedLocation = MutableStateFlow<EditableLocation?>(null)
@@ -170,6 +167,10 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         }
     }
 
+    fun isSelectedUsedProductListingNull():Boolean{
+        return selectedUsedProductListing.value==null
+    }
+
     fun setSelectedService(serviceId: Long) {
         repository.setSelectedItem(serviceId)
         selectedUsedProductListing.value?.let {
@@ -184,6 +185,8 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     fun inValidateSelectedService() {
         repository.invalidateSelectedItem()
     }
+
+
 
     private fun loadManageProductInfoDetails(publishedService: EditableUsedProductListing) {
         // Reset all values before initializing

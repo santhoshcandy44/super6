@@ -2,10 +2,6 @@ package com.lts360.compose.ui.usedproducts.manage.viewmodels
 
 
 import android.content.Context
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,8 +14,6 @@ import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.EditableLocation
 import com.lts360.api.models.service.EditableService
-import com.lts360.api.models.service.UsedProductListing
-import com.lts360.app.database.models.service.DraftLocation
 import com.lts360.compose.ui.services.BitmapContainer
 import com.lts360.compose.ui.services.BitmapContainerFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,12 +36,8 @@ class UsedProductsListingWorkflowViewModel @Inject constructor(
 ) : ViewModel() {
 
 
-
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> get() = _isLoading
-
-    private val _refreshing = MutableStateFlow(false)
-    val refreshing: StateFlow<Boolean> get() = _refreshing
+    val isLoading = _isLoading.asStateFlow()
 
 
     private val bitmapContainerFactory = BitmapContainerFactory()
@@ -120,16 +110,13 @@ class UsedProductsListingWorkflowViewModel @Inject constructor(
     val imageContainersError = _imageContainersError.asStateFlow()
 
 
-    // UI state
-    private val _editableService = MutableStateFlow<EditableService?>(null)
-    val editableService: StateFlow<EditableService?> = _editableService.asStateFlow()
-
 
 
     private val _isPublishing = MutableStateFlow(false)
     val isPublishing = _isPublishing.asStateFlow()
 
     private var onCreateServiceJob: Job? = null
+
 
 
     // Optionally add functions to update fields if required
@@ -504,10 +491,6 @@ class UsedProductsListingWorkflowViewModel @Inject constructor(
         onCreateServiceJob?.cancel()
 
 
-
-        savedStateHandle.remove<String>("status")
-        savedStateHandle.remove<Long>("draftId")
-
         _title.value = ""
         _shortDescription.value = ""
         _price.value=""
@@ -525,7 +508,6 @@ class UsedProductsListingWorkflowViewModel @Inject constructor(
         _countryError.value = null
         _stateError.value = null
         _selectedLocationError.value = null
-        _editableService.value = null
 
     }
 

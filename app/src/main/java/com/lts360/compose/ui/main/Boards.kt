@@ -1,8 +1,11 @@
 package com.lts360.compose.ui.main
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,9 +15,14 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,24 +63,32 @@ fun Boards(
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 8.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.Top
     ) {
         // LazyRow for horizontal scrolling of tabs
-        LazyRow(
+        ScrollableTabRow(
+            selectedTabIndex = selectedTabIndex,
+            divider = {},
+            indicator = {},
+            edgePadding = 0.dp,
             modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-
+                .fillMaxWidth()
         ) {
-            itemsIndexed(boards) { tabIndex, item ->
-                Box(
-                    modifier = Modifier
-                        .wrapContentSize()
 
-                ) {
+            boards.forEachIndexed{ tabIndex, item ->
+
+                Box(modifier = Modifier
+                        .wrapContentSize()) {
+                /*    if(tabIndex==boards.size-1){
+                        Image(Icons.Default.Settings, contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp))
+                    }else{
+
+                    }*/
+
                     FilterChip(
+                        modifier = Modifier.padding(start = 8.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = if (tabIndex == selectedTabIndex) greenColor
                             else Color.Unspecified

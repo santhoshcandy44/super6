@@ -64,6 +64,7 @@ import com.lts360.R
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.viewmodels.LogInViewModel
 import com.lts360.compose.ui.main.MainActivity
+import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.utils.NavigatorSubmitButton
 import kotlinx.coroutines.launch
 
@@ -496,7 +497,7 @@ fun LongInTextFieldWithLabel(
             .padding(vertical = 4.dp),
         leadingIcon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_login_user),
+                painter = painterResource(MaterialTheme.icons.logInUser),
                 contentDescription = "User Icon",
                 tint = MaterialTheme.colorScheme.onSurface // Use the appropriate tint color
             )
@@ -540,7 +541,7 @@ fun LongInPasswordFieldWithLabel(
         ),
         leadingIcon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_login_password),
+                painter = painterResource(MaterialTheme.icons.logInPassword),
                 contentDescription = "User Icon",
                 tint = MaterialTheme.colorScheme.onSurface // Use the appropriate tint color
             )

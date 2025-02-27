@@ -75,7 +75,7 @@ fun ManageUsedProductListingScreen(
                         .fillMaxWidth()
                 ) {
                     Text(
-                        text = "Manage Seconds",
+                        text = "Create Seconds",
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -102,6 +102,7 @@ fun ManageUsedProductListingScreen(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
+
 
                 PublishedUsedProductListingScreen(
                     isUsedProductListingCreated,

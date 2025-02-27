@@ -7,10 +7,12 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import coil3.ImageLoader
@@ -29,11 +31,14 @@ import com.lts360.api.common.CommonClient
 import com.lts360.app.AppExceptionHandler
 import com.lts360.app.database.AppDatabase
 import com.lts360.components.isAuthActivityInStack
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.repos.AuthRepository
 import com.lts360.compose.ui.main.MainActivity
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
+import com.lts360.compose.ui.theme.ThemePreferences
+import com.lts360.compose.ui.theme.viewmodels.ThemeMode
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -98,8 +103,12 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
     lateinit var chatUsersImageLoader: ImageLoader
         private set
 
+    @Inject
+    lateinit var themePreferences: ThemePreferences
+
     override fun onCreate() {
         super.onCreate()
+
 
 
         if(BuildConfig.DEBUG){
@@ -283,7 +292,7 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
                         Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     } else {
                         // Task exists, bring to front without recreation
-                        Intent.FLAG_ACTIVITY_NEW_TASK
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
                     }
                 })
 
@@ -326,7 +335,7 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
                     Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
                 } else {
                     // Task exists, bring to front without recreation
-                    Intent.FLAG_ACTIVITY_NEW_TASK
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
                 }
             })
 

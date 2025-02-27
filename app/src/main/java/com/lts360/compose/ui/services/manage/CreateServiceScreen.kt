@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
@@ -109,10 +110,7 @@ fun CreateServiceScreen(
     val draftId by viewModel.draftId.collectAsState()
 
 
-    BackHandler {
-        viewModel.clearSelectedDraft()
-        onPopBackStack()
-    }
+
 
     val thumbnailContainer by viewModel.thumbnailContainer.collectAsState()
 
@@ -250,13 +248,18 @@ fun CreateServiceScreen(
     )
     val coroutineScope = rememberCoroutineScope()
 
-    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
-        coroutineScope.launch {
-            bottomSheetScaffoldState.bottomSheetState.hide()
+    BackHandler {
+        if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+            coroutineScope.launch {
+                bottomSheetScaffoldState.bottomSheetState.hide()
+            }
+        }else{
+            onPopBackStack()
         }
     }
 
     BottomSheetScaffold(
+        sheetDragHandle = null,
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
             CreateServiceLocationBottomSheetScreen(
@@ -654,7 +657,51 @@ fun CreateServiceScreen(
                                 }
                             }
 
-                            item(span = { GridItemSpan(maxLineSpan) }) {
+
+
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                // Location TextField
+                                OutlinedTextField(
+                                    readOnly = true,
+                                    value = selectedLocation?.geo ?: "",
+                                    onValueChange = { /* Handle location change */ },
+                                    label = { Text("Location") },
+                                    trailingIcon = {
+
+                                        IconButton(
+                                            onClick = {
+                                                coroutineScope.launch {
+                                                    bottomSheetScaffoldState.bottomSheetState.expand()
+                                                }
+                                            }
+                                        ) {
+
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.RotateLeft,
+                                                contentDescription = null
+                                            )
+
+                                        }
+
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+
+                                )
+
+                                selectedLocationError?.let {
+                                    ErrorText(it)
+                                }
+                            }
+
+                        }
+
+
+
+                        item(span = { GridItemSpan(maxLineSpan) }) {
 
                                 Column(modifier = Modifier.fillMaxWidth()) {
                                     // Action Buttons
@@ -946,6 +993,7 @@ fun CreateServiceScreen(
                         Text("Confirm")
                     }
                 },
+
                 dismissButton = {
                     TextButton(
                         onClick = {

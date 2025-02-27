@@ -32,6 +32,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -95,10 +97,7 @@ fun CreateUsedProductListingScreen(
     viewModel: UsedProductsListingWorkflowViewModel
 ) {
 
-    BackHandler {
-        viewModel.clearSelectedDraft()
-        onPopBackStack()
-    }
+
 
 
     val name by viewModel.title.collectAsState()
@@ -211,11 +210,16 @@ fun CreateUsedProductListingScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
-        coroutineScope.launch {
-            bottomSheetScaffoldState.bottomSheetState.hide()
+    BackHandler {
+        if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+            coroutineScope.launch {
+                bottomSheetScaffoldState.bottomSheetState.hide()
+            }
+        }else{
+            onPopBackStack()
         }
     }
+
 
     var expanded by remember { mutableStateOf(false) }
 
@@ -227,60 +231,64 @@ fun CreateUsedProductListingScreen(
         sheetDragHandle = null,
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
-            CreateUsedProductListingLocationBottomSheetScreen(
-                bottomSheetScaffoldState.bottomSheetState.currentValue, {
-                    viewModel.updateLocation(
-                        EditableLocation(
-                            serviceId = -1,
-                            latitude = it.latitude,
-                            longitude = it.longitude,
-                            locationType = it.locationType,
-                            geo = it.geo
+
+            if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+                CreateUsedProductListingLocationBottomSheetScreen(
+                    bottomSheetScaffoldState.bottomSheetState.currentValue, {
+                        viewModel.updateLocation(
+                            EditableLocation(
+                                serviceId = -1,
+                                latitude = it.latitude,
+                                longitude = it.longitude,
+                                locationType = it.locationType,
+                                geo = it.geo
+                            )
                         )
-                    )
 
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.hide()
-                    }
-                }, {
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
+                        }
+                    }, {
 
-                    viewModel.updateLocation(
-                        EditableLocation(
-                            serviceId = -1,
-                            latitude = it.latitude,
-                            longitude = it.longitude,
-                            locationType = it.locationType,
-                            geo = it.geo
+                        viewModel.updateLocation(
+                            EditableLocation(
+                                serviceId = -1,
+                                latitude = it.latitude,
+                                longitude = it.longitude,
+                                locationType = it.locationType,
+                                geo = it.geo
+                            )
                         )
-                    )
 
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.hide()
-                    }
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
+                        }
 
-                }, { district, callback ->
+                    }, { district, callback ->
 
-                    viewModel.updateLocation(
-                        EditableLocation(
-                            serviceId = -1,
-                            latitude = district.coordinates.latitude,
-                            longitude = district.coordinates.longitude,
-                            locationType = district.district,
-                            geo = district.district
+                        viewModel.updateLocation(
+                            EditableLocation(
+                                serviceId = -1,
+                                latitude = district.coordinates.latitude,
+                                longitude = district.coordinates.longitude,
+                                locationType = district.district,
+                                geo = district.district
+                            )
                         )
-                    )
-                    callback()
+                        callback()
 
-                },
-                {
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.hide()
-                    }
-                },
-                viewModel,
-                false
+                    },
+                    {
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
+                        }
+                    },
+                    viewModel,
+                    false
 
-            )
+                )
+            }
+
 
         },
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
@@ -584,19 +592,21 @@ fun CreateUsedProductListingScreen(
                                     label = { Text("Location") },
                                     trailingIcon = {
 
-                                        Icon(
-                                            Icons.AutoMirrored.Filled.RotateLeft,
-                                            contentDescription = null
-                                        )
+                                       IconButton({
+                                           coroutineScope.launch {
+                                               bottomSheetScaffoldState.bottomSheetState.expand()
+                                           }
+                                       }) {
+                                           Icon(
+                                               Icons.AutoMirrored.Filled.RotateLeft,
+                                               contentDescription = null
+                                           )
+                                       }
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp)
-                                        .clickable {
-                                            coroutineScope.launch {
-                                                bottomSheetScaffoldState.bottomSheetState.expand()
-                                            }
-                                        }
+
                                 )
 
                                 selectedLocationError?.let {
@@ -622,8 +632,6 @@ fun CreateUsedProductListingScreen(
                                         shape = RectangleShape,
                                         onClick = {
                                             if (viewModel.validateAll()) {
-
-
 
                                                 val productId = (-1).toString().toRequestBody("text/plain".toMediaTypeOrNull())
 

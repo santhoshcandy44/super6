@@ -242,7 +242,7 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
     navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpForceJoinNow: () -> Unit,
     servicesViewModel: BookmarksViewModel,
-    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navHostController.getBackStackEntry<ServiceOwnerProfile>() }),
+    viewModel: ServiceOwnerProfileViewModel,
 
 
     ) {
@@ -252,7 +252,7 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
 
-    val selectedItem by servicesViewModel.nestedServiceOwnerProfileSelectedItem.collectAsState()
+    val selectedItem by viewModel.selectedItem.collectAsState()
     val item = selectedItem
     if(item !is Service) return
 
@@ -407,6 +407,7 @@ fun DetailedServiceInfoContent(
 
 
     BottomSheetScaffold(
+        sheetDragHandle = null,
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
             ForceWelcomeScreen(

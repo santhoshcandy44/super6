@@ -46,8 +46,7 @@ class SecondsOwnerProfileViewModel @Inject constructor(
 ) : ViewModel() {
 
 
-    val arg = savedStateHandle.toRoute<SecondsOwnerProfile>()
-    private val serviceOwnerId = arg.serviceOwnerId
+    val serviceOwnerId = savedStateHandle.get<Long>("serviceOwnerId") ?: -1
 
 
     val userId = UserSharedPreferencesManager.userId
@@ -99,6 +98,9 @@ class SecondsOwnerProfileViewModel @Inject constructor(
 
 
     }
+
+
+    fun isSelectedUsedProductListingNull()  = _selectedItem.value==null
 
 
     fun onRemoveBookmark(

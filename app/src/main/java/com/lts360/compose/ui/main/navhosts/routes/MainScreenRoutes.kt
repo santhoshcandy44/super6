@@ -36,33 +36,51 @@ data class SwitchAccountType(val accountType: AccountType)
 @Serializable
 data class DetailedService(val key: Int)
 
-
-
+@Serializable
+data class DetailedServiceFeedUser(val key: Int=-1)
 
 @Serializable
 data class DetailedSeconds(val key: Int)
-@Serializable
-data class DetailedServiceFeedUser(val key: Int=-1)
+
 @Serializable
 data class  DetailedSecondsFeedUser(val key: Int=-1)
 
-
-
 @Serializable
-data object BookmarkedDetailedService
+sealed class  BookMarkRoutes{
+    @Serializable
+    data object BookmarkedDetailedService : BookMarkRoutes()
 
-@Serializable
-data object BookmarkedDetailedUsedProductListing
+    @Serializable
+    data object BookmarkedDetailedUsedProductListing : BookMarkRoutes()
 
-@Serializable
-data class BookmarkedDetailedServiceImagesSlider(val selectedImagePosition: Int)
+    @Serializable
+    data class BookmarkedDetailedServiceImagesSlider(val selectedImagePosition: Int) : BookMarkRoutes()
+
+    @Serializable
+    data class BookmarkedDetailedUsedProductListingImagesSlider(val selectedImagePosition: Int) : BookMarkRoutes()
+
+    @Serializable
+    data object BookmarkedServices : BookMarkRoutes()
+
+    @Serializable
+    data class ServiceOwnerProfile(val serviceOwnerId: Long, val key: Int = -1) : BookMarkRoutes()
+
+    @Serializable
+    data class DetailedServiceFeedUser(val key: Int=-1) : BookMarkRoutes()
+
+    @Serializable
+    data class DetailedServiceFeedUserImagesSlider(val selectedImagePosition: Int): BookMarkRoutes()
 
 
-@Serializable
-data class BookmarkedDetailedUsedProductListingImagesSlider(val selectedImagePosition: Int)
+    @Serializable
+    data class SecondsOwnerProfile(val serviceOwnerId: Long, val key: Int = -1) : BookMarkRoutes()
 
-@Serializable
-data object BookmarkedServices
+    @Serializable
+    data class  DetailedSecondsFeedUser(val key: Int=-1) : BookMarkRoutes()
+
+    @Serializable
+    data class DetailedSecondsFeedUserImagesSlider(val selectedImagePosition: Int): BookMarkRoutes()
+}
 
 
 
@@ -74,7 +92,6 @@ data class ChatWindow(
 
 @Serializable
 data class ServiceOwnerProfile(val serviceOwnerId: Long, val key: Int = -1)
-
 
 @Serializable
 data class SecondsOwnerProfile(val serviceOwnerId: Long, val key: Int = -1)

@@ -66,6 +66,10 @@ class ServicesWorkflowViewModel @Inject constructor(
     val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
+
+    private val _lastEntry = MutableStateFlow<String?>(null)
+    val lastEntry = _lastEntry.asStateFlow()
+
     private val _draftServices = MutableStateFlow<List<EditableService>>(emptyList())
     val draftServices = _draftServices.asStateFlow()
 
@@ -1233,6 +1237,10 @@ class ServicesWorkflowViewModel @Inject constructor(
             Result.Error(t)
 
         }
+    }
+
+    fun updateLastEntry(lastEntry: String?){
+        _lastEntry.value = lastEntry
     }
 
 

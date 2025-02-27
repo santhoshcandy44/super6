@@ -25,10 +25,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String" ,"DEBUG_BASE_URL","\"http://192.168.68.85:3000\"")
-        buildConfigField("String" ,"BASE_URL","\"http://192.168.68.85:3000\"")
-        buildConfigField("String" ,"DEBUG_SOCKET_BASE_URL","\"http://192.168.68.85:3080\"")
-        buildConfigField("String" ,"SOCKET_BASE_URL","\"http://192.168.68.85:3080\"")
+        buildConfigField("String" ,"DEBUG_BASE_URL","\"http://192.168.194.85:3000\"")
+        buildConfigField("String" ,"BASE_URL","\"http://192.168.194.85:3000\"")
+        buildConfigField("String" ,"DEBUG_SOCKET_BASE_URL","\"http://192.168.194.85:3080\"")
+        buildConfigField("String" ,"SOCKET_BASE_URL","\"http://192.168.194.85:3080\"")
         buildConfigField("String" ,"REFERER","\"referer.lts360.com\"")
 
         vectorDrawables {
@@ -121,6 +121,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.process)
+    implementation(libs.androidx.appcompat)
 
 
     testImplementation(libs.junit)
@@ -216,6 +217,10 @@ dependencies {
     implementation(libs.places)
 
     implementation(libs.jsoup)  // Use the latest stable version
+
+    implementation("com.google.zxing:core:3.5.1")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.2")
 
 }
 

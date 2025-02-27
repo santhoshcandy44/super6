@@ -74,10 +74,19 @@ fun PublishedUsedProductListingScreen(
             ) {
 
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
                     if (publishedServices.isNotEmpty()) {
+
+                        item{
+                            Text(
+                                text = "All Published Seconds",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+
                         items(publishedServices) { publishedUsedProductListing ->
                             UsedProductListingItem(
                                 title = publishedUsedProductListing.name,

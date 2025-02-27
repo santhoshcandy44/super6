@@ -91,15 +91,15 @@ interface ManageUsedProductListingService{
     ): Response<ResponseReply>
 
 
-    @GET("api/app/serve/services/search-suggestions/{user_id}")
-    suspend fun searchFilter(
+    @GET("api/app/serve/used-product-listings/search-used-product-listing-suggestions/{user_id}")
+    suspend fun searchFilterUsedProductListing(
         @Path("user_id") userId: Long,
         @Query("query") query: String = "",
     ): Response<ResponseReply>
 
 
-    @GET("api/app/serve/services/guest-search-suggestions/{user_id}")
-    suspend fun guestSearchFilter(
+    @GET("api/app/serve/used-product-listings/guest-used-product-listing-search-suggestions/{user_id}")
+    suspend fun guestSearchFilterUsedProductListing(
         @Path("user_id") userId: Long,
         @Query("query") query: String = "",
     ): Response<ResponseReply>

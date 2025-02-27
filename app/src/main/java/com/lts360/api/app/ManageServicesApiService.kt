@@ -166,14 +166,14 @@ interface ManageServicesApiService{
     ): Response<ResponseReply>
 
 
-    @GET("api/app/serve/services/search-suggestions/{user_id}")
+    @GET("api/app/serve/services/search-services-suggestions/{user_id}")
     suspend fun searchFilter(
         @Path("user_id") userId: Long,
         @Query("query") query: String = "",
     ): Response<ResponseReply>
 
 
-    @GET("api/app/serve/services/guest-search-suggestions/{user_id}")
+    @GET("api/app/serve/services/guest-services-search-suggestions/{user_id}")
     suspend fun guestSearchFilter(
         @Path("user_id") userId: Long,
         @Query("query") query: String = "",
@@ -185,6 +185,7 @@ interface ManageServicesApiService{
         @Path("service_id") serviceId: Long,
         @Query("user_id") userId: Long,
     ): Response<ResponseReply>
+
 
 }
 

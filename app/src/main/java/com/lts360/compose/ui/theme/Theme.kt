@@ -11,13 +11,17 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.lts360.R
+import com.lts360.compose.ui.theme.viewmodels.ThemeViewModel
 
 
 private val Shapes = Shapes(
@@ -102,11 +106,14 @@ val CustomLightColorScheme = CustomColorScheme(
     shimmerColor = Color.White,
     serviceSurfaceContainer = Color(0xFFFFFAF6),
     colorScheme = LightColorPalette, // Include the light color palette
-
 )
 
 
 val LocalCustomColorScheme = staticCompositionLocalOf { CustomLightColorScheme }
+
+val LocalCustomIcons = staticCompositionLocalOf { LightIcons}
+
+
 
 val CustomFontFamily = FontFamily(
     Font(R.font.helvetica), // Regular font
@@ -137,26 +144,41 @@ val customTypography = Typography(
 
 @Composable
 fun AppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
+    val viewModel: ThemeViewModel = hiltViewModel()
+    val themeMode by viewModel.themeMode.collectAsState()
+
+    val darkTheme = when (themeMode) {
+        1 -> true  // Dark Mode
+        0 -> false // Light Mode
+        else -> isSystemInDarkTheme() // Default to system theme
+    }
+
 
     val customColorScheme = if (darkTheme) CustomDarkColorScheme else CustomLightColorScheme
+    val icons = if (darkTheme) LightIcons else DarkIcons
 
-    CompositionLocalProvider(
-        LocalCustomColorScheme provides customColorScheme
-    ) {
+    CompositionLocalProvider(LocalCustomColorScheme provides customColorScheme, LocalCustomIcons provides icons) {
         MaterialTheme(
             colorScheme = customColorScheme.colorScheme,
             shapes = Shapes,
-            content = content,
-            typography = customTypography, // Set the custom typography here
-
+            typography = customTypography,
+            content = content
         )
     }
 }
+
 
 val MaterialTheme.customColorScheme: CustomColorScheme
     @Composable
     @ReadOnlyComposable
     get() = LocalCustomColorScheme.current
+
+
+val MaterialTheme.icons: LocalIcons
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalCustomIcons.current
+
+

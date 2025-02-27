@@ -9,7 +9,7 @@ sealed class ManageUsedProductListingRoutes  {
     data object ManageUsedProductListing: ManageUsedProductListingRoutes()
 
     @Serializable
-    data object CreateUsedProductListing
+    data object CreateUsedProductListing: ManageUsedProductListingRoutes()
 
     @Serializable
     data object ManagePublishedUsedProductListing: ManageUsedProductListingRoutes()

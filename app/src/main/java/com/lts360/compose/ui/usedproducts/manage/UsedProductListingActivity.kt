@@ -15,15 +15,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.compose.ui.auth.navhost.slideComposable
-import com.lts360.compose.ui.services.manage.CreateServiceScreen
-import com.lts360.compose.ui.services.manage.ManagePublishedServicesScreen
-import com.lts360.compose.ui.services.manage.navhost.ManageServicesNavHost
-import com.lts360.compose.ui.services.manage.navhost.ManageServicesRoutes
-import com.lts360.compose.ui.services.manage.rememberManageServicesCustomBottomNavController
-import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
-import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.usedproducts.manage.navhost.ManageUsedProductListingRoutes
+import com.lts360.compose.ui.usedproducts.manage.navhost.rememberManageUsedProductListingCustomBottomNavController
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.compose.utils.SafeDrawingBox
@@ -40,7 +34,7 @@ class UsedProductListingActivity : ComponentActivity() {
 
                 Surface {
                     SafeDrawingBox {
-                        ManageUsedProductListingNavHost{
+                        ManageUsedProductListingNavHost {
                             this@UsedProductListingActivity.finish()
                         }
                     }
@@ -52,24 +46,28 @@ class UsedProductListingActivity : ComponentActivity() {
 }
 
 
-
-
 @Composable
-fun ManageUsedProductListingNavHost(defaultValue: ManageUsedProductListingRoutes = ManageUsedProductListingRoutes.ManageUsedProductListing, onFinishActivity:()->Unit) {
+fun ManageUsedProductListingNavHost(
+    defaultValue: ManageUsedProductListingRoutes = ManageUsedProductListingRoutes.ManageUsedProductListing,
+    onFinishActivity: () -> Unit
+) {
+
+
+    val usedProductsListingWorkflowViewModel: UsedProductsListingWorkflowViewModel = hiltViewModel()
+    val publishedUsedProductsListingViewModel: PublishedUsedProductsListingViewModel =
+        hiltViewModel()
 
     var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
-    val navController = rememberManageServicesCustomBottomNavController(lastEntry)
+    val navController = rememberManageUsedProductListingCustomBottomNavController(
+        lastEntry,
+        publishedUsedProductsListingViewModel.isSelectedUsedProductListingNull()
+    )
 
     val currentBackStackEntryAsState by navController.currentBackStackEntryAsState()
 
-    LaunchedEffect(currentBackStackEntryAsState){
+    LaunchedEffect(currentBackStackEntryAsState) {
         lastEntry = navController.currentBackStackEntry?.destination?.route
     }
-
-    val usedProductsListingWorkflowViewModel : UsedProductsListingWorkflowViewModel = hiltViewModel()
-    val publishedUsedProductsListingViewModel : PublishedUsedProductsListingViewModel = hiltViewModel()
-
-
 
 
     // Define the AnimatedNavHost
@@ -84,18 +82,23 @@ fun ManageUsedProductListingNavHost(defaultValue: ManageUsedProductListingRoutes
                 navController,
                 publishedUsedProductsListingViewModel,
                 {
+                    usedProductsListingWorkflowViewModel.clearSelectedDraft()
                     navController.navigate(ManageUsedProductListingRoutes.CreateUsedProductListing)
                 }, {
                     navController.navigate(ManageUsedProductListingRoutes.ManagePublishedUsedProductListing)
-                },onFinishActivity)
+                }, onFinishActivity
+            )
 
         }
 
         slideComposable<ManageUsedProductListingRoutes.CreateUsedProductListing> {
             CreateUsedProductListingScreen({
-                navController.previousBackStackEntry?.savedStateHandle?.set("is_used_product_listing_created", true)
+                navController.previousBackStackEntry?.savedStateHandle?.set(
+                    "is_used_product_listing_created",
+                    true
+                )
                 navController.popBackStack()
-            },{
+            }, {
                 navController.popBackStack()
             }, usedProductsListingWorkflowViewModel)
         }
@@ -103,7 +106,8 @@ fun ManageUsedProductListingNavHost(defaultValue: ManageUsedProductListingRoutes
 
         slideComposable<ManageUsedProductListingRoutes.ManagePublishedUsedProductListing> {
 
-            val viewModel: PublishedUsedProductsListingViewModel = publishedUsedProductsListingViewModel
+            val viewModel: PublishedUsedProductsListingViewModel =
+                publishedUsedProductsListingViewModel
             val editableSelectedUsedProductListing by viewModel.selectedUsedProductListing.collectAsState()
 
             editableSelectedUsedProductListing?.let {

@@ -79,7 +79,7 @@ fun BookmarksScreen(
     onNavigateUpDetailedUsedProductListing: () -> Unit,
 
     onPopBackStack: () -> Unit,
-    viewModel: BookmarksViewModel = hiltViewModel()
+    viewModel: BookmarksViewModel
 ) {
 
 

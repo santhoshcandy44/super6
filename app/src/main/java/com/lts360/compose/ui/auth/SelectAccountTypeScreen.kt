@@ -59,6 +59,7 @@ import com.lts360.R
 import com.lts360.compose.ui.auth.viewmodels.SwitchAccountTypeViewModel
 import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettings
 import com.lts360.compose.ui.main.viewmodels.AccountAndProfileSettingsViewModel
+import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.utils.NavigatorSubmitButton
 
 
@@ -171,12 +172,12 @@ private fun SelectAccountTypeScreenContent(
     val accountTypes = listOf(
         AccountTypeChooser(
             "Personal",
-            R.drawable.ic_account_type_personal,
+            MaterialTheme.icons.accountTypePersonal,
             "Looking for a personalized experience.", AccountType.Personal
         ),
         AccountTypeChooser(
             "Business",
-            R.drawable.ic_account_type_business,
+            MaterialTheme.icons.accountTypeBusiness,
             "Personalized experience & Active business tools for purposes.", AccountType.Business
         )
     )

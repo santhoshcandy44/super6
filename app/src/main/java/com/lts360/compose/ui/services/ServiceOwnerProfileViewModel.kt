@@ -44,8 +44,7 @@ class ServiceOwnerProfileViewModel @Inject constructor(
 ) : ViewModel() {
 
 
-    val arg = savedStateHandle.toRoute<ServiceOwnerProfile>()
-    private val serviceOwnerId = arg.serviceOwnerId
+    val arg = savedStateHandle.get<Long>("serviceOwnerId")
 
 
     val userId = UserSharedPreferencesManager.userId
@@ -101,6 +100,10 @@ class ServiceOwnerProfileViewModel @Inject constructor(
 
 
     }
+
+
+
+    fun isSelectedServiceNull()  = _selectedItem.value==null
 
 
     fun onRemoveBookmark(

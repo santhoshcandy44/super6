@@ -42,6 +42,7 @@ import com.lts360.compose.ui.services.FeedUserDetailedServiceInfoScreen
 import com.lts360.compose.ui.services.FeedUserImagesSliderScreen
 import com.lts360.compose.ui.services.ImagesSliderScreen
 import com.lts360.compose.ui.services.ServiceOwnerProfileViewModel
+import com.lts360.compose.ui.theme.ThemeModeSettingsActivity
 import com.lts360.compose.ui.usedproducts.DetailedUsedProductListingScreen
 import com.lts360.compose.ui.usedproducts.FeedUserDetailedSecondsInfoScreen
 import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
@@ -240,8 +241,6 @@ fun BottomNavHost(
             )
         }
 
-
-
         slideComposable<DetailedSeconds> { backStackEntry ->
 
 
@@ -362,6 +361,9 @@ fun BottomNavHost(
             )
             val selectedItem by servicesViewModel.selectedItem.collectAsState()
 
+            val viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navController.getBackStackEntry<ServiceOwnerProfile>() })
+
+
             selectedItem?.let {
                 ServiceOwnerProfileScreen(
                     navController,
@@ -377,7 +379,8 @@ fun BottomNavHost(
                     },
                     {
                         navController.navigate(DetailedServiceFeedUser(it))
-                    }, servicesViewModel
+                    }, servicesViewModel,
+                    viewModel
                 )
             }
 
@@ -390,12 +393,15 @@ fun BottomNavHost(
                 navController.getBackStackEntry<BottomBar.Home>()
             } else navController.getBackStackEntry<BottomBar.NestedSeconds>()
             }
-            val viewModel: SecondsViewmodel = hiltViewModel(
+            val secondsViewModel: SecondsViewmodel = hiltViewModel(
                 parentBackStackEntry,
                 key = "seconds_${key}"
             )
 
-            val selectedItem by viewModel.selectedItem.collectAsState()
+            val viewmodel: SecondsOwnerProfileViewModel =
+                hiltViewModel(remember { navController.getBackStackEntry<SecondsOwnerProfile>() })
+
+            val selectedItem by secondsViewModel.selectedItem.collectAsState()
 
             selectedItem?.let {
                 SecondsServiceOwnerProfileScreen(
@@ -412,7 +418,8 @@ fun BottomNavHost(
                     },
                     {
                         navController.navigate(DetailedSecondsFeedUser(it))
-                    }, viewModel
+                    }, secondsViewModel,
+                    viewmodel
                 )
             }
 
@@ -569,10 +576,15 @@ fun BottomNavHost(
                     flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                 })
             },
-
                 onNavigateUpBookmarks = {
                 onNavigateUpBookmarkedServices()
-            }, moreViewModel,
+            },
+                onNavigateUpThemeModeSettings = {
+                    context.startActivity(Intent(context, ThemeModeSettingsActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    })
+                },
+                moreViewModel,
                 onNavigateUpWelcomeScreenSheet,
                 onNavigateUpLogInSheet,
                 onNavigateUpGuestManageIndustriesAndInterests = {

@@ -79,7 +79,7 @@ import com.lts360.compose.ui.chat.MAX_IMAGES
 import com.lts360.compose.ui.chat.createImagePartForUri
 import com.lts360.compose.ui.chat.getFileExtensionFromImageFormat
 import com.lts360.compose.ui.chat.isValidImageDimensions
-import com.lts360.compose.ui.main.PublishedUsedProductListingLocationBottomSheetScreen
+import com.lts360.compose.ui.main.ManagePublishedUsedProductListingLocationBottomSheetScreen
 import com.lts360.compose.ui.services.manage.DeleteServiceBottomSheet
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.ui.services.manage.ExposedDropdownCountry
@@ -91,7 +91,6 @@ import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProduct
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,10 +104,7 @@ fun ManagePublishedUsedProductListingScreen(
 
     val userId = viewModel.userId
 
-    BackHandler {
-        viewModel.inValidateSelectedService()
-        onPopBackStack()
-    }
+
 
 
     val serviceTitleError by viewModel.titleError.collectAsState()
@@ -139,7 +135,6 @@ fun ManagePublishedUsedProductListingScreen(
     val isLoading = false
 
     val isPublishing by viewModel.isPublishing.collectAsState()
-
 
 
     val editableService by viewModel.selectedUsedProductListing.collectAsState()
@@ -211,13 +206,28 @@ fun ManagePublishedUsedProductListingScreen(
     val coroutineScope = rememberCoroutineScope()
 
 
-
-
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             SheetValue.Hidden,
             skipHiddenState = false
-        ))
+        )
+    )
+
+
+    BackHandler {
+
+        if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+            coroutineScope.launch {
+                bottomSheetScaffoldState.bottomSheetState.hide()
+            }
+        }else{
+            /*
+        viewModel.inValidateSelectedService()
+*/
+            onPopBackStack()
+        }
+
+    }
 
 
     val sheetState = rememberModalBottomSheetState()
@@ -242,82 +252,89 @@ fun ManagePublishedUsedProductListingScreen(
     BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
-            PublishedUsedProductListingLocationBottomSheetScreen(
-                bottomSheetScaffoldState.bottomSheetState.currentValue, {
 
-                    editableService?.let { nonNullableEditableService ->
-                        viewModel.updateLocation(
-                            EditableLocation(
-                                serviceId = nonNullableEditableService.productId,
-                                latitude = it.latitude,
-                                longitude = it.longitude,
-                                locationType = it.locationType,
-                                geo = it.geo
+            if(bottomSheetScaffoldState.bottomSheetState.currentValue==SheetValue.Expanded){
+
+                ManagePublishedUsedProductListingLocationBottomSheetScreen(
+                    bottomSheetScaffoldState.bottomSheetState.currentValue, {
+
+                        editableService?.let { nonNullableEditableService ->
+                            viewModel.updateLocation(
+                                EditableLocation(
+                                    serviceId = nonNullableEditableService.productId,
+                                    latitude = it.latitude,
+                                    longitude = it.longitude,
+                                    locationType = it.locationType,
+                                    geo = it.geo
+                                )
                             )
-                        )
 
+                            coroutineScope.launch {
+                                bottomSheetScaffoldState.bottomSheetState.hide()
+                            }
+                        }
+
+                    }, { recentLocation ->
+
+                        editableService?.let { nonNullableEditableService ->
+
+                            viewModel.updateLocation(
+                                EditableLocation(
+                                    serviceId = nonNullableEditableService.productId,
+                                    latitude = recentLocation.latitude,
+                                    longitude = recentLocation.longitude,
+                                    locationType = recentLocation.locationType,
+                                    geo = recentLocation.geo
+                                )
+                            )
+
+                            coroutineScope.launch {
+                                bottomSheetScaffoldState.bottomSheetState.hide()
+                            }
+                        }
+
+                    }, { district, callback ->
+
+
+                        editableService?.let { nonNullableEditableService ->
+
+                            viewModel.updateLocation(
+                                EditableLocation(
+                                    serviceId = nonNullableEditableService.productId,
+                                    latitude = district.coordinates.latitude,
+                                    longitude = district.coordinates.longitude,
+                                    locationType = district.district,
+                                    geo = district.district
+                                )
+                            )
+
+                        }
+
+                        callback()
+
+                    },
+                    {
                         coroutineScope.launch {
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
-                    }
+                    },
+                    viewModel,
+                    false
 
-                }, { recentLocation ->
-
-                    editableService?.let { nonNullableEditableService ->
-
-                        viewModel.updateLocation(
-                            EditableLocation(
-                                serviceId = nonNullableEditableService.productId,
-                                latitude = recentLocation.latitude,
-                                longitude = recentLocation.longitude,
-                                locationType = recentLocation.locationType,
-                                geo = recentLocation.geo
-                            )
-                        )
-
-                        coroutineScope.launch {
-                            bottomSheetScaffoldState.bottomSheetState.hide()
-                        }
-                    }
-
-                }, { district, callback ->
+                )
+            }
 
 
-                    editableService?.let { nonNullableEditableService ->
-
-                        viewModel.updateLocation(
-                            EditableLocation(
-                                serviceId = nonNullableEditableService.productId,
-                                latitude = district.coordinates.latitude,
-                                longitude = district.coordinates.longitude,
-                                locationType = district.district,
-                                geo = district.district
-                            )
-                        )
-
-                    }
-
-                    callback()
-
-                },
-                {
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.hide()
-                    }
-                },
-                viewModel,
-                false
-
-            )
 
         },
+        sheetDragHandle = null,
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
         sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     ) { _ ->
 
 
-        Scaffold(
+      Scaffold(
             topBar = {
                 TopAppBar(
                     navigationIcon = {
@@ -342,440 +359,454 @@ fun ManagePublishedUsedProductListingScreen(
                 .imePadding()
         ) { contentPadding ->
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding)
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 8.dp)
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        strokeWidth = 4.dp
-                    )
-                } else {
-                    // Main content
-                    LazyVerticalGrid(
-                        modifier = Modifier.fillMaxWidth(),
-                        columns = GridCells.Adaptive(140.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
 
-                        item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
-                            Text(
-                                text = "Update Product",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding)
+                .padding(horizontal = 16.dp)
+                .padding(top = 8.dp)
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    strokeWidth = 4.dp
+                )
+            } else {
+                // Main content
+                LazyVerticalGrid(
+                    modifier = Modifier.fillMaxWidth(),
+                    columns = GridCells.Adaptive(140.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
 
-
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-
-                            Column(modifier = Modifier.fillMaxWidth()) {
-
-                                // Text Field for UsedProductListing Title
-                                OutlinedTextField(
-                                    value = serviceTitle,
-                                    onValueChange = { viewModel.updateTitle(it) },
-                                    label = { Text("Name") },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                )
-
-                                if (serviceTitle.length > 100) {
-                                    Text(
-                                        text = "Limit: ${serviceTitle.length}/${100}",
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(
-                                            horizontal = 16.dp,
-                                            vertical = 4.dp
-                                        ) // Adjust padding as needed
-                                    )
-                                }
-
-                                // Display error message if there's an error
-                                serviceTitleError?.let {
-                                    ErrorText(it)
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                // Text Field for Short Description
-                                OutlinedTextField(
-                                    value = serviceShortDescription,
-                                    onValueChange = { viewModel.updateShortDescription(it) },
-                                    label = { Text("Description") },
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    minLines = 4
-                                )
+                    item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
+                        Text(
+                            text = "Update Product",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
 
 
-                                if (serviceShortDescription.length > 250) {
-                                    Text(
-                                        text = "Limit: ${serviceShortDescription.length}/${250}",
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(
-                                            horizontal = 16.dp,
-                                            vertical = 4.dp
-                                        ) // Adjust padding as needed
-                                    )
-                                }
+                    item(span = { GridItemSpan(maxLineSpan) }) {
 
-                                shortDescriptionError?.let {
-                                    ErrorText(it)
-                                }
+                        Column(modifier = Modifier.fillMaxWidth()) {
 
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-
-                                OutlinedTextField(
-                                    keyboardOptions = KeyboardOptions(keyboardType =  KeyboardType.Number),
-                                    value = price,
-                                    onValueChange = {
-                                        viewModel.updatePrice(it)
-                                    },
-                                    label = { Text("Price") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    minLines = 1,
-                                    isError = priceError != null
-                                )
-
-                                priceError?.let {
-                                    Text(
-                                        text = it,
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                                    )
-                                }
-
-                            }
-
-                        }
-
-
-
-                        item(span = {GridItemSpan(maxLineSpan)}){
-
-                            ExposedDropdownMenuBox(
-                                expanded = expanded,
-                                onExpandedChange = { expanded = !expanded },
+                            // Text Field for UsedProductListing Title
+                            OutlinedTextField(
+                                value = serviceTitle,
+                                onValueChange = { viewModel.updateTitle(it) },
+                                label = { Text("Name") },
                                 modifier = Modifier
-                                    .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(4.dp))
-                            ) {
-                                OutlinedTextField(
-                                    value = selectedPriceUnit,
-                                    onValueChange = {
+                                    .fillMaxWidth()
+                            )
 
-                                    },
-                                    readOnly = true,
-                                    label = { Text("Currency") },
-                                    trailingIcon = {
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                                    },
-                                    modifier = Modifier
-                                        .menuAnchor(
-                                            ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                                        .fillMaxWidth()
+                            if (serviceTitle.length > 100) {
+                                Text(
+                                    text = "Limit: ${serviceTitle.length}/${100}",
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(
+                                        horizontal = 16.dp,
+                                        vertical = 4.dp
+                                    ) // Adjust padding as needed
                                 )
-
-                                ExposedDropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false }
-                                ) {
-                                    priceUnits.forEach { unit ->
-                                        DropdownMenuItem(
-                                            text = { Text(text = unit) },
-                                            onClick = {
-                                                viewModel.updatePriceUnit(unit)
-                                                expanded = false
-                                            }
-                                        )
-                                    }
-                                }
                             }
 
                             // Display error message if there's an error
-                            priceUnitError?.let {
+                            serviceTitleError?.let {
                                 ErrorText(it)
                             }
 
-                        }
-
-
-                        if (imageContainers.isNotEmpty()) {
-                            itemsIndexed(imageContainers) { index, bitmapContainer ->
-
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(140.dp) // Container size
-                                            .clip(RoundedCornerShape(4.dp)) // Clips to rounded corners
-                                    ) {
-                                        // Image
-
-
-
-
-                                        AsyncImage(
-                                            if(bitmapContainer.type== ContainerType.BITMAP){
-                                                bitmapContainer.bitmapContainer?.path
-                                            }else{
-                                                bitmapContainer.container?.image?.imageUrl
-
-                                            },
-                                            contentDescription = "UsedProductListing image",
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(12.dp)
-                                                .border(
-                                                    1.dp,
-                                                    Color.Gray,
-                                                    RoundedCornerShape(4.dp)
-                                                )
-                                        )
-
-                                        ReloadImageIconButton {
-                                            if (isPickerLaunch)
-                                                return@ReloadImageIconButton
-
-                                            isPickerLaunch = true
-                                            refreshImageIndex = index
-                                            pickSingleImageLauncher.launch(
-                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                            )
-                                        }
-
-                                        RemoveImageIconButton {
-                                            viewModel.removeContainer(index)
-                                        }
-
-                                    }
-
-                                    bitmapContainer.bitmapContainer?.errorMessage?.let {
-                                        Text(
-                                            text = it,
-                                            textAlign = TextAlign.Center,
-                                            color = Color.Red
-                                        )
-                                    }
-
-
-
-                                }
-
-                            }
-                        }
-
-                        item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
-
-                            // Upload Images Section
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            UploadServiceImagesContainer(imageContainersError) {
+                            // Text Field for Short Description
+                            OutlinedTextField(
+                                value = serviceShortDescription,
+                                onValueChange = { viewModel.updateShortDescription(it) },
+                                label = { Text("Description") },
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                minLines = 4
+                            )
 
-                                if (isPickerLaunch)
-                                    return@UploadServiceImagesContainer
 
-                                isPickerLaunch = true
+                            if (serviceShortDescription.length > 250) {
+                                Text(
+                                    text = "Limit: ${serviceShortDescription.length}/${250}",
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(
+                                        horizontal = 16.dp,
+                                        vertical = 4.dp
+                                    ) // Adjust padding as needed
+                                )
+                            }
 
-                                pickImagesLauncher.launch(
-                                    PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                            shortDescriptionError?.let {
+                                ErrorText(it)
+                            }
+
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+
+                            OutlinedTextField(
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                value = price,
+                                onValueChange = {
+                                    viewModel.updatePrice(it)
+                                },
+                                label = { Text("Price") },
+                                modifier = Modifier.fillMaxWidth(),
+                                minLines = 1,
+                                isError = priceError != null
+                            )
+
+                            priceError?.let {
+                                Text(
+                                    text = it,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(
+                                        horizontal = 16.dp,
+                                        vertical = 4.dp
                                     )
                                 )
                             }
 
                         }
 
-                        item(span = { GridItemSpan(maxLineSpan) }) {
+                    }
 
-                            ExposedDropdownCountry(
-                                selectedCountry,
-                                selectedState,
-                                selectedCountryError,
-                                selectedStateError,
-                                {
-                                    viewModel.updateCountry(it.value)
-                                }
+
+
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = !expanded },
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.surface,
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                        ) {
+                            OutlinedTextField(
+                                value = selectedPriceUnit,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Currency") },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                },
+                                modifier = Modifier
+                                    .menuAnchor(
+                                        ExposedDropdownMenuAnchorType.PrimaryNotEditable
+                                    )
+                                    .fillMaxWidth()
+                            )
+
+                            ExposedDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
                             ) {
-                                viewModel.updateState(it.name)
+                                priceUnits.forEach { unit ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = unit) },
+                                        onClick = {
+                                            viewModel.updatePriceUnit(unit)
+                                            expanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
 
+                        // Display error message if there's an error
+                        priceUnitError?.let {
+                            ErrorText(it)
+                        }
+
+                    }
 
 
-                        item(span = { GridItemSpan(maxLineSpan) }){
+                    if (imageContainers.isNotEmpty()) {
+                        itemsIndexed(imageContainers) { index, bitmapContainer ->
 
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                // Location TextField
-                                OutlinedTextField(
-                                    readOnly = true,
-                                    value = selectedLocation?.geo ?: "",
-                                    onValueChange = { /* Handle location change */ },
-                                    label = { Text("Location") },
-                                    trailingIcon = {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(140.dp) // Container size
+                                        .clip(RoundedCornerShape(4.dp)) // Clips to rounded corners
+                                ) {
+
+                                    AsyncImage(
+                                        if (bitmapContainer.type == ContainerType.BITMAP) {
+                                            bitmapContainer.bitmapContainer?.path
+                                        } else {
+                                            bitmapContainer.container?.image?.imageUrl
+
+                                        },
+                                        contentDescription = "UsedProductListing image",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(12.dp)
+                                            .border(
+                                                1.dp,
+                                                Color.Gray,
+                                                RoundedCornerShape(4.dp)
+                                            )
+                                    )
+
+                                    ReloadImageIconButton {
+                                        if (isPickerLaunch)
+                                            return@ReloadImageIconButton
+
+                                        isPickerLaunch = true
+                                        refreshImageIndex = index
+                                        pickSingleImageLauncher.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                        )
+                                    }
+
+                                    RemoveImageIconButton {
+                                        viewModel.removeContainer(index)
+                                    }
+
+                                }
+
+                                bitmapContainer.bitmapContainer?.errorMessage?.let {
+                                    Text(
+                                        text = it,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.Red
+                                    )
+                                }
+
+
+                            }
+
+                        }
+                    }
+
+                    item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
+
+                        // Upload Images Section
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        UploadServiceImagesContainer(imageContainersError) {
+
+                            if (isPickerLaunch)
+                                return@UploadServiceImagesContainer
+
+                            isPickerLaunch = true
+
+                            pickImagesLauncher.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        }
+
+                    }
+
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+
+                        ExposedDropdownCountry(
+                            selectedCountry,
+                            selectedState,
+                            selectedCountryError,
+                            selectedStateError,
+                            {
+                                viewModel.updateCountry(it.value)
+                            }
+                        ) {
+                            viewModel.updateState(it.name)
+                        }
+                    }
+
+
+
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            // Location TextField
+                            OutlinedTextField(
+                                readOnly = true,
+                                value = selectedLocation?.geo ?: "",
+                                onValueChange = { /* Handle location change */ },
+                                label = { Text("Location") },
+                                trailingIcon = {
+
+                                    IconButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                bottomSheetScaffoldState.bottomSheetState.expand()
+                                            }
+                                        }
+                                    ) {
 
                                         Icon(
                                             Icons.AutoMirrored.Filled.RotateLeft,
                                             contentDescription = null
                                         )
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                        .clickable {
-                                            coroutineScope.launch {
-                                                bottomSheetScaffoldState.bottomSheetState.expand()
-                                            }
-                                        }
-                                )
 
-                                selectedLocationError?.let {
-                                    ErrorText(it)
-                                }
-                            }
+                                    }
 
-                        }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
 
+                            )
 
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            // Upload Images Section
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Column(modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                // Action Buttons
-                                Button(
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(
-                                            0xFF57D457
-                                        )
-                                    ),
-                                    shape = RectangleShape,
-                                    onClick = {
-
-                                        editableService?.let { nonNullSelectedUsedProductListing ->
-                                            if (viewModel.validateAll()) {
-
-
-                                                val bodyProductId = nonNullSelectedUsedProductListing.productId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-
-                                                val bodyTitle =
-                                                    serviceTitle.toRequestBody("text/plain".toMediaTypeOrNull())
-                                                val bodyShortDescription =
-                                                    serviceShortDescription.toRequestBody("text/plain".toMediaTypeOrNull())
-
-
-                                                val bodyPriceUnit= priceUnit.toRequestBody("text/plain".toMediaTypeOrNull())
-
-                                                val bodyCountry = selectedCountry.toString()
-                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
-
-                                                val bodyState = selectedState.toString()
-                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
-
-
-                                                val keepImages = imageContainers.mapNotNull{ it.container }
-                                                    .mapNotNull{ it.image }
-                                                    .map { it.imageId }
-
-                                                val bodyPrice = price.toDouble().let {
-                                                    Gson().toJson(it)  // Convert the float to a JSON representation
-                                                        .toRequestBody("text/plain".toMediaType())  // Convert the JSON string to RequestBody
-                                                }
-
-
-
-                                                val bodyKeepImageIds = keepImages.toString().toRequestBody("application/json".toMediaTypeOrNull())
-
-
-
-                                                val bodyLocation = selectedLocation?.let {
-                                                    Gson().toJson(it)
-                                                        .toRequestBody("application/json".toMediaType())
-                                                }
-
-
-                                                val bodyImages = imageContainers.mapNotNull{ it.bitmapContainer }.mapIndexed { index, bitmapContainer ->
-                                                    createImagePartForUri(
-                                                        context,
-                                                        Uri.parse(bitmapContainer.path),
-                                                        "IMAGE_${index}_${
-                                                            getFileExtensionFromImageFormat(
-                                                                bitmapContainer.format
-                                                            )
-                                                        }",
-                                                        bitmapContainer.format,
-                                                        "images[]"
-                                                    )
-                                                }.filterNotNull()
-
-
-                                                viewModel.onUpdateUsedProductListing(
-                                                    bodyProductId,
-                                                    bodyTitle,
-                                                    bodyShortDescription,
-                                                    bodyPrice,
-                                                    bodyPriceUnit,
-                                                    bodyState,
-                                                    bodyCountry,
-                                                    bodyImages,
-                                                    bodyLocation,
-                                                    bodyKeepImageIds,
-                                                    {
-                                                        Toast.makeText(
-                                                            context,
-                                                            it,
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-
-                                                    }) {
-
-                                                    Toast.makeText(
-                                                        context,
-                                                        it,
-                                                        Toast.LENGTH_SHORT
-                                                    )
-                                                        .show()
-                                                }
-
-                                            }
-
-                                        }
-
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-
-                                ) {
-                                    Text("Update")
-                                }
-
-                                Button(
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.Red
-                                    ),
-                                    shape = RectangleShape,
-                                    onClick = {
-                                        bottomSheetState=true
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Delete")
-                                }
+                            selectedLocationError?.let {
+                                ErrorText(it)
                             }
                         }
 
                     }
 
-                }
 
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        // Upload Images Section
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Action Buttons
+                            Button(
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(
+                                        0xFF57D457
+                                    )
+                                ),
+                                shape = RectangleShape,
+                                onClick = {
+
+                                    editableService?.let { nonNullSelectedUsedProductListing ->
+                                        if (viewModel.validateAll()) {
+
+
+                                            val bodyProductId =
+                                                nonNullSelectedUsedProductListing.productId.toString()
+                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
+
+                                            val bodyTitle =
+                                                serviceTitle.toRequestBody("text/plain".toMediaTypeOrNull())
+                                            val bodyShortDescription =
+                                                serviceShortDescription.toRequestBody("text/plain".toMediaTypeOrNull())
+
+
+                                            val bodyPriceUnit =
+                                                priceUnit.toRequestBody("text/plain".toMediaTypeOrNull())
+
+                                            val bodyCountry = selectedCountry.toString()
+                                                .toRequestBody("text/plain".toMediaTypeOrNull())
+
+                                            val bodyState = selectedState.toString()
+                                                .toRequestBody("text/plain".toMediaTypeOrNull())
+
+
+                                            val keepImages =
+                                                imageContainers.mapNotNull { it.container }
+                                                    .mapNotNull { it.image }
+                                                    .map { it.imageId }
+
+                                            val bodyPrice = price.toDouble().let {
+                                                Gson().toJson(it)  // Convert the float to a JSON representation
+                                                    .toRequestBody("text/plain".toMediaType())  // Convert the JSON string to RequestBody
+                                            }
+
+
+                                            val bodyKeepImageIds = keepImages.toString()
+                                                .toRequestBody("application/json".toMediaTypeOrNull())
+
+
+                                            val bodyLocation = selectedLocation?.let {
+                                                Gson().toJson(it)
+                                                    .toRequestBody("application/json".toMediaType())
+                                            }
+
+
+                                            val bodyImages =
+                                                imageContainers.mapNotNull { it.bitmapContainer }
+                                                    .mapIndexed { index, bitmapContainer ->
+                                                        createImagePartForUri(
+                                                            context,
+                                                            Uri.parse(bitmapContainer.path),
+                                                            "IMAGE_${index}_${
+                                                                getFileExtensionFromImageFormat(
+                                                                    bitmapContainer.format
+                                                                )
+                                                            }",
+                                                            bitmapContainer.format,
+                                                            "images[]"
+                                                        )
+                                                    }.filterNotNull()
+
+
+                                            viewModel.onUpdateUsedProductListing(
+                                                bodyProductId,
+                                                bodyTitle,
+                                                bodyShortDescription,
+                                                bodyPrice,
+                                                bodyPriceUnit,
+                                                bodyState,
+                                                bodyCountry,
+                                                bodyImages,
+                                                bodyLocation,
+                                                bodyKeepImageIds,
+                                                {
+                                                    Toast.makeText(
+                                                        context,
+                                                        it,
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+
+                                                }) {
+
+                                                Toast.makeText(
+                                                    context,
+                                                    it,
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                    .show()
+                                            }
+
+                                        }
+
+                                    }
+
+                                },
+                                modifier = Modifier.fillMaxWidth()
+
+                            ) {
+                                Text("Update")
+                            }
+
+                            Button(
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Red
+                                ),
+                                shape = RectangleShape,
+                                onClick = {
+                                    bottomSheetState = true
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Delete")
+                            }
+                        }
+                    }
+
+                }
 
             }
 
+
+        }
 
         }
     }
@@ -789,7 +820,7 @@ fun ManagePublishedUsedProductListingScreen(
                 .safeDrawingPadding(),
             dragHandle = null,
             onDismissRequest = {
-                bottomSheetState=false
+                bottomSheetState = false
             },
             sheetState = sheetState,
             shape = RoundedCornerShape(16.dp)
@@ -810,10 +841,10 @@ fun ManagePublishedUsedProductListingScreen(
                                 .show()
                         }
                     }
-                    bottomSheetState=false
+                    bottomSheetState = false
 
                 }) {
-                bottomSheetState=false
+                bottomSheetState = false
             }
 
         }

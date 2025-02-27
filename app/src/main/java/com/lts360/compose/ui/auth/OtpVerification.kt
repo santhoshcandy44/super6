@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.components.utils.LogUtils
+import com.lts360.compose.ui.NoRippleInteractionSource
 import com.lts360.compose.ui.auth.viewmodels.EmailOTPVerificationViewModel
 import com.lts360.compose.utils.NavigatorSubmitButton
 import kotlinx.coroutines.flow.Flow
@@ -949,12 +950,3 @@ fun CustomPinInput(
 
 }
 
-
-class NoRippleInteractionSource : MutableInteractionSource {
-
-    override val interactions: Flow<Interaction> = emptyFlow()
-
-    override suspend fun emit(interaction: Interaction) {}
-
-    override fun tryEmit(interaction: Interaction) = true
-}

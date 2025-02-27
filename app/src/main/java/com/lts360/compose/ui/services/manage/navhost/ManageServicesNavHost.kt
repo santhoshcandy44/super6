@@ -27,17 +27,23 @@ import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewMode
 @Composable
 fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRoutes.ManageServices, onFinishActivity:()->Unit) {
 
-    var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
-    val navController = rememberManageServicesCustomBottomNavController(lastEntry)
 
-    val currentBackStackEntryAsState by navController.currentBackStackEntryAsState()
 
-    LaunchedEffect(currentBackStackEntryAsState){
-        lastEntry = navController.currentBackStackEntry?.destination?.route
-    }
 
     val draftServicesViewModel: ServicesWorkflowViewModel =  hiltViewModel()
     val publishedServicesViewModel: PublishedServicesViewModel =  hiltViewModel()
+
+
+
+    val lastEntry by draftServicesViewModel.lastEntry.collectAsState()
+    val navController = rememberManageServicesCustomBottomNavController(lastEntry, publishedServicesViewModel.isSelectedServiceNull())
+
+    val currentBackStackEntryAsState by navController.currentBackStackEntryAsState()
+
+
+    LaunchedEffect(currentBackStackEntryAsState){
+        draftServicesViewModel.updateLastEntry(navController.currentBackStackEntry?.destination?.route)
+    }
 
 
     NavHost(
@@ -49,6 +55,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             ManageServicesScreen(
                 navController,
                 {
+                    draftServicesViewModel.clearSelectedDraft()
                     navController.navigate(ManageServicesRoutes.CreateService)
                 }, { type, draftId ->
                     draftServicesViewModel.updateDraftInfoAndLoadDraftDetails(type, draftId)

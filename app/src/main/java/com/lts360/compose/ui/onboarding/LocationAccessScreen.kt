@@ -39,6 +39,7 @@ import com.lts360.compose.ui.main.OnBoardUserLocationBottomSheetScreen
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.onboarding.viewmodels.LocationAccessViewModel
+import com.lts360.compose.ui.theme.icons
 import kotlinx.coroutines.launch
 
 
@@ -201,7 +202,7 @@ fun LocationAccessScreen(
             ) {
 
                 Image(
-                    painter = painterResource(R.drawable.ic_location_access_on_boarding), // Your location image
+                    painter = painterResource(MaterialTheme.icons.locationAccessOnBoarding), // Your location image
                     contentDescription = "Location",
                     modifier = Modifier.size(96.dp)
                 )

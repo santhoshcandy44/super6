@@ -78,8 +78,8 @@ fun SecondsServiceOwnerProfileScreen(
     key: Int,
     onNavigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpDetailedService: (Int) -> Unit,
-    servicesViewModel: SecondsViewmodel
-
+    servicesViewModel: SecondsViewmodel,
+    secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel
 ) {
 
 
@@ -115,12 +115,12 @@ fun SecondsServiceOwnerProfileScreen(
 
         },
         {
-            servicesViewModel.setNestedServiceOwnerProfileSelectedItem(it)
             onNavigateUpDetailedService(key)
         },
         {
             navHostController.popBackStack()
-        }
+        },
+        secondsOwnerProfileViewModel
     )
 
 }
@@ -135,7 +135,8 @@ fun BookmarkedSecondsOwnerProfileScreen(
         Int, Long, FeedUserProfileInfo
     ) -> Unit,
     onNavigateUpDetailedService: () -> Unit,
-    servicesViewModel: BookmarksViewModel
+    servicesViewModel: BookmarksViewModel,
+    secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel
 ) {
 
 
@@ -171,12 +172,12 @@ fun BookmarkedSecondsOwnerProfileScreen(
         }
 
     }, {
-        servicesViewModel.setNestedServiceOwnerProfileSelectedItem(it)
         onNavigateUpDetailedService()
     } ,
         {
             navHostController.popBackStack()
-        }
+        },
+        secondsOwnerProfileViewModel
     )
 
 }
@@ -190,7 +191,7 @@ fun SecondsOwnerProfileScreenContent(
     onNavigateUpChat: () -> Unit,
     onNavigateUpDetailedService: (UsedProductListing) -> Unit,
     onPopBackStack: () -> Unit,
-    viewModel: SecondsOwnerProfileViewModel = hiltViewModel(navHostController.getBackStackEntry<SecondsOwnerProfile>()),
+    viewModel: SecondsOwnerProfileViewModel,
 ) {
 
 
@@ -248,6 +249,7 @@ fun SecondsOwnerProfileScreenContent(
 
 
     BottomSheetScaffold(
+        sheetDragHandle = null,
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
             ForceWelcomeScreen(
@@ -299,31 +301,28 @@ fun SecondsOwnerProfileScreenContent(
             Box(modifier = Modifier.padding(contentPadding)) {
 
 
-                selectedParentService?.let {
+                selectedParentService?.let { nonNullSelectedParentService ->
 
                     SecondsOwnerProfile(
                         createdServices ?: emptyList(),
                         /*    isLoading,*/
                         userId,
-                        it.user,
+                        nonNullSelectedParentService.user,
                         {
-                            selectedParentService?.let {
-                                if (it.user.userId != userId) {
-                                    ProfileInfoChatUser(
-                                        it.user.profilePicUrl,
-                                        it.user.isOnline
-                                    ) {
+                            if (nonNullSelectedParentService.user.userId != userId) {
+                                ProfileInfoChatUser(
+                                    nonNullSelectedParentService.user.profilePicUrl,
+                                    nonNullSelectedParentService.user.isOnline
+                                ) {
 
-                                        if (signInMethod == "guest") {
-                                            coroutineScope.launch {
-                                                bottomSheetScaffoldState.bottomSheetState.expand()
-                                            }
-                                        } else {
-                                            onNavigateUpChat()
+                                    if (signInMethod == "guest") {
+                                        coroutineScope.launch {
+                                            bottomSheetScaffoldState.bottomSheetState.expand()
                                         }
+                                    } else {
+                                        onNavigateUpChat()
                                     }
                                 }
-
                             }
                         }, {
                             viewModel.setSelectedItem(it)
@@ -477,7 +476,7 @@ fun SecondsOwnerProfileScreenContent(
                                         painter = if (nonNullSelectedItem.isBookmarked) painterResource(
                                             R.drawable.ic_bookmarked
                                         ) else painterResource(
-                                            R.drawable.ic_bookmark
+                                            R.drawable.ic_dark_bookmark
                                         ),
                                         contentDescription = "Bookmark",
                                         modifier = Modifier.size(24.dp),

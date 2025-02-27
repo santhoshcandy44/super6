@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lts360.R
+import com.lts360.compose.ui.theme.icons
 
 
 @Composable
@@ -43,7 +44,7 @@ fun LocationWrapper(location: String?, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically // Center contents vertically
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_location),
+                    painter = painterResource(MaterialTheme.icons.location),
                     contentDescription = null,
                     modifier = Modifier.size(24.dp)
                 )

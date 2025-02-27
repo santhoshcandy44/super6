@@ -296,15 +296,13 @@ fun BookmarkedDetailedUsedProductListingInfoScreen(
 }
 
 @Composable
-fun BookmarkedFeedUserUsedProductListingInfoScreen(
+fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpForceJoinNow: () -> Unit,
     servicesViewModel: BookmarksViewModel,
-    viewModel: SecondsOwnerProfileViewModel = hiltViewModel(remember {
-        navHostController.getBackStackEntry<SecondsOwnerProfile>()
-    })
+    viewModel: SecondsOwnerProfileViewModel
 
     ) {
 
@@ -313,7 +311,7 @@ fun BookmarkedFeedUserUsedProductListingInfoScreen(
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
 
-    val selectedItem by servicesViewModel.nestedServiceOwnerProfileSelectedItem.collectAsState()
+    val selectedItem by viewModel.selectedItem.collectAsState()
 
 
     val scope = rememberCoroutineScope()
@@ -410,6 +408,7 @@ fun DetailedUsedProductListingContent(
 
 
     BottomSheetScaffold(
+        sheetDragHandle = null,
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
             ForceWelcomeScreen(

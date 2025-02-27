@@ -95,9 +95,6 @@ class BookmarksViewModel @Inject constructor(
     val selectedItem = _selectedItem.asStateFlow()
 
 
-    private val _nestedServiceOwnerProfileSelectedItem = MutableStateFlow<BookMarkedItem?>(null)
-    val nestedServiceOwnerProfileSelectedItem = _nestedServiceOwnerProfileSelectedItem.asStateFlow()
-
 
     init {
 
@@ -105,14 +102,6 @@ class BookmarksViewModel @Inject constructor(
 
     }
 
-
-    fun setNestedServiceOwnerProfileSelectedItem(item: BookMarkedItem?) {
-        _nestedServiceOwnerProfileSelectedItem.value = item
-        /*  service?.let {
-              savedStateHandle["nested_service_owner_profile_selected_item"] = service.serviceId
-          }*/
-
-    }
 
     // Function to update the error message
     fun updateError(exception: Throwable?) {
@@ -133,6 +122,8 @@ class BookmarksViewModel @Inject constructor(
             !(it is Service && it.type == "service" && it.serviceId == service.serviceId)
         }
     }
+
+    fun isSelectedBookmarkNull()  =_selectedItem.value==null
 
     fun removeUsedProductListingItem(service: UsedProductListing) {
         _bookmarks.value = _bookmarks.value.filter {

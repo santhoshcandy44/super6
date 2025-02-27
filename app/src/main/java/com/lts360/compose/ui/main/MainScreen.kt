@@ -291,62 +291,64 @@ fun MainScreen(
         BottomSheetScaffold(
             sheetContent = {
 
-                if (sheetContent == "guest_industries" && selectedIndustriesCount == 0) {
+                if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+                    if (sheetContent == "guest_industries" && selectedIndustriesCount == 0) {
 
-                    Surface {
-                        GuestChooseIndustrySheet(onDismissed = {
-                            viewModel.setIndustriesSheetDismissed()
-                            coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.hide()
-                            }
-                        }) {
-                            viewModel.setIndustriesSheetDismissed()
-                            coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.hide()
-                            }
-                        }
-                    }
-
-                }
-
-                if (sheetContent == "valid_user_industries") {
-                    Surface {
-                        ChooseIndustrySheet(onDismissed = {
-                            viewModel.setIndustriesSheetDismissed()
-                            coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.hide()
-                            }
-                        }) {
-                            coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.hide()
-                            }
-                            onManageIndustriesAndInterestsNavigateUp(userId, "update_industries")
-                        }
-                    }
-
-                }
-
-                if (sheetContent == "welcome") {
-                    ForceWelcomeScreen(
-                        onLogInNavigate = {
-                            context.startActivity(Intent(context, AuthActivity::class.java)
-                                .apply {
-                                    flags =
-                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                                    putExtra("force_type", "force_login")
-                                })
-                        }, onSelectAccountNavigate = {
-                            context.startActivity(Intent(context, AuthActivity::class.java)
-                                .apply {
-                                    flags =
-                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                                    putExtra("force_type", "force_register")
+                        Surface {
+                            GuestChooseIndustrySheet(onDismissed = {
+                                viewModel.setIndustriesSheetDismissed()
+                                coroutineScope.launch {
+                                    bottomSheetScaffoldState.bottomSheetState.hide()
                                 }
-                            )
+                            }) {
+                                viewModel.setIndustriesSheetDismissed()
+                                coroutineScope.launch {
+                                    bottomSheetScaffoldState.bottomSheetState.hide()
+                                }
+                            }
+                        }
 
-                        }) {
-                        coroutineScope.launch {
-                            bottomSheetScaffoldState.bottomSheetState.hide()
+                    }
+
+                    if (sheetContent == "valid_user_industries") {
+                        Surface {
+                            ChooseIndustrySheet(onDismissed = {
+                                viewModel.setIndustriesSheetDismissed()
+                                coroutineScope.launch {
+                                    bottomSheetScaffoldState.bottomSheetState.hide()
+                                }
+                            }) {
+                                coroutineScope.launch {
+                                    bottomSheetScaffoldState.bottomSheetState.hide()
+                                }
+                                onManageIndustriesAndInterestsNavigateUp(userId, "update_industries")
+                            }
+                        }
+
+                    }
+
+                    if (sheetContent == "welcome") {
+                        ForceWelcomeScreen(
+                            onLogInNavigate = {
+                                context.startActivity(Intent(context, AuthActivity::class.java)
+                                    .apply {
+                                        flags =
+                                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                        putExtra("force_type", "force_login")
+                                    })
+                            }, onSelectAccountNavigate = {
+                                context.startActivity(Intent(context, AuthActivity::class.java)
+                                    .apply {
+                                        flags =
+                                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                        putExtra("force_type", "force_register")
+                                    }
+                                )
+
+                            }) {
+                            coroutineScope.launch {
+                                bottomSheetScaffoldState.bottomSheetState.hide()
+                            }
                         }
                     }
                 }

@@ -60,6 +60,7 @@ import com.lts360.R
 import com.lts360.compose.ui.auth.AccountType
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.main.viewmodels.AccountAndProfileSettingsViewModel
+import com.lts360.compose.ui.theme.icons
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -169,7 +170,7 @@ fun AccountAndProfileSettingsScreen(
 
                             ){
                                 Image(
-                                    painter = painterResource(R.drawable.ic_exit),
+                                    painter = painterResource(MaterialTheme.icons.exit),
                                     contentDescription = null,
                                     colorFilter =  ColorFilter.tint(Color.Red) ,
                                     modifier = Modifier.padding(8.dp)

@@ -9,7 +9,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -20,16 +19,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.toRoute
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.chat.IsolatedChatActivity
-import com.lts360.compose.ui.main.navhosts.routes.BookmarkedDetailedService
-import com.lts360.compose.ui.main.navhosts.routes.BookmarkedDetailedServiceImagesSlider
-import com.lts360.compose.ui.main.navhosts.routes.BookmarkedDetailedUsedProductListing
-import com.lts360.compose.ui.main.navhosts.routes.BookmarkedDetailedUsedProductListingImagesSlider
-import com.lts360.compose.ui.main.navhosts.routes.BookmarkedServices
-import com.lts360.compose.ui.main.navhosts.routes.DetailedSecondsFeedUser
-import com.lts360.compose.ui.main.navhosts.routes.DetailedSecondsFeedUserImagesSlider
+import com.lts360.compose.ui.main.navhosts.routes.BookMarkRoutes
 import com.lts360.compose.ui.main.navhosts.routes.DetailedServiceFeedUser
 import com.lts360.compose.ui.main.navhosts.routes.DetailedServiceFeedUserImagesSlider
-import com.lts360.compose.ui.main.navhosts.routes.SecondsOwnerProfile
 import com.lts360.compose.ui.main.navhosts.routes.ServiceOwnerProfile
 import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.main.profile.BookmarkedServiceOwnerProfileScreen
@@ -40,7 +32,7 @@ import com.lts360.compose.ui.services.FeedUserImagesSliderScreen
 import com.lts360.compose.ui.services.ServiceOwnerProfileViewModel
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.usedproducts.BookmarkedDetailedUsedProductListingInfoScreen
-import com.lts360.compose.ui.usedproducts.BookmarkedFeedUserUsedProductListingInfoScreen
+import com.lts360.compose.ui.usedproducts.BookmarkedFeedUserDetailedUsedProductListingInfoScreen
 import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
 import com.lts360.compose.ui.usedproducts.manage.BookmarkedSecondsOwnerProfileScreen
 import com.lts360.compose.ui.usedproducts.manage.BookmarkedSecondsSliderScreen
@@ -54,19 +46,25 @@ class BookmarksActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
         setContent {
             AppTheme {
                 Surface {
                     SafeDrawingBox {
 
+                        val bookmarksViewModel: BookmarksViewModel = hiltViewModel()
+                        val secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel = hiltViewModel()
+                        val servicesOwnerProfileViewModel: ServiceOwnerProfileViewModel = hiltViewModel()
+
                         val context = LocalContext.current
 
                         var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
 
-                        val navController =
-                            rememberBookMarksCustomBottomNavController(lastEntry)
+                        val navController = rememberBookMarksCustomBottomNavController(
+                            lastEntry,
+                            bookmarksViewModel.isSelectedBookmarkNull(),
+                            secondsOwnerProfileViewModel.isSelectedUsedProductListingNull(),
+                            servicesOwnerProfileViewModel.isSelectedServiceNull()
+                        )
 
                         val currentBackStackEntryAsState by navController.currentBackStackEntryAsState()
 
@@ -75,35 +73,38 @@ class BookmarksActivity : ComponentActivity() {
                             lastEntry = navController.currentBackStackEntry?.destination?.route
                         }
 
-                        NavHost(navController, BookmarkedServices) {
+                        NavHost(navController, BookMarkRoutes.BookmarkedServices) {
 
-                            slideComposable<BookmarkedServices> {
-                                BookmarksScreen({
-                                    navController.navigate(BookmarkedDetailedService)
-                                },
+                            slideComposable<BookMarkRoutes.BookmarkedServices> {
+                                BookmarksScreen(
+                                    {
+                                        navController.navigate(BookMarkRoutes.BookmarkedDetailedService)
+                                    },
                                     {
                                         navController.navigate(
-                                            ServiceOwnerProfile(it),
+                                            BookMarkRoutes.ServiceOwnerProfile(it),
                                             NavOptions.Builder().setLaunchSingleTop(true).build()
                                         )
                                     },
                                     {
-                                        navController.navigate(BookmarkedDetailedUsedProductListing)
+                                        navController.navigate(BookMarkRoutes.BookmarkedDetailedUsedProductListing)
 
                                     },
-                                    { this@BookmarksActivity.finish() })
+                                    {
+                                        this@BookmarksActivity.finish()
+
+                                    },
+                                    bookmarksViewModel
+                                )
                             }
 
-                            slideComposable<BookmarkedDetailedService> {
-                                val viewModel: BookmarksViewModel =
-                                    hiltViewModel(remember {
-                                        navController.getBackStackEntry<BookmarkedServices>()
-                                    })
+                            slideComposable<BookMarkRoutes.BookmarkedDetailedService> {
+
                                 BookmarkedDetailedServiceInfoScreen(
                                     navController,
                                     onNavigateUpSlider = {
                                         navController.navigate(
-                                            BookmarkedDetailedServiceImagesSlider(
+                                            BookMarkRoutes.BookmarkedDetailedServiceImagesSlider(
                                                 it
                                             )
                                         )
@@ -125,34 +126,29 @@ class BookmarksActivity : ComponentActivity() {
                                     },
                                     onNavigateUpForceJoinNow = {
 
-                                    }, viewModel
+                                    }, bookmarksViewModel
                                 )
                             }
 
-                            slideComposable<BookmarkedDetailedServiceImagesSlider> {
+                            slideComposable<BookMarkRoutes.BookmarkedDetailedServiceImagesSlider> {
                                 val selectedImagePosition =
-                                    it.toRoute<BookmarkedDetailedServiceImagesSlider>().selectedImagePosition
+                                    it.toRoute<BookMarkRoutes.BookmarkedDetailedServiceImagesSlider>().selectedImagePosition
 
-                                val viewModel: BookmarksViewModel =
-                                    hiltViewModel(remember { navController.getBackStackEntry<BookmarkedServices>() })
-
-                                val selectedItem by viewModel.selectedItem.collectAsState()
+                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
 
                                 selectedItem?.let {
                                     BookmarkedImagesSliderScreen(
                                         navController,
                                         selectedImagePosition,
-                                        viewModel,
+                                        bookmarksViewModel,
                                         { navController.popBackStack() }
                                     )
                                 }
                             }
 
-                            slideComposable<ServiceOwnerProfile> {
+                            slideComposable<BookMarkRoutes.ServiceOwnerProfile> {
 
-                                val viewModel: BookmarksViewModel =
-                                    hiltViewModel(remember { navController.getBackStackEntry<BookmarkedServices>() })
-                                val selectedItem by viewModel.selectedItem.collectAsState()
+                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
                                 selectedItem?.let {
                                     BookmarkedServiceOwnerProfileScreen(
                                         navController,
@@ -172,24 +168,24 @@ class BookmarksActivity : ComponentActivity() {
                                                     })
                                         },
                                         {
-                                            navController.navigate(DetailedServiceFeedUser())
-                                        }, viewModel
+                                            navController.navigate(BookMarkRoutes.DetailedServiceFeedUser())
+                                        }, bookmarksViewModel,
+                                        servicesOwnerProfileViewModel
                                     )
                                 }
 
                             }
 
-                            slideComposable<DetailedServiceFeedUser> {
-                                val viewModel: BookmarksViewModel =
-                                    hiltViewModel(remember { navController.getBackStackEntry<BookmarkedServices>() })
-                                val selectedItem by viewModel.selectedItem.collectAsState()
+                            slideComposable<BookMarkRoutes.DetailedServiceFeedUser> {
+
+                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
 
                                 selectedItem?.let {
                                     BookmarkedFeedUserDetailedServiceInfoScreen(
                                         navController,
                                         {
                                             navController.navigate(
-                                                DetailedServiceFeedUserImagesSlider(it)
+                                                BookMarkRoutes.DetailedServiceFeedUserImagesSlider(it)
                                             )
                                         },
                                         { chatUser, chatId, recipientId, feedUserProfile ->
@@ -210,27 +206,24 @@ class BookmarksActivity : ComponentActivity() {
 
                                         }, {
 
-                                        }, viewModel
+                                        },
+                                        bookmarksViewModel,
+                                        servicesOwnerProfileViewModel
                                     )
                                 }
 
                             }
 
-                            slideComposable<DetailedServiceFeedUserImagesSlider> {
+                            slideComposable<BookMarkRoutes.DetailedServiceFeedUserImagesSlider> {
                                 val selectedImagePosition =
-                                    it.toRoute<DetailedServiceFeedUserImagesSlider>().selectedImagePosition
+                                    it.toRoute<BookMarkRoutes.DetailedServiceFeedUserImagesSlider>().selectedImagePosition
 
-
-                                val viewModel: ServiceOwnerProfileViewModel =
-                                    hiltViewModel(remember {
-                                        navController.getBackStackEntry<ServiceOwnerProfile>()
-                                    })
-                                val selectedItem by viewModel.selectedItem.collectAsState()
+                                val selectedItem by servicesOwnerProfileViewModel.selectedItem.collectAsState()
                                 selectedItem?.let {
                                     FeedUserImagesSliderScreen(
                                         navController,
                                         selectedImagePosition,
-                                        viewModel,
+                                        servicesOwnerProfileViewModel,
                                         { navController.popBackStack() }
                                     )
                                 }
@@ -238,14 +231,13 @@ class BookmarksActivity : ComponentActivity() {
                             }
 
 
-                            slideComposable<BookmarkedDetailedUsedProductListing> {
-                                val viewModel: BookmarksViewModel =
-                                    hiltViewModel(remember { navController.getBackStackEntry<BookmarkedServices>() })
+                            slideComposable<BookMarkRoutes.BookmarkedDetailedUsedProductListing> {
+
                                 BookmarkedDetailedUsedProductListingInfoScreen(
                                     navController,
                                     onNavigateUpSlider = {
                                         navController.navigate(
-                                            BookmarkedDetailedUsedProductListingImagesSlider(
+                                            BookMarkRoutes.BookmarkedDetailedUsedProductListingImagesSlider(
                                                 it
                                             )
                                         )
@@ -270,40 +262,34 @@ class BookmarksActivity : ComponentActivity() {
                                     },
                                     {
                                         navController.navigate(
-                                            SecondsOwnerProfile(
+                                            BookMarkRoutes.SecondsOwnerProfile(
                                                 it
                                             )
                                         )
                                     },
 
-                                    viewModel
+                                    bookmarksViewModel
                                 )
                             }
 
-                            slideComposable<BookmarkedDetailedUsedProductListingImagesSlider> {
+                            slideComposable<BookMarkRoutes.BookmarkedDetailedUsedProductListingImagesSlider> {
                                 val selectedImagePosition =
-                                    it.toRoute<BookmarkedDetailedUsedProductListingImagesSlider>().selectedImagePosition
+                                    it.toRoute<BookMarkRoutes.BookmarkedDetailedUsedProductListingImagesSlider>().selectedImagePosition
 
-                                val viewModel: BookmarksViewModel =
-                                    hiltViewModel(remember { navController.getBackStackEntry<BookmarkedServices>() })
-
-                                val selectedItem by viewModel.selectedItem.collectAsState()
+                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
 
                                 selectedItem?.let {
                                     BookmarkedSecondsSliderScreen(
                                         navController,
                                         selectedImagePosition,
-                                        viewModel,
+                                        bookmarksViewModel,
                                         { navController.popBackStack() }
                                     )
                                 }
                             }
 
-                            slideComposable<SecondsOwnerProfile> {
-
-                                val viewModel: BookmarksViewModel =
-                                    hiltViewModel(remember { navController.getBackStackEntry<BookmarkedServices>() })
-                                val selectedItem by viewModel.selectedItem.collectAsState()
+                            slideComposable<BookMarkRoutes.SecondsOwnerProfile> {
+                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
                                 selectedItem?.let {
                                     BookmarkedSecondsOwnerProfileScreen(
                                         navController,
@@ -323,24 +309,26 @@ class BookmarksActivity : ComponentActivity() {
                                                     })
                                         },
                                         {
-                                            navController.navigate(DetailedSecondsFeedUser())
-                                        }, viewModel
+                                            navController.navigate(BookMarkRoutes.DetailedSecondsFeedUser())
+                                        }, bookmarksViewModel,
+                                        secondsOwnerProfileViewModel
                                     )
                                 }
-
                             }
 
-                            slideComposable<DetailedSecondsFeedUser> {
-                                val viewModel: BookmarksViewModel =
-                                    hiltViewModel(remember { navController.getBackStackEntry<BookmarkedServices>() })
-                                val selectedItem by viewModel.selectedItem.collectAsState()
+
+                            slideComposable<BookMarkRoutes.DetailedSecondsFeedUser> {
+
+                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
 
                                 selectedItem?.let {
-                                    BookmarkedFeedUserUsedProductListingInfoScreen(
+                                    BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
                                         navController,
                                         {
                                             navController.navigate(
-                                                DetailedSecondsFeedUserImagesSlider(it)
+                                                BookMarkRoutes.DetailedSecondsFeedUserImagesSlider(
+                                                    it
+                                                )
                                             )
                                         },
                                         { chatUser, chatId, recipientId, feedUserProfile ->
@@ -360,34 +348,29 @@ class BookmarksActivity : ComponentActivity() {
                                                     })
 
                                         }, {
-
-                                        }, viewModel
+                                        }, bookmarksViewModel,
+                                        secondsOwnerProfileViewModel
                                     )
                                 }
 
                             }
 
-                            slideComposable<DetailedSecondsFeedUserImagesSlider> {
+
+                            slideComposable<BookMarkRoutes.DetailedSecondsFeedUserImagesSlider> {
                                 val selectedImagePosition =
-                                    it.toRoute<DetailedSecondsFeedUserImagesSlider>().selectedImagePosition
+                                    it.toRoute<BookMarkRoutes.DetailedSecondsFeedUserImagesSlider>().selectedImagePosition
 
-                                val viewModel: SecondsOwnerProfileViewModel = hiltViewModel(remember {
-                                    navController.getBackStackEntry<SecondsOwnerProfile>()
-                                })
-
-                                val selectedItem by viewModel.selectedItem.collectAsState()
+                                val selectedItem by secondsOwnerProfileViewModel.selectedItem.collectAsState()
                                 selectedItem?.let {
                                     FeedUserSecondsImagesSliderScreen(
                                         navController,
                                         selectedImagePosition,
-                                        viewModel,
+                                        secondsOwnerProfileViewModel,
                                         { navController.popBackStack() }
                                     )
                                 }
 
                             }
-
-
 
                         }
 

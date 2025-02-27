@@ -55,6 +55,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.R
 import com.lts360.app.database.models.notification.Notification
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
+import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
 import com.lts360.compose.ui.viewmodels.NotificationViewModel.Companion.getTimeAgo
 
@@ -299,7 +300,7 @@ fun NotificationScreen(navController: NavHostController,
 
                                     Icon(
                                         painter = painterResource(
-                                            R.drawable.ic_notification_mark_as_read
+                                            MaterialTheme.icons.notificationMarkAsRead
                                         ),
                                         contentDescription = "Mark as Read",
                                         modifier = Modifier.size(24.dp),
@@ -328,7 +329,7 @@ fun NotificationScreen(navController: NavHostController,
                                 // Bookmark Icon
                                 Icon(
                                     painter = painterResource(
-                                        R.drawable.ic_notification_delete
+                                        MaterialTheme.icons.deleteNotification
                                     ),
                                     contentDescription = "Bookmark",
                                     modifier = Modifier.size(24.dp),

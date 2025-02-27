@@ -12,15 +12,17 @@ import androidx.navigation.Navigator
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.DialogNavigator
 import com.lts360.compose.ui.services.manage.navhost.ManageServicesRoutes
+import com.lts360.compose.ui.usedproducts.manage.navhost.ManageUsedProductListingRoutes
 
 
 @Composable
 public fun rememberManageServicesCustomBottomNavController(
     lastEntry:String?,
+    isSelectedServiceNull:Boolean,
     vararg navigators: Navigator<out NavDestination>,
 ): NavHostController {
     val context = LocalContext.current
-    return rememberSaveable(inputs = navigators, saver = NavControllerSaver(context, lastEntry)) {
+    return rememberSaveable(inputs = navigators, saver = NavControllerSaver(context, lastEntry, isSelectedServiceNull)) {
         createNavController(context)
     }
         .apply {
@@ -37,7 +39,7 @@ private fun createNavController(context: Context) =
     }
 
 /** Saver to save and restore the NavController across config change and process death. */
-private fun NavControllerSaver(context: Context, lasEntry:String?): Saver<NavHostController, *> =
+private fun NavControllerSaver(context: Context, lasEntry:String?, isSelectedServiceNull:Boolean): Saver<NavHostController, *> =
     Saver<NavHostController, Bundle>(
         save = { it.saveState() },
         restore = {
@@ -49,13 +51,24 @@ private fun NavControllerSaver(context: Context, lasEntry:String?): Saver<NavHos
                     ?.replace(Regex("/\\{[^}]+\\}"), "") // Remove path parameters
                     ?.replace(Regex("\\?.*"), "")?.trim() // Optionally trim whitespace
 
-                val allowedScreens = listOf(
+                var allowedScreens = listOf(
                     ManageServicesRoutes.ManageServices::class,
-                    ManageServicesRoutes.CreateService::class
-
+                    ManageServicesRoutes.CreateService::class,
                 )
 
-                // Step 2: Get the list of allowed screens' qualified names
+                if(cleanedRoute == ManageServicesRoutes.ManagePublishedService::class.qualifiedName.orEmpty()){
+
+                    if(!isSelectedServiceNull){
+                        allowedScreens = allowedScreens.toMutableList()
+                            .apply {
+                                add(ManageServicesRoutes.ManagePublishedService::class)
+                            }
+                    }
+
+                }
+
+
+
                 val allowedRoutes = allowedScreens.map { it.qualifiedName.orEmpty() }
 
                 if (cleanedRoute in allowedRoutes) {

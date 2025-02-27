@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -55,26 +55,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.toRoute
 import coil3.compose.AsyncImage
 import com.lts360.R
 import com.lts360.api.models.service.UsedProductListing
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.getCurrencySymbol
 import com.lts360.compose.ui.main.common.NoInternetScreen
-import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
-import com.lts360.compose.ui.services.ShimmerServiceCard
 import kotlinx.coroutines.launch
 
 
@@ -213,442 +210,432 @@ fun SecondsScreen(
 
 
 
+    Surface {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ){
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize() // This makes the Box take up the entire available space
-    ){
-
-        Column(modifier = Modifier.fillMaxSize()){
-
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize() // This makes the Box take up the entire available space
-
-            ) {
+            Column(modifier = Modifier.fillMaxSize()){
 
 
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize() // This makes the Box take up the entire available space
+
+                ) {
 
 
-                if (initialLoadState && items.isEmpty()) {
-                    LazyColumn(
-                        contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp), // Adjust the space between items
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        if (onlySearchBar) {
-                            item {
-                                Box(modifier = Modifier.fillParentMaxSize()) {
-                                    CircularProgressIndicatorLegacy(
-                                        modifier = Modifier
-                                            .padding(16.dp)
-                                            .align(Alignment.Center),
-                                        color = MaterialTheme.colorScheme.primary
 
-                                    )
+
+                    if (initialLoadState && items.isEmpty()) {
+                        LazyColumn(
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp), // Adjust the space between items
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            if (onlySearchBar) {
+                                item {
+                                    Box(modifier = Modifier.fillParentMaxSize()) {
+                                        CircularProgressIndicatorLegacy(
+                                            modifier = Modifier
+                                                .padding(16.dp)
+                                                .align(Alignment.Center),
+                                            color = MaterialTheme.colorScheme.primary
+
+                                        )
+                                    }
+                                }
+                            } else {
+                               /* items(3) {
+                                    ShimmerServiceCard()
+                                }*/
+
+                                item {
+                                    Box(modifier = Modifier.fillParentMaxSize()) {
+                                        CircularProgressIndicatorLegacy(
+                                            modifier = Modifier
+                                                .padding(16.dp)
+                                                .align(Alignment.Center),
+                                            color = MaterialTheme.colorScheme.primary
+
+                                        )
+                                    }
                                 }
                             }
-                        } else {
-                            items(3) {
-                                ShimmerServiceCard()
-                            }
                         }
-                    }
 
-                } else {
+                    } else {
+                        val nestedScrollConnection = rememberNestedScrollInteropConnection() // Enables nested scroll behavior
 
-                    PullToRefreshBox(
-                        state = pullToRefreshState,
-                        modifier = Modifier.fillMaxSize(),
-                        isRefreshing = isRefreshingItems,
-                        onRefresh = onRefresh
-                    ) {
-
-
-                        LazyVerticalGrid(
-                            GridCells.Adaptive(120.dp),
-                            state = lazyGridState,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 8.dp)
+                        PullToRefreshBox(
+                            state = pullToRefreshState,
+                            modifier = Modifier.fillMaxSize(),
+                            isRefreshing = isRefreshingItems,
+                            onRefresh = onRefresh
                         ) {
-/*                                (lazyPagingServices.loadState.refresh as? LoadState.Error)?.error?.let { error ->
-                                    mapExceptionToError(error)
-                                } is Error.NoInternet */
 
                             // Handle no internet case
                             if (hasNetworkError) {
-                                item (span = { GridItemSpan(maxLineSpan) }){
-                                    Box(modifier = Modifier.fillMaxSize()) {
-                                        NoInternetScreen(modifier = Modifier.align(Alignment.Center)) {
-                                            onRetry()
-                                        }
+                                Box(modifier = Modifier.fillMaxSize()
+                                    .nestedScroll(nestedScrollConnection) // Enables nested scrolling
+                                ) {
+                                    NoInternetScreen(modifier = Modifier.align(Alignment.Center)) {
+                                        onRetry()
                                     }
                                 }
                             }
-
-//                                lazyPagingServices.loadState.refresh !is LoadState.Loading && lazyPagingServices.itemCount == 0
                             // Handle empty state after loading
                             else if (!isLoadingItems && !hasAppendError && items.isEmpty()) {
-                                item (span = { GridItemSpan(maxLineSpan) }){
-                                    Box(modifier = Modifier.fillMaxSize()) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            modifier = Modifier.align(Alignment.Center)
-                                        ) {
-                                            Image(
-                                                painter = painterResource(R.drawable.all_caught_up),
-                                                contentDescription = "Image from drawable",
-                                                modifier = Modifier.sizeIn(
-                                                    maxWidth = 200.dp,
-                                                    maxHeight = 200.dp
-                                                )
+                                Box(modifier = Modifier.fillMaxSize()
+                                    .nestedScroll(nestedScrollConnection) // Enables nested scrolling
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.align(Alignment.Center)
+                                    ) {
+                                        Image(
+                                            painter = painterResource(R.drawable.all_caught_up),
+                                            contentDescription = "Image from drawable",
+                                            modifier = Modifier.sizeIn(
+                                                maxWidth = 200.dp,
+                                                maxHeight = 200.dp
                                             )
-                                            Spacer(Modifier.height(16.dp))
-                                            Text(text = "Oops, nothing to catch")
-                                        }
+                                        )
+                                        Spacer(Modifier.height(16.dp))
+                                        Text(text = "Oops, nothing to catch")
                                     }
-
                                 }
                             }
                             // Handle loaded items
                             else {
+                                LazyVerticalGrid(
+                                    GridCells.Adaptive(120.dp),
+                                    state = lazyGridState,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp),
+                                    modifier = Modifier
+                                        .fillMaxSize()) {
 
-                                /*                                    val itemCount = lazyPagingServices.itemCount
-                                                                    items(
-                                                                        count = if (itemCount > 0) itemCount else items.size,
-                                                                        contentType = if (itemCount > 0) {
-                                                                            lazyPagingServices.itemContentType { "ServiceItems" }
-                                                                        } else {
-                                                                            { "ServiceItems" }
-                                                                        }
-                                                                    ) { index ->
-                                                                        // Access the item based on the current state
-                                                                        val item = if (itemCount > 0) {
-                                                                            lazyPagingServices[index]!!
-                                                                        } else {
-                                                                            items[index] // Fallback to cached data
-                                                                        }*/
+                                    items(items) { usedProductListing ->
 
 
-                                items(items) { usedProductListing ->
+                                        UsedProductListingCard(
+                                            signInMethod,
+                                            usedProductListing,
+                                            {
+                                                viewModel.setSelectedItem(usedProductListing)
+                                                onNavigateUpServiceDetailedScreen()
+                                            },
+                                            {
+                                                if (usedProductListing.isBookmarked) {
+
+                                                    viewModel.directUpdateServiceIsBookMarked(
+                                                        usedProductListing.productId,
+                                                        false
+                                                    )
 
 
-                                    UsedProductListingCard(
-                                        signInMethod,
-                                        usedProductListing,
-                                        {
-                                            viewModel.setSelectedItem(usedProductListing)
-                                            onNavigateUpServiceDetailedScreen()
-                                        },
-                                        {
-                                            if (usedProductListing.isBookmarked) {
+                                                    viewModel.onRemoveBookmark(
+                                                        viewModel.userId,
+                                                        usedProductListing, onSuccess = {
 
-                                                viewModel.directUpdateServiceIsBookMarked(
-                                                    usedProductListing.productId,
-                                                    false
-                                                )
-
-
-                                                viewModel.onRemoveBookmark(
-                                                    viewModel.userId,
-                                                    usedProductListing, onSuccess = {
-
-                                                        viewModel.directUpdateServiceIsBookMarked(
-                                                            usedProductListing.productId,
-                                                            false
-                                                        )
-
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Bookmark removed",
-                                                                Toast.LENGTH_SHORT
+                                                            viewModel.directUpdateServiceIsBookMarked(
+                                                                usedProductListing.productId,
+                                                                false
                                                             )
-                                                            .show()
 
-                                                    }, onError = {
+                                                            Toast
+                                                                .makeText(
+                                                                    context,
+                                                                    "Bookmark removed",
+                                                                    Toast.LENGTH_SHORT
+                                                                )
+                                                                .show()
+
+                                                        }, onError = {
 
 
-                                                        viewModel.directUpdateServiceIsBookMarked(
-                                                            usedProductListing.productId,
-                                                            true
-                                                        )
-
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Something wrong",
-                                                                Toast.LENGTH_SHORT
+                                                            viewModel.directUpdateServiceIsBookMarked(
+                                                                usedProductListing.productId,
+                                                                true
                                                             )
-                                                            .show()
+
+                                                            Toast
+                                                                .makeText(
+                                                                    context,
+                                                                    "Something wrong",
+                                                                    Toast.LENGTH_SHORT
+                                                                )
+                                                                .show()
 
 
 
-                                                    })
+                                                        })
 
 
+                                                }
+
+                                                else {
+
+                                                    viewModel.directUpdateServiceIsBookMarked(
+                                                        usedProductListing.productId,
+                                                        true
+                                                    )
+
+                                                    viewModel.onBookmark(
+                                                        viewModel.userId,
+                                                        usedProductListing,
+                                                        onSuccess = {
+
+
+
+
+                                                            viewModel.directUpdateServiceIsBookMarked(
+                                                                usedProductListing.productId,
+                                                                true
+                                                            )
+
+
+                                                            Toast
+                                                                .makeText(
+                                                                    context,
+                                                                    "Bookmarked",
+                                                                    Toast.LENGTH_SHORT
+                                                                )
+                                                                .show()
+
+                                                        },
+                                                        onError = {
+
+                                                            viewModel.directUpdateServiceIsBookMarked(
+                                                                usedProductListing.productId,
+                                                                false
+                                                            )
+                                                            Toast
+                                                                .makeText(
+                                                                    context,
+                                                                    "Something wrong",
+                                                                    Toast.LENGTH_SHORT
+                                                                )
+                                                                .show()
+
+                                                        })
+                                                }
                                             }
+                                        )
 
-                                            else {
+                                    }
 
-                                                viewModel.directUpdateServiceIsBookMarked(
-                                                    usedProductListing.productId,
-                                                    true
+                                    // Loading indicator for appending more items
+                                    if (isLoadingItems) {
+                                        item (span = { GridItemSpan(maxLineSpan) }){
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+
+
+                                                CircularProgressIndicatorLegacy(
+                                                    modifier = Modifier.padding(
+                                                        16.dp
+                                                    ),
+                                                    color = MaterialTheme.colorScheme.primary
+
                                                 )
-
-                                                viewModel.onBookmark(
-                                                    viewModel.userId,
-                                                    usedProductListing,
-                                                    onSuccess = {
-
-
-
-
-                                                        viewModel.directUpdateServiceIsBookMarked(
-                                                            usedProductListing.productId,
-                                                            true
-                                                        )
-
-
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Bookmarked",
-                                                                Toast.LENGTH_SHORT
-                                                            )
-                                                            .show()
-
-                                                    },
-                                                    onError = {
-
-                                                        viewModel.directUpdateServiceIsBookMarked(
-                                                            usedProductListing.productId,
-                                                            false
-                                                        )
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Something wrong",
-                                                                Toast.LENGTH_SHORT
-                                                            )
-                                                            .show()
-
-                                                    })
                                             }
-                                        }
-                                    )
-
-                                }
-
-
-                                // Loading indicator for appending more items
-                                if (isLoadingItems) {
-                                    item (span = { GridItemSpan(maxLineSpan) }){
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.Center,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-
-
-                                            CircularProgressIndicatorLegacy(
-                                                modifier = Modifier.padding(
-                                                    16.dp
-                                                ),
-                                                color = MaterialTheme.colorScheme.primary
-
-                                            )
                                         }
                                     }
-                                }
 
-                                // Handle errors for appending items
-                                if (hasAppendError) {
-                                    item (span = { GridItemSpan(maxLineSpan) }){
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.Center,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
+                                    // Handle errors for appending items
+                                    if (hasAppendError) {
+                                        item (span = { GridItemSpan(maxLineSpan) }){
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
 
-                                            Text("Unable to load more.")
+                                                Text("Unable to load more.")
 
-                                            Text(
-                                                "Retry",
-                                                color = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier
-                                                    .clickable {
-                                                        viewModel.retry(
-                                                            userId,
-                                                            searchQuery
-                                                        )
-                                                    }
+                                                Text(
+                                                    "Retry",
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier
+                                                        .clickable {
+                                                            viewModel.retry(
+                                                                userId,
+                                                                searchQuery
+                                                            )
+                                                        }
 
-                                            )
+                                                )
+                                            }
                                         }
                                     }
-                                }
 
 
-                                if (!hasMoreItems) {
-                                    item (span = { GridItemSpan(maxLineSpan) }){
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.Center,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                "You have reached the end",
-                                                modifier = Modifier.padding(8.dp)
-                                            )
+                                    if (!hasMoreItems) {
+                                        item (span = { GridItemSpan(maxLineSpan) }){
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    "You have reached the end",
+                                                    modifier = Modifier.padding(8.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
 
                             }
 
+
+
+
+
                         }
 
-//                            PullRefreshIndicator(lazyPagingServices.loadState.refresh is LoadState.Loading,
-//                                pullToRefreshState, Modifier.align(Alignment.TopCenter))
+
                     }
+
+
 
 
                 }
-
-
-
             }
-        }
 
-        if (serviceInfoBottomSheetState.currentValue == SheetValue.Expanded) {
-            ModalBottomSheet(
-                modifier = Modifier
-                    .safeDrawingPadding(),
-                onDismissRequest = {
-                    scope.launch {
-                        serviceInfoBottomSheetState.hide()
-                    }
-                },
-                shape = RectangleShape, // Set shape to square (rectangle)
-                sheetState = serviceInfoBottomSheetState,
-                dragHandle = null // Remove the drag handle
-
-            ) {
-
-
-                // Sheet content
-                selectedItem?.let { nonNullSelectedItem ->
-
-                    viewModel.setSelectedItem(
-                        nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked)
-                    )
-
-                    Column(modifier = Modifier.fillMaxWidth()) {
-
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-
-
-                                }
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-
-                            // Bookmark Icon
-                            Icon(
-                                painter = if (nonNullSelectedItem.isBookmarked) painterResource(
-                                    R.drawable.ic_bookmarked
-                                ) else painterResource(
-                                    R.drawable.ic_bookmark
-                                ),
-                                contentDescription = "Bookmark",
-                                modifier = Modifier.size(24.dp),
-                                tint = Color.Unspecified
-                            )
-
-                            // Text
-                            Text(
-                                text = "Bookmark",
-                                modifier = Modifier.padding(horizontal = 4.dp),
-                            )
+            if (serviceInfoBottomSheetState.currentValue == SheetValue.Expanded) {
+                ModalBottomSheet(
+                    modifier = Modifier
+                        .safeDrawingPadding(),
+                    onDismissRequest = {
+                        scope.launch {
+                            serviceInfoBottomSheetState.hide()
                         }
+                    },
+                    shape = RectangleShape, // Set shape to square (rectangle)
+                    sheetState = serviceInfoBottomSheetState,
+                    dragHandle = null // Remove the drag handle
+
+                ) {
 
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedItem?.let {
-                                        try {
+                    // Sheet content
+                    selectedItem?.let { nonNullSelectedItem ->
 
-                                            val shareIntent = Intent().apply {
-                                                action = Intent.ACTION_SEND
-                                                putExtra(
-                                                    Intent.EXTRA_TEXT,
-                                                    it.shortCode
-                                                )  // Text you want to share
-                                                type =
-                                                    "text/plain"  // MIME type for text
+                        viewModel.setSelectedItem(
+                            nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked)
+                        )
+
+                        Column(modifier = Modifier.fillMaxWidth()) {
+
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+
+
+                                    }
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+
+
+                                // Bookmark Icon
+                                Icon(
+                                    painter = if (nonNullSelectedItem.isBookmarked) painterResource(
+                                        R.drawable.ic_bookmarked
+                                    ) else painterResource(
+                                        R.drawable.ic_dark_bookmark
+                                    ),
+                                    contentDescription = "Bookmark",
+                                    modifier = Modifier.size(24.dp),
+                                    tint = Color.Unspecified
+                                )
+
+                                // Text
+                                Text(
+                                    text = "Bookmark",
+                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                )
+                            }
+
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedItem?.let {
+                                            try {
+
+                                                val shareIntent = Intent().apply {
+                                                    action = Intent.ACTION_SEND
+                                                    putExtra(
+                                                        Intent.EXTRA_TEXT,
+                                                        it.shortCode
+                                                    )  // Text you want to share
+                                                    type =
+                                                        "text/plain"  // MIME type for text
+                                                }
+                                                // Start the share intent
+                                                context.startActivity(
+                                                    Intent.createChooser(
+                                                        shareIntent,
+                                                        "Share via"
+                                                    )
+                                                )
+                                            } catch (e: ActivityNotFoundException) {
+
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "No app to open",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    .show()
                                             }
-                                            // Start the share intent
-                                            context.startActivity(
-                                                Intent.createChooser(
-                                                    shareIntent,
-                                                    "Share via"
-                                                )
-                                            )
-                                        } catch (e: ActivityNotFoundException) {
 
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "No app to open",
-                                                    Toast.LENGTH_SHORT
-                                                )
-                                                .show()
                                         }
 
                                     }
-
-                                }
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
 
 
-                            // Bookmark Icon
-                            Icon(
-                                Icons.Default.Share,
-                                contentDescription = "Share",
-                                modifier = Modifier.size(24.dp),
-                            )
+                                // Bookmark Icon
+                                Icon(
+                                    Icons.Default.Share,
+                                    contentDescription = "Share",
+                                    modifier = Modifier.size(24.dp),
+                                )
 
-                            // Text
-                            Text(
-                                text = "Share",
-                                modifier = Modifier.padding(horizontal = 4.dp),
-                            )
+                                // Text
+                                Text(
+                                    text = "Share",
+                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                )
+                            }
                         }
+
                     }
 
+
                 }
-
-
             }
+
+
+
         }
-
-
-
     }
+
 
 }
 

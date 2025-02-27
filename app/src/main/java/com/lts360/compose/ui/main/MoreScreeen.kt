@@ -23,7 +23,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -52,6 +54,7 @@ import com.lts360.compose.ui.auth.AccountType
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.shimmerLoadingAnimation
 import com.lts360.compose.ui.theme.customColorScheme
+import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.viewmodels.MoreViewModel
 
 
@@ -64,6 +67,7 @@ fun MoreScreen(
     onManageServiceNavigateUp: () -> Unit,
     onManageSecondsNavigateUp: () -> Unit,
     onNavigateUpBookmarks: () -> Unit,
+    onNavigateUpThemeModeSettings: () -> Unit,
     viewModel: MoreViewModel,
     onNavigateUpWelcomeScreenSheet: () -> Unit,
     onNavigateUpLogInSheet: () -> Unit,
@@ -325,25 +329,32 @@ fun MoreScreen(
                         if (signInMethod == "guest") {
                             Column(
                                 modifier = Modifier
-                                    .background(MaterialTheme.customColorScheme.moreActionsContainerColor)
+                                    .background(MaterialTheme.customColorScheme.moreActionsContainerColor, RoundedCornerShape(8.dp))
                             ) {
                                 // Settings Item
                                 AccountManagementItem(
-                                    iconRes = R.drawable.ic_add,
+                                    color = Color(
+                                        0xFF007cf9
+                                    ),
+                                    iconRes = R.drawable.ic_light_add,
                                     text = "Join Now"
                                 ) {
                                     onNavigateUpWelcomeScreenSheet()
                                 }
 
                                 AccountManagementItem(
-                                    iconRes = R.drawable.ic_sign_now,
+                                    color = Color(
+                                        0xFF964B00
+                                    ),
+                                    iconRes = R.drawable.ic_light_sign_now,
                                     text = "Log In"
                                 ) {
                                     onNavigateUpLogInSheet()
                                 }
 
                                 AccountManagementItem(
-                                    iconRes = R.drawable.ic_interest,
+                                    color = Color.Red,
+                                    iconRes = R.drawable.ic_light_interest,
                                     text = "Manage Industries and Interests"
                                 ) {
 
@@ -360,11 +371,14 @@ fun MoreScreen(
 
                             Column(
                                 modifier = Modifier
-                                    .background(MaterialTheme.customColorScheme.moreActionsContainerColor)
+                                    .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
                             ) {
                                 // Settings Item
                                 AccountManagementItem(
-                                    iconRes = R.drawable.ic_settings,
+                                    color = Color(
+                                        0xFF007cf9
+                                    ),
+                                    iconRes = R.drawable.ic_light_settings,
                                     text = "Account and Profile Settings"
                                 ) {
 
@@ -376,7 +390,10 @@ fun MoreScreen(
                                 }
 
                                 AccountManagementItem(
-                                    iconRes = R.drawable.ic_bookmark,
+                                    color = Color(
+                                        0xFF964B00
+                                    ),
+                                    iconRes = R.drawable.ic_light_bookmark,
                                     text = "Bookmarks"
                                 ) {
 
@@ -384,8 +401,9 @@ fun MoreScreen(
 
                                 }
                                 AccountManagementItem(
-                                    iconRes = R.drawable.ic_interest,
-                                    text = "Manage Industries and Interests"
+                                    color = Color.Red,
+                                    iconRes = R.drawable.ic_light_interest,
+                                    text = "Manage Service Industries"
                                 ) {
 
                                     onManageIndustriesAndInterestsNavigateUp()
@@ -404,11 +422,15 @@ fun MoreScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
 
                                     Column(
+
                                         modifier = Modifier
-                                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor)
+                                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
                                     ) {
                                         AccountManagementItem(
-                                            iconRes = R.drawable.ic_manage_services,
+                                            color = Color(
+                                                0xFF49d85b
+                                            ),
+                                            iconRes = R.drawable.ic_light_manage_services,
                                             text = "Manage Services"
                                         ) {
                                             onManageServiceNavigateUp()
@@ -419,10 +441,13 @@ fun MoreScreen(
 
                                     Column(
                                         modifier = Modifier
-                                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor)
+                                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
                                     ) {
                                         AccountManagementItem(
-                                            iconRes = R.drawable.ic_manage_seconds,
+                                            color = Color(
+                                                0xFFfe9603
+                                            ),
+                                            iconRes =R.drawable.ic_light_manage_seconds,
                                             text = "Manage Seconds"
                                         ) {
                                             onManageSecondsNavigateUp()
@@ -439,14 +464,33 @@ fun MoreScreen(
 
                         // Actions Section
                         Text("Actions", style = MaterialTheme.typography.titleMedium)
+
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Column(
                             modifier = Modifier
-                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor)
+                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                        ) {
+                            ActionItem(
+                                color = Color.Black,
+                                iconRes = R.drawable.ic_light_theme_mode, text = "Theme Mode") {
+                                onNavigateUpThemeModeSettings()
+                            }
+                        }
+
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Column(
+                            modifier = Modifier
+                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
                         ) {
 
-                            ActionItem(iconRes = R.drawable.ic_invite, text = "Invite Friends") {
+
+
+                            ActionItem(
+                                color = Color(0xFF3f7787) ,
+                                iconRes = R.drawable.ic_light_invite_friends, text = "Invite Friends") {
 
                                 try {
                                     val shareMessage = """
@@ -472,7 +516,9 @@ fun MoreScreen(
                                 }
                             }
 
-                            ActionItem(iconRes = R.drawable.ic_help, text = "Help and Support") {
+                            ActionItem(
+                                color = Color(0xFFff591f),
+                                iconRes = R.drawable.ic_light_help, text = "Help and Support") {
                                 val emailIntent =
                                     Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
                                         putExtra(
@@ -502,7 +548,10 @@ fun MoreScreen(
                             }
 
                             ActionItem(
-                                iconRes = R.drawable.ic_privacy_policy,
+                                color = Color(
+                                    0xFFc14581
+                                ),
+                                iconRes = R.drawable.ic_light_privacy_policy,
                                 text = "Privacy Policy"
                             ) {
 
@@ -527,7 +576,9 @@ fun MoreScreen(
 
 
 @Composable
-fun AccountManagementItem(iconRes: Int, text: String, onClick: () -> Unit) {
+fun AccountManagementItem(iconRes: Int, text: String,
+                          color: Color=Color.Unspecified,
+                          onClick: () -> Unit) {
 
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -541,25 +592,37 @@ fun AccountManagementItem(iconRes: Int, text: String, onClick: () -> Unit) {
                 }
 
             }
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
-            painter = painterResource(id = iconRes),
-            contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
+
+    .padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+
+        Box(
+            modifier = Modifier
+                .size(32.dp) // Ensures consistent size
+                .background(color, CircleShape),
+            contentAlignment = Alignment.Center // Centers the Image inside the Box
+        ) {
+            Image(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp) // Remove padding, size only
+            )
+        }
+
         Spacer(modifier = Modifier.width(8.dp))
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 
 }
+
+
+
 
 @Composable
-fun ActionItem(iconRes: Int, text: String, onClick: () -> Unit) {
+fun ActionItem(iconRes: Int,
+               color: Color=Color.Unspecified,
+               text: String, onClick: () -> Unit) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
-
 
     Row(
         modifier = Modifier
@@ -569,15 +632,24 @@ fun ActionItem(iconRes: Int, text: String, onClick: () -> Unit) {
                     onClick()
                 }
             }
-            .padding(16.dp),
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(id = iconRes),
-            contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(32.dp) // Ensures consistent size
+                .background(color, CircleShape),
+            contentAlignment = Alignment.Center // Centers the Image inside the Box
+        ) {
+            Image(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp) // Remove padding, size only
+            )
+        }
         Spacer(modifier = Modifier.width(8.dp))
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
+
