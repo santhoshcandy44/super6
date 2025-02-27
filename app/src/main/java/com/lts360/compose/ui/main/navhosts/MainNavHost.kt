@@ -16,24 +16,15 @@ import com.lts360.compose.ui.auth.SwitchAccountTypeScreen
 import com.lts360.compose.ui.auth.navhost.AuthScreen
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.auth.navhost.slideComposableRoot
+import com.lts360.compose.ui.bookmarks.BookmarksActivity
 import com.lts360.compose.ui.chat.ChatScreen
 import com.lts360.compose.ui.chat.openImageSliderActivity
 import com.lts360.compose.ui.chat.openPlayerActivity
 import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
 import com.lts360.compose.ui.chat.viewmodels.ChatViewModel
 import com.lts360.compose.ui.main.MainScreen
-import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettings
-import com.lts360.compose.ui.main.navhosts.routes.ChangeProfilePassword
-import com.lts360.compose.ui.main.navhosts.routes.ChatWindow
-import com.lts360.compose.ui.main.navhosts.routes.EditEmailOtpVerification
-import com.lts360.compose.ui.main.navhosts.routes.EditProfileAbout
-import com.lts360.compose.ui.main.navhosts.routes.EditProfileEmail
-import com.lts360.compose.ui.main.navhosts.routes.EditProfileFirstName
-import com.lts360.compose.ui.main.navhosts.routes.EditProfileLastName
+import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
-import com.lts360.compose.ui.main.navhosts.routes.PersonalSettings
-import com.lts360.compose.ui.main.navhosts.routes.Profile
-import com.lts360.compose.ui.main.navhosts.routes.SwitchAccountType
 import com.lts360.compose.ui.main.profile.ProfileScreen
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.onboarding.ChooseIndustryScreen
@@ -47,7 +38,6 @@ import com.lts360.compose.ui.profile.EditProfileFirstNameScreen
 import com.lts360.compose.ui.profile.EditProfileLastNameScreen
 import com.lts360.compose.ui.profile.EditProfileSettingsScreen
 import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
-import com.lts360.compose.ui.bookmarks.BookmarksActivity
 import com.lts360.compose.ui.usedproducts.manage.UsedProductListingActivity
 import com.lts360.compose.ui.viewmodels.MoreViewModel
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
@@ -81,9 +71,9 @@ fun MainNavHost() {
                 notificationViewModel,
                 moreViewModel,
                 onProfileNavigateUp = {
-                    navController.navigate(Profile)
+                    navController.navigate(AccountAndProfileSettingsRoutes.Profile)
                 }, onAccountAndProfileSettingsNavigateUp = { accountType ->
-                    navController.navigate(AccountAndProfileSettings(accountType))
+                    navController.navigate(AccountAndProfileSettingsRoutes.AccountAndProfileSettings(accountType))
                 }, onManageIndustriesAndInterestsNavigateUp = { userId, type ->
                     navController.navigate(OnBoardingScreen.ChooseIndustries(userId, type))
                 },
@@ -101,7 +91,7 @@ fun MainNavHost() {
                     chatListViewModel.updateSelectedChatUser(chatUser)
 
                     navController.navigate(
-                        ChatWindow(
+                        MainRoutes.ChatWindow(
                             chatId,
                             recipientId
                         )
@@ -115,7 +105,7 @@ fun MainNavHost() {
                 })
         }
 
-        slideComposable<ChatWindow> {
+        slideComposable<MainRoutes.ChatWindow> {
 
             val chatViewModel: ChatViewModel = hiltViewModel()
 
@@ -137,75 +127,80 @@ fun MainNavHost() {
             GuestChooseIndustryScreen({},{ navController.popBackStack() })
         }
 
-        slideComposable<Profile> {
+
+        slideComposable<OnBoardingScreen.ChooseIndustries> {
+            ChooseIndustryScreen({}, { navController.popBackStack() })
+        }
+
+        slideComposable<AccountAndProfileSettingsRoutes.Profile> {
 
             ProfileScreen({ navController.popBackStack() })
         }
 
-        slideComposable<AccountAndProfileSettings> {
+        slideComposable<AccountAndProfileSettingsRoutes.AccountAndProfileSettings> {
             AccountAndProfileSettingsScreen({
-                navController.navigate(PersonalSettings)
+                navController.navigate(AccountAndProfileSettingsRoutes.PersonalSettings)
             }, {
-                navController.navigate(ChangeProfilePassword)
+                navController.navigate(AccountAndProfileSettingsRoutes.ChangeProfilePassword)
             }, { accountType ->
-                navController.navigate(SwitchAccountType(accountType))
+                navController.navigate(AccountAndProfileSettingsRoutes.SwitchAccountType(accountType))
             }, {
                 navController.popBackStack()
             })
         }
 
-        slideComposable<PersonalSettings> {
+        slideComposable<AccountAndProfileSettingsRoutes.PersonalSettings> {
             EditProfileSettingsScreen({
-                navController.navigate(EditProfileFirstName)
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileFirstName)
             }, {
-                navController.navigate(EditProfileLastName)
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileLastName)
             }, {
-                navController.navigate(EditProfileAbout("complete_about"))
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileAbout("complete_about"))
             }, {
-                navController.navigate(EditProfileEmail)
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileEmail)
             }, {
                 navController.popBackStack()
             }, profileSettingViewModel)
         }
 
-        slideComposable<EditProfileFirstName> {
+        slideComposable<AccountAndProfileSettingsRoutes.EditProfileFirstName> {
             EditProfileFirstNameScreen({
-                navController.popBackStack(PersonalSettings, false)
+                navController.popBackStack(AccountAndProfileSettingsRoutes.PersonalSettings, false)
             }, { navController.popBackStack() })
         }
 
-        slideComposable<EditProfileLastName> {
+        slideComposable<AccountAndProfileSettingsRoutes.EditProfileLastName> {
             EditProfileLastNameScreen({
-                navController.popBackStack(PersonalSettings, false)
+                navController.popBackStack(AccountAndProfileSettingsRoutes.PersonalSettings, false)
             }, { navController.popBackStack() })
         }
 
-        slideComposable<EditProfileAbout> {
+        slideComposable<AccountAndProfileSettingsRoutes.EditProfileAbout> {
             EditProfileAboutScreen(
                 { _, _ -> },
                 {},
                 {
-                    navController.popBackStack(PersonalSettings, false)
+                    navController.popBackStack(AccountAndProfileSettingsRoutes.PersonalSettings, false)
                 }, { navController.popBackStack() })
         }
 
-        slideComposable<EditProfileEmail> {
+        slideComposable<AccountAndProfileSettingsRoutes.EditProfileEmail> {
             EditProfileEmailScreen({
-                navController.navigate(EditEmailOtpVerification(it))
+                navController.navigate(AccountAndProfileSettingsRoutes.EditEmailOtpVerification(it))
             }, { navController.popBackStack() })
         }
 
-        slideComposable<EditEmailOtpVerification> {
+        slideComposable<AccountAndProfileSettingsRoutes.EditEmailOtpVerification> {
             EditEmailEmailOtpVerificationScreen({
-                navController.popBackStack(PersonalSettings, false)
+                navController.popBackStack(AccountAndProfileSettingsRoutes.PersonalSettings, false)
             }, { navController.popBackStack() })
         }
 
-        slideComposable<ChangeProfilePassword> {
+        slideComposable<AccountAndProfileSettingsRoutes.ChangeProfilePassword> {
             ChangePasswordScreen(onForgotPasswordNavigateUp = {
                 navController.navigate(AuthScreen.ForgotPassword)
             }, {
-                navController.popBackStack<AccountAndProfileSettings>(false)
+                navController.popBackStack<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>(false)
             }, { navController.popBackStack() })
         }
 
@@ -222,7 +217,7 @@ fun MainNavHost() {
 
         slideComposable<AuthScreen.ForgotPasswordEmailOtpVerification> {
             ForgotPasswordEmailOtpVerificationProtected({ email, accessToken ->
-                navController.popBackStack<AccountAndProfileSettings>(inclusive = false)
+                navController.popBackStack<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>(inclusive = false)
                 navController.navigate(AuthScreen.ResetPassword(accessToken, email))
             }, { navController.popBackStack() })
         }
@@ -233,15 +228,12 @@ fun MainNavHost() {
             }
         }
 
-        slideComposable<SwitchAccountType> {
+        slideComposable<AccountAndProfileSettingsRoutes.SwitchAccountType> {
             SwitchAccountTypeScreen(navController,{navController.popBackStack()}, {
                 navController.popBackStack()
             })
         }
 
-        slideComposable<OnBoardingScreen.ChooseIndustries> {
-            ChooseIndustryScreen({}, { navController.popBackStack() })
-        }
     }
 }
 

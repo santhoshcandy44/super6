@@ -80,9 +80,9 @@ import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
-import com.lts360.compose.ui.main.navhosts.routes.SecondsOwnerProfile
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
+import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.utils.ExpandableText
@@ -167,7 +167,7 @@ fun FeedUserDetailedSecondsInfoScreen(
     onNavigateUpForceJoinNow: () -> Unit,
     servicesViewModel: SecondsViewmodel,
     viewModel: SecondsOwnerProfileViewModel = hiltViewModel(remember {
-        navHostController.getBackStackEntry<SecondsOwnerProfile>()
+        navHostController.getBackStackEntry<BottomNavRoutes.SecondsOwnerProfile>()
     })) {
 
 

@@ -16,8 +16,7 @@ import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.auth.navhost.noTransitionComposable
 import com.lts360.compose.ui.main.models.CurrentLocation
-import com.lts360.compose.ui.main.navhosts.routes.Districts
-import com.lts360.compose.ui.main.navhosts.routes.LocationChooser
+import com.lts360.compose.ui.main.navhosts.routes.LocationSetUpRoutes
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
@@ -221,13 +220,13 @@ fun UserLocationBottomSheetContent(
                 NavHost(
                     navController = bottomSheetNavController,
                     startDestination = if (locationStatesEnabled)
-                        LocationChooser()
-                    else LocationChooser(
+                        LocationSetUpRoutes.LocationChooser()
+                    else LocationSetUpRoutes.LocationChooser(
                         false
                     ),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    noTransitionComposable<LocationChooser> {
+                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
 
                         UserLocationBottomSheet(
                             bottomSheetValue,
@@ -237,12 +236,12 @@ fun UserLocationBottomSheetContent(
                             onCurrentLocationSelected = onCurrentLocationSelected,
                             onRecentLocationSelected = onRecentLocationSelected,
                             onStateClick = {
-                                bottomSheetNavController.navigate(Districts)
+                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
                             },
                             homeViewModel)
                     }
 
-                    noTransitionComposable<Districts> {
+                    noTransitionComposable<LocationSetUpRoutes.Districts> {
                         DistrictsScreen(bottomSheetNavController,
                             isLoading,
                             onDistrictSelected)
@@ -290,13 +289,13 @@ fun PublishedUsedProductListingBottomSheetContent(
                 NavHost(
                     navController = bottomSheetNavController,
                     startDestination = if (locationStatesEnabled)
-                        LocationChooser()
-                    else LocationChooser(
+                        LocationSetUpRoutes.LocationChooser()
+                    else LocationSetUpRoutes.LocationChooser(
                         false
                     ),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    noTransitionComposable<LocationChooser> {
+                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
 
                         PublishedUsedProductListingLocationBottomSheet(
                             bottomSheetValue,
@@ -306,12 +305,12 @@ fun PublishedUsedProductListingBottomSheetContent(
                             onCurrentLocationSelected = onCurrentLocationSelected,
                             onRecentLocationSelected = onRecentLocationSelected,
                             onStateClick = {
-                                bottomSheetNavController.navigate(Districts)
+                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
                             },
                             publishedUsedProductsListingViewModel)
                     }
 
-                    noTransitionComposable<Districts> {
+                    noTransitionComposable<LocationSetUpRoutes.Districts> {
                         DistrictsScreen(bottomSheetNavController,
                             isLoading,
                             onDistrictSelected,{
@@ -358,13 +357,13 @@ fun CreateUsedProductListingBottomSheetContent(
                 NavHost(
                     navController = bottomSheetNavController,
                     startDestination = if (locationStatesEnabled)
-                        LocationChooser()
-                    else LocationChooser(
+                        LocationSetUpRoutes.LocationChooser()
+                    else LocationSetUpRoutes.LocationChooser(
                         false
                     ),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    noTransitionComposable<LocationChooser> {
+                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
 
                         CreateUsedProductListingLocationBottomSheet(
                             bottomSheetValue,
@@ -374,12 +373,12 @@ fun CreateUsedProductListingBottomSheetContent(
                             onCurrentLocationSelected = onCurrentLocationSelected,
                             onRecentLocationSelected = onRecentLocationSelected,
                             onStateClick = {
-                                bottomSheetNavController.navigate(Districts)
+                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
                             },
                             usedProductsListingWorkflowViewModel)
                     }
 
-                    noTransitionComposable<Districts> {
+                    noTransitionComposable<LocationSetUpRoutes.Districts> {
                         DistrictsScreen(bottomSheetNavController,
                             isLoading,
                             onDistrictSelected,{
@@ -427,13 +426,13 @@ fun CreateServiceLocationBottomSheetContent(
                 NavHost(
                     navController = bottomSheetNavController,
                     startDestination = if (locationStatesEnabled)
-                        LocationChooser()
-                    else LocationChooser(
+                        LocationSetUpRoutes.LocationChooser()
+                    else LocationSetUpRoutes.LocationChooser(
                         false
                     ),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    noTransitionComposable<LocationChooser> {
+                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
 
                         CreateServiceLocationBottomSheet(
                             bottomSheetValue,
@@ -443,12 +442,12 @@ fun CreateServiceLocationBottomSheetContent(
                             onCurrentLocationSelected = onCurrentLocationSelected,
                             onRecentLocationSelected = onRecentLocationSelected,
                             onStateClick = {
-                                bottomSheetNavController.navigate(Districts)
+                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
                             },
                             createServiceViewModel)
                     }
 
-                    noTransitionComposable<Districts> {
+                    noTransitionComposable<LocationSetUpRoutes.Districts> {
                         DistrictsScreen(bottomSheetNavController,
                             isLoading,
                             onDistrictSelected,{
@@ -494,13 +493,13 @@ fun LocationBottomSheetContent(
                 NavHost(
                     navController = bottomSheetNavController,
                     startDestination = if (locationStatesEnabled)
-                        LocationChooser()
-                    else LocationChooser(
+                        LocationSetUpRoutes.LocationChooser()
+                    else LocationSetUpRoutes.LocationChooser(
                         false
                     ),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    noTransitionComposable<LocationChooser> {
+                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
 
                         LocationBottomSheet(
                             bottomSheetValue,
@@ -510,11 +509,11 @@ fun LocationBottomSheetContent(
                             onCurrentLocationSelected = onCurrentLocationSelected,
                             onRecentLocationSelected = onRecentLocationSelected,
                             onStateClick = {
-                                bottomSheetNavController.navigate(Districts)
+                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
                             })
                     }
 
-                    noTransitionComposable<Districts> {
+                    noTransitionComposable<LocationSetUpRoutes.Districts> {
                         DistrictsScreen(bottomSheetNavController,
                             isLoading,
                             onDistrictSelected,{
@@ -560,13 +559,13 @@ fun EditLocationBottomSheetContent(
                 NavHost(
                     navController = bottomSheetNavController,
                     startDestination = if (locationStatesEnabled)
-                        LocationChooser()
-                    else LocationChooser(
+                        LocationSetUpRoutes.LocationChooser()
+                    else LocationSetUpRoutes.LocationChooser(
                         false
                     ),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    noTransitionComposable<LocationChooser> {
+                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
 
                         EditLocationBottomSheet(
                             bottomSheetValue,
@@ -576,12 +575,12 @@ fun EditLocationBottomSheetContent(
                             onCurrentLocationSelected = onCurrentLocationSelected,
                             onRecentLocationSelected = onRecentLocationSelected,
                             onStateClick = {
-                                bottomSheetNavController.navigate(Districts)
+                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
                             },
                             publishedServicesViewModel)
                     }
 
-                    noTransitionComposable<Districts> {
+                    noTransitionComposable<LocationSetUpRoutes.Districts> {
                         DistrictsScreen(bottomSheetNavController,
                             isLoading,
                             onDistrictSelected,{

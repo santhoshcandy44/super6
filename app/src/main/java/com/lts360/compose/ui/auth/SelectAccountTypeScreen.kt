@@ -57,7 +57,7 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavController
 import com.lts360.R
 import com.lts360.compose.ui.auth.viewmodels.SwitchAccountTypeViewModel
-import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettings
+import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.main.viewmodels.AccountAndProfileSettingsViewModel
 import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.utils.NavigatorSubmitButton
@@ -74,7 +74,7 @@ fun SwitchAccountTypeScreen(
 
     ) {
     val backStackEntry = remember {
-        navController.getBackStackEntry<AccountAndProfileSettings>()
+        navController.getBackStackEntry<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>()
     }
 
     val sharedViewModel: AccountAndProfileSettingsViewModel = hiltViewModel(backStackEntry)

@@ -39,7 +39,7 @@ import com.lts360.compose.ui.auth.repos.decryptFile
 import com.lts360.compose.ui.auth.repos.encryptMessage
 import com.lts360.compose.ui.chat.ChatUtilNativeBaseActivity
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
-import com.lts360.compose.ui.main.navhosts.routes.ChatWindow
+import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -161,7 +161,7 @@ class ChatViewModel @Inject constructor(
     val chatUsersProfileImageLoader = repository.chatUsersProfileImageLoader
 
     val userId = UserSharedPreferencesManager.userId
-    val args = savedStateHandle.toRoute<ChatWindow>()
+    val args = savedStateHandle.toRoute<MainRoutes.ChatWindow>()
 
 
     private val _lastLoadedItemId = MutableStateFlow<Long>(-1L)

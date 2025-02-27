@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.lts360.compose.ui.main.navhosts.routes.LocationChooser
+import com.lts360.compose.ui.main.navhosts.routes.LocationSetUpRoutes
 import com.lts360.compose.ui.viewmodels.LocationViewModel
 import com.lts360.compose.utils.NavigatorCard
 
@@ -39,7 +39,7 @@ fun DistrictsScreen(
 
 
     val backStackEntry = remember {
-        navHostController.getBackStackEntry<LocationChooser>()
+        navHostController.getBackStackEntry<LocationSetUpRoutes.LocationChooser>()
     }
 
     val locationViewModel: LocationViewModel = hiltViewModel(backStackEntry)

@@ -17,7 +17,7 @@ import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.chat.viewmodels.ChatViewModel
 import com.lts360.compose.ui.chat.viewmodels.IsolatedChatActivityViewModel
-import com.lts360.compose.ui.main.navhosts.routes.ChatWindow
+import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
@@ -63,13 +63,14 @@ class IsolatedChatActivity : ComponentActivity() {
                             val context = LocalContext.current
                             val navController = rememberNavController()
                             NavHost(
-                                navController, ChatWindow(
-                                    chatId, recipientId)
+                                navController, MainRoutes.ChatWindow(
+                                    chatId, recipientId
+                                )
                             ) {
-                                slideComposable<ChatWindow> { backStackEntry ->
+                                slideComposable<MainRoutes.ChatWindow> { backStackEntry ->
 
                                     val chatViewModel: ChatViewModel = hiltViewModel()
-                                    val args = backStackEntry.toRoute<ChatWindow>()
+                                    val args = backStackEntry.toRoute<MainRoutes.ChatWindow>()
                                     val userState by isolatedChatActivityViewModel.selectedChatUser.collectAsState()
 
                                     userState?.let {

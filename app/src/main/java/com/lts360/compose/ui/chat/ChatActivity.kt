@@ -190,7 +190,7 @@ import com.lts360.compose.ui.chat.viewmodels.deserializeFileUploadState
 import com.lts360.compose.ui.chat.viewmodels.factories.ChatActivityViewModelFactory
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.main.MainActivity
-import com.lts360.compose.ui.main.navhosts.routes.ChatWindow
+import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.utils.FormatterUtils.humanReadableBytesSize
@@ -270,7 +270,7 @@ class ChatActivity : ChatUtilNativeBaseActivity() {
                                 modifier = Modifier.fillMaxSize()
                             ) {
                                 SetChatContent(
-                                    ChatWindow(userState.chatUser.chatId, senderId),
+                                    MainRoutes.ChatWindow(userState.chatUser.chatId, senderId),
                                     chatActivityViewModel,
                                     userState.firstVisibleItemIndex
                                 )
@@ -300,7 +300,7 @@ class ChatActivity : ChatUtilNativeBaseActivity() {
 
         val navHostController = rememberNavController()
         NavHost(navHostController, startDestination) {
-            noTransitionComposable<ChatWindow> {
+            noTransitionComposable<MainRoutes.ChatWindow> {
                 NotificationChatScreen(
                     { uri, videoWidth, videoHeight, totalDuration ->
                         openPlayerActivity(

@@ -15,7 +15,7 @@ import com.lts360.api.auth.managers.TokenManager
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.compose.ui.auth.AccountType
-import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettings
+import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -40,7 +40,7 @@ class  AccountAndProfileSettingsViewModel @Inject constructor(savedStateHandle: 
 
 
     // Retrieve arguments from SavedStateHandle
-    private val args = savedStateHandle.toRoute<AccountAndProfileSettings>()
+    private val args = savedStateHandle.toRoute<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>()
 
 
 

@@ -23,16 +23,7 @@ import com.lts360.compose.ui.main.HomeScreen
 import com.lts360.compose.ui.main.MoreScreen
 import com.lts360.compose.ui.main.NotificationScreen
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
-import com.lts360.compose.ui.main.navhosts.routes.DetailedSeconds
-import com.lts360.compose.ui.main.navhosts.routes.DetailedSecondsFeedUser
-import com.lts360.compose.ui.main.navhosts.routes.DetailedSecondsFeedUserImagesSlider
-import com.lts360.compose.ui.main.navhosts.routes.DetailedService
-import com.lts360.compose.ui.main.navhosts.routes.DetailedServiceFeedUser
-import com.lts360.compose.ui.main.navhosts.routes.DetailedServiceFeedUserImagesSlider
-import com.lts360.compose.ui.main.navhosts.routes.SecondsDetailedImagesSlider
-import com.lts360.compose.ui.main.navhosts.routes.SecondsOwnerProfile
-import com.lts360.compose.ui.main.navhosts.routes.ServiceDetailedImagesSlider
-import com.lts360.compose.ui.main.navhosts.routes.ServiceOwnerProfile
+import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
 import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.main.profile.ServiceOwnerProfileScreen
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
@@ -103,14 +94,14 @@ fun BottomNavHost(
             HomeScreen(
                 navController,
                 {
-                    navController.navigate(DetailedService(args.key))
+                    navController.navigate(BottomNavRoutes.DetailedService(args.key))
                 },
                 {
-                    navController.navigate(DetailedSeconds(args.key))
+                    navController.navigate(BottomNavRoutes.DetailedSeconds(args.key))
                 },
                 { serviceOwnerId ->
                     navController.navigate(
-                        ServiceOwnerProfile(serviceOwnerId, args.key),
+                        BottomNavRoutes.ServiceOwnerProfile(serviceOwnerId, args.key),
                         NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
                 },
@@ -144,14 +135,14 @@ fun BottomNavHost(
             HomeScreen(
                 navController,
                 {
-                    navController.navigate(DetailedService(args.key))
+                    navController.navigate(BottomNavRoutes.DetailedService(args.key))
                 },
                 {
-                    navController.navigate(DetailedSeconds(args.key))
+                    navController.navigate(BottomNavRoutes.DetailedSeconds(args.key))
                 },
                 { serviceOwnerId ->
                     navController.navigate(
-                        ServiceOwnerProfile(serviceOwnerId, args.key),
+                        BottomNavRoutes.ServiceOwnerProfile(serviceOwnerId, args.key),
                         NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
                 },
@@ -168,10 +159,10 @@ fun BottomNavHost(
         }
 
 
-        slideComposable<DetailedService> { backStackEntry ->
+        slideComposable<BottomNavRoutes.DetailedService> { backStackEntry ->
 
 
-            val args = backStackEntry.toRoute<DetailedService>()
+            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedService>()
             val key = args.key
             val parentBackStackEntry = remember {
                 if (key == 0) {
@@ -188,7 +179,7 @@ fun BottomNavHost(
                     key,
                     navController,
                     onNavigateUpSlider = {
-                        navController.navigate(ServiceDetailedImagesSlider(key, it))
+                        navController.navigate(BottomNavRoutes.DetailedServiceImagesSlider(key, it))
                     }, navigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
                         onNavigateUpChatScreen(
                             chatUser,
@@ -219,14 +210,14 @@ fun BottomNavHost(
             HomeScreen(
                 navController,
                 {
-                    navController.navigate(DetailedService(args.key))
+                    navController.navigate(BottomNavRoutes.DetailedService(args.key))
                 },
                 {
-                    navController.navigate(DetailedSeconds(args.key))
+                    navController.navigate(BottomNavRoutes.DetailedSeconds(args.key))
                 },
                 { serviceOwnerId ->
                     navController.navigate(
-                        ServiceOwnerProfile(serviceOwnerId, args.key),
+                        BottomNavRoutes.ServiceOwnerProfile(serviceOwnerId, args.key),
                         NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
                 },
@@ -241,10 +232,10 @@ fun BottomNavHost(
             )
         }
 
-        slideComposable<DetailedSeconds> { backStackEntry ->
+        slideComposable<BottomNavRoutes.DetailedSeconds> { backStackEntry ->
 
 
-            val args = backStackEntry.toRoute<DetailedSeconds>()
+            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedSeconds>()
             val key = args.key
 
             val parentBackStackEntry =  remember {
@@ -263,7 +254,7 @@ fun BottomNavHost(
                     key,
                     navController,
                     onNavigateUpSlider = {
-                        navController.navigate(SecondsDetailedImagesSlider(key, it))
+                        navController.navigate(BottomNavRoutes.DetailedSecondsImagesSlider(key, it))
                     }, navigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
                         onNavigateUpChatScreen(
                             chatUser,
@@ -278,7 +269,7 @@ fun BottomNavHost(
                     {
                             serviceOwnerId ->
                         navController.navigate(
-                            SecondsOwnerProfile(serviceOwnerId, args.key),
+                            BottomNavRoutes.SecondsOwnerProfile(serviceOwnerId, args.key),
                             NavOptions.Builder().setLaunchSingleTop(true).build()
                         )
                     },
@@ -288,10 +279,10 @@ fun BottomNavHost(
         }
 
 
-        slideComposable<ServiceDetailedImagesSlider> {
+        slideComposable<BottomNavRoutes.DetailedServiceImagesSlider> {
 
 
-            val args = it.toRoute<ServiceDetailedImagesSlider>()
+            val args = it.toRoute<BottomNavRoutes.DetailedServiceImagesSlider>()
             val selectedImagePosition = args.selectedImagePosition
             val key = args.key
 
@@ -317,10 +308,10 @@ fun BottomNavHost(
         }
 
 
-        slideComposable<SecondsDetailedImagesSlider> {
+        slideComposable<BottomNavRoutes.DetailedSecondsImagesSlider> {
 
 
-            val args = it.toRoute<SecondsDetailedImagesSlider>()
+            val args = it.toRoute<BottomNavRoutes.DetailedSecondsImagesSlider>()
             val selectedImagePosition = args.selectedImagePosition
             val key = args.key
 
@@ -345,8 +336,8 @@ fun BottomNavHost(
 
         }
 
-        slideComposable<ServiceOwnerProfile> { backStackEntry ->
-            val key = backStackEntry.toRoute<ServiceOwnerProfile>().key
+        slideComposable<BottomNavRoutes.ServiceOwnerProfile> { backStackEntry ->
+            val key = backStackEntry.toRoute<BottomNavRoutes.ServiceOwnerProfile>().key
 
             val parentBackStackEntry = remember{
                 if (key == 0) {
@@ -361,7 +352,7 @@ fun BottomNavHost(
             )
             val selectedItem by servicesViewModel.selectedItem.collectAsState()
 
-            val viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navController.getBackStackEntry<ServiceOwnerProfile>() })
+            val viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navController.getBackStackEntry<BottomNavRoutes.ServiceOwnerProfile>() })
 
 
             selectedItem?.let {
@@ -378,7 +369,7 @@ fun BottomNavHost(
 
                     },
                     {
-                        navController.navigate(DetailedServiceFeedUser(it))
+                        navController.navigate(BottomNavRoutes.DetailedServiceFeedUser(it))
                     }, servicesViewModel,
                     viewModel
                 )
@@ -386,8 +377,8 @@ fun BottomNavHost(
 
         }
 
-        slideComposable<SecondsOwnerProfile> { backStackEntry ->
-            val key = backStackEntry.toRoute<SecondsOwnerProfile>().key
+        slideComposable<BottomNavRoutes.SecondsOwnerProfile> { backStackEntry ->
+            val key = backStackEntry.toRoute<BottomNavRoutes.SecondsOwnerProfile>().key
 
             val parentBackStackEntry = remember {  if (key == 0) {
                 navController.getBackStackEntry<BottomBar.Home>()
@@ -399,7 +390,7 @@ fun BottomNavHost(
             )
 
             val viewmodel: SecondsOwnerProfileViewModel =
-                hiltViewModel(remember { navController.getBackStackEntry<SecondsOwnerProfile>() })
+                hiltViewModel(remember { navController.getBackStackEntry<BottomNavRoutes.SecondsOwnerProfile>() })
 
             val selectedItem by secondsViewModel.selectedItem.collectAsState()
 
@@ -417,7 +408,7 @@ fun BottomNavHost(
 
                     },
                     {
-                        navController.navigate(DetailedSecondsFeedUser(it))
+                        navController.navigate(BottomNavRoutes.DetailedSecondsFeedUser(it))
                     }, secondsViewModel,
                     viewmodel
                 )
@@ -425,8 +416,8 @@ fun BottomNavHost(
 
         }
 
-        slideComposable<DetailedSecondsFeedUser> { backStackEntry ->
-            val args = backStackEntry.toRoute<DetailedSecondsFeedUser>()
+        slideComposable<BottomNavRoutes.DetailedSecondsFeedUser> { backStackEntry ->
+            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedSecondsFeedUser>()
 
             val key = args.key
 
@@ -448,7 +439,7 @@ fun BottomNavHost(
                     navController,
                     key,
                     {
-                        navController.navigate(DetailedSecondsFeedUserImagesSlider(it))
+                        navController.navigate(BottomNavRoutes.DetailedSecondsFeedUserImagesSlider(it))
                     },
                     { chatUser, chatId, recipientId, feedUserProfile ->
 
@@ -466,12 +457,12 @@ fun BottomNavHost(
 
         }
 
-        slideComposable<DetailedSecondsFeedUserImagesSlider> {
+        slideComposable<BottomNavRoutes.DetailedSecondsFeedUserImagesSlider> {
 
             val selectedImagePosition =
-                it.toRoute<DetailedSecondsFeedUserImagesSlider>().selectedImagePosition
+                it.toRoute<BottomNavRoutes.DetailedSecondsFeedUserImagesSlider>().selectedImagePosition
             val viewmodel: SecondsOwnerProfileViewModel =
-                hiltViewModel(remember { navController.getBackStackEntry<SecondsOwnerProfile>() })
+                hiltViewModel(remember { navController.getBackStackEntry<BottomNavRoutes.SecondsOwnerProfile>() })
 
             FeedUserSecondsImagesSliderScreen(
                 navController,
@@ -481,8 +472,8 @@ fun BottomNavHost(
         }
 
 
-        slideComposable<DetailedServiceFeedUser> { backStackEntry ->
-            val args = backStackEntry.toRoute<DetailedServiceFeedUser>()
+        slideComposable<BottomNavRoutes.DetailedServiceFeedUser> { backStackEntry ->
+            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedServiceFeedUser>()
 
             val key = args.key
 
@@ -502,7 +493,7 @@ fun BottomNavHost(
                     navController,
                     key,
                     {
-                        navController.navigate(DetailedServiceFeedUserImagesSlider(it))
+                        navController.navigate(BottomNavRoutes.DetailedServiceFeedUserImagesSlider(it))
                     },
                     { chatUser, chatId, recipientId, feedUserProfile ->
 
@@ -520,12 +511,12 @@ fun BottomNavHost(
 
         }
 
-        slideComposable<DetailedServiceFeedUserImagesSlider> {
+        slideComposable<BottomNavRoutes.DetailedServiceFeedUserImagesSlider> {
 
             val selectedImagePosition =
-                it.toRoute<DetailedServiceFeedUserImagesSlider>().selectedImagePosition
+                it.toRoute<BottomNavRoutes.DetailedServiceFeedUserImagesSlider>().selectedImagePosition
             val serviceOwnerProfileViewModel: ServiceOwnerProfileViewModel =
-                hiltViewModel(remember { navController.getBackStackEntry<ServiceOwnerProfile>() })
+                hiltViewModel(remember { navController.getBackStackEntry<BottomNavRoutes.ServiceOwnerProfile>() })
 
             FeedUserImagesSliderScreen(
                 navController,

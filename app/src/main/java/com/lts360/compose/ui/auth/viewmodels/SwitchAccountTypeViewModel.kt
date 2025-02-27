@@ -14,7 +14,7 @@ import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.compose.ui.auth.AccountType
-import com.lts360.compose.ui.main.navhosts.routes.SwitchAccountType
+import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +29,7 @@ class SwitchAccountTypeViewModel @Inject constructor(
     private val userProfileDao: UserProfileDao,
 ) : ViewModel() {
 
-    private val args = savedStateHandle.toRoute<SwitchAccountType>()
+    private val args = savedStateHandle.toRoute<AccountAndProfileSettingsRoutes.SwitchAccountType>()
 
     val accountType = args.accountType
 

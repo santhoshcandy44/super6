@@ -5,16 +5,16 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.lts360.api.app.AppClient
-import com.lts360.api.common.errors.ErrorResponse
-import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.Utils.Result
 import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.app.AppClient
 import com.lts360.api.app.ProfileSettingsService
+import com.lts360.api.common.errors.ErrorResponse
+import com.lts360.api.common.responses.ResponseReply
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.compose.ui.auth.repos.AuthRepository
 import com.lts360.compose.ui.auth.viewmodels.EmailOTPVerificationViewModel
-import com.lts360.compose.ui.main.navhosts.routes.EditEmailOtpVerification
+import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +30,7 @@ class EditEmailEmailOTPVerificationViewModel @Inject constructor(
 ) : EmailOTPVerificationViewModel(authRepository){
 
 
-    private val args = savedStateHandle.toRoute<EditEmailOtpVerification>()
+    private val args = savedStateHandle.toRoute<AccountAndProfileSettingsRoutes.EditEmailOtpVerification>()
     val userId: Long = UserSharedPreferencesManager.userId
 
     val email: String = args.email

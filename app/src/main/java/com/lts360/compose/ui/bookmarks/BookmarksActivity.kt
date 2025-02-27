@@ -20,9 +20,6 @@ import androidx.navigation.toRoute
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.chat.IsolatedChatActivity
 import com.lts360.compose.ui.main.navhosts.routes.BookMarkRoutes
-import com.lts360.compose.ui.main.navhosts.routes.DetailedServiceFeedUser
-import com.lts360.compose.ui.main.navhosts.routes.DetailedServiceFeedUserImagesSlider
-import com.lts360.compose.ui.main.navhosts.routes.ServiceOwnerProfile
 import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.main.profile.BookmarkedServiceOwnerProfileScreen
 import com.lts360.compose.ui.services.BookmarkedDetailedServiceInfoScreen

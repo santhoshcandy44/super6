@@ -18,7 +18,6 @@ import com.lts360.api.models.service.Service
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
-import com.lts360.compose.ui.main.navhosts.routes.ServiceOwnerProfile
 import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel

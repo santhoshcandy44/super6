@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.lts360.api.Utils.Result
 import com.lts360.api.Utils.mapExceptionToError
@@ -14,13 +13,10 @@ import com.lts360.api.auth.managers.TokenManager
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.FeedUserProfileInfo
-import com.lts360.api.models.service.Service
 import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
-import com.lts360.compose.ui.main.navhosts.routes.SecondsOwnerProfile
-import com.lts360.compose.ui.main.navhosts.routes.ServiceOwnerProfile
 import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel

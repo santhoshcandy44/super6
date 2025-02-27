@@ -89,8 +89,8 @@ import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
-import com.lts360.compose.ui.main.navhosts.routes.ServiceOwnerProfile
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
+import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
@@ -171,7 +171,7 @@ fun FeedUserDetailedServiceInfoScreen(
     navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpForceJoinNow: () -> Unit,
     servicesViewModel: ServicesViewModel,
-    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navHostController.getBackStackEntry<ServiceOwnerProfile>() }),
+    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navHostController.getBackStackEntry<BottomNavRoutes.ServiceOwnerProfile>() }),
 
 
     ) {

@@ -65,7 +65,6 @@ import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
-import com.lts360.compose.ui.main.navhosts.routes.ServiceOwnerProfile
 import com.lts360.compose.ui.services.ServiceOwnerProfileViewModel
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.viewmodels.ServicesViewModel

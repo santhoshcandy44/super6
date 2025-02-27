@@ -34,10 +34,9 @@ import com.lts360.compose.ui.main.District
 import com.lts360.compose.ui.main.StateModel
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.models.LocationRepository
-import com.lts360.compose.ui.main.navhosts.routes.LocationChooser
+import com.lts360.compose.ui.main.navhosts.routes.LocationSetUpRoutes
 import com.lts360.compose.ui.main.navhosts.routes.RecentLocationSerializer
-import com.lts360.compose.ui.main.navhosts.routes.deserializeLocationsList
-import com.lts360.compose.ui.main.navhosts.routes.serializeLocationsList
+import com.lts360.compose.ui.main.navhosts.routes.StateMapSerializer
 import com.lts360.compose.ui.managers.LocationManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -72,15 +71,12 @@ class LocationViewModel @Inject constructor(
 
 
 
-    private val args = savedStateHandle.toRoute<LocationChooser>()
+    private val args = savedStateHandle.toRoute<LocationSetUpRoutes.LocationChooser>()
     val isLocationStatesEnabled = args.locationStatesEnabled
 
 
 
     val userId = UserSharedPreferencesManager.userId
-
-
-
 
     private val _currentLocation = MutableStateFlow<CurrentLocation?>(null)
     val currentLocation: StateFlow<CurrentLocation?> = _currentLocation
@@ -123,7 +119,7 @@ class LocationViewModel @Inject constructor(
         if (isLocationStatesEnabled) {
             val stateMap = savedStateHandle.get<String>("locations")
                 ?.let {
-                    deserializeLocationsList(it)
+                    StateMapSerializer.deserializeLocationsList(it)
                 }
             if (stateMap != null) {
                 _locations.value = stateMap
@@ -140,7 +136,7 @@ class LocationViewModel @Inject constructor(
             viewModelScope.launch {
                 _locations.collectLatest { stateMap ->
                     stateMap?.let {
-                        savedStateHandle["locations"] = serializeLocationsList(it)
+                        savedStateHandle["locations"] = StateMapSerializer.serializeLocationsList(it)
                     }
                 }
             }

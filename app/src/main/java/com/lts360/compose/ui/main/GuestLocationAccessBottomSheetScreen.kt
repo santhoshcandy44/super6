@@ -15,8 +15,7 @@ import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.auth.navhost.noTransitionComposable
 import com.lts360.compose.ui.main.models.CurrentLocation
-import com.lts360.compose.ui.main.navhosts.routes.Districts
-import com.lts360.compose.ui.main.navhosts.routes.LocationChooser
+import com.lts360.compose.ui.main.navhosts.routes.LocationSetUpRoutes
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 
 
@@ -44,11 +43,11 @@ fun OnBoardGuestUserLocationAccessBottomSheetScreen(
                 // NavHost inside the bottom sheet
                 NavHost(
                     navController = bottomSheetNavController,
-                    startDestination = if (locationStatesEnabled) LocationChooser()
-                    else LocationChooser(false),
+                    startDestination = if (locationStatesEnabled) LocationSetUpRoutes.LocationChooser()
+                    else LocationSetUpRoutes.LocationChooser(false),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    noTransitionComposable<LocationChooser> {
+                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
                         LocationBottomSheet(
                             bottomSheetValue,
                             onCloseClick = {
@@ -57,12 +56,12 @@ fun OnBoardGuestUserLocationAccessBottomSheetScreen(
                             onRecentLocationSelected = onRecentLocationSelected,
                             onCurrentLocationSelected = onCurrentLocationSelected,
                             onStateClick = {
-                                bottomSheetNavController.navigate(Districts)
+                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
                             })
                     }
 
 
-                    noTransitionComposable<Districts> {
+                    noTransitionComposable<LocationSetUpRoutes.Districts> {
                         DistrictsScreen(bottomSheetNavController,
                             isLoading,
                             onDistrictSelected) {
@@ -108,11 +107,11 @@ fun GuestUserLocationAccessBottomSheetScreen(
                 // NavHost inside the bottom sheet
                 NavHost(
                     navController = bottomSheetNavController,
-                    startDestination = if (locationStatesEnabled) LocationChooser()
-                    else LocationChooser(false),
+                    startDestination = if (locationStatesEnabled) LocationSetUpRoutes.LocationChooser()
+                    else LocationSetUpRoutes.LocationChooser(false),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    noTransitionComposable<LocationChooser> {
+                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
                         GuestUserLocationBottomSheet(
                             bottomSheetValue,
                             onCloseClick = {
@@ -121,12 +120,12 @@ fun GuestUserLocationAccessBottomSheetScreen(
                             onRecentLocationSelected = onRecentLocationSelected,
                             onCurrentLocationSelected = onCurrentLocationSelected,
                             onStateClick = {
-                                bottomSheetNavController.navigate(Districts)
+                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
                             }, homeViewModel = homeViewModel)
                     }
 
 
-                    noTransitionComposable<Districts> {
+                    noTransitionComposable<LocationSetUpRoutes.Districts> {
                         DistrictsScreen(bottomSheetNavController,
                             isLoading,
                             onDistrictSelected) {

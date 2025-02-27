@@ -60,7 +60,6 @@ import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
-import com.lts360.compose.ui.main.navhosts.routes.SecondsOwnerProfile
 import com.lts360.compose.ui.main.profile.LoadingServiceOwnerProfileScreen
 import com.lts360.compose.ui.main.profile.ProfileAboutSection
 import com.lts360.compose.ui.main.profile.ProfileInfoChatUser

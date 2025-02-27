@@ -15,35 +15,52 @@ import kotlinx.serialization.json.Json
 sealed class MainRoutes  {
     @Serializable
     data object Main : MainRoutes()
+
+    @Serializable
+    data class ChatWindow(
+        val chatId: Int,
+        val recipientId: Long)
+
+    @Serializable
+    data class SMSChatScreen(val address:String)
 }
 
 
 @Serializable
-data class SMSChatScreen(val address:String)
+sealed class BottomNavRoutes {
+
+    @Serializable
+    data class DetailedService(val key: Int)
+
+    @Serializable
+    data class ServiceOwnerProfile(val serviceOwnerId: Long, val key: Int = -1)
+
+    @Serializable
+    data class DetailedServiceImagesSlider(val key: Int, val selectedImagePosition: Int)
+
+    @Serializable
+    data class DetailedServiceFeedUser(val key: Int=-1)
+
+    @Serializable
+    data class DetailedServiceFeedUserImagesSlider(val selectedImagePosition: Int)
+
+    @Serializable
+    data class DetailedSeconds(val key: Int)
 
 
-@Serializable
-data object Profile
+    @Serializable
+    data class SecondsOwnerProfile(val serviceOwnerId: Long, val key: Int = -1)
 
-@Serializable
-data class AccountAndProfileSettings(val accountType: String)
+    @Serializable
+    data class  DetailedSecondsFeedUser(val key: Int=-1)
 
+    @Serializable
+    data class DetailedSecondsImagesSlider(val key: Int, val selectedImagePosition: Int)
 
-@Serializable
-data class SwitchAccountType(val accountType: AccountType)
+    @Serializable
+    data class DetailedSecondsFeedUserImagesSlider(val selectedImagePosition: Int)
 
-
-@Serializable
-data class DetailedService(val key: Int)
-
-@Serializable
-data class DetailedServiceFeedUser(val key: Int=-1)
-
-@Serializable
-data class DetailedSeconds(val key: Int)
-
-@Serializable
-data class  DetailedSecondsFeedUser(val key: Int=-1)
+}
 
 @Serializable
 sealed class  BookMarkRoutes{
@@ -82,82 +99,63 @@ sealed class  BookMarkRoutes{
     data class DetailedSecondsFeedUserImagesSlider(val selectedImagePosition: Int): BookMarkRoutes()
 }
 
-
-
 @Serializable
-data class ChatWindow(
-    val chatId: Int,
-    val recipientId: Long)
+sealed class AccountAndProfileSettingsRoutes{
 
 
-@Serializable
-data class ServiceOwnerProfile(val serviceOwnerId: Long, val key: Int = -1)
+    @Serializable
+    data object Profile
 
-@Serializable
-data class SecondsOwnerProfile(val serviceOwnerId: Long, val key: Int = -1)
+    @Serializable
+    data class SwitchAccountType(val accountType: AccountType)
 
-@Serializable
-data class ServiceDetailedImagesSlider(val key: Int, val selectedImagePosition: Int)
+    @Serializable
+    data class AccountAndProfileSettings(val accountType: String)
 
+    @Serializable
+    data object PersonalSettings : AccountAndProfileSettingsRoutes()
 
-@Serializable
-data class SecondsDetailedImagesSlider(val key: Int, val selectedImagePosition: Int)
+    @Serializable
+    data object ChangeProfilePassword : AccountAndProfileSettingsRoutes()
 
-@Serializable
-data class DetailedServiceFeedUserImagesSlider(val selectedImagePosition: Int)
+    @Serializable
+    data object EditProfileFirstName : AccountAndProfileSettingsRoutes()
 
+    @Serializable
+    data object EditProfileLastName : AccountAndProfileSettingsRoutes()
 
-@Serializable
-data class DetailedSecondsFeedUserImagesSlider(val selectedImagePosition: Int)
+    @Serializable
+    data class EditProfileAbout(val type: String?) : AccountAndProfileSettingsRoutes()
 
-@Serializable
-data object PersonalSettings
+    @Serializable
+    data object EditProfileEmail : AccountAndProfileSettingsRoutes()
 
-@Serializable
-data object ChangeProfilePassword
+    @Serializable
+    data class EditEmailOtpVerification(val email: String) : AccountAndProfileSettingsRoutes()
 
-@Serializable
-data object EditProfileFirstName
-
-@Serializable
-data object EditProfileLastName
-
-@Serializable
-data class EditProfileAbout(val type: String?)
-
-@Serializable
-data object EditProfileEmail
-
-@Serializable
-data class EditEmailOtpVerification(val email: String)
-
-
-
-
-
-
-
-/*
-
-
-@Serializable
-data class HomeDetail(val key:Int=-1, val submittedQuery: String? = null, val onlySearchBar: Boolean = false)
-*/
-
-@Serializable
-data class LocationChooser(val locationStatesEnabled:Boolean=true)
-
-@Serializable
-data object Districts
-
-// Function to serialize a list of EditableService objects to a JSON string
-fun serializeLocationsList(stateMap: StateMap): String {
-    return Json.encodeToString(stateMap)  // The default serializer for the List type is automatically used
 }
 
-// Function to deserialize a JSON string back to a list of EditableService objects
-fun deserializeLocationsList(stateMap: String): StateMap {
-    return Json.decodeFromString(stateMap)
+@Serializable
+sealed class LocationSetUpRoutes{
+    @Serializable
+    data class LocationChooser(val locationStatesEnabled:Boolean=true)
+
+    @Serializable
+    data object Districts
+}
+
+
+
+object StateMapSerializer{
+    // Function to serialize a list of EditableService objects to a JSON string
+    fun serializeLocationsList(stateMap: StateMap): String {
+        return Json.encodeToString(stateMap)  // The default serializer for the List type is automatically used
+    }
+
+    // Function to deserialize a JSON string back to a list of EditableService objects
+    fun deserializeLocationsList(stateMap: String): StateMap {
+        return Json.decodeFromString(stateMap)
+    }
 }
 
 
@@ -172,8 +170,6 @@ object RecentLocationSerializer{
         return Json.decodeFromString(recentLocation)
     }
 }
-
-
 
 object UserProfileSerializer{
 
