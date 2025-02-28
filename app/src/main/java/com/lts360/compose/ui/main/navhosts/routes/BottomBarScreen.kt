@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class BottomBar{
+
     @Serializable
     data class Home(
         val key: Int = 0,

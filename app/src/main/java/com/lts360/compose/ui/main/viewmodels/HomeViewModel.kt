@@ -20,6 +20,8 @@ import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.auth.managers.TokenManager
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
+import com.lts360.api.models.service.Service
+import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.app.database.models.profile.UserLocation
@@ -102,7 +104,17 @@ class HomeViewModel @Inject constructor(
     private val _suggestions = MutableStateFlow<List<String>>(emptyList())
     val suggestions = _suggestions.asStateFlow()
 
+    private val _selectedServiceItem = MutableStateFlow<Service?>(null)
+    val selectedServiceItem = _selectedServiceItem.asStateFlow()
 
+    private val _selectedServiceOwnerServiceItem = MutableStateFlow<Service?>(null)
+    val selectedServiceOwnerServiceItem = _selectedServiceOwnerServiceItem.asStateFlow()
+
+    private val _selectedServiceOwnerUsedProductListingItem = MutableStateFlow<UsedProductListing?>(null)
+    val selectedServiceOwnerUsedProductListingItem = _selectedServiceOwnerUsedProductListingItem.asStateFlow()
+
+    private val _selectedUsedProductListingItem = MutableStateFlow<UsedProductListing?>(null)
+    val selectedUsedProductListingItem = _selectedUsedProductListingItem.asStateFlow()
 
 
 
@@ -131,6 +143,30 @@ class HomeViewModel @Inject constructor(
     }
 
 
+
+    fun isSelectedServiceItemNull() = _selectedServiceItem.value==null
+
+    fun isSelectedUsedProductListingItemNull() = _selectedUsedProductListingItem.value == null
+
+    fun isSelectedServiceOwnerServiceItemNull() = _selectedServiceOwnerServiceItem.value == null
+
+    fun isSelectedServiceOwnerUsedProductListingItemNull() = _selectedServiceOwnerUsedProductListingItem.value == null
+
+    fun setSelectedServiceItem(item: Service?) {
+        _selectedServiceItem.value = item
+    }
+
+    fun setSelectedServiceOwnerServiceItem(item: Service?) {
+        _selectedServiceOwnerServiceItem.value = item
+    }
+
+    fun setSelectedUsedProductListingItem(item: UsedProductListing?) {
+        _selectedUsedProductListingItem.value = item
+    }
+
+    fun setSelectedSecondsOwnerUsedProductListingIItem(item: UsedProductListing?) {
+        _selectedServiceOwnerUsedProductListingItem.value = item
+    }
 
     private fun setLocationType(locationType: String?) {
         _selectedLocationType.value = locationType
@@ -168,20 +204,19 @@ class HomeViewModel @Inject constructor(
 
 
     fun navigateToOverlay(navController: NavController, route: BottomBar) {
-
         viewModelScope.launch {
             navController.navigate(
                 route
             )
-            collapseSearchAction()
         }
-    }
 
+        setEmptySuggestions()
+
+    }
 
     fun collapseSearchAction(forceResetSearchText:Boolean=false) {
         if (_isSearching.value) {
-            // Execute your collapse logic
-            setSuggestions(emptyList())
+            setEmptySuggestions()
             if(forceResetSearchText){
                 _searchQuery.value = TextFieldValue(text = "", selection = TextRange(0))
             }
@@ -189,7 +224,9 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-
+    private fun setEmptySuggestions(){
+        setSuggestions(emptyList())
+    }
 
     fun setCurrentLocation(
         currentLocation: CurrentLocation,

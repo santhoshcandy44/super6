@@ -30,35 +30,35 @@ sealed class MainRoutes  {
 sealed class BottomNavRoutes {
 
     @Serializable
-    data class DetailedService(val key: Int)
+    data class DetailedService(val key: Int) : BottomNavRoutes()
 
     @Serializable
-    data class ServiceOwnerProfile(val serviceOwnerId: Long, val key: Int = -1)
+    data class DetailedServiceImagesSlider(val key: Int, val selectedImagePosition: Int) : BottomNavRoutes()
 
     @Serializable
-    data class DetailedServiceImagesSlider(val key: Int, val selectedImagePosition: Int)
+    data class ServiceOwnerProfile(val serviceOwnerId: Long, val key: Int = -1) : BottomNavRoutes()
 
     @Serializable
-    data class DetailedServiceFeedUser(val key: Int=-1)
+    data class DetailedServiceFeedUser(val key: Int=-1) : BottomNavRoutes()
 
     @Serializable
-    data class DetailedServiceFeedUserImagesSlider(val selectedImagePosition: Int)
-
-    @Serializable
-    data class DetailedSeconds(val key: Int)
+    data class DetailedServiceFeedUserImagesSlider(val selectedImagePosition: Int) : BottomNavRoutes()
 
 
     @Serializable
-    data class SecondsOwnerProfile(val serviceOwnerId: Long, val key: Int = -1)
+    data class DetailedSeconds(val key: Int) : BottomNavRoutes()
 
     @Serializable
-    data class  DetailedSecondsFeedUser(val key: Int=-1)
+    data class SecondsOwnerProfile(val serviceOwnerId: Long, val key: Int = -1) : BottomNavRoutes()
 
     @Serializable
-    data class DetailedSecondsImagesSlider(val key: Int, val selectedImagePosition: Int)
+    data class  DetailedSecondsFeedUser(val key: Int=-1) : BottomNavRoutes()
 
     @Serializable
-    data class DetailedSecondsFeedUserImagesSlider(val selectedImagePosition: Int)
+    data class DetailedSecondsImagesSlider(val key: Int, val selectedImagePosition: Int) : BottomNavRoutes()
+
+    @Serializable
+    data class DetailedSecondsFeedUserImagesSlider(val selectedImagePosition: Int) : BottomNavRoutes()
 
 }
 

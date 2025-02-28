@@ -22,7 +22,8 @@ data class LocalIcons(
     val locationAccessOnBoarding:Int,
     val deleteNotification:Int,
     val notificationMarkAsRead:Int,
-    val manageThemeMode:Int
+    val manageThemeMode:Int,
+    val wall:Int
 )
 
 val LightIcons = LocalIcons(
@@ -45,7 +46,8 @@ val LightIcons = LocalIcons(
     locationAccessOnBoarding = R.drawable.ic_light_location_access_on_boarding,
     deleteNotification = R.drawable.ic_light_notification_delete,
     notificationMarkAsRead = R.drawable.ic_light_notification_mark_as_read,
-    manageThemeMode = R.drawable.ic_light_theme_mode
+    manageThemeMode = R.drawable.ic_light_theme_mode,
+    wall = R.drawable.light_app_wall
 
 )
 
@@ -69,7 +71,8 @@ val DarkIcons = LocalIcons(
     locationAccessOnBoarding = R.drawable.ic_dark_location_access_on_boarding,
     deleteNotification = R.drawable.ic_dark_notification_delete,
     notificationMarkAsRead = R.drawable.ic_dark_notification_mark_as_read,
-    manageThemeMode = R.drawable.ic_dark_theme_mode
+    manageThemeMode = R.drawable.ic_dark_theme_mode,
+    wall = R.drawable.dark_app_wall
 
 )
 

@@ -76,7 +76,7 @@ fun SecondsServiceOwnerProfileScreen(
     navHostController: NavHostController,
     key: Int,
     onNavigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
-    onNavigateUpDetailedService: (Int) -> Unit,
+    onNavigateUpDetailedSeconds: (Int, UsedProductListing) -> Unit,
     servicesViewModel: SecondsViewmodel,
     secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel
 ) {
@@ -114,7 +114,7 @@ fun SecondsServiceOwnerProfileScreen(
 
         },
         {
-            onNavigateUpDetailedService(key)
+            onNavigateUpDetailedSeconds(key, it)
         },
         {
             navHostController.popBackStack()
@@ -188,7 +188,7 @@ fun SecondsOwnerProfileScreenContent(
     selectedParentService: UsedProductListing?,
     navHostController: NavHostController,
     onNavigateUpChat: () -> Unit,
-    onNavigateUpDetailedService: (UsedProductListing) -> Unit,
+    onNavigateUpDetailedSeconds: (UsedProductListing) -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: SecondsOwnerProfileViewModel,
 ) {
@@ -324,8 +324,7 @@ fun SecondsOwnerProfileScreenContent(
                                 }
                             }
                         }, {
-                            viewModel.setSelectedItem(it)
-                            onNavigateUpDetailedService(it)
+                            onNavigateUpDetailedSeconds(it)
                         }, {
                             viewModel.setSelectedItem(it)
                             bottomSheetState = true

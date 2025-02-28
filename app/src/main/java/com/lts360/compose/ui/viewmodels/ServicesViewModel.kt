@@ -142,7 +142,7 @@ class ServicesViewModel @Inject constructor(
 
     val submittedQuery = savedStateHandle.get<String?>("submittedQuery")
     val onlySearchBar = savedStateHandle.get<Boolean>("onlySearchBar") ?: false
-    private val key = savedStateHandle.get<Int>("key") ?: 0
+    private val key =  savedStateHandle.get<Int>("key") ?: 0
 
     val userId = UserSharedPreferencesManager.userId
 

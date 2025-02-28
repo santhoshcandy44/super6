@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.compose.dropUnlessResumedV2
+import com.lts360.compose.ui.theme.icons
 
 
 @Composable
@@ -50,12 +51,12 @@ fun WelcomeScreen(
     Box(modifier = Modifier
             .fillMaxSize()) {
 
-
+        val id = MaterialTheme.icons.wall
 
         AndroidView(
             factory = { ctx ->
                 ImageView(ctx).apply {
-                    setImageResource(R.drawable.wall) // Load .9.png
+                    setImageResource(id)
                 }
             },
             modifier = Modifier.fillMaxSize()

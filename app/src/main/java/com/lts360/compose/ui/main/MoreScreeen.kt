@@ -527,7 +527,7 @@ fun MoreScreen(
                                         )
                                         putExtra(
                                             Intent.EXTRA_SUBJECT,
-                                            "Video Downloader for Twitter Application Feedback"
+                                            "Help & Support"
                                         )
                                     }
 
@@ -597,8 +597,8 @@ fun AccountManagementItem(iconRes: Int, text: String,
 
         Box(
             modifier = Modifier
-                .size(32.dp) // Ensures consistent size
-                .background(color, CircleShape),
+                .background(color, CircleShape)
+                .size(32.dp),
             contentAlignment = Alignment.Center // Centers the Image inside the Box
         ) {
             Image(
@@ -637,8 +637,8 @@ fun ActionItem(iconRes: Int,
     ) {
         Box(
             modifier = Modifier
-                .size(32.dp) // Ensures consistent size
-                .background(color, CircleShape),
+                .background(color, CircleShape)
+                .size(32.dp),
             contentAlignment = Alignment.Center // Centers the Image inside the Box
         ) {
             Image(

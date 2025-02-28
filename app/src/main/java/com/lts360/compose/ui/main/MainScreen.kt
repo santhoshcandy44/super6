@@ -225,7 +225,15 @@ fun MainScreen(
 
     var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val navController = rememberCustomBottomNavController(lastEntry)
+
+
+    val navController = rememberCustomBottomNavController(lastEntry,
+        homeViewModel.isSelectedServiceItemNull(),
+        homeViewModel.isSelectedServiceOwnerServiceItemNull(),
+        homeViewModel.isSelectedUsedProductListingItemNull(),
+        homeViewModel.isSelectedServiceOwnerUsedProductListingItemNull()
+
+        )
 
 
     val allowedScreens = listOf(
@@ -361,7 +369,6 @@ fun MainScreen(
         ) { innerPadding ->
 
 
-
             Scaffold(
                 floatingActionButton = {
 
@@ -395,6 +402,7 @@ fun MainScreen(
 
 
                 }) { contentPadding ->
+
 
                 BottomNavHost(
                     homeViewModel,
@@ -455,6 +463,8 @@ fun MainScreen(
                     },{
                         dockedFloatingActionButtonVisibility = it
                     })
+
+
             }
 
             // Check if isConnected has a value

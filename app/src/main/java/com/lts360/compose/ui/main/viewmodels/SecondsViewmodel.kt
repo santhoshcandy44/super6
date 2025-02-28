@@ -45,7 +45,7 @@ class SecondsViewmodel @Inject constructor(
 
     val submittedQuery = savedStateHandle.get<String?>("submittedQuery")
     val onlySearchBar = savedStateHandle.get<Boolean>("onlySearchBar") ?: false
-    private val key = savedStateHandle.get<Int>("key") ?: 0
+    private val key =  savedStateHandle.get<Int>("key") ?: 0
 
     val userId = UserSharedPreferencesManager.userId
 
@@ -72,9 +72,6 @@ class SecondsViewmodel @Inject constructor(
 
 
     private var loadingItemsJob: Job? = null
-
-    private val _nestedServiceOwnerProfileSelectedItem = MutableStateFlow<UsedProductListing?>(null)
-    val nestedServiceOwnerProfileSelectedItem = _nestedServiceOwnerProfileSelectedItem.asStateFlow()
 
 
     init {
@@ -129,9 +126,6 @@ class SecondsViewmodel @Inject constructor(
         }
     }
 
-    fun setNestedServiceOwnerProfileSelectedItem(service: UsedProductListing?) {
-        _nestedServiceOwnerProfileSelectedItem.value = service
-    }
 
     // Load next page
     fun nextPage(userId: Long, query: String?) {

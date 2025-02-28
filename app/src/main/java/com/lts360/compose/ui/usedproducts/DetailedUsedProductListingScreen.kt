@@ -96,7 +96,7 @@ fun DetailedUsedProductListingScreen(
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpForceJoinNow: () -> Unit,
-    onUsedProductListingClicked:(Long)-> Unit,
+    onUsedProductListingOwnerProfileClicked:(Long)-> Unit,
     viewModel: SecondsViewmodel
 ) {
 
@@ -115,7 +115,7 @@ fun DetailedUsedProductListingScreen(
         onNavigateUpForceJoinNow,
         {
             selectedItem?.let {
-                onUsedProductListingClicked(it.user.userId)
+                onUsedProductListingOwnerProfileClicked(it.user.userId)
             }
         },
         {
@@ -175,7 +175,7 @@ fun FeedUserDetailedSecondsInfoScreen(
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
 
-    val selectedItem by servicesViewModel.nestedServiceOwnerProfileSelectedItem.collectAsState()
+    val selectedItem by viewModel.selectedItem.collectAsState()
 
 
     val scope = rememberCoroutineScope()
