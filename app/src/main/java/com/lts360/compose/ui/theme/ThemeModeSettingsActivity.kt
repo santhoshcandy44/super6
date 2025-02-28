@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Surface
+import com.lts360.compose.ui.news.LanguageSettingsScreen
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -16,7 +17,7 @@ class ThemeModeSettingsActivity : ComponentActivity() {
 
                 Surface {
                     SafeDrawingBox {
-                        ThemeSettingsScreen({
+                           ThemeSettingsScreen({
                             finish()
                         })
                     }

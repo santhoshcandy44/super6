@@ -287,14 +287,13 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
                 AppClient.clear()
 
                 startActivity(Intent(applicationContext, AuthActivity::class.java).apply {
-                    flags = if (!isAuthActivityInStack(applicationContext)) {
-                        // No existing task, clear everything
-                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or if (!isAuthActivityInStack(applicationContext)) {
+                        Intent.FLAG_ACTIVITY_CLEAR_TASK
                     } else {
-                        // Task exists, bring to front without recreation
                         Intent.FLAG_ACTIVITY_SINGLE_TOP
                     }
                 })
+
 
 
             }
@@ -329,12 +328,10 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
 
             AppClient.clear()
 
-            startActivity( Intent(applicationContext, AuthActivity::class.java).apply {
-                flags = if (!isAuthActivityInStack(applicationContext)) {
-                    // No existing task, clear everything
-                    Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(Intent(applicationContext, AuthActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or if (!isAuthActivityInStack(applicationContext)) {
+                    Intent.FLAG_ACTIVITY_CLEAR_TASK
                 } else {
-                    // Task exists, bring to front without recreation
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
                 }
             })

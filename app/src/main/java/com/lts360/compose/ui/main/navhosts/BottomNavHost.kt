@@ -136,35 +136,30 @@ fun BottomNavHost(
 
             val servicesViewModel: ServicesViewModel = hiltViewModel(key = args.key.toString())
             val secondsViewmodel: SecondsViewmodel = hiltViewModel(key = "seconds_${args.key}")
-            Column {
-
-                Text("Service: ${args.key}")
-                HomeScreen(
-                    navController,
-                    {
-                        navController.navigate(BottomNavRoutes.DetailedService(args.key))
-                    },
-                    {
-                        navController.navigate(BottomNavRoutes.DetailedSeconds(args.key))
-                    },
-                    { serviceOwnerId ->
-                        navController.navigate(
-                            BottomNavRoutes.ServiceOwnerProfile(serviceOwnerId, args.key),
-                            NavOptions.Builder().setLaunchSingleTop(true).build()
-                        )
-                    },
-                    { showChooseIndustriesSheet() },
-                    { dropUnlessResumedV2(backstackEntry) { navController.popBackStack() } },
-                    homeViewModel,
-                    servicesViewModel,
-                    secondsViewmodel,
-                    onDockedFabAddNewSecondsChanged,
-                    args.onlySearchBar,
-                    "Services",
-
+            HomeScreen(
+                navController,
+                {
+                    navController.navigate(BottomNavRoutes.DetailedService(args.key))
+                },
+                {
+                    navController.navigate(BottomNavRoutes.DetailedSeconds(args.key))
+                },
+                { serviceOwnerId ->
+                    navController.navigate(
+                        BottomNavRoutes.ServiceOwnerProfile(serviceOwnerId, args.key),
+                        NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
+                },
+                { showChooseIndustriesSheet() },
+                { dropUnlessResumedV2(backstackEntry) { navController.popBackStack() } },
+                homeViewModel,
+                servicesViewModel,
+                secondsViewmodel,
+                onDockedFabAddNewSecondsChanged,
+                args.onlySearchBar,
+                "Services",
 
-            }
+                )
 
         }
 

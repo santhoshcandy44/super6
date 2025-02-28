@@ -46,6 +46,7 @@ import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import com.lts360.compose.ui.news.LanguageSettingsScreen
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
@@ -65,9 +66,7 @@ class TestActivity : ComponentActivity() {
         setContent {
             AppTheme {
                 Surface {
-                    SafeDrawingBox {
-                        QRCodeScannerScreen()
-                    }
+                    LanguageSettingsScreen()
                 }
             }
         }
