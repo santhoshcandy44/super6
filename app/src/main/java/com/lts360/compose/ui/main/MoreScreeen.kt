@@ -51,6 +51,7 @@ import com.lts360.R
 import com.lts360.components.utils.openUrlInCustomTab
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.AccountType
+import com.lts360.compose.ui.chat.ChatScreen
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.shimmerLoadingAnimation
 import com.lts360.compose.ui.theme.customColorScheme
@@ -143,122 +144,133 @@ fun MoreScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
 
 
-    Scaffold(
 
-        /*   topBar = {
-               TopAppBar( title = { Text(text = "More",
-                           style = MaterialTheme.typography.titleMedium) })
-           },
-   */
+    Scaffold( modifier = Modifier
+        .fillMaxSize() // This makes the Box take up the entire available space
+    ){ contentPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize() // This makes the Box take up the entire available space
+                .padding(contentPadding)
+        ) {
 
-        content = { paddingValues ->
 
-
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxSize() // This makes the Box take up the entire available space
-                    .padding(paddingValues) // Use the padding values provided by Scaffold
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
+                Spacer(Modifier.height(32.dp))
 
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 32.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-
-                    if (isLoading) {
-                        // Profile Section
-                        Box(
+                if (isLoading) {
+                    // Profile Section
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                    ) {
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(100.dp)
+                                .padding(16.dp)
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            ) {
-                                // Profile Image
-                                Box {
+                            // Profile Image
+                            Box {
 
-                                    Box(
-                                        modifier = Modifier
-                                            .size(60.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.customColorScheme.shimmerContainer)
-                                            .shimmerLoadingAnimation(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                Column(
-                                    verticalArrangement = Arrangement.Center,
+                                Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = 16.dp)
+                                        .size(60.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.customColorScheme.shimmerContainer)
+                                        .shimmerLoadingAnimation(),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        "",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(MaterialTheme.customColorScheme.shimmerContainer)
-                                            .shimmerLoadingAnimation(),
-                                        color = Color.White,
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Text(
-                                        "",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 4.dp)
-                                            .background(MaterialTheme.customColorScheme.shimmerContainer)
-                                            .shimmerLoadingAnimation(),
-                                        color = Color.White,
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
                                 }
                             }
-                        }
 
-                    } else {
-                        // Profile Section
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
 
-                        ) {
-                            Row(
+                            Column(
+                                verticalArrangement = Arrangement.Center,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) {
+                                    .padding(start = 16.dp)
+                            ) {
+                                Text(
+                                    "",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(MaterialTheme.customColorScheme.shimmerContainer)
+                                        .shimmerLoadingAnimation(),
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    "",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 4.dp)
+                                        .background(MaterialTheme.customColorScheme.shimmerContainer)
+                                        .shimmerLoadingAnimation(),
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
 
-                                        if (signInMethod == "guest") {
+                } else {
+                    // Profile Section
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+
+                                    if (signInMethod == "guest") {
 
 
-                                        } else {
-                                            dropUnlessResumedV2(lifecycleOwner) {
-                                                onProfileNavigateUp()
-                                            }
+                                    } else {
+                                        dropUnlessResumedV2(lifecycleOwner) {
+                                            onProfileNavigateUp()
                                         }
-                                    }) {
-                                // Profile Image
-                                profilePicBitmap?.let {
+                                    }
+                                }) {
+                            // Profile Image
+                            profilePicBitmap?.let {
 
 
+                                Image(
+                                    it.asImageBitmap(),
+                                    contentDescription = null,
+
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .border(
+                                            width = 2.dp,
+                                            purpleGradientBrush,
+                                            shape = CircleShape
+                                        )
+                                        .padding(2.dp)
+                                        .clip(CircleShape), // Fill the Box with the image
+                                    contentScale = ContentScale.Crop // Crop the image to fit within the Box
+                                )
+
+
+                            }
+                                ?: run {
                                     Image(
-                                        it.asImageBitmap(),
+                                        painter = painterResource(R.drawable.user_placeholder),
                                         contentDescription = null,
-
                                         modifier = Modifier
                                             .size(60.dp)
                                             .border(
@@ -267,302 +279,281 @@ fun MoreScreen(
                                                 shape = CircleShape
                                             )
                                             .padding(2.dp)
-                                            .clip(CircleShape), // Fill the Box with the image
-                                        contentScale = ContentScale.Crop // Crop the image to fit within the Box
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+
+
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            ) {
+                                Text(
+                                    "${userProfile?.firstName.orEmpty()} ${userProfile?.lastName.orEmpty()}",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                if (signInMethod == "guest") {
+                                    Text(
+                                        userProfile?.userId.toString(),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                } else {
+
+                                    Text(
+                                        userProfile?.email.orEmpty(),
+                                        style = MaterialTheme.typography.bodyMedium
                                     )
 
 
                                 }
-                                    ?: run {
-                                        Image(
-                                            painter = painterResource(R.drawable.user_placeholder),
-                                            contentDescription = null,
-                                            modifier = Modifier
-                                                .size(60.dp)
-                                                .border(
-                                                    width = 2.dp,
-                                                    purpleGradientBrush,
-                                                    shape = CircleShape
-                                                )
-                                                .padding(2.dp)
-                                                .clip(CircleShape),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    }
 
-                                Spacer(modifier = Modifier.width(16.dp))
+                            }
+                        }
+                    }
 
+                    Spacer(modifier = Modifier.height(8.dp))
 
+                    if (signInMethod == "guest") {
+                        Column(
+                            modifier = Modifier
+                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor, RoundedCornerShape(8.dp))
+                        ) {
+                            // Settings Item
+                            AccountManagementItem(
+                                color = Color(
+                                    0xFF007cf9
+                                ),
+                                iconRes = R.drawable.ic_light_add,
+                                text = "Join Now"
+                            ) {
+                                onNavigateUpWelcomeScreenSheet()
+                            }
+
+                            AccountManagementItem(
+                                color = Color(
+                                    0xFF964B00
+                                ),
+                                iconRes = R.drawable.ic_light_sign_now,
+                                text = "Log In"
+                            ) {
+                                onNavigateUpLogInSheet()
+                            }
+
+                            AccountManagementItem(
+                                color = Color.Red,
+                                iconRes = R.drawable.ic_light_interest,
+                                text = "Manage Industries and Interests"
+                            ) {
+
+                                onNavigateUpGuestManageIndustriesAndInterests()
+                            }
+                        }
+                    } else {
+                        // Account Management Section
+                        Text(
+                            "Account Management",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Column(
+                            modifier = Modifier
+                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                        ) {
+                            // Settings Item
+                            AccountManagementItem(
+                                color = Color(
+                                    0xFF007cf9
+                                ),
+                                iconRes = R.drawable.ic_light_settings,
+                                text = "Account and Profile Settings"
+                            ) {
+
+                                userProfile?.let {
+
+                                    onAccountAndProfileSettingsNavigateUp(it.accountType)
+
+                                }
+                            }
+
+                            AccountManagementItem(
+                                color = Color(
+                                    0xFF964B00
+                                ),
+                                iconRes = R.drawable.ic_light_bookmark,
+                                text = "Bookmarks"
+                            ) {
+
+                                onNavigateUpBookmarks()
+
+                            }
+                            AccountManagementItem(
+                                color = Color.Red,
+                                iconRes = R.drawable.ic_light_interest,
+                                text = "Manage Service Industries"
+                            ) {
+
+                                onManageIndustriesAndInterestsNavigateUp()
+                            }
+                        }
+
+                        userProfile?.let {
+
+                            if (it.accountType == AccountType.Business.name) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                // Actions Section
+                                Text(
+                                    "Business Tools & Settings",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
 
                                 Column(
-                                    verticalArrangement = Arrangement.Center,
+
                                     modifier = Modifier
-                                        .fillMaxWidth()
+                                        .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
                                 ) {
-                                    Text(
-                                        "${userProfile?.firstName.orEmpty()} ${userProfile?.lastName.orEmpty()}",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-
-                                    if (signInMethod == "guest") {
-                                        Text(
-                                            userProfile?.userId.toString(),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    } else {
-
-                                        Text(
-                                            userProfile?.email.orEmpty(),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-
-
-                                    }
-
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        if (signInMethod == "guest") {
-                            Column(
-                                modifier = Modifier
-                                    .background(MaterialTheme.customColorScheme.moreActionsContainerColor, RoundedCornerShape(8.dp))
-                            ) {
-                                // Settings Item
-                                AccountManagementItem(
-                                    color = Color(
-                                        0xFF007cf9
-                                    ),
-                                    iconRes = R.drawable.ic_light_add,
-                                    text = "Join Now"
-                                ) {
-                                    onNavigateUpWelcomeScreenSheet()
-                                }
-
-                                AccountManagementItem(
-                                    color = Color(
-                                        0xFF964B00
-                                    ),
-                                    iconRes = R.drawable.ic_light_sign_now,
-                                    text = "Log In"
-                                ) {
-                                    onNavigateUpLogInSheet()
-                                }
-
-                                AccountManagementItem(
-                                    color = Color.Red,
-                                    iconRes = R.drawable.ic_light_interest,
-                                    text = "Manage Industries and Interests"
-                                ) {
-
-                                    onNavigateUpGuestManageIndustriesAndInterests()
-                                }
-                            }
-                        } else {
-                            // Account Management Section
-                            Text(
-                                "Account Management",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Column(
-                                modifier = Modifier
-                                    .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
-                            ) {
-                                // Settings Item
-                                AccountManagementItem(
-                                    color = Color(
-                                        0xFF007cf9
-                                    ),
-                                    iconRes = R.drawable.ic_light_settings,
-                                    text = "Account and Profile Settings"
-                                ) {
-
-                                    userProfile?.let {
-
-                                        onAccountAndProfileSettingsNavigateUp(it.accountType)
-
-                                    }
-                                }
-
-                                AccountManagementItem(
-                                    color = Color(
-                                        0xFF964B00
-                                    ),
-                                    iconRes = R.drawable.ic_light_bookmark,
-                                    text = "Bookmarks"
-                                ) {
-
-                                    onNavigateUpBookmarks()
-
-                                }
-                                AccountManagementItem(
-                                    color = Color.Red,
-                                    iconRes = R.drawable.ic_light_interest,
-                                    text = "Manage Service Industries"
-                                ) {
-
-                                    onManageIndustriesAndInterestsNavigateUp()
-                                }
-                            }
-
-                            userProfile?.let {
-
-                                if (it.accountType == AccountType.Business.name) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    // Actions Section
-                                    Text(
-                                        "Business Tools & Settings",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    Column(
-
-                                        modifier = Modifier
-                                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                                    AccountManagementItem(
+                                        color = Color(
+                                            0xFF49d85b
+                                        ),
+                                        iconRes = R.drawable.ic_light_manage_services,
+                                        text = "Manage Services"
                                     ) {
-                                        AccountManagementItem(
-                                            color = Color(
-                                                0xFF49d85b
-                                            ),
-                                            iconRes = R.drawable.ic_light_manage_services,
-                                            text = "Manage Services"
-                                        ) {
-                                            onManageServiceNavigateUp()
-                                        }
+                                        onManageServiceNavigateUp()
                                     }
+                                }
 
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
 
-                                    Column(
-                                        modifier = Modifier
-                                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                                Column(
+                                    modifier = Modifier
+                                        .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                                ) {
+                                    AccountManagementItem(
+                                        color = Color(
+                                            0xFFfe9603
+                                        ),
+                                        iconRes =R.drawable.ic_light_manage_seconds,
+                                        text = "Manage Seconds"
                                     ) {
-                                        AccountManagementItem(
-                                            color = Color(
-                                                0xFFfe9603
-                                            ),
-                                            iconRes =R.drawable.ic_light_manage_seconds,
-                                            text = "Manage Seconds"
-                                        ) {
-                                            onManageSecondsNavigateUp()
-                                        }
+                                        onManageSecondsNavigateUp()
                                     }
-
                                 }
 
                             }
+
                         }
+                    }
 
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                        // Actions Section
-                        Text("Actions", style = MaterialTheme.typography.titleMedium)
+                    // Actions Section
+                    Text("Actions", style = MaterialTheme.typography.titleMedium)
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                        Column(
-                            modifier = Modifier
-                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
-                        ) {
-                            ActionItem(
-                                color = Color.Black,
-                                iconRes = R.drawable.ic_light_theme_mode, text = "Theme Mode") {
-                                onNavigateUpThemeModeSettings()
-                            }
+                    Column(
+                        modifier = Modifier
+                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                    ) {
+                        ActionItem(
+                            color = Color.Black,
+                            iconRes = R.drawable.ic_light_theme_mode, text = "Theme Mode") {
+                            onNavigateUpThemeModeSettings()
                         }
+                    }
 
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                        Column(
-                            modifier = Modifier
-                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
-                        ) {
+                    Column(
+                        modifier = Modifier
+                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                    ) {
 
 
 
-                            ActionItem(
-                                color = Color(0xFF3f7787) ,
-                                iconRes = R.drawable.ic_light_invite_friends, text = "Invite Friends") {
+                        ActionItem(
+                            color = Color(0xFF3f7787) ,
+                            iconRes = R.drawable.ic_light_invite_friends, text = "Invite Friends") {
 
-                                try {
-                                    val shareMessage = """
+                            try {
+                                val shareMessage = """
         Lts360 (Download It from PlayStore)
 
         https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}
     """.trimIndent()
 
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_SUBJECT, "Super6 App")
-                                        putExtra(Intent.EXTRA_TEXT, shareMessage)
-                                    }
-
-                                    context.startActivity(
-                                        Intent.createChooser(
-                                            shareIntent,
-                                            "Choose one"
-                                        )
-                                    )
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, "Super6 App")
+                                    putExtra(Intent.EXTRA_TEXT, shareMessage)
                                 }
-                            }
 
-                            ActionItem(
-                                color = Color(0xFFff591f),
-                                iconRes = R.drawable.ic_light_help, text = "Help and Support") {
-                                val emailIntent =
-                                    Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
-                                        putExtra(
-                                            Intent.EXTRA_EMAIL,
-                                            arrayOf(context.getString(R.string.help_and_support))
-                                        )
-                                        putExtra(
-                                            Intent.EXTRA_SUBJECT,
-                                            "Help & Support"
-                                        )
-                                    }
-
-                                try {
-                                    context.startActivity(
-                                        Intent.createChooser(
-                                            emailIntent,
-                                            "Send mail..."
-                                        )
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        shareIntent,
+                                        "Choose one"
                                     )
-                                } catch (e: ActivityNotFoundException) {
-                                    Toast.makeText(
-                                        context,
-                                        "No email app installed",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+                                )
+                            } catch (e: Exception) {
+                                Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
                             }
-
-                            ActionItem(
-                                color = Color(
-                                    0xFFc14581
-                                ),
-                                iconRes = R.drawable.ic_light_privacy_policy,
-                                text = "Privacy Policy"
-                            ) {
-
-                                openUrlInCustomTab(context, context.getString(R.string.privacy_policy))
-                            }
-
-
                         }
 
-                    }
+                        ActionItem(
+                            color = Color(0xFFff591f),
+                            iconRes = R.drawable.ic_light_help, text = "Help and Support") {
+                            val emailIntent =
+                                Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
+                                    putExtra(
+                                        Intent.EXTRA_EMAIL,
+                                        arrayOf(context.getString(R.string.help_and_support))
+                                    )
+                                    putExtra(
+                                        Intent.EXTRA_SUBJECT,
+                                        "Help & Support"
+                                    )
+                                }
 
+                            try {
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        emailIntent,
+                                        "Send mail..."
+                                    )
+                                )
+                            } catch (e: ActivityNotFoundException) {
+                                Toast.makeText(
+                                    context,
+                                    "No email app installed",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+
+                        ActionItem(
+                            color = Color(
+                                0xFFc14581
+                            ),
+                            iconRes = R.drawable.ic_light_privacy_policy,
+                            text = "Privacy Policy"
+                        ) {
+
+                            openUrlInCustomTab(context, context.getString(R.string.privacy_policy))
+                        }
+
+
+                    }
 
                 }
 
@@ -570,7 +561,9 @@ fun MoreScreen(
             }
 
 
-        })
+        }
+    }
+
 
 }
 

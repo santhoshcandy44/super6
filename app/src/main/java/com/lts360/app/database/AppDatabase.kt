@@ -35,6 +35,8 @@ import com.lts360.app.database.models.service.DraftLocation
 import com.lts360.app.database.models.service.DraftPlan
 import com.lts360.app.database.models.service.DraftService
 import com.lts360.app.database.models.service.DraftThumbnail
+import com.lts360.compose.ui.news.qr.daos.QRCodeDao
+import com.lts360.compose.ui.news.qr.models.QRCodeEntity
 import java.io.File
 import java.io.IOException
 
@@ -57,7 +59,8 @@ import java.io.IOException
         Industry::class,
         MessageMediaMetadata::class,
         MessageProcessingData::class,
-    ], version = 1,
+        QRCodeEntity::class
+    ], version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -77,11 +80,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun draftThumbnailDao(): DraftThumbnailDao
     abstract fun recentLocationDao(): RecentLocationDao
     abstract fun guestIndustryDao(): GuestIndustryDao
+    abstract fun qrCodeDao(): QRCodeDao
 
+    suspend fun backupDatabase(context: Context) {
 
-   suspend fun backupDatabase(context: Context) {
-
-       // Path to the original Room database file
+        // Path to the original Room database file
         val dbFile = context.getDatabasePath("app_database")
 
         // Backup location in the external storage
@@ -98,18 +101,20 @@ abstract class AppDatabase : RoomDatabase() {
 
         } catch (e: IOException) {
             e.printStackTrace()
-            CrashlyticsLogger.recordException(e, mapOf(
+            CrashlyticsLogger.recordException(
+                e, mapOf(
                     "backup_error" to "true",
-                    "error_message" to (e.message ?: "Caused while backing up database"))
+                    "error_message" to (e.message ?: "Caused while backing up database")
+                )
             )
         }
     }
 
 
-    private  suspend fun formatAndCleanDatabase(context: Context){
+    private suspend fun formatAndCleanDatabase(context: Context) {
         clearAllData()
-/*        close()
-        context.deleteDatabase("app_database")*/
+        /*        close()
+                context.deleteDatabase("app_database")*/
     }
 
     private suspend fun clearAllData() {

@@ -1,11 +1,12 @@
 package com.lts360.compose.ui.profile
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -53,14 +54,33 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
+import com.lts360.components.utils.InputStreamRequestBody
 import com.lts360.compose.transformations.PlaceholderTransformation
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
 import com.lts360.compose.ui.services.manage.ErrorText
+import com.lts360.libs.imagecrop.CropProfilePicActivityContracts
+import com.lts360.libs.imagepicker.GalleyPagerActivityContracts
+import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import java.io.File
+import okhttp3.RequestBody
+import okio.BufferedSink
+import java.io.InputStream
+
+
+fun createRequestBodyFromInputStream(inputStream: InputStream, mediaType: String): RequestBody {
+
+    return object : RequestBody() {
+        override fun contentType(): MediaType? {
+            return mediaType.toMediaTypeOrNull()
+        }
+
+        override fun writeTo(sink: BufferedSink) {
+            inputStream.copyTo(sink.outputStream()) // Copy the input stream to the output sink
+        }
+    }
+}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +90,7 @@ fun EditProfileSettingsScreen(
     onEditLastNameNavigateUp: () -> Unit,
     onEditAboutNavigateUp: () -> Unit,
     onEditEmailNavigateUp: () -> Unit,
-    onPopStack:()-> Unit,
+    onPopStack: () -> Unit,
     viewModel: ProfileSettingsViewModel
 ) {
 
@@ -93,29 +113,94 @@ fun EditProfileSettingsScreen(
 
     var isPickerLaunched by rememberSaveable { mutableStateOf(false) }
 
-    //Register the image picker
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { selectedUri ->
-            // Convert the URI to a file and upload the image
-            val imageFile = File(getRealPathFromURI(context, selectedUri))
-            val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
-            val imagePart =
-                MultipartBody.Part.createFormData("profile_pic", imageFile.name, requestFile)
-            viewModel.onUploadImage(userId, imagePart, onSuccess = {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                    .show()
-            }) {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                    .show()
-            }
 
+    fun startUploadFile(uri: Uri) {
+        // Convert the URI to a file and upload the image
+        val inputStreamRequestBody = InputStreamRequestBody(context, uri)
+
+        val resolver = context.contentResolver
+        val cursor = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+
+        val displayName = cursor?.use {
+            if (it.moveToFirst()) {
+                it.getString(it.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+            } else {
+                null
+            }
         }
 
-        isPickerLaunched = false
+        if (displayName == null) {
+            return
+        }
+
+        val imagePart =
+            MultipartBody.Part.createFormData("profile_pic", displayName, inputStreamRequestBody)
+
+        viewModel.onUploadImage(userId, imagePart, onSuccess = {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                .show()
+        }) {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                .show()
+        }
 
     }
+
+    val cropLauncher = rememberLauncherForActivityResult(
+        CropProfilePicActivityContracts.ImageCropper()
+    ) { uri ->
+
+        uri?.let {
+            return@let startUploadFile(it)
+        }
+
+    }
+
+    val imagePickerLauncher =
+        rememberLauncherForActivityResult(GalleyPagerActivityContracts.ImagePicker()) { uri: Uri? ->
+
+            uri?.let { selectedUri ->
+
+                try {
+
+                    // Step 1: Get InputStream from URI safely
+                    val inputStream: InputStream? =
+                        context.contentResolver.openInputStream(selectedUri)
+
+                    // Step 2: Decode InputStream to Bitmap
+                    val bitmap = inputStream?.let { BitmapFactory.decodeStream(it) }
+
+                    if (bitmap != null) {
+                        // Step 3: Get image width and height
+                        val width = bitmap.width
+                        val height = bitmap.height
+
+                        // Step 4: Check if the image meets the minimum size (100px by 100px)
+                        if (width >= 100 && height >= 100) {
+                            // Step 5: Check the aspect ratio (1:1)
+                            if (width == height) {
+
+                                return@let startUploadFile(selectedUri)
+
+                            } else {
+                                cropLauncher.launch(selectedUri)
+                            }
+                        } else {
+
+                            Toast.makeText(context, "Image is too small", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    }
+
+
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            isPickerLaunched = false
+        }
+
 
     // Determine progress color based on health status
     val progressColor = when (healthStatus) {
@@ -159,12 +244,12 @@ fun EditProfileSettingsScreen(
             // AppBarLayout equivalent using TopAppBar in Compose
 
 
-            userProfile?.let {  nonNullUserProfile ->
+            userProfile?.let { nonNullUserProfile ->
 
                 val firstName = nonNullUserProfile.first_name
-                val lastName = nonNullUserProfile.last_name ?:""
+                val lastName = nonNullUserProfile.last_name ?: ""
                 val about = nonNullUserProfile.about
-                val aboutError = if(about.isNullOrEmpty()) "About is not yet updated" else null
+                val aboutError = if (about.isNullOrEmpty()) "About is not yet updated" else null
                 val email = nonNullUserProfile.email
 
                 Column(
@@ -270,8 +355,8 @@ fun EditProfileSettingsScreen(
                                     if (isPickerLaunched)
                                         return@IconButton
                                     isPickerLaunched = true
-                                    imagePickerLauncher.launch("image/*")
 
+                                    imagePickerLauncher.launch(Unit)
                                 }) {
 
                                 Icon(
@@ -287,7 +372,8 @@ fun EditProfileSettingsScreen(
 
                             CircularProgressIndicatorLegacy(
                                 modifier = Modifier.align(Alignment.Center),
-                                color = MaterialTheme.colorScheme.primary)
+                                color = MaterialTheme.colorScheme.primary
+                            )
 
                         }
 
@@ -414,13 +500,12 @@ fun EditProfileSettingsScreen(
                     )
 
                 }
-            }?:run {
+            } ?: run {
                 CircularProgressIndicatorLegacy(
                     modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary)
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
-
-
 
 
         }
@@ -429,7 +514,7 @@ fun EditProfileSettingsScreen(
 }
 
 
-private fun getRealPathFromURI(context: Context, uri: Uri): String {
+fun getRealPathFromURI(context: Context, uri: Uri): String {
     val projection = arrayOf(MediaStore.Images.Media.DATA)
     val cursor = context.contentResolver.query(uri, projection, null, null, null)
     if (cursor != null) {

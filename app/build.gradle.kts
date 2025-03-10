@@ -1,8 +1,8 @@
 import com.android.build.api.dsl.Packaging
 
 plugins {
-    alias(libs.plugins.androidApplication)
-    alias(libs.plugins.jetbrainsKotlinAndroid)
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("com.google.gms.google-services")
     id("com.google.dagger.hilt.android")
@@ -23,12 +23,14 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
         buildConfigField("String" ,"DEBUG_BASE_URL","\"http://192.168.113.85:3000\"")
-        buildConfigField("String" ,"BASE_URL","\"http://192.168.113.85:3000\"")
         buildConfigField("String" ,"DEBUG_SOCKET_BASE_URL","\"http://192.168.113.85:3080\"")
-        buildConfigField("String" ,"SOCKET_BASE_URL","\"http://192.168.113.85:3080\"")
+        buildConfigField("String" ,"BASE_URL","\"https://api.lts360.com\"")
+        buildConfigField("String" ,"SOCKET_BASE_URL","\"https://api.lts360.com\"")
         buildConfigField("String" ,"REFERER","\"referer.lts360.com\"")
 
         vectorDrawables {
@@ -45,6 +47,7 @@ android {
             // Configure the NDK version if needed
             version = "28.0.12674087"  // Choose the version that matches your setup
         }
+
 
 
     }
@@ -85,8 +88,9 @@ android {
     composeCompiler {
 
         reportsDestination = layout.buildDirectory.dir("compose_compiler")
-        stabilityConfigurationFile =
+        stabilityConfigurationFiles.addAll(
             rootProject.layout.projectDirectory.file("stability_config.conf")
+        )
     }
 
 
@@ -117,110 +121,138 @@ android {
 dependencies {
 
 
+    // AndroidX Libraries
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
+    implementation("androidx.appcompat:appcompat:1.7.0")
 
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.process)
-    implementation(libs.androidx.appcompat)
+    dependencies {
+        // Testing Libraries
+        testImplementation(libs.junit)
+        androidTestImplementation(libs.androidx.junit)
+        androidTestImplementation(libs.androidx.espresso.core)
 
-
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-
-    implementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    debugImplementation(libs.androidx.ui.tooling)
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.test.manifest)
-
-    implementation(libs.androidx.activity.compose)
-
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.lifecycle.runtime.ktx) // Latest version
-
-    implementation(libs.androidx.navigation.compose)
+        // Apply constraints for resolving duplicate versions
+        implementation("androidx.test.espresso:espresso-core:3.6.1") {
+            because("Resolving duplicate versions")
+        }
+    }
 
 
-    implementation(libs.kotlinx.serialization.json)
+    implementation("androidx.multidex:multidex:2.0.1")
 
-    implementation(libs.material3)
-    implementation(libs.androidx.material.icons.extended) // or latest version
+    // Jetpack Compose BOM
+    implementation(platform("androidx.compose:compose-bom:2025.02.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.02.00"))
+    debugImplementation("androidx.compose.ui:ui-tooling:1.7.8")
+    implementation("androidx.compose.ui:ui:1.7.8")
+    implementation("androidx.compose.ui:ui-test:1.7.8")
+    implementation("androidx.compose.ui:ui-graphics:1.7.8")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.7.8")
 
-    // Coil for image loading
-    implementation(libs.coil.compose)
-    implementation(libs.coil.network.okhttp)
-    implementation(libs.coil.gif)
+    // Compose UI Testing
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.7.8")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.7.8")
 
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.messaging) // Check for the latest version
-    implementation(libs.firebase.analytics) // or the latest version
+    // Activity and Lifecycle
+    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
 
-    implementation(libs.androidx.credentials)
-    implementation(libs.googleid)
-    implementation(libs.play.services.auth)
-    implementation(libs.play.services.location)
+    // Navigation
+    implementation("androidx.navigation:navigation-compose:2.8.8")
 
-    implementation(libs.retrofit)
-    implementation(libs.converter.gson)
-    implementation(libs.logging.interceptor)
-    implementation(libs.okhttp.urlconnection)
+    // Kotlin Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
-    implementation(libs.socket.io.client)
+    // Material Design 3
+    implementation("androidx.compose.material3:material3:1.4.0-alpha09")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
-    implementation(libs.androidx.room.runtime)
-    annotationProcessor(libs.androidx.room.room.compiler)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.room.compiler)
-    implementation(libs.androidx.room.paging)
+    // Coil for Image Loading
+    implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
+    implementation("io.coil-kt.coil3:coil-gif:3.1.0")
 
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-analytics")
 
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler)
-    ksp(libs.dagger.hilt.compiler)
+    // AndroidX Credentials and Google Play Services
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.hilt.common)
-    implementation(libs.androidx.hilt.work)
-    ksp(libs.androidx.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
+    //oAuth Google
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
+    // Retrofit and OkHttp
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation("com.squareup.okhttp3:okhttp-urlconnection:4.12.0") // For JavaNetCookieJar
 
-    implementation(libs.androidx.paging.runtime)
-    testImplementation(libs.androidx.paging.common)
-    implementation(libs.androidx.paging.compose)
+    // Socket.IO
+    implementation("io.socket:socket.io-client:2.0.0")
 
+    // Room Database
+    implementation("androidx.room:room-runtime:2.6.1")
+    annotationProcessor("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-paging:2.6.1")
 
+    // Hilt for Dependency Injection
+    implementation("com.google.dagger:hilt-android:2.55")
+    ksp("com.google.dagger:hilt-compiler:2.55")
+    ksp("com.google.dagger:hilt-android-compiler:2.55")
+// Hilt Navigation for Jetpack Compose
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.media3.ui)
-    implementation(libs.androidx.media3.common)
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    ksp("androidx.hilt:hilt-compiler:1.2.0")
 
+    // Paging
+    implementation("androidx.paging:paging-runtime-ktx:3.3.6")
+    testImplementation("androidx.paging:paging-common-ktx:3.3.6")
+    implementation("androidx.paging:paging-compose:3.3.6")
 
-    implementation(libs.androidx.camera.core)
-    implementation( libs.androidx.camera.camera2)
-    implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.androidx.camera.view)
+    // ExoPlayer
+    implementation("androidx.media3:media3-exoplayer:1.5.1")
+    implementation("androidx.media3:media3-ui:1.5.1")
+    implementation("androidx.media3:media3-common:1.5.1")
 
-    implementation(libs.androidx.exifinterface)
+    // Camera
+    implementation("androidx.camera:camera-core:1.4.1")
+    implementation("androidx.camera:camera-camera2:1.4.1")
+    implementation("androidx.camera:camera-lifecycle:1.4.1")
+    implementation("androidx.camera:camera-view:1.4.1")
 
-    implementation(libs.androidx.security.crypto)
+    // ExifInterface
+    implementation("androidx.exifinterface:exifinterface:1.4.0")
 
-    implementation(libs.androidx.browser) // Add the latest version of browser dependency
+    // Security
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
-    implementation(libs.places)
+    // Browser
+    implementation("androidx.browser:browser:1.8.0")
 
-    implementation(libs.jsoup)  // Use the latest stable version
+    // Places
+    implementation("com.google.android.libraries.places:places:4.1.0")
+
+    // Jsoup
+    implementation("org.jsoup:jsoup:1.15.4")
+
 
     implementation("com.google.zxing:core:3.5.1")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-    implementation("androidx.datastore:datastore-preferences:1.1.2")
+    implementation("androidx.datastore:datastore-preferences:1.1.3")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
 }
 
