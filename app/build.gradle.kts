@@ -30,7 +30,7 @@ android {
         buildConfigField("String" ,"DEBUG_BASE_URL","\"http://192.168.113.85:3000\"")
         buildConfigField("String" ,"DEBUG_SOCKET_BASE_URL","\"http://192.168.113.85:3080\"")
         buildConfigField("String" ,"BASE_URL","\"https://api.lts360.com\"")
-        buildConfigField("String" ,"SOCKET_BASE_URL","\"https://api.lts360.com\"")
+        buildConfigField("String" ,"SOCKET_BASE_URL","\"https://chat.lts360.com\"")
         buildConfigField("String" ,"REFERER","\"referer.lts360.com\"")
 
         vectorDrawables {

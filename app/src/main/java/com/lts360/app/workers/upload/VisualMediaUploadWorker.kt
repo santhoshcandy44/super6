@@ -561,6 +561,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                     val status = fileTransferData?.optString("status")
 
 
+
                     if (status != null && status == "KEY_ERROR") {
 
                         val keyErrorRecipientId = fileTransferData.getLong("recipient_id")
@@ -579,10 +580,11 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                             )
                         )
 
-
                     } else if (status != null && status == "USER_NOT_ACTIVE_ERROR") {
                         onMessageSentCompleted.completeExceptionally(UserNotActiveException("User not active"))
-                    } else {
+                    } else if(status!=null && status == "ERROR"){
+                        onMessageSentCompleted.completeExceptionally(Exception("Unknown error occurred"))
+                    }else {
 
                         // Initialize file transfer from the last sent chunk (resume)
                         FileInputStream(encryptedFile).use { fis ->
@@ -926,7 +928,9 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
                 } else if (status != null && status == "USER_NOT_ACTIVE_ERROR") {
                     onMessageSentFailed("User not active")
-                } else {
+                }  else if(status!=null && status == "ERROR"){
+                    onMessageSentFailed("Unknown error occurred")
+                }else {
 
                     ByteArrayInputStream(thumbnail).use { fis ->
                         thumbnailChunkIndex = lastSentThumbnailChunkIndex

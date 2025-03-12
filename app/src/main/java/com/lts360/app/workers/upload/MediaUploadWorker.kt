@@ -479,6 +479,8 @@ class MediaUploadWorker @AssistedInject constructor(
                     }
                     else if (status != null && status == "USER_NOT_ACTIVE_ERROR") {
                         onMessageSentCompleted.completeExceptionally(UserNotActiveException("User not active"))
+                    }else if(status!=null && status == "ERROR"){
+                        onMessageSentCompleted.completeExceptionally(UserNotActiveException("Unknown error occurred"))
                     }
                     else {
 
