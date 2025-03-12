@@ -9,7 +9,6 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,8 +31,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -83,6 +80,7 @@ import com.lts360.compose.ui.services.manage.ReloadImageIconButton
 import com.lts360.compose.ui.services.manage.RemoveImageIconButton
 import com.lts360.compose.ui.services.manage.UploadServiceImagesContainer
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
+import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -96,8 +94,6 @@ fun CreateUsedProductListingScreen(
     onPopBackStack: () -> Unit,
     viewModel: UsedProductsListingWorkflowViewModel
 ) {
-
-
 
 
     val name by viewModel.title.collectAsState()
@@ -114,8 +110,6 @@ fun CreateUsedProductListingScreen(
     val imageContainers by viewModel.imageContainers.collectAsState()
 
 
-
-
     val serviceTitleError by viewModel.titleError.collectAsState()
     val shortDescriptionError by viewModel.shortDescriptionError.collectAsState()
     val priceError by viewModel.priceError.collectAsState()
@@ -125,7 +119,6 @@ fun CreateUsedProductListingScreen(
 
     val imageContainersError by viewModel.imageContainersError.collectAsState()
     val selectedLocationError by viewModel.selectedLocationError.collectAsState()
-
 
 
     /*
@@ -145,7 +138,7 @@ fun CreateUsedProductListingScreen(
 
     // Create a launcher for picking multiple images
     val pickImagesLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(MAX_IMAGES)
+        GalleryPagerActivityResultContracts.PickMultipleImages(MAX_IMAGES)
     ) { uris ->
         // Check if the number of selected images is less than 12
         if (imageContainers.size < MAX_IMAGES) {
@@ -200,7 +193,6 @@ fun CreateUsedProductListingScreen(
     }
 
 
-
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             SheetValue.Hidden,
@@ -211,11 +203,11 @@ fun CreateUsedProductListingScreen(
     val coroutineScope = rememberCoroutineScope()
 
     BackHandler {
-        if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+        if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
             coroutineScope.launch {
                 bottomSheetScaffoldState.bottomSheetState.hide()
             }
-        }else{
+        } else {
             onPopBackStack()
         }
     }
@@ -227,12 +219,12 @@ fun CreateUsedProductListingScreen(
 
     val selectedPriceUnit by viewModel.priceUnit.collectAsState()
 
-   BottomSheetScaffold(
+    BottomSheetScaffold(
         sheetDragHandle = null,
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
 
-            if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+            if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
                 CreateUsedProductListingLocationBottomSheetScreen(
                     bottomSheetScaffoldState.bottomSheetState.currentValue, {
                         viewModel.updateLocation(
@@ -295,7 +287,6 @@ fun CreateUsedProductListingScreen(
         sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     ) { _ ->
-
 
 
         Scaffold(
@@ -415,7 +406,7 @@ fun CreateUsedProductListingScreen(
 
 
                                 OutlinedTextField(
-                                    keyboardOptions = KeyboardOptions(keyboardType =  KeyboardType.Number),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     value = price,
                                     onValueChange = {
                                         viewModel.updatePrice(it)
@@ -430,23 +421,28 @@ fun CreateUsedProductListingScreen(
                                     Text(
                                         text = it,
                                         color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                        modifier = Modifier.padding(
+                                            horizontal = 16.dp,
+                                            vertical = 4.dp
+                                        )
                                     )
                                 }
-
 
 
                             }
 
                         }
 
-                        item(span = {GridItemSpan(maxLineSpan)}){
+                        item(span = { GridItemSpan(maxLineSpan) }) {
 
                             ExposedDropdownMenuBox(
                                 expanded = expanded,
                                 onExpandedChange = { expanded = !expanded },
                                 modifier = Modifier
-                                    .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(4.dp))
+                                    .background(
+                                        MaterialTheme.colorScheme.surface,
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
                             ) {
                                 OutlinedTextField(
                                     value = selectedPriceUnit,
@@ -460,7 +456,8 @@ fun CreateUsedProductListingScreen(
                                     },
                                     modifier = Modifier
                                         .menuAnchor(
-                                            ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                                            ExposedDropdownMenuAnchorType.PrimaryNotEditable
+                                        )
                                         .fillMaxWidth()
                                 )
 
@@ -554,9 +551,7 @@ fun CreateUsedProductListingScreen(
                                 isPickerLaunch = true
 
                                 pickImagesLauncher.launch(
-                                    PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
+                                    Unit
                                 )
                             }
 
@@ -577,11 +572,10 @@ fun CreateUsedProductListingScreen(
                             }
 
 
-
                         }
 
 
-                        item(span = { GridItemSpan(maxLineSpan) }){
+                        item(span = { GridItemSpan(maxLineSpan) }) {
 
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 // Location TextField
@@ -592,16 +586,16 @@ fun CreateUsedProductListingScreen(
                                     label = { Text("Location") },
                                     trailingIcon = {
 
-                                       IconButton({
-                                           coroutineScope.launch {
-                                               bottomSheetScaffoldState.bottomSheetState.expand()
-                                           }
-                                       }) {
-                                           Icon(
-                                               Icons.AutoMirrored.Filled.RotateLeft,
-                                               contentDescription = null
-                                           )
-                                       }
+                                        IconButton({
+                                            coroutineScope.launch {
+                                                bottomSheetScaffoldState.bottomSheetState.expand()
+                                            }
+                                        }) {
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.RotateLeft,
+                                                contentDescription = null
+                                            )
+                                        }
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -633,7 +627,8 @@ fun CreateUsedProductListingScreen(
                                         onClick = {
                                             if (viewModel.validateAll()) {
 
-                                                val productId = (-1).toString().toRequestBody("text/plain".toMediaTypeOrNull())
+                                                val productId = (-1).toString()
+                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
 
                                                 val bodyTitle =
                                                     name.toRequestBody("text/plain".toMediaTypeOrNull())
@@ -648,8 +643,8 @@ fun CreateUsedProductListingScreen(
                                                     .toRequestBody("text/plain".toMediaTypeOrNull())
 
 
-                                                val bodyKeepImageIds = "[]".toRequestBody("application/json".toMediaTypeOrNull())
-
+                                                val bodyKeepImageIds =
+                                                    "[]".toRequestBody("application/json".toMediaTypeOrNull())
 
 
                                                 val bodyPrice = price.toDouble().let {

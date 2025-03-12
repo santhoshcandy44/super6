@@ -1,6 +1,7 @@
 package com.lts360.compose.ui.usedproducts.manage.viewmodels
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,9 +16,11 @@ import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.EditableLocation
 import com.lts360.api.models.service.EditableUsedProductListing
 import com.lts360.api.models.service.UsedProductListing
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.services.manage.models.CombinedContainer
 import com.lts360.compose.ui.services.manage.models.CombinedContainerFactory
+import com.lts360.compose.ui.services.manage.models.ContainerType
 import com.lts360.compose.ui.usedproducts.manage.UsedProductListingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -185,8 +188,6 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     fun inValidateSelectedService() {
         repository.invalidateSelectedItem()
     }
-
-
 
     private fun loadManageProductInfoDetails(publishedService: EditableUsedProductListing) {
         // Reset all values before initializing
@@ -394,19 +395,19 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         format: String,
         errorMessage: String? = null,
     ) {
-        val currentContainers = _imageContainers.value.toMutableList()
+        val currentContainers = _imageContainers.value
         if (index in currentContainers.indices) {
-            currentContainers[index] = currentContainers[index].copy(
-                bitmapContainer = currentContainers[index].bitmapContainer?.copy(
-                    path = path,
-                    width = width,
-                    height = height,
-                    format = format,
-                    errorMessage = errorMessage
-                )
-
-            )
-            _imageContainers.value = currentContainers
+            _imageContainers.value = currentContainers.mapIndexed { i, container ->
+                if (i == index) {
+                    containerFactory.createCombinedContainerForBitmap(
+                        path,
+                        width,
+                        height,
+                        format,
+                        errorMessage
+                    )
+                } else container
+            }
         }
     }
 

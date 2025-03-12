@@ -190,7 +190,8 @@
 
         <activity
             android:name=".libs.imagecrop.CropProfilePicActivity"
-            android:exported="false" />
+            android:exported="false"
+            />
 
         <provider
             android:name="androidx.core.content.FileProvider"

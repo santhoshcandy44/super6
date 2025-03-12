@@ -1,8 +1,10 @@
 package com.lts360.libs.imagecrop
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -17,10 +19,10 @@ import java.io.IOException
 
 
 class CropProfilePicActivity: ComponentActivity(){
+    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         val uri = intent.data
         if(uri == null){
             setResult(RESULT_OK, null)

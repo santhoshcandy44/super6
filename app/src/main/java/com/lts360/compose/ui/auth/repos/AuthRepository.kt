@@ -100,17 +100,18 @@ class AuthRepository @Inject constructor(
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         success(idToken)
-                        // Handle successful sign-in (e.g., navigate to another activity)
                     } else {
-                        failure("Failed to sign in try again")
+                        failure("Failed to log in try again")
                     }
                 }
 
 
             // Process the Google ID token credential as needed
         } catch (e: GetCredentialException) {
+            e.printStackTrace()
             failure("Failed to log in try again")
         } catch (e: GoogleIdTokenParsingException) {
+            e.printStackTrace()
             failure("Failed to log in try again")
         } catch (e: IOException) {
             // Handle network issues, such as no connectivity

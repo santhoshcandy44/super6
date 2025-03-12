@@ -80,6 +80,7 @@ import com.lts360.compose.ui.chat.isValidImageDimensions
 import com.lts360.compose.ui.services.ThumbnailContainer
 import com.lts360.compose.ui.services.manage.models.Container
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
+import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
 import kotlinx.coroutines.Job
 
 
@@ -109,7 +110,7 @@ fun EditServiceImagesScreen(navHostController: NavHostController, onPopBackStack
 
     // Create a launcher for picking multiple images
     val pickImagesLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(MAX_IMAGES)
+        GalleryPagerActivityResultContracts.PickMultipleImages(MAX_IMAGES)
     ) { uris ->
 
             // Proceed if there are URIs to handle
@@ -414,7 +415,7 @@ fun EditServiceImagesScreen(navHostController: NavHostController, onPopBackStack
 
                     viewModel.togglePickerLaunch()
 
-                    pickImagesLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    pickImagesLauncher.launch(Unit)
 
                 }
             )

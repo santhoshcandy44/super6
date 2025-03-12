@@ -60,7 +60,7 @@ import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.libs.imagecrop.CropProfilePicActivityContracts
-import com.lts360.libs.imagepicker.GalleyPagerActivityContracts
+import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
 import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -149,15 +149,13 @@ fun EditProfileSettingsScreen(
     val cropLauncher = rememberLauncherForActivityResult(
         CropProfilePicActivityContracts.ImageCropper()
     ) { uri ->
-
         uri?.let {
             return@let startUploadFile(it)
         }
-
     }
 
     val imagePickerLauncher =
-        rememberLauncherForActivityResult(GalleyPagerActivityContracts.ImagePicker()) { uri: Uri? ->
+        rememberLauncherForActivityResult(GalleryPagerActivityResultContracts.PickSingleImage()) { uri: Uri? ->
 
             uri?.let { selectedUri ->
 

@@ -3,8 +3,6 @@ package com.lts360.compose.ui.services.manage
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -38,6 +36,7 @@ import com.lts360.compose.ui.chat.createImagePartForUri
 import com.lts360.compose.ui.chat.getFileExtensionFromImageFormat
 import com.lts360.compose.ui.chat.isValidThumbnailDimensionsFormat
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
+import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -68,7 +67,7 @@ fun EditServiceThumbnailScreen(
 
 
     val pickThumbnailImageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        GalleryPagerActivityResultContracts.PickSingleImage()
     ) { uri ->
 
         uri?.let {
@@ -133,9 +132,7 @@ fun EditServiceThumbnailScreen(
                             isPickerLaunch = true
 
                             pickThumbnailImageLauncher.launch(
-                                PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                )
+                                Unit
                             )
                         },it, it.path)
                 } ?: run {
@@ -148,9 +145,7 @@ fun EditServiceThumbnailScreen(
                             isPickerLaunch = true
 
                             pickThumbnailImageLauncher.launch(
-                                PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                )
+                                Unit
                             )
                         },
                         imageUrl = selectedService?.thumbnail?.imageUrl,

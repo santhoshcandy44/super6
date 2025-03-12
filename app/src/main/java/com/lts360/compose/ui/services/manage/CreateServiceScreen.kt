@@ -89,6 +89,7 @@ import com.lts360.compose.ui.chat.isValidThumbnailDimensionsFormat
 import com.lts360.compose.ui.main.CreateServiceLocationBottomSheetScreen
 import com.lts360.compose.ui.services.ValidatedPlan
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
+import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -108,8 +109,6 @@ fun CreateServiceScreen(
 
     val status by viewModel.status.collectAsState()
     val draftId by viewModel.draftId.collectAsState()
-
-
 
 
     val thumbnailContainer by viewModel.thumbnailContainer.collectAsState()
@@ -158,7 +157,7 @@ fun CreateServiceScreen(
 
     // Create a launcher for picking multiple images
     val pickImagesLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(MAX_IMAGES)
+        GalleryPagerActivityResultContracts.PickMultipleImages(MAX_IMAGES)
     ) { uris ->
         // Check if the number of selected images is less than 12
         if (imageContainers.size < MAX_IMAGES) {
@@ -190,7 +189,7 @@ fun CreateServiceScreen(
 
     // Create a launcher for picking multiple images
     val pickSingleImageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        GalleryPagerActivityResultContracts.PickSingleImage()
     ) { uri ->
 
         if (refreshImageIndex != -1) {
@@ -214,7 +213,7 @@ fun CreateServiceScreen(
 
 
     val pickThumbnailImageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        GalleryPagerActivityResultContracts.PickSingleImage()
     ) { uri ->
         uri?.let {
             // Proceed if there are URIs to handle
@@ -249,11 +248,11 @@ fun CreateServiceScreen(
     val coroutineScope = rememberCoroutineScope()
 
     BackHandler {
-        if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+        if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
             coroutineScope.launch {
                 bottomSheetScaffoldState.bottomSheetState.hide()
             }
-        }else{
+        } else {
             onPopBackStack()
         }
     }
@@ -385,9 +384,7 @@ fun CreateServiceScreen(
                                     isPickerLaunch = true
 
                                     pickThumbnailImageLauncher.launch(
-                                        PickVisualMediaRequest(
-                                            ActivityResultContracts.PickVisualMedia.ImageOnly
-                                        )
+                                       Unit
                                     )
                                 },
                                 thumbnailContainer,
@@ -395,267 +392,263 @@ fun CreateServiceScreen(
                             )
                         }
 
-                            item(span = { GridItemSpan(maxLineSpan) }) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
 
-                                Column(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
 
-                                    // Text Field for Service Title
-                                    OutlinedTextField(
-                                        value = serviceTitle,
-                                        onValueChange = { viewModel.updateTitle(it) },
-                                        label = { Text("Service Title") },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                    )
-
-                                    if (serviceTitle.length > 100) {
-                                        Text(
-                                            text = "Limit: ${serviceTitle.length}/${100}",
-                                            color = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.padding(
-                                                horizontal = 16.dp,
-                                                vertical = 4.dp
-                                            ) // Adjust padding as needed
-                                        )
-                                    }
-
-                                    // Display error message if there's an error
-                                    serviceTitleError?.let {
-                                        ErrorText(it)
-                                    }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    // Text Field for Short Description
-                                    OutlinedTextField(
-                                        value = serviceShortDescription,
-                                        onValueChange = { viewModel.updateShortDescription(it) },
-                                        label = { Text("Service Short Description") },
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
-                                        minLines = 4
-                                    )
-
-
-                                    if (serviceShortDescription.length > 250) {
-                                        Text(
-                                            text = "Limit: ${serviceShortDescription.length}/${250}",
-                                            color = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.padding(
-                                                horizontal = 16.dp,
-                                                vertical = 4.dp
-                                            ) // Adjust padding as needed
-                                        )
-                                    }
-
-                                    shortDescriptionError?.let {
-                                        ErrorText(it)
-                                    }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    ExposedDropdownIndustry(selectedIndustry) {
-                                        viewModel.updateIndustry(it.value)
-                                    }
-
-                                    selectedIndustryError?.let {
-                                        ErrorText(it)
-                                    }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    OutlinedTextField(
-                                        value = serviceLongDescription,
-                                        onValueChange = { viewModel.updateLongDescription(it) },
-                                        label = { Text("Service Long Description") },
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
-                                        minLines = 6
-                                    )
-
-                                    if (serviceLongDescription.length > 5000) {
-                                        Text(
-                                            text = "Limit: ${serviceLongDescription.length}/${5000}",
-                                            color = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.padding(
-                                                horizontal = 16.dp,
-                                                vertical = 4.dp
-                                            ) // Adjust padding as needed
-                                        )
-                                    }
-
-
-                                    longDescriptionError?.let {
-                                        ErrorText(it)
-                                    }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    // Plans Section
-                                    Text(
-                                        text = "Add Plans",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                }
-
-                            }
-
-
-                            itemsIndexed(
-                                plans,
-                                key = { index, _ -> index },
-                                span = { _, _ -> GridItemSpan(maxLineSpan) }) { index, plan ->
-                                PlanItem(
-                                    plan = plan.editablePlan,
-                                    updatePlan = { updatedPlan ->
-                                        viewModel.updatePlan(
-                                            index,
-                                            ValidatedPlan(true, updatedPlan)
-                                        )
-                                    },
-                                    onPlanRemove = {
-                                        viewModel.removePlan(it)
-                                    },
-                                    onValidate = !plan.isValid
+                                // Text Field for Service Title
+                                OutlinedTextField(
+                                    value = serviceTitle,
+                                    onValueChange = { viewModel.updateTitle(it) },
+                                    label = { Text("Service Title") },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
 
-
-
-                            item(span = { GridItemSpan(maxLineSpan) }) {
-
-                                Column(modifier = Modifier.fillMaxWidth()) {
-                                    // Add Plan Button
-
-                                    IconButton(
-                                        modifier = Modifier
-                                            .border(
-                                                width = 1.dp,
-                                                color = Color.Gray,
-                                                shape = CircleShape
-                                            )
-                                            .size(40.dp),
-                                        onClick = {
-
-                                            if (plans.size >= 3) {
-                                                Toast.makeText(
-                                                    context,
-                                                    "Maximum 3 plans can be added",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            } else {
-                                                viewModel.addPlan()
-                                            }
-
-                                        }
-                                    ) {
-                                        Text(text = "+")
-                                    }
-
-                                    plansError?.let {
-                                        ErrorText(it)
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    // Plans Section
+                                if (serviceTitle.length > 100) {
                                     Text(
-                                        text = "Set Location",
-                                        style = MaterialTheme.typography.titleMedium
+                                        text = "Limit: ${serviceTitle.length}/${100}",
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(
+                                            horizontal = 16.dp,
+                                            vertical = 4.dp
+                                        ) // Adjust padding as needed
                                     )
-
-
                                 }
-                            }
 
-                            if (imageContainers.isNotEmpty()) {
-                                itemsIndexed(imageContainers) { index, bitmapContainer ->
-
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(140.dp) // Container size
-                                                .clip(RoundedCornerShape(4.dp)) // Clips to rounded corners
-                                        ) {
-                                            // Image
-
-                                            AsyncImage(
-                                                bitmapContainer.path,
-                                                contentDescription = "Service image",
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .padding(12.dp)
-                                                    .border(
-                                                        1.dp,
-                                                        Color.Gray,
-                                                        RoundedCornerShape(4.dp)
-                                                    )
-                                            )
-
-                                            ReloadImageIconButton {
-                                                if (isPickerLaunch)
-                                                    return@ReloadImageIconButton
-
-                                                isPickerLaunch = true
-                                                refreshImageIndex = index
-                                                pickSingleImageLauncher.launch(
-                                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                                )
-                                            }
-
-                                            RemoveImageIconButton {
-                                                viewModel.removeContainer(index)
-                                            }
-
-                                        }
-
-                                        bitmapContainer.errorMessage?.let {
-                                            Text(
-                                                text = it,
-                                                textAlign = TextAlign.Center,
-                                                color = Color.Red
-                                            )
-                                        }
-                                    }
-
+                                // Display error message if there's an error
+                                serviceTitleError?.let {
+                                    ErrorText(it)
                                 }
-                            }
 
-                            item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
-
-                                // Upload Images Section
                                 Spacer(modifier = Modifier.height(8.dp))
 
-                                UploadServiceImagesContainer(imageContainersError) {
+                                // Text Field for Short Description
+                                OutlinedTextField(
+                                    value = serviceShortDescription,
+                                    onValueChange = { viewModel.updateShortDescription(it) },
+                                    label = { Text("Service Short Description") },
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    minLines = 4
+                                )
 
-                                    if (isPickerLaunch)
-                                        return@UploadServiceImagesContainer
 
-                                    isPickerLaunch = true
-
-                                    pickImagesLauncher.launch(
-                                        PickVisualMediaRequest(
-                                            ActivityResultContracts.PickVisualMedia.ImageOnly
-                                        )
+                                if (serviceShortDescription.length > 250) {
+                                    Text(
+                                        text = "Limit: ${serviceShortDescription.length}/${250}",
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(
+                                            horizontal = 16.dp,
+                                            vertical = 4.dp
+                                        ) // Adjust padding as needed
                                     )
                                 }
 
+                                shortDescriptionError?.let {
+                                    ErrorText(it)
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                ExposedDropdownIndustry(selectedIndustry) {
+                                    viewModel.updateIndustry(it.value)
+                                }
+
+                                selectedIndustryError?.let {
+                                    ErrorText(it)
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                OutlinedTextField(
+                                    value = serviceLongDescription,
+                                    onValueChange = { viewModel.updateLongDescription(it) },
+                                    label = { Text("Service Long Description") },
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    minLines = 6
+                                )
+
+                                if (serviceLongDescription.length > 5000) {
+                                    Text(
+                                        text = "Limit: ${serviceLongDescription.length}/${5000}",
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(
+                                            horizontal = 16.dp,
+                                            vertical = 4.dp
+                                        ) // Adjust padding as needed
+                                    )
+                                }
+
+
+                                longDescriptionError?.let {
+                                    ErrorText(it)
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+                                // Plans Section
+                                Text(
+                                    text = "Add Plans",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
                             }
 
-                            item(span = { GridItemSpan(maxLineSpan) }) {
+                        }
 
-                                ExposedDropdownCountry(
-                                    selectedCountry,
-                                    selectedState,
-                                    selectedCountryError,
-                                    selectedStateError,
-                                    {
-                                        viewModel.updateCountry(it.value)
+
+                        itemsIndexed(
+                            plans,
+                            key = { index, _ -> index },
+                            span = { _, _ -> GridItemSpan(maxLineSpan) }) { index, plan ->
+                            PlanItem(
+                                plan = plan.editablePlan,
+                                updatePlan = { updatedPlan ->
+                                    viewModel.updatePlan(
+                                        index,
+                                        ValidatedPlan(true, updatedPlan)
+                                    )
+                                },
+                                onPlanRemove = {
+                                    viewModel.removePlan(it)
+                                },
+                                onValidate = !plan.isValid
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+
+
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                // Add Plan Button
+
+                                IconButton(
+                                    modifier = Modifier
+                                        .border(
+                                            width = 1.dp,
+                                            color = Color.Gray,
+                                            shape = CircleShape
+                                        )
+                                        .size(40.dp),
+                                    onClick = {
+
+                                        if (plans.size >= 3) {
+                                            Toast.makeText(
+                                                context,
+                                                "Maximum 3 plans can be added",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            viewModel.addPlan()
+                                        }
+
                                     }
                                 ) {
-                                    viewModel.updateState(it.name)
+                                    Text(text = "+")
                                 }
+
+                                plansError?.let {
+                                    ErrorText(it)
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // Plans Section
+                                Text(
+                                    text = "Set Location",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+
+
                             }
+                        }
+
+                        if (imageContainers.isNotEmpty()) {
+                            itemsIndexed(imageContainers) { index, bitmapContainer ->
+
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(140.dp) // Container size
+                                            .clip(RoundedCornerShape(4.dp)) // Clips to rounded corners
+                                    ) {
+                                        // Image
+
+                                        AsyncImage(
+                                            bitmapContainer.path,
+                                            contentDescription = "Service image",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(12.dp)
+                                                .border(
+                                                    1.dp,
+                                                    Color.Gray,
+                                                    RoundedCornerShape(4.dp)
+                                                )
+                                        )
+
+                                        ReloadImageIconButton {
+                                            if (isPickerLaunch)
+                                                return@ReloadImageIconButton
+
+                                            isPickerLaunch = true
+                                            refreshImageIndex = index
+                                            pickSingleImageLauncher.launch(Unit)
+                                        }
+
+                                        RemoveImageIconButton {
+                                            viewModel.removeContainer(index)
+                                        }
+
+                                    }
+
+                                    bitmapContainer.errorMessage?.let {
+                                        Text(
+                                            text = it,
+                                            textAlign = TextAlign.Center,
+                                            color = Color.Red
+                                        )
+                                    }
+                                }
+
+                            }
+                        }
+
+                        item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
+
+                            // Upload Images Section
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            UploadServiceImagesContainer(imageContainersError) {
+
+                                if (isPickerLaunch)
+                                    return@UploadServiceImagesContainer
+
+                                isPickerLaunch = true
+
+                                pickImagesLauncher.launch(
+                                    Unit
+                                )
+                            }
+
+                        }
+
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+
+                            ExposedDropdownCountry(
+                                selectedCountry,
+                                selectedState,
+                                selectedCountryError,
+                                selectedStateError,
+                                {
+                                    viewModel.updateCountry(it.value)
+                                }
+                            ) {
+                                viewModel.updateState(it.name)
+                            }
+                        }
 
 
 
@@ -703,355 +696,477 @@ fun CreateServiceScreen(
 
                         item(span = { GridItemSpan(maxLineSpan) }) {
 
-                                Column(modifier = Modifier.fillMaxWidth()) {
-                                    // Action Buttons
-                                    Row(
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                // Action Buttons
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp)
+                                ) {
+
+                                    Box(
                                         modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 8.dp)
+                                            .weight(1f)
                                     ) {
 
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                        ) {
+                                        if (status == "draft") {
+                                            //
+                                            OutlinedButton(
+                                                colors = ButtonDefaults.outlinedButtonColors(
+                                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                                ),
+                                                shape = RectangleShape,
+                                                onClick = {
+                                                    if (serviceTitle.isNotEmpty() && serviceShortDescription.isNotEmpty()) {
 
-                                            if (status == "draft") {
-                                                //
-                                                OutlinedButton(
-                                                    colors = ButtonDefaults.outlinedButtonColors(
-                                                        contentColor = MaterialTheme.colorScheme.onSurface
-                                                    ),
-                                                    shape = RectangleShape,
-                                                    onClick = {
-                                                        if (serviceTitle.isNotEmpty() && serviceShortDescription.isNotEmpty()) {
-
-                                                            val draftService = DraftService(
-                                                                id = draftId,
-                                                                title = serviceTitle,
-                                                                shortDescription = serviceShortDescription,
-                                                                longDescription = serviceLongDescription,
-                                                                industry = selectedIndustry,
-                                                                country = selectedCountry,
-                                                                state = selectedState,
-                                                                status = "draft"
-                                                            )
-
-                                                            viewModel.updateDraft(
-                                                                draftId,
-                                                                draftService,
-                                                                imageContainers,
-                                                                plans.map { it.editablePlan },
-                                                                selectedLocation,
-                                                                thumbnailContainer
-                                                            ) {
-                                                                Toast.makeText(
-                                                                    context,
-                                                                    "Draft updated",
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
-                                                            }
-
-                                                        } else {
-                                                            Toast.makeText(
-                                                                context,
-                                                                "Title/Short Description can't be empty",
-                                                                Toast.LENGTH_SHORT
-                                                            ).show()
-                                                        }
-                                                    },
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(end = 8.dp)
-                                                ) {
-                                                    Text("Update")
-                                                }
-
-                                            } else {
-                                                OutlinedButton(
-                                                    colors = ButtonDefaults.outlinedButtonColors(
-                                                        contentColor = MaterialTheme.colorScheme.onSurface
-                                                    ),
-                                                    shape = RectangleShape,
-                                                    onClick = {
-
-                                                        if (serviceTitle.isNotEmpty() && serviceShortDescription.isNotEmpty()) {
-
-
-                                                            val draftService = DraftService(
-                                                                title = serviceTitle,
-                                                                shortDescription = serviceShortDescription,
-                                                                longDescription = serviceLongDescription,
-                                                                status = "draft",
-                                                                industry = selectedIndustry,
-                                                                country = selectedCountry,
-                                                                state = selectedState
-                                                            )
-
-
-
-                                                            viewModel.draft(
-                                                                draftService,
-                                                                imageContainers,
-                                                                plans.map { it.editablePlan },
-                                                                selectedLocation,
-                                                                thumbnailContainer,
-
-                                                                ) {
-                                                                Toast.makeText(
-                                                                    context,
-                                                                    "Draft saved",
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
-                                                            }
-
-                                                        } else {
-                                                            Toast.makeText(
-                                                                context,
-                                                                "Title/Short Description can't be empty",
-                                                                Toast.LENGTH_SHORT
-                                                            ).show()
-                                                        }
-                                                    },
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(end = 8.dp)
-                                                ) {
-                                                    Text("Draft")
-                                                }
-                                            }
-
-                                        }
-
-                                        Button(
-                                            shape = RectangleShape,
-                                            onClick = {
-                                                if (viewModel.validateAll()) {
-
-
-                                                    val bodyTitle =
-                                                        serviceTitle.toRequestBody("text/plain".toMediaTypeOrNull())
-                                                    val bodyShortDescription =
-                                                        serviceShortDescription.toRequestBody("text/plain".toMediaTypeOrNull())
-                                                    val bodyLongDescription =
-                                                        serviceLongDescription.toRequestBody("text/plain".toMediaTypeOrNull())
-
-                                                    val bodyIndustry = selectedIndustry.toString()
-                                                        .toRequestBody("text/plain".toMediaTypeOrNull())
-
-                                                    val bodyCountry = selectedCountry.toString()
-                                                        .toRequestBody("text/plain".toMediaTypeOrNull())
-
-                                                    val bodyState = selectedState.toString()
-                                                        .toRequestBody("text/plain".toMediaTypeOrNull())
-
-                                                    val bodyPlans =
-                                                        Gson().toJson(plans.map {
-                                                            it.editablePlan
-                                                        })
-                                                            .toRequestBody("application/json".toMediaType())
-
-
-                                                    val bodyLocation = selectedLocation?.let {
-                                                        Gson().toJson(it)
-                                                            .toRequestBody("application/json".toMediaType())
-                                                    }
-
-                                                    val bodyImages =
-                                                        imageContainers.mapIndexed { index, bitmapContainer ->
-                                                            createImagePartForUri(
-                                                                context,
-                                                                Uri.parse(bitmapContainer.path),
-                                                                "IMAGE_${index}_${
-                                                                    getFileExtensionFromImageFormat(
-                                                                        bitmapContainer.format
-                                                                    )
-                                                                }",
-                                                                bitmapContainer.format,
-                                                                "images[]"
-                                                            )
-                                                        }.filterNotNull()
-
-                                                    val bodyThumbnail = thumbnailContainer!!.let {
-                                                        createImagePartForUri(
-                                                            context,
-                                                            Uri.parse(it.path),
-                                                            "IMAGE_THUMBNAIL_${
-                                                                getFileExtensionFromImageFormat(
-                                                                    it.format
-                                                                )
-                                                            }",
-                                                            it.format,
-                                                            "thumbnail"
+                                                        val draftService = DraftService(
+                                                            id = draftId,
+                                                            title = serviceTitle,
+                                                            shortDescription = serviceShortDescription,
+                                                            longDescription = serviceLongDescription,
+                                                            industry = selectedIndustry,
+                                                            country = selectedCountry,
+                                                            state = selectedState,
+                                                            status = "draft"
                                                         )
-                                                    }
 
-                                                    if (bodyThumbnail == null || bodyImages.isEmpty()) {
+                                                        viewModel.updateDraft(
+                                                            draftId,
+                                                            draftService,
+                                                            imageContainers,
+                                                            plans.map { it.editablePlan },
+                                                            selectedLocation,
+                                                            thumbnailContainer
+                                                        ) {
+                                                            Toast.makeText(
+                                                                context,
+                                                                "Draft updated",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+
+                                                    } else {
                                                         Toast.makeText(
                                                             context,
-                                                            "Failed to create service",
+                                                            "Title/Short Description can't be empty",
                                                             Toast.LENGTH_SHORT
-                                                        )
-                                                            .show()
-                                                        return@Button
+                                                        ).show()
                                                     }
+                                                },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(end = 8.dp)
+                                            ) {
+                                                Text("Update")
+                                            }
 
-                                                    viewModel.onCreateService(
-                                                        bodyTitle,
-                                                        bodyShortDescription,
-                                                        bodyLongDescription,
-                                                        bodyIndustry,
-                                                        bodyCountry,
-                                                        bodyState,
-                                                        bodyThumbnail,
-                                                        bodyImages,
-                                                        bodyPlans,
-                                                        bodyLocation,
-                                                        {
-                                                            onServiceCreated()
+                                        } else {
+                                            OutlinedButton(
+                                                colors = ButtonDefaults.outlinedButtonColors(
+                                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                                ),
+                                                shape = RectangleShape,
+                                                onClick = {
+
+                                                    if (serviceTitle.isNotEmpty() && serviceShortDescription.isNotEmpty()) {
+
+
+                                                        val draftService = DraftService(
+                                                            title = serviceTitle,
+                                                            shortDescription = serviceShortDescription,
+                                                            longDescription = serviceLongDescription,
+                                                            status = "draft",
+                                                            industry = selectedIndustry,
+                                                            country = selectedCountry,
+                                                            state = selectedState
+                                                        )
+
+
+
+                                                        viewModel.draft(
+                                                            draftService,
+                                                            imageContainers,
+                                                            plans.map { it.editablePlan },
+                                                            selectedLocation,
+                                                            thumbnailContainer,
+
+                                                            ) {
                                                             Toast.makeText(
                                                                 context,
-                                                                it,
+                                                                "Draft saved",
                                                                 Toast.LENGTH_SHORT
                                                             ).show()
+                                                        }
 
-                                                        }) {
+                                                    } else {
+                                                        Toast.makeText(
+                                                            context,
+                                                            "Title/Short Description can't be empty",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                    }
+                                                },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(end = 8.dp)
+                                            ) {
+                                                Text("Draft")
+                                            }
+                                        }
 
+                                    }
+
+                                    Button(
+                                        shape = RectangleShape,
+                                        onClick = {
+                                            if (viewModel.validateAll()) {
+
+
+                                                val bodyTitle =
+                                                    serviceTitle.toRequestBody("text/plain".toMediaTypeOrNull())
+                                                val bodyShortDescription =
+                                                    serviceShortDescription.toRequestBody("text/plain".toMediaTypeOrNull())
+                                                val bodyLongDescription =
+                                                    serviceLongDescription.toRequestBody("text/plain".toMediaTypeOrNull())
+
+                                                val bodyIndustry = selectedIndustry.toString()
+                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
+
+                                                val bodyCountry = selectedCountry.toString()
+                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
+
+                                                val bodyState = selectedState.toString()
+                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
+
+                                                val bodyPlans =
+                                                    Gson().toJson(plans.map {
+                                                        it.editablePlan
+                                                    })
+                                                        .toRequestBody("application/json".toMediaType())
+
+
+                                                val bodyLocation = selectedLocation?.let {
+                                                    Gson().toJson(it)
+                                                        .toRequestBody("application/json".toMediaType())
+                                                }
+
+                                                val bodyImages =
+                                                    imageContainers.mapIndexed { index, bitmapContainer ->
+                                                        createImagePartForUri(
+                                                            context,
+                                                            Uri.parse(bitmapContainer.path),
+                                                            "IMAGE_${index}_${
+                                                                getFileExtensionFromImageFormat(
+                                                                    bitmapContainer.format
+                                                                )
+                                                            }",
+                                                            bitmapContainer.format,
+                                                            "images[]"
+                                                        )
+                                                    }.filterNotNull()
+
+                                                val bodyThumbnail = thumbnailContainer!!.let {
+                                                    createImagePartForUri(
+                                                        context,
+                                                        Uri.parse(it.path),
+                                                        "IMAGE_THUMBNAIL_${
+                                                            getFileExtensionFromImageFormat(
+                                                                it.format
+                                                            )
+                                                        }",
+                                                        it.format,
+                                                        "thumbnail"
+                                                    )
+                                                }
+
+                                                if (bodyThumbnail == null || bodyImages.isEmpty()) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Failed to create service",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                        .show()
+                                                    return@Button
+                                                }
+
+                                                viewModel.onCreateService(
+                                                    bodyTitle,
+                                                    bodyShortDescription,
+                                                    bodyLongDescription,
+                                                    bodyIndustry,
+                                                    bodyCountry,
+                                                    bodyState,
+                                                    bodyThumbnail,
+                                                    bodyImages,
+                                                    bodyPlans,
+                                                    bodyLocation,
+                                                    {
+                                                        onServiceCreated()
                                                         Toast.makeText(
                                                             context,
                                                             it,
                                                             Toast.LENGTH_SHORT
-                                                        )
-                                                            .show()
-                                                    }
+                                                        ).show()
 
+                                                    }) {
+
+                                                    Toast.makeText(
+                                                        context,
+                                                        it,
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                        .show()
                                                 }
-                                            },
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Text("Publish")
-                                        }
-                                    }
 
-
-                                    if (status == "draft") {
-
-                                        // Delete Draft Button
-                                        Button(
-                                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                                            shape = RectangleShape,
-                                            onClick = {
-                                                viewModel.setDeleteDraftDialogVisibility(true)
-                                            },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 4.dp)
-                                        ) {
-                                            Text("Delete Draft")
-                                        }
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text("Publish")
                                     }
                                 }
 
+
+                                if (status == "draft") {
+
+                                    // Delete Draft Button
+                                    Button(
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                                        shape = RectangleShape,
+                                        onClick = {
+                                            viewModel.setDeleteDraftDialogVisibility(true)
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        Text("Delete Draft")
+                                    }
+                                }
                             }
 
                         }
 
                     }
-
 
                 }
 
 
             }
-        }
 
 
-
-        if (isPublishing) {
-            LoadingDialog()
-        }
-
-        // Alert Dialog
-        if (deleteDraftDialogVisibility) {
-            AlertDialog(
-                onDismissRequest = {
-                    viewModel.setDeleteDraftDialogVisibility(false)
-                },
-                title = { Text("Delete Draft") },
-                text = { Text("This action cannot be undone. Are you sure you want to delete this draft?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-
-                            viewModel.deleteDraft(draftId) {
-                                onServiceDeleted()
-                            }
-
-                            viewModel.setDeleteDraftDialogVisibility(false)
-                        }
-                    ) {
-                        Text("Confirm")
-                    }
-                },
-
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.setDeleteDraftDialogVisibility(false)
-                        }
-                    ) {
-                        Text("Cancel")
-                    }
-                }
-            )
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun ExposedDropdownIndustry(
-        selectedValue: Int = -1,
-        isError: Boolean = false,
-        onSelected: (DraftIndustry) -> Unit,
-    ) {
 
 
-        // Get access to context and resources
-        val context = LocalContext.current
-        val resources = context.resources
+    if (isPublishing) {
+        LoadingDialog()
+    }
 
-        // Retrieve string-array and integer-array
-        val industryNames: Array<String> = resources.getStringArray(R.array.dropdown_items)
-        val industryValues: Array<Int> =
-            resources.getIntArray(R.array.industry_values).toTypedArray()
+    // Alert Dialog
+    if (deleteDraftDialogVisibility) {
+        AlertDialog(
+            onDismissRequest = {
+                viewModel.setDeleteDraftDialogVisibility(false)
+            },
+            title = { Text("Delete Draft") },
+            text = { Text("This action cannot be undone. Are you sure you want to delete this draft?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
 
-        // Pair the names and values
-        val industries = industryNames.zip(industryValues) { name, value ->
-            DraftIndustry(name = name, value = value)
-        }
-        // Dropdown state management
-        var expanded by remember { mutableStateOf(false) }
+                        viewModel.deleteDraft(draftId) {
+                            onServiceDeleted()
+                        }
 
-        var selectedIndustry by remember(selectedValue) {
-            mutableStateOf(if (selectedValue != -1) industries.find {
-                it.value == selectedValue
-            } else null)
-        }
+                        viewModel.setDeleteDraftDialogVisibility(false)
+                    }
+                ) {
+                    Text("Confirm")
+                }
+            },
 
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = {
-                expanded = !expanded
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.setDeleteDraftDialogVisibility(false)
+                    }
+                ) {
+                    Text("Cancel")
+                }
             }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExposedDropdownIndustry(
+    selectedValue: Int = -1,
+    isError: Boolean = false,
+    onSelected: (DraftIndustry) -> Unit,
+) {
+
+
+    // Get access to context and resources
+    val context = LocalContext.current
+    val resources = context.resources
+
+    // Retrieve string-array and integer-array
+    val industryNames: Array<String> = resources.getStringArray(R.array.dropdown_items)
+    val industryValues: Array<Int> =
+        resources.getIntArray(R.array.industry_values).toTypedArray()
+
+    // Pair the names and values
+    val industries = industryNames.zip(industryValues) { name, value ->
+        DraftIndustry(name = name, value = value)
+    }
+    // Dropdown state management
+    var expanded by remember { mutableStateOf(false) }
+
+    var selectedIndustry by remember(selectedValue) {
+        mutableStateOf(if (selectedValue != -1) industries.find {
+            it.value == selectedValue
+        } else null)
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = {
+            expanded = !expanded
+        }
+    ) {
+        OutlinedTextField(
+            isError = isError,
+            value = selectedIndustry?.name ?: "Select Industry",
+            onValueChange = {},
+            readOnly = true,
+            label = { if (selectedIndustry?.name != null) Text("Select Industry") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
+            colors = ExposedDropdownMenuDefaults.textFieldColors()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            industries.forEach { industry ->
+                DropdownMenuItem(
+                    text = { Text(industry.name) },
+                    onClick = {
+                        selectedIndustry = industry
+                        onSelected(industry)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExposedDropdownCountry(
+    selectedCountryValue: String? = null,
+    selectedStateValue: String? = null,
+    countryError: String?,
+    stateError: String?,
+    onCountrySelected: (DraftCountry) -> Unit,
+    onStateSelected: (DraftState) -> Unit,
+) {
+
+    // Get access to context and resources
+    val context = LocalContext.current
+    val resources = context.resources
+
+    // Define country data
+    val countryNames: Array<String> = resources.getStringArray(R.array.country_items)
+    val countryValues: Array<String> = resources.getStringArray(R.array.country_values)
+    val countries = countryNames.zip(countryValues) { name, value ->
+        DraftCountry(name = name, value = value)
+    }
+
+    // Define states data (this is simplified; you can modify based on actual data)
+    val statesMap = mapOf(
+        "IN" to listOf(
+            "Andaman and Nicobar Islands",
+            "Andhra Pradesh",
+            "Arunachal Pradesh",
+            "Assam",
+            "Bihar",
+            "Chandigarh",
+            "Chhattisgarh",
+            "Dadra and Nagar Haveli and Daman and Diu",
+            "Delhi",
+            "Goa",
+            "Gujarat",
+            "Haryana",
+            "Himachal Pradesh",
+            "Jammu and Kashmir",
+            "Jharkhand",
+            "Karnataka",
+            "Kerala",
+            "Ladakh",
+            "Lakshadweep",
+            "Madhya Pradesh",
+            "Maharashtra",
+            "Manipur",
+            "Meghalaya",
+            "Mizoram",
+            "Nagaland",
+            "Odisha",
+            "Puducherry",
+            "Punjab",
+            "Rajasthan",
+            "Sikkim",
+            "Tamil Nadu",
+            "Telangana",
+            "Tripura",
+            "Uttar Pradesh",
+            "Uttarakhand",
+            "West Bengal"
+        )
+    )
+
+    // State management
+    var expandedCountry by remember { mutableStateOf(false) }
+    var expandedState by remember { mutableStateOf(false) }
+
+    var selectedCountry by remember(selectedCountryValue) {
+        mutableStateOf(
+            if (selectedCountryValue != null)
+                countries.find { it.value == selectedCountryValue }
+            else null
+        )
+    }
+
+    var selectedState by remember(selectedStateValue) {
+        mutableStateOf(selectedStateValue)
+    }
+
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+
+        // Country dropdown
+        ExposedDropdownMenuBox(
+            expanded = expandedCountry,
+            onExpandedChange = { expandedCountry = !expandedCountry }
         ) {
             OutlinedTextField(
-                isError = isError,
-                value = selectedIndustry?.name ?: "Select Industry",
+                isError = countryError != null,
+                value = selectedCountry?.name ?: "Select Country",
                 onValueChange = {},
                 readOnly = true,
-                label = { if (selectedIndustry?.name != null) Text("Select Industry") },
+                label = { Text("Select Country") },
                 trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCountry)
                 },
                 modifier = Modifier
                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
@@ -1060,120 +1175,43 @@ fun CreateServiceScreen(
             )
 
             ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+                expanded = expandedCountry,
+                onDismissRequest = { expandedCountry = false }
             ) {
-                industries.forEach { industry ->
+                countries.forEach { country ->
                     DropdownMenuItem(
-                        text = { Text(industry.name) },
+                        text = { Text(country.name) },
                         onClick = {
-                            selectedIndustry = industry
-                            onSelected(industry)
-                            expanded = false
+                            selectedCountry = country
+                            selectedState = null // Reset selected state when country changes
+                            onCountrySelected(country)
+                            expandedCountry = false
                         }
                     )
                 }
             }
         }
-    }
 
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun ExposedDropdownCountry(
-        selectedCountryValue: String? = null,
-        selectedStateValue: String? = null,
-        countryError: String?,
-        stateError: String?,
-        onCountrySelected: (DraftCountry) -> Unit,
-        onStateSelected: (DraftState) -> Unit,
-    ) {
-
-        // Get access to context and resources
-        val context = LocalContext.current
-        val resources = context.resources
-
-        // Define country data
-        val countryNames: Array<String> = resources.getStringArray(R.array.country_items)
-        val countryValues: Array<String> = resources.getStringArray(R.array.country_values)
-        val countries = countryNames.zip(countryValues) { name, value ->
-            DraftCountry(name = name, value = value)
+        countryError?.let {
+            ErrorText(it)
         }
 
-        // Define states data (this is simplified; you can modify based on actual data)
-        val statesMap = mapOf(
-            "IN" to listOf(
-                "Andaman and Nicobar Islands",
-                "Andhra Pradesh",
-                "Arunachal Pradesh",
-                "Assam",
-                "Bihar",
-                "Chandigarh",
-                "Chhattisgarh",
-                "Dadra and Nagar Haveli and Daman and Diu",
-                "Delhi",
-                "Goa",
-                "Gujarat",
-                "Haryana",
-                "Himachal Pradesh",
-                "Jammu and Kashmir",
-                "Jharkhand",
-                "Karnataka",
-                "Kerala",
-                "Ladakh",
-                "Lakshadweep",
-                "Madhya Pradesh",
-                "Maharashtra",
-                "Manipur",
-                "Meghalaya",
-                "Mizoram",
-                "Nagaland",
-                "Odisha",
-                "Puducherry",
-                "Punjab",
-                "Rajasthan",
-                "Sikkim",
-                "Tamil Nadu",
-                "Telangana",
-                "Tripura",
-                "Uttar Pradesh",
-                "Uttarakhand",
-                "West Bengal"
-            )
-        )
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // State management
-        var expandedCountry by remember { mutableStateOf(false) }
-        var expandedState by remember { mutableStateOf(false) }
-
-        var selectedCountry by remember(selectedCountryValue) {
-            mutableStateOf(
-                if (selectedCountryValue != null)
-                    countries.find { it.value == selectedCountryValue }
-                else null
-            )
-        }
-
-        var selectedState by remember(selectedStateValue) {
-            mutableStateOf(selectedStateValue)
-        }
-
-
-        Column(modifier = Modifier.fillMaxWidth()) {
-
-            // Country dropdown
+        // State dropdown (only shown after selecting a country)
+        selectedCountry?.let {
             ExposedDropdownMenuBox(
-                expanded = expandedCountry,
-                onExpandedChange = { expandedCountry = !expandedCountry }
-            ) {
+                expanded = expandedState,
+                onExpandedChange = { expandedState = !expandedState }) {
                 OutlinedTextField(
-                    isError = countryError != null,
-                    value = selectedCountry?.name ?: "Select Country",
+                    isError = stateError != null,
+                    value = selectedState ?: "Select State",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Select Country") },
+                    label = { Text("Select State") },
                     trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCountry)
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedState)
                     },
                     modifier = Modifier
                         .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
@@ -1182,127 +1220,82 @@ fun CreateServiceScreen(
                 )
 
                 ExposedDropdownMenu(
-                    expanded = expandedCountry,
-                    onDismissRequest = { expandedCountry = false }
+                    expanded = expandedState,
+                    onDismissRequest = { expandedState = false }
                 ) {
-                    countries.forEach { country ->
+                    val states = statesMap[it.value] ?: emptyList()
+
+                    states.forEach { state ->
                         DropdownMenuItem(
-                            text = { Text(country.name) },
+                            text = { Text(state) },
                             onClick = {
-                                selectedCountry = country
-                                selectedState = null // Reset selected state when country changes
-                                onCountrySelected(country)
-                                expandedCountry = false
+                                selectedState = state
+                                onStateSelected(
+                                    DraftState(
+                                        name = state,
+                                        countryValue = it.value
+                                    )
+                                )
+                                expandedState = false
                             }
                         )
                     }
                 }
             }
 
-
-            countryError?.let {
+            stateError?.let {
                 ErrorText(it)
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // State dropdown (only shown after selecting a country)
-            selectedCountry?.let {
-                ExposedDropdownMenuBox(
-                    expanded = expandedState,
-                    onExpandedChange = { expandedState = !expandedState }) {
-                    OutlinedTextField(
-                        isError = stateError != null,
-                        value = selectedState ?: "Select State",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Select State") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedState)
-                        },
-                        modifier = Modifier
-                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                            .fillMaxWidth(),
-                        colors = ExposedDropdownMenuDefaults.textFieldColors()
-                    )
-
-                    ExposedDropdownMenu(
-                        expanded = expandedState,
-                        onDismissRequest = { expandedState = false }
-                    ) {
-                        val states = statesMap[it.value] ?: emptyList()
-
-                        states.forEach { state ->
-                            DropdownMenuItem(
-                                text = { Text(state) },
-                                onClick = {
-                                    selectedState = state
-                                    onStateSelected(
-                                        DraftState(
-                                            name = state,
-                                            countryValue = it.value
-                                        )
-                                    )
-                                    expandedState = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                stateError?.let {
-                    ErrorText(it)
-                }
-            }
         }
-
     }
 
+}
 
-    @Composable
-    fun BoxScope.ReloadImageIconButton(onClick: () -> Unit) {
 
-        IconButton(
-            onClick = {
-                onClick()
+@Composable
+fun BoxScope.ReloadImageIconButton(onClick: () -> Unit) {
 
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(50))
-                .border(1.dp, Color.Gray, RoundedCornerShape(50))
-                .size(24.dp) // Ensure button size
-                .zIndex(1f) // Ensure button is above the image
-        ) {
-            Icon(
-                imageVector = Icons.Default.Refresh, // Replace with your actual drawable
-                contentDescription = "Reload",
-                modifier = Modifier.padding(4.dp) // Size of the icon within the button
-            )
-        }
+    IconButton(
+        onClick = {
+            onClick()
 
+        },
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(50))
+            .border(1.dp, Color.Gray, RoundedCornerShape(50))
+            .size(24.dp) // Ensure button size
+            .zIndex(1f) // Ensure button is above the image
+    ) {
+        Icon(
+            imageVector = Icons.Default.Refresh, // Replace with your actual drawable
+            contentDescription = "Reload",
+            modifier = Modifier.padding(4.dp) // Size of the icon within the button
+        )
     }
 
-    @Composable
-    fun BoxScope.RemoveImageIconButton(onClick: () -> Unit) {
+}
 
-        IconButton(
-            onClick = {
-                onClick()
-            },
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .size(24.dp)// Size of the icon within the button
-                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(50))
-                .border(1.dp, Color.Gray, RoundedCornerShape(50))
-                .zIndex(1f)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Remove, // Replace with your actual drawable
-                contentDescription = "Remove",
-                modifier = Modifier.padding(4.dp) // Size of the icon within the button
-            )
-        }
+@Composable
+fun BoxScope.RemoveImageIconButton(onClick: () -> Unit) {
 
+    IconButton(
+        onClick = {
+            onClick()
+        },
+        modifier = Modifier
+            .align(Alignment.TopStart)
+            .size(24.dp)// Size of the icon within the button
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(50))
+            .border(1.dp, Color.Gray, RoundedCornerShape(50))
+            .zIndex(1f)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Remove, // Replace with your actual drawable
+            contentDescription = "Remove",
+            modifier = Modifier.padding(4.dp) // Size of the icon within the button
+        )
     }
+
+}
 

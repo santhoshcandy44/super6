@@ -104,6 +104,7 @@ fun CropScreen(uri: Uri, croppedResult:(Bitmap?)->Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .padding(horizontal = 16.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -248,10 +249,6 @@ fun CropScreen(uri: Uri, croppedResult:(Bitmap?)->Unit) {
                 }
             }
         }
-
-
-
-
 
 
         Column(
