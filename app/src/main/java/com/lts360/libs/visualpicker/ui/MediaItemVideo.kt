@@ -42,50 +42,48 @@ import kotlinx.coroutines.withContext
 
 
 @Composable
-fun MediaItemVideo(media: ImageMediaData,
-                   onClicked: () -> Unit = {},
-                   isSingle:Boolean=true,
-                   size: Dp = 80.dp ) {
+fun MediaItemVideo(
+    media: ImageMediaData,
+    onClicked: () -> Unit = {},
+    isSingle: Boolean = true,
+    size: Dp = 80.dp
+) {
     val context = LocalContext.current
 
 
-    var thumbnail by remember { mutableStateOf<Bitmap?>(null) }
+    var thumbnail by remember {
+        mutableStateOf<Bitmap?>(
+            VisualsThumbnailsCache.getBitmap(media.uri.toString())
+        )
+    }
     var isLoading by remember { mutableStateOf(false) }  // Flag to track if the thumbnail is loading
-
-    LaunchedEffect(isLoading){
-        Log.e(TAG,"isLoading ${isLoading}")
-    }
-
-    LaunchedEffect(isLoading){
-        Log.e(TAG,"Thumbnail ${thumbnail==null}")
-    }
 
 
     LaunchedEffect(media) {
 
-        // Check if URI exists and retrieve the thumbnail in a background thread
-        media.uri.let {
-            if (isUriExist(context, it)) {
-                // Use MediaMetadataRetriever to fetch the middle thumbnail in a background thread
-                if (media.duration != -1L) {
-                    try {
-                        isLoading = true  // Start loading
-                        thumbnail = withContext(Dispatchers.Default) {
-                            // Retrieve the middle frame thumbnail or an equivalent
-                            MediaMetadataRetriever().getMiddleVideoThumbnail(
-                                context,
-                                media.duration,
-                                it
-                            )
-                        }
-                    } catch (_: Exception) {
-                        // Handle error if thumbnail creation fails
-                    } finally {
-                        isLoading = false  // Thumbnail loaded or failed
+        val mediaUri = media.uri
+
+        if (isUriExist(context, mediaUri) && media.duration != -1L && thumbnail == null) {
+            // Use MediaMetadataRetriever to fetch the middle thumbnail in a background thread
+            try {
+                isLoading = true  // Start loading
+                thumbnail = withContext(Dispatchers.IO) {
+                    // Retrieve the middle frame thumbnail or an equivalent
+                    MediaMetadataRetriever().getMiddleVideoThumbnail(
+                        context,
+                        media.duration,
+                        mediaUri
+                    ).also {
+                        VisualsThumbnailsCache.putBitmap(mediaUri.toString(), it)
                     }
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                isLoading = false  // Thumbnail loaded or failed
             }
         }
+
     }
 
     // Card with adaptive size, aspect ratio ensures items are proportional
@@ -133,7 +131,7 @@ fun MediaItemVideo(media: ImageMediaData,
 
             }
 
-            if(!isSingle){
+            if (!isSingle) {
                 // Top-right corner indicator for selection status
                 Box(
                     modifier = Modifier

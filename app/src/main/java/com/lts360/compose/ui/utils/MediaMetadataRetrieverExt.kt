@@ -14,22 +14,15 @@ fun MediaMetadataRetriever.getMiddleVideoThumbnail(
     uri: Uri
 ): Bitmap? {
 
-
-    setDataSource(getPathFromUri(context, uri))
-
-    // Fall back to middle of video
-    // Note: METADATA_KEY_DURATION unit is in ms, not us.
+    setDataSource(context, uri)
     val thumbnailTimeUs: Long = duration * 1000 / 2
-
     val thumbnail = getFrameAtTime(thumbnailTimeUs)
-
     release()
     return thumbnail
 }
 
 
 fun MediaMetadataRetriever.getThumbnail(context: Context, uri: Uri, frameAt: Long = 0): Bitmap? {
-
 
     val openFileDescriptor = context.contentResolver.openFileDescriptor(uri, "r")
         ?: throw IOException("Failed to open file descriptor")
