@@ -49,14 +49,16 @@ fun LoadImageGalleryWithPermissions(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-
-
-
-
-
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 
-        var showRationale by remember { mutableStateOf(true) }
+        var showRationale by remember {
+            mutableStateOf(
+                ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as Activity,
+                    android.Manifest.permission.READ_MEDIA_IMAGES
+                )
+            )
+        }
 
 
         // State to handle permission request
