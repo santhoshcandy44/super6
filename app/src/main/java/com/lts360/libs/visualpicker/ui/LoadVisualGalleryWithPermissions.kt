@@ -1,9 +1,8 @@
-package com.lts360.libs.imagepicker.ui
+package com.lts360.libs.visualpicker.ui
 
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -18,7 +17,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,49 +29,52 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
-import com.lts360.libs.imagepicker.ImagePickerViewModel
 import com.lts360.libs.imagepicker.utils.redirectToAppSettings
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Composable
-fun LoadImageGalleryWithPermissions(
+fun LoadVisualGalleryWithPermissions(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
 
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-
-
-
-
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 
-        var showRationale by remember { mutableStateOf(true) }
+
+        val shouldShowPermissionRationale: () -> Boolean = {
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                context as Activity,
+                android.Manifest.permission.READ_MEDIA_IMAGES
+            ) || ActivityCompat.shouldShowRequestPermissionRationale(
+                context as Activity,
+                android.Manifest.permission.READ_MEDIA_VIDEO
+            )
+        }
+
+        var showRationale by remember {
+            mutableStateOf(
+                shouldShowPermissionRationale()
+            )
+        }
 
 
         // State to handle permission request
         var isInitial by remember {
             mutableStateOf(
-                ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as Activity,
-                    android.Manifest.permission.READ_MEDIA_IMAGES
-                )
+                true
             )
         }
-
 
         val hasPermissionGranted: () -> Boolean = {
             ContextCompat.checkSelfPermission(
                 context, android.Manifest.permission.READ_MEDIA_IMAGES
             ) == PackageManager.PERMISSION_GRANTED
+                    &&
+                    ContextCompat.checkSelfPermission(
+                        context, android.Manifest.permission.READ_MEDIA_VIDEO
+                    ) == PackageManager.PERMISSION_GRANTED
         }
 
         // State to handle permission request
@@ -88,21 +89,21 @@ fun LoadImageGalleryWithPermissions(
         val requestPermissions = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestMultiplePermissions()
         ) { permissions ->
-            val imagesGranted = permissions[android.Manifest.permission.READ_MEDIA_IMAGES] == true
+            val visualMediaPermissionsGranted =
+                permissions[android.Manifest.permission.READ_MEDIA_IMAGES] == true
+                        && permissions[android.Manifest.permission.READ_MEDIA_VIDEO] == true
 
             // Update state based on the permissions result
-            if (imagesGranted) {
+            if (visualMediaPermissionsGranted) {
                 setPermissionsGranted(true)
             } else {
                 setPermissionsGranted(false)
                 isInitial = false
-                showRationale = ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as Activity,
-                    android.Manifest.permission.READ_MEDIA_IMAGES
-                )
+                showRationale = shouldShowPermissionRationale()
                 // Optionally, show rationale or notify the user why these permissions are required
             }
         }
+
 
 
         LaunchedEffect(Unit) {
@@ -110,11 +111,13 @@ fun LoadImageGalleryWithPermissions(
                 // Request both permissions at once
                 requestPermissions.launch(
                     arrayOf(
-                        android.Manifest.permission.READ_MEDIA_IMAGES
+                        android.Manifest.permission.READ_MEDIA_IMAGES,
+                        android.Manifest.permission.READ_MEDIA_VIDEO
                     )
                 )
             }
         }
+
 
         LifecycleResumeEffect(Unit) {
             if (!permissionsGranted) {
@@ -144,10 +147,10 @@ fun LoadImageGalleryWithPermissions(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
-                    if (!showRationale) {
+                    if (showRationale) {
                         // If permissions are not granted, show a button to request them
                         Text(
-                            "Images Permission is required.",
+                            "Images/Videos Permission is required.",
                             color = Color.White,
                             textAlign = TextAlign.Center
                         )
@@ -171,7 +174,7 @@ fun LoadImageGalleryWithPermissions(
                         if (!isInitial) {
                             // If permissions are not granted, show a button to request them
                             Text(
-                                "To list images permission is required.",
+                                "To list images/videos permission is required.",
                                 color = Color.White, textAlign = TextAlign.Center
                             )
                             Spacer(Modifier.height(8.dp))
@@ -186,7 +189,10 @@ fun LoadImageGalleryWithPermissions(
                                 onClick = {
                                     // Request both permissions at once
                                     requestPermissions.launch(
-                                        arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES)
+                                        arrayOf(
+                                            android.Manifest.permission.READ_MEDIA_IMAGES,
+                                            android.Manifest.permission.READ_MEDIA_VIDEO
+                                        )
                                     )
                                 }) {
                                 Text("Allow Permissions", color = Color.White)
@@ -200,13 +206,18 @@ fun LoadImageGalleryWithPermissions(
     } else {
 
 
-        var showRationale by remember {
-            mutableStateOf(
-                ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as Activity, android.Manifest.permission.READ_EXTERNAL_STORAGE
-                )
+        val shouldShowPermissionRationale: () -> Boolean = {
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                context as Activity, android.Manifest.permission.READ_EXTERNAL_STORAGE
             )
         }
+
+        var showRationale by remember {
+            mutableStateOf(
+                shouldShowPermissionRationale()
+            )
+        }
+
 
         val hasPermissionGranted: () -> Boolean = {
             ContextCompat.checkSelfPermission(
@@ -242,25 +253,10 @@ fun LoadImageGalleryWithPermissions(
             } else {
                 readPermissionGranted = false
                 isInitial = false
-
                 // Check if the user has permanently denied the permission
-                showRationale = ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as Activity, android.Manifest.permission.READ_EXTERNAL_STORAGE
-                )
+                showRationale = shouldShowPermissionRationale()
 
                 // Optionally, show rationale or notify the user why these permissions are required
-            }
-        }
-
-        LifecycleResumeEffect(Unit) {
-
-            if (!readPermissionGranted) {
-                if (hasPermissionGranted()) {
-                    readPermissionGranted = true
-                }
-            }
-            onPauseOrDispose {
-
             }
         }
 
@@ -271,6 +267,17 @@ fun LoadImageGalleryWithPermissions(
                     android.Manifest.permission.READ_EXTERNAL_STORAGE
                 )
             )
+        }
+
+        LifecycleResumeEffect(Unit) {
+            if (!readPermissionGranted) {
+                if (hasPermissionGranted()) {
+                    readPermissionGranted = true
+                }
+            }
+            onPauseOrDispose {
+
+            }
         }
 
         // Column to show the UI for requesting permissions or displaying the gallery
@@ -289,7 +296,7 @@ fun LoadImageGalleryWithPermissions(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
-                    if (!showRationale) {
+                    if (showRationale) {
                         // If permissions are not granted, show a button to request them
                         Text(
                             "Storage Permission is required.",

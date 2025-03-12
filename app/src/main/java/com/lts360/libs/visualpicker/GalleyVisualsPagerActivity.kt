@@ -1,4 +1,4 @@
-package com.lts360.libs.imagepicker
+package com.lts360.libs.visualpicker
 
 import android.content.Intent
 import android.net.Uri
@@ -34,12 +34,12 @@ import androidx.navigation.toRoute
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.libs.imagepicker.routes.GalleyImagesPagerRoutes
-import com.lts360.libs.imagepicker.ui.LoadImageGalleryWithPermissions
+import com.lts360.libs.visualpicker.ui.LoadVisualGalleryWithPermissions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class GalleyImagesPagerActivity : ComponentActivity() {
+class GalleyVisualsPagerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,11 +67,11 @@ class GalleyImagesPagerActivity : ComponentActivity() {
                 ) { contentPadding ->
 
 
-                    LoadImageGalleryWithPermissions(modifier = Modifier.padding(contentPadding)) {
+                    LoadVisualGalleryWithPermissions(modifier = Modifier.padding(contentPadding)) {
 
                         val navController = rememberNavController()
 
-                        val viewModel: ImagePickerViewModel = hiltViewModel()
+                        val viewModel: VisualMediaPickerViewModel = hiltViewModel()
 
                         val MAX_ITEMS = maxItems
 
@@ -81,7 +81,6 @@ class GalleyImagesPagerActivity : ComponentActivity() {
                         val selectedMediaItems =
                             mediaItems.filter { it.isSelected }
                                 .map { it.uri }
-
 
 
 
@@ -99,7 +98,7 @@ class GalleyImagesPagerActivity : ComponentActivity() {
                                     slideComposable<GalleyImagesPagerRoutes.GalleyImagesPager> {
 
                                         if (isSingle) {
-                                            GalleySingleImagePickerScreen(
+                                            GallerySingleVisualPickerScreen(
                                                 {
                                                     setResult(
                                                         RESULT_OK, Intent()
@@ -118,7 +117,7 @@ class GalleyImagesPagerActivity : ComponentActivity() {
                                                 viewModel
                                             )
                                         } else {
-                                            GalleyMultipleImagesPickerScreen(
+                                            GalleryMultipleVisualsPickerScreen(
                                                 { imageMediaData ->
 
                                                     if (imageMediaData.isSelected || selectedMediaItems.size < MAX_ITEMS) {
@@ -156,7 +155,7 @@ class GalleyImagesPagerActivity : ComponentActivity() {
                                         album?.let { nonNullAlbum ->
 
                                             if (isSingle) {
-                                                ShowAlbumPhotosScreen(args.album,
+                                                ShowAlbumVisualsPickerScreen(args.album,
                                                     viewModel.groupMediaDate(
                                                         nonNullAlbum
                                                     ),
@@ -172,7 +171,7 @@ class GalleyImagesPagerActivity : ComponentActivity() {
                                                 }
                                             } else {
 
-                                                GalleyMultipleImagesPickerShowAlbumPhotosScreen(
+                                                GalleryMultipleVisualsPickerShowAlbumVisualsScreen(
                                                     args.album,
                                                     viewModel.groupMediaDate(
                                                         nonNullAlbum
@@ -202,6 +201,7 @@ class GalleyImagesPagerActivity : ComponentActivity() {
 
                                     }
                                 }
+
                             }
 
                             selectedMediaItems.takeIf { it.isNotEmpty() }?.let {

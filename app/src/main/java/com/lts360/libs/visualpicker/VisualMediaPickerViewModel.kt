@@ -1,18 +1,13 @@
-package com.lts360.libs.imagepicker
+package com.lts360.libs.visualpicker
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.provider.MediaStore
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.lts360.libs.imagepicker.models.ImageMediaData
-import com.lts360.libs.imagepicker.routes.GalleyImagesPagerRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +23,7 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class ImagePickerViewModel @Inject constructor(
+class VisualMediaPickerViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     savedStateHandle: SavedStateHandle
 ) :
@@ -48,13 +43,13 @@ class ImagePickerViewModel @Inject constructor(
         // Launch a coroutine to fetch and process images
         viewModelScope.launch(Dispatchers.IO) {
             // Fetch media items (sorted by descending dateAdded)
-            val mediaItems = getImagesFromGallery(context).sortedByDescending { it.dateAdded }
+            val mediaItems = getImagesAndVideosFromGallery(context).sortedByDescending { it.dateAdded }
             _mediaItems.value = mediaItems
         }
     }
 
 
-    private fun getImagesFromGallery(context: Context): List<ImageMediaData> {
+    fun getImagesAndVideosFromGallery(context: Context): List<ImageMediaData> {
         val mediaList = mutableListOf<ImageMediaData>()
 
         // Query Images
@@ -96,16 +91,68 @@ class ImagePickerViewModel @Inject constructor(
                     id.toString()
                 )
 
+                mediaList.add(ImageMediaData(id, contentUri, name, "image", dateAdded, width, height, data))
+            }
+        }
+
+        // Query Videos
+        val videoProjection = arrayOf(
+            MediaStore.Video.Media._ID,
+            MediaStore.Video.Media.DISPLAY_NAME,
+            MediaStore.Video.Media.DATE_ADDED,
+            MediaStore.Video.Media.WIDTH,
+            MediaStore.Video.Media.HEIGHT,
+            MediaStore.Video.Media.DURATION,
+            MediaStore.Video.Media.DATA,
+            MediaStore.Video.Media.MINI_THUMB_MAGIC
+        )
+
+
+        val videoCursor: Cursor? = context.contentResolver.query(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            videoProjection,
+            null,
+            null,
+            MediaStore.Video.Media.DATE_ADDED + " DESC"
+        )
+
+
+
+        videoCursor?.use {
+            val idColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+            val nameColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
+            val dateAddedColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
+            val widthColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.WIDTH)
+            val heightColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.HEIGHT)
+            val durationColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+            val dataColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
+
+            while (it.moveToNext()) {
+                val id = it.getLong(idColumn)
+                val name = it.getString(nameColumn)
+                val dateAdded = it.getLong(dateAddedColumn)
+                val width = it.getInt(widthColumn)
+                val height = it.getInt(heightColumn)
+                val duration = it.getLong(durationColumn)
+                val data = it.getString(dataColumn)
+
+
+                val contentUri = Uri.withAppendedPath(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    id.toString()
+                )
+
                 mediaList.add(
                     ImageMediaData(
                         id,
                         contentUri,
                         name,
-                        "image",
+                        "video",
                         dateAdded,
                         width,
                         height,
-                        data
+                        data,
+                        duration,
                     )
                 )
             }

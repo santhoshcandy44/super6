@@ -1,15 +1,18 @@
-package com.lts360.libs.imagepicker.ui
+package com.lts360.libs.visualpicker.ui
 
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -26,8 +29,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.components.utils.isUriExist
+import com.lts360.compose.ui.NoRippleInteractionSource
 import com.lts360.compose.ui.chat.formatTimeSeconds
 import com.lts360.compose.ui.utils.getMiddleVideoThumbnail
 import com.lts360.libs.imagepicker.models.ImageMediaData
@@ -36,15 +42,27 @@ import kotlinx.coroutines.withContext
 
 
 @Composable
-fun MediaItemVideo(media: ImageMediaData) {
+fun MediaItemVideo(media: ImageMediaData,
+                   onClicked: () -> Unit = {},
+                   isSingle:Boolean=true,
+                   size: Dp = 80.dp ) {
     val context = LocalContext.current
 
 
     var thumbnail by remember { mutableStateOf<Bitmap?>(null) }
-    var isLoading by remember { mutableStateOf(true) }  // Flag to track if the thumbnail is loading
+    var isLoading by remember { mutableStateOf(false) }  // Flag to track if the thumbnail is loading
+
+    LaunchedEffect(isLoading){
+        Log.e(TAG,"isLoading ${isLoading}")
+    }
+
+    LaunchedEffect(isLoading){
+        Log.e(TAG,"Thumbnail ${thumbnail==null}")
+    }
 
 
-    LaunchedEffect(media.uri) {
+    LaunchedEffect(media) {
+
         // Check if URI exists and retrieve the thumbnail in a background thread
         media.uri.let {
             if (isUriExist(context, it)) {
@@ -72,18 +90,20 @@ fun MediaItemVideo(media: ImageMediaData) {
 
     // Card with adaptive size, aspect ratio ensures items are proportional
     Card(
+        onClick = onClicked,
+        interactionSource = remember { NoRippleInteractionSource() },
         modifier = Modifier
             .fillMaxWidth()  // Fill available width
-            .aspectRatio(1f),  // Ensure a square aspect ratio
+            .wrapContentSize(),  // Ensure a square aspect ratio
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.wrapContentSize(),
             contentAlignment = Alignment.Center
         ) {
             // Show gray placeholder while loading
             if (isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.size(size),
                     contentAlignment = Alignment.Center
                 ) {
                     // Gray placeholder background
@@ -100,14 +120,36 @@ fun MediaItemVideo(media: ImageMediaData) {
                         bitmap = it.asImageBitmap(),
                         contentDescription = media.displayName,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.size(size)
                     )
                 } ?: run {
                     // Gray placeholder background
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .size(size)
                             .background(Color.Gray.copy(alpha = 0.3f))  // Semi-transparent gray
+                    )
+                }
+
+            }
+
+            if(!isSingle){
+                // Top-right corner indicator for selection status
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)  // Space from the top and right edges
+                        .size(24.dp)  // Adjust size as needed
+                ) {
+                    // Conditional selection indicator (circle)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                color = if (media.isSelected) Color.Yellow else Color.White,  // Orange if selected, white otherwise
+                                shape = CircleShape
+                            )
+                            .border(2.dp, Color.White, CircleShape)  // White border
                     )
                 }
             }
@@ -116,6 +158,7 @@ fun MediaItemVideo(media: ImageMediaData) {
                 Text(
                     formatTimeSeconds(media.duration / 1000f),
                     style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White,
                     modifier = Modifier
                         .wrapContentSize()
                         .padding(4.dp)
@@ -129,6 +172,8 @@ fun MediaItemVideo(media: ImageMediaData) {
                 )
 
             }
+
+
         }
     }
 }

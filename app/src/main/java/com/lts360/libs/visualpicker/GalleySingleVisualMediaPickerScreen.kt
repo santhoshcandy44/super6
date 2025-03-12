@@ -1,6 +1,8 @@
-package com.lts360.libs.imagepicker
+package com.lts360.libs.visualpicker
 
 import android.net.Uri
+import android.nfc.Tag
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,18 +44,19 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.libs.imagepicker.models.ImageMediaData
 import com.lts360.libs.imagepicker.ui.MediaItemImage
+import com.lts360.libs.visualpicker.ui.MediaItemVideo
 import kotlinx.coroutines.launch
 
 
 @Composable
-fun GalleySingleImagePickerScreen(
+fun GallerySingleVisualPickerScreen(
     onImagePicked: (Uri) -> Unit,
     onNavigateUpAlbum: (String) -> Unit,
-    viewModel: ImagePickerViewModel
+    viewModel: VisualMediaPickerViewModel
 ) {
 
 
@@ -114,7 +117,7 @@ fun TabContent(
     page: Int,
     onImagePicked: (Uri) -> Unit,
     onNavigateUpAlbum: (String) -> Unit,
-    viewModel: ImagePickerViewModel
+    viewModel: VisualMediaPickerViewModel
 ) {
 
 
@@ -126,16 +129,16 @@ fun TabContent(
 
     // Different content for each tab
     when (page) {
-        0 -> ShowPhotos(groupedByDateMediaItems, onImagePicked)
+        0 -> ShowVisuals(groupedByDateMediaItems, onImagePicked)
         1 -> {
-            ShowPhotosAlbums(groupedByFolderMediaItems, onNavigateUpAlbum)
+            ShowVisualsAlbums(groupedByFolderMediaItems, onNavigateUpAlbum)
         }
     }
 }
 
 
 @Composable
-fun ShowPhotos(groupedByDate: Map<String, List<ImageMediaData>>, onImagePicked: (Uri) -> Unit) {
+fun ShowVisuals(groupedByDate: Map<String, List<ImageMediaData>>, onImagePicked: (Uri) -> Unit) {
     // LazyVerticalGrid to display images and videos in a grid layout
     LazyVerticalGrid(
         columns = GridCells.Adaptive(80.dp),  // Change 3 to the number of columns you need
@@ -169,6 +172,12 @@ fun ShowPhotos(groupedByDate: Map<String, List<ImageMediaData>>, onImagePicked: 
                         onImagePicked(media.uri)
                     })
                 }
+
+                if(media.type=="video"){
+                    MediaItemVideo(media,{
+                        onImagePicked(media.uri)
+                    })
+                }
             }
         }
 
@@ -179,7 +188,7 @@ fun ShowPhotos(groupedByDate: Map<String, List<ImageMediaData>>, onImagePicked: 
 
 
 @Composable
-fun ShowPhotosAlbums(
+fun ShowVisualsAlbums(
     groupedByFolder: Map<String, List<ImageMediaData>>,
     onNavigateUpAlbum: (String) -> Unit
 ) {
@@ -215,6 +224,11 @@ fun ShowPhotosAlbums(
                                 onNavigateUpAlbum(album)
                             })
                         }
+                        if(mediaGroupItem.type=="video"){
+                            MediaItemVideo(mediaGroupItem,{
+                                onNavigateUpAlbum(album)
+                            })
+                        }
                         Text(
                             text = album,  // You can format this better if needed
                             color = Color.White,
@@ -244,7 +258,7 @@ fun ShowPhotosAlbums(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShowAlbumPhotosScreen(
+fun ShowAlbumVisualsPickerScreen(
     album: String,
     items: Map<String, List<ImageMediaData>>,
     onPopStack: () -> Unit,
@@ -282,7 +296,7 @@ fun ShowAlbumPhotosScreen(
                 .fillMaxSize()
                 .padding(contentPadding)
         ) {
-            ShowPhotos(
+            ShowVisuals(
                 items
             ) {
                 onImagePicked(it)

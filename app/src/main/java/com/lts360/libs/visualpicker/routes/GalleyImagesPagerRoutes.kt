@@ -1,4 +1,4 @@
-package com.lts360.libs.imagepicker.routes
+package com.lts360.libs.visualpicker.routes
 
 import kotlinx.serialization.Serializable
 

@@ -58,8 +58,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun GalleyMultipleImagesPickerScreen(
-    onImagePicked: (List<Uri>) -> Unit,
-    onNavigateUpAlbum: (String) -> Unit
+    onImagePicked: (ImageMediaData) -> Unit,
+    onNavigateUpAlbum: (String) -> Unit,
+    viewModel: ImagePickerViewModel
 ) {
 
 
@@ -107,7 +108,7 @@ fun GalleyMultipleImagesPickerScreen(
             // HorizontalPager for the swipeable content
             HorizontalPager(state = pagerState) { page ->
                 // Each page's content, corresponding to the selected tab
-                GalleyMultipleImagesPickerTab(page = page, onImagePicked, onNavigateUpAlbum)
+                GalleyMultipleImagesPickerTab(page = page, onImagePicked, onNavigateUpAlbum, viewModel)
             }
         }
     }
@@ -117,28 +118,23 @@ fun GalleyMultipleImagesPickerScreen(
 @Composable
 fun GalleyMultipleImagesPickerTab(
     page: Int,
-    onImagesPicked: (List<Uri>) -> Unit,
+    onImagesPicked: (ImageMediaData) -> Unit,
     onNavigateUpAlbum: (String) -> Unit,
-    viewModel: ImagePickerViewModel = hiltViewModel()
+    viewModel: ImagePickerViewModel
 ) {
 
 
-    val groupedByDateMediaItems by viewModel.groupedByDateMediaItems.collectAsState()
-    val groupedByFolderMediaItems by viewModel.groupedByFolderMediaItems.collectAsState()
 
-    val selectedGroupedByDateMediaItems = groupedByDateMediaItems.values.flatten()
-        .filter { it.isSelected }
-        .map { it.uri }
+    val mediaItems by viewModel.mediaItems.collectAsState()
+
+    val groupedByDateMediaItems = viewModel.groupMediaDate(mediaItems)
+    val groupedByFolderMediaItems = viewModel.groupMediaFolders(mediaItems)
 
 
-    val selectedItems = when {
-        selectedGroupedByDateMediaItems.isNotEmpty() -> selectedGroupedByDateMediaItems
-        else -> null
-    }
+
 
 
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
 
     Box(
@@ -151,53 +147,11 @@ fun GalleyMultipleImagesPickerTab(
         when (page) {
             0 ->
 
+                GalleyMultipleImagesPickerShowPhotos(groupedByDateMediaItems, {
 
-                Column(modifier = Modifier.fillMaxSize()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .weight(1f)
-                    ) {
+                    onImagesPicked(it)
 
-                        GalleyMultipleImagesPickerShowPhotos(groupedByDateMediaItems, {
-
-                            if (it.isSelected || selectedGroupedByDateMediaItems.size < viewModel.MAX_ITEMS) {
-                                viewModel.updateImageMediaIsSelected(it.id)
-                            } else {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        "You can select up to ${viewModel.MAX_ITEMS}.",
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
-                            }
-                        })
-
-                    }
-
-                    selectedItems?.let {
-                        OutlinedButton(
-                            onClick = { onImagesPicked(it) },
-                            shape = RoundedCornerShape(4.dp),
-                            modifier = Modifier
-                                .wrapContentSize()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            // "Add" Text
-                            Text("Add", color = Color.White)
-
-                            // Spacer for spacing between the text and the count box
-                            Spacer(Modifier.width(8.dp))
-
-                            // Rounded box for showing the count of selected items
-                            Text(
-                                text = it.size.toString(),  // Show the count
-                                color = Color.White
-                            )
-                        }
-                    }
-                }
-
+                })
 
             1 -> {
                 GalleyMultipleImagesPickerShowPhotosAlbums(
@@ -207,7 +161,6 @@ fun GalleyMultipleImagesPickerTab(
             }
         }
 
-        SnackbarHost(hostState = snackbarHostState)
     }
 
 
@@ -332,22 +285,14 @@ fun GalleyMultipleImagesPickerShowPhotosAlbums(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GalleyMultipleImagesPickerShowAlbumPhotosScreen(
-    viewModel: ImagePickerViewModel,
-    selectedGroupedByFolderMediaItems: List<Uri>,
     album: String,
     items: Map<String, List<ImageMediaData>>,
-    onPopStack: () -> Unit,
-    onImagesPicked: (List<Uri>) -> Unit
-
+    onImagePicked: (ImageMediaData) -> Unit,
+    onPopStack: () -> Unit
 ) {
 
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     Scaffold(
-        snackbarHost = {
-            SnackbarHost(snackbarHostState)
-        },
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -390,42 +335,8 @@ fun GalleyMultipleImagesPickerShowAlbumPhotosScreen(
                     GalleyMultipleImagesPickerShowPhotos(
                         items,
                     ) {
-
-                        if(it.isSelected || selectedGroupedByFolderMediaItems.size < viewModel.MAX_ITEMS){
-                            viewModel.updateAlbumMediaIsSelected(it.id)
-                        }else{
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    "You can select up to ${viewModel.MAX_ITEMS}.",
-                                    duration = SnackbarDuration.Short,
-                                )
-                            }
-                        }
+                        onImagePicked(it)
                     }
-                }
-            }
-
-
-
-            selectedGroupedByFolderMediaItems.takeIf { it.isNotEmpty() }?.let {
-                OutlinedButton(
-                    onClick = { onImagesPicked(it) },
-                    shape = RoundedCornerShape(4.dp),
-                    modifier = Modifier
-                        .wrapContentSize()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    // "Add" Text
-                    Text("Add", color = Color.White)
-
-                    // Spacer for spacing between the text and the count box
-                    Spacer(Modifier.width(8.dp))
-
-                    // Rounded box for showing the count of selected items
-                    Text(
-                        text = it.size.toString(),  // Show the count
-                        color = Color.White
-                    )
                 }
             }
 

@@ -1,13 +1,19 @@
 package com.lts360.test
 
 
+import android.app.Activity
 import android.content.res.Configuration
 import android.graphics.Paint
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -17,8 +23,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,16 +43,41 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil3.compose.AsyncImage
 import com.lts360.R
 import com.lts360.compose.ui.auth.repos.AuthRepository
 import com.lts360.compose.ui.theme.AppTheme
+import com.lts360.libs.imagepicker.utils.redirectToAppSettings
+import com.lts360.libs.visualpicker.GalleryVisualPagerActivityResultContracts
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+
+/*      var items by remember { mutableStateOf(emptyList<NewsArticle>()) }
+
+                   val context = LocalContext.current
+
+                   LaunchedEffect(Unit) {
+
+                       val data = context.assets.open("recent_articles.json")
+                           .bufferedReader()
+                           .use {
+                               it.readText()
+                           }
+
+                       val serializer = Json { ignoreUnknownKeys }
+                       items = serializer.decodeFromString(data) as List<NewsArticle>
+                   }*/
+
 
 @Serializable
 data class NewsArticle(
@@ -64,53 +101,50 @@ class TestActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
         setContent {
+
+
             AppTheme {
-                /*      var items by remember { mutableStateOf(emptyList<NewsArticle>()) }
-
-                      val context = LocalContext.current
-
-                      LaunchedEffect(Unit) {
-
-                          val data = context.assets.open("recent_articles.json")
-                              .bufferedReader()
-                              .use {
-                                  it.readText()
-                              }
-
-                          val serializer = Json { ignoreUnknownKeys }
-                          items = serializer.decodeFromString(data) as List<NewsArticle>
-                      }*/
-
-
 
                 Surface {
 
 
+
+
                     val context = LocalContext.current
+                    val launcher = rememberLauncherForActivityResult(
+                        GalleryVisualPagerActivityResultContracts
+                            .PickMultipleVisuals()
+                    ) { uris ->
+
+                    }
 
                     Box(
                         Modifier
                             .fillMaxSize()
                             .background(Color.Black)
+                            .clickable {
+                                launcher.launch(Unit)
+                            }
                     ) {
 
 
-
-/*
-                        DonutChart(
-                            listOf(10, 30, 40, 15, 5),
-                            listOf(
-                                Color(0xFF7B4F98),  // Purple
-                                Color(0xFF34A853),  // Green
-                                Color(0xFFFBBC05),  // Yellow
-                                Color(0xFF4285F4),  // Blue
-                                Color(0xFFDB4437)   // Red
-                            ),
-                            size = 500.dp,
-                            modifier = Modifier.align(Alignment.Center)
-                                .background(Color.Yellow)
-                        )*/
+                        /*
+                                                DonutChart(
+                                                    listOf(10, 30, 40, 15, 5),
+                                                    listOf(
+                                                        Color(0xFF7B4F98),  // Purple
+                                                        Color(0xFF34A853),  // Green
+                                                        Color(0xFFFBBC05),  // Yellow
+                                                        Color(0xFF4285F4),  // Blue
+                                                        Color(0xFFDB4437)   // Red
+                                                    ),
+                                                    size = 500.dp,
+                                                    modifier = Modifier.align(Alignment.Center)
+                                                        .background(Color.Yellow)
+                                                )*/
 
                     }
                 }
@@ -119,36 +153,8 @@ class TestActivity : ComponentActivity() {
     }
 
 
-    @Composable
-    fun ImageGridScreen() {
-        val imageUrls =
-            List(1000) { "https://picsum.photos/200/300?random=$it" } // Example image URLs
 
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(100.dp),  // Adjust column width
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(imageUrls.size) { index ->
-                ImageItem(imageUrls[index])
-            }
-        }
-    }
 
-    @Composable
-    fun ImageItem(imageUrl: String) {
-        AsyncImage(
-            model = imageUrl,
-            contentDescription = "Image",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(100.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color.Gray)
-        )
-    }
 
 
     @Composable

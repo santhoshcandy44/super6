@@ -32,9 +32,9 @@
         android:required="true" />
 
 
-    <!--
-        <uses-permission android:name="android.permission.FLASHLIGHT" />
-    -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
+
     <!--
         <uses-feature
             android:name="android.hardware.telephony"
@@ -186,6 +186,10 @@
 
         <activity
             android:name=".libs.imagepicker.GalleyImagesPagerActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".libs.visualpicker.GalleyVisualsPagerActivity"
             android:exported="false" />
 
         <activity

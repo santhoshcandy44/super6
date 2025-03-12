@@ -2,6 +2,7 @@ package com.lts360.compose.ui.auth.repos
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
@@ -28,6 +29,7 @@ import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.UserLocation
 import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.app.database.daos.profile.UserLocationDao
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +68,7 @@ class AuthRepository @Inject constructor(
                 val digest = md.digest(bytes)
                 digest.fold("") { str, it -> str + "%02x".format(it) }
             } catch (e: NoSuchAlgorithmException) {
+                e.printStackTrace()
                 failure("Failed to log in try again")
                 return
             }
@@ -101,6 +104,7 @@ class AuthRepository @Inject constructor(
                     if (task.isSuccessful) {
                         success(idToken)
                     } else {
+                        Log.e(TAG,"${task.exception?.message}")
                         failure("Failed to log in try again")
                     }
                 }

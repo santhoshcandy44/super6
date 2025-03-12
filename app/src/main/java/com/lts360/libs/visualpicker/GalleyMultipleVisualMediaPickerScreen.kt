@@ -1,6 +1,5 @@
-package com.lts360.libs.imagepicker
+package com.lts360.libs.visualpicker
 
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,18 +41,17 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.libs.imagepicker.models.ImageMediaData
 import com.lts360.libs.imagepicker.ui.MediaItemImage
+import com.lts360.libs.visualpicker.ui.MediaItemVideo
 import kotlinx.coroutines.launch
 
-
 @Composable
-fun GalleySingleImagePickerScreen(
-    onImagePicked: (Uri) -> Unit,
+fun GalleryMultipleVisualsPickerScreen(
+    onImagePicked: (ImageMediaData) -> Unit,
     onNavigateUpAlbum: (String) -> Unit,
-    viewModel: ImagePickerViewModel
+    viewModel: VisualMediaPickerViewModel
 ) {
 
 
@@ -98,44 +96,63 @@ fun GalleySingleImagePickerScreen(
                 }
             }
 
-
             // HorizontalPager for the swipeable content
             HorizontalPager(state = pagerState) { page ->
-                TabContent(page = page, onImagePicked, onNavigateUpAlbum, viewModel)
+                // Each page's content, corresponding to the selected tab
+                GalleryMultipleImagesPickerTab(page = page, onImagePicked, onNavigateUpAlbum, viewModel)
             }
         }
     }
 
 }
 
-
 @Composable
-fun TabContent(
+fun GalleryMultipleImagesPickerTab(
     page: Int,
-    onImagePicked: (Uri) -> Unit,
+    onImagesPicked: (ImageMediaData) -> Unit,
     onNavigateUpAlbum: (String) -> Unit,
-    viewModel: ImagePickerViewModel
+    viewModel: VisualMediaPickerViewModel
 ) {
-
 
     val mediaItems by viewModel.mediaItems.collectAsState()
 
     val groupedByDateMediaItems = viewModel.groupMediaDate(mediaItems)
     val groupedByFolderMediaItems = viewModel.groupMediaFolders(mediaItems)
 
+    val scope = rememberCoroutineScope()
 
-    // Different content for each tab
-    when (page) {
-        0 -> ShowPhotos(groupedByDateMediaItems, onImagePicked)
-        1 -> {
-            ShowPhotosAlbums(groupedByFolderMediaItems, onNavigateUpAlbum)
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+
+
+        // Different content for each tab
+        when (page) {
+            0 ->
+                GalleryMultipleImagesPickerShowVisuals(groupedByDateMediaItems, {
+                    onImagesPicked(it)
+
+                })
+            1 -> {
+                GalleryMultipleImagesPickerShowVisualsAlbums(
+                    groupedByFolderMediaItems,
+                    onNavigateUpAlbum
+                )
+            }
         }
+
     }
+
+
+
 }
 
-
 @Composable
-fun ShowPhotos(groupedByDate: Map<String, List<ImageMediaData>>, onImagePicked: (Uri) -> Unit) {
+fun GalleryMultipleImagesPickerShowVisuals(
+    groupedByDate: Map<String, List<ImageMediaData>>,
+    onImagePicked: (ImageMediaData) -> Unit
+) {
     // LazyVerticalGrid to display images and videos in a grid layout
     LazyVerticalGrid(
         columns = GridCells.Adaptive(80.dp),  // Change 3 to the number of columns you need
@@ -149,13 +166,12 @@ fun ShowPhotos(groupedByDate: Map<String, List<ImageMediaData>>, onImagePicked: 
 
 
         // Loop over the grouped items
-        groupedByDate.entries.forEachIndexed { index, entry ->
+        groupedByDate.entries.forEachIndexed{ index, entry ->
 
             val (date, mediaGroup) = entry
 
             // Add a header for each date group, with full span
-            item(span = { GridItemSpan(maxLineSpan) },
-                key = "key_${index}_${date.hashCode()}") {
+            item(span = { GridItemSpan(maxLineSpan) } , key =  "key_${index}_${date.hashCode()}") {
                 Text(
                     color = Color.White,
                     text = date,  // You can format this better if needed
@@ -165,28 +181,39 @@ fun ShowPhotos(groupedByDate: Map<String, List<ImageMediaData>>, onImagePicked: 
             // Display all media items for the current date group
             items(mediaGroup, key = { it.id }) { media ->
                 if (media.type == "image") {
-                    MediaItemImage(media, {
-                        onImagePicked(media.uri)
-                    })
+                    MediaItemImage(
+                        media,
+                        {
+                            onImagePicked(media)
+                        }, false
+                    )
+                }
+
+                if (media.type == "video") {
+                    MediaItemVideo(
+                        media,
+                        {
+                            onImagePicked(media)
+                        }, false
+                    )
                 }
             }
         }
-
-
     }
-
 }
 
 
+
 @Composable
-fun ShowPhotosAlbums(
+fun GalleryMultipleImagesPickerShowVisualsAlbums(
     groupedByFolder: Map<String, List<ImageMediaData>>,
     onNavigateUpAlbum: (String) -> Unit
 ) {
     // LazyVerticalGrid to display images and videos in a grid layout
     LazyVerticalGrid(
         columns = GridCells.Adaptive(80.dp),  // Change 3 to the number of columns you need
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
             .nestedScroll(rememberNestedScrollInteropConnection()),
         contentPadding = PaddingValues(8.dp),  // Add padding around the grid
         horizontalArrangement = Arrangement.spacedBy(8.dp),  // Space between columns
@@ -211,10 +238,23 @@ fun ShowPhotosAlbums(
                     ) {
 
                         if (mediaGroupItem.type == "image") {
-                            MediaItemImage(mediaGroupItem, onClicked = {
-                                onNavigateUpAlbum(album)
-                            })
+                            MediaItemImage(
+                                mediaGroupItem,
+                                isSingle = true,
+                                onClicked = {
+                                    onNavigateUpAlbum(album)
+                                })
                         }
+
+                        if (mediaGroupItem.type == "video") {
+                            MediaItemVideo(
+                                mediaGroupItem,
+                                isSingle = true,
+                                onClicked = {
+                                    onNavigateUpAlbum(album)
+                                })
+                        }
+
                         Text(
                             text = album,  // You can format this better if needed
                             color = Color.White,
@@ -241,15 +281,16 @@ fun ShowPhotosAlbums(
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShowAlbumPhotosScreen(
+fun GalleryMultipleVisualsPickerShowAlbumVisualsScreen(
     album: String,
     items: Map<String, List<ImageMediaData>>,
-    onPopStack: () -> Unit,
-    onImagePicked: (Uri) -> Unit
+    onImagePicked: (ImageMediaData) -> Unit,
+    onPopStack: () -> Unit
 ) {
+
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -277,78 +318,30 @@ fun ShowAlbumPhotosScreen(
         containerColor = Color.Black,
     ) { contentPadding ->
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-        ) {
-            ShowPhotos(
-                items
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
             ) {
-                onImagePicked(it)
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding)
+                ) {
+                    GalleryMultipleImagesPickerShowVisuals(
+                        items,
+                    ) {
+                        onImagePicked(it)
+                    }
+                }
             }
+
         }
 
-
     }
 }
 
 
-/*
-
-fun formatMediaDateAdded(dateAdded: Long): String {
-    // Check if the timestamp is in seconds (not milliseconds)
-    val adjustedDateAdded = if (dateAdded < 1000000000000L) {
-        // If it's in seconds, convert to milliseconds by multiplying by 1000
-        dateAdded * 1000
-    } else {
-        // If it's already in milliseconds, use it as is
-        dateAdded
-    }
-
-    // Create a Date object from the adjusted timestamp (milliseconds)
-    val date = Date(adjustedDateAdded)
-
-    // Create a ZonedDateTime object from the Date object
-    val dateTime = date.toInstant().atZone(ZoneId.systemDefault())
-
-    // Determine the date of the timestamp
-    val dateOfTimestamp = dateTime.toLocalDate()
-
-    // Get the current date
-    val now = LocalDate.now()
-
-    // Check if the date is today
-    if (dateOfTimestamp.isEqual(now)) {
-        // Format: HH:mm a (e.g., 02:00 AM)
-        val timeFormatter = DateTimeFormatter.ofPattern("h:mm a")
-        return dateTime.format(timeFormatter)
-    }
-
-    // Check if the date is yesterday
-    if (dateOfTimestamp.isEqual(now.minus(1, ChronoUnit.DAYS))) {
-        // Format: Yesterday HH:mm a (e.g., Yesterday 12:00 AM)
-        val timeFormatter = DateTimeFormatter.ofPattern("h:mm a")
-        val timePart = dateTime.format(timeFormatter)
-        return "Yesterday $timePart"
-    }
-
-    // Check if the date is within the last 7 days
-    if (!dateOfTimestamp.isBefore(now.minus(7, ChronoUnit.DAYS))) {
-        val dayOfWeek = dateOfTimestamp.dayOfWeek
-        val weekdayName = dayOfWeek.name.lowercase()
-            .replaceFirstChar { it.uppercase() } // Capitalize the first letter
-
-        // Format time part for the last 7 days
-        val timeOfTimestamp = dateTime.toLocalTime() // Get time from ZonedDateTime
-        val timeFormatted = timeOfTimestamp.format(DateTimeFormatter.ofPattern("h:mm a"))
-
-        return "$weekdayName $timeFormatted"
-    }
-
-    // For any other date, format as: MMM d, yyyy h:mm a (e.g., Sep 12, 2024 5:37 AM)
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a")
-    return dateTime.format(dateTimeFormatter)
-}
-
-*/
