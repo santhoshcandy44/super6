@@ -3,14 +3,12 @@ package com.lts360.compose.ui.auth
 import android.app.ActivityOptions
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Surface
 import com.google.firebase.auth.FirebaseAuth
 import com.lts360.R
 import com.lts360.api.auth.managers.TokenManager
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.account.InvalidSessionActivity
 import com.lts360.compose.ui.auth.navhost.AuthNavHost
 import com.lts360.compose.ui.auth.navhost.AuthScreen
@@ -20,7 +18,6 @@ import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-
 
 
 @AndroidEntryPoint

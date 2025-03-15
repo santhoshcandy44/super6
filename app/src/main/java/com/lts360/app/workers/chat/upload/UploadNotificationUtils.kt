@@ -1,4 +1,4 @@
-package com.lts360.app.workers.upload
+package com.lts360.app.workers.chat.upload
 
 import android.app.NotificationChannel
 import android.app.NotificationManager

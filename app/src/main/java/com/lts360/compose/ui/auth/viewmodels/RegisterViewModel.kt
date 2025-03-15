@@ -5,6 +5,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.gson.Gson
 import com.lts360.App
 import com.lts360.api.auth.AuthClient
@@ -22,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -197,6 +200,10 @@ class RegisterViewModel @Inject constructor(
         }
     }
 
+    fun setLoading(isLoading:Boolean){
+        _isLoading.value = isLoading
+    }
+
 
     fun onLegacyEmailSignUp(email: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
@@ -320,12 +327,20 @@ class RegisterViewModel @Inject constructor(
 
             if (response.isSuccessful) {
                 // Handle successful response
-                val loginResponse = response.body()
+                val body = response.body()
 
 
-                if (loginResponse != null && loginResponse.isSuccessful) {
+                if (body != null && body.isSuccessful) {
 
-                    Result.Success(loginResponse)
+
+                    val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
+                    try {
+                        FirebaseAuth.getInstance().signInWithCredential(firebaseCredential)
+                            .await()
+                        Result.Success(body)
+                    } catch (e: Exception) {
+                        Result.Error(Exception("Failed to log in try again"))
+                    }
 
                 } else {
 

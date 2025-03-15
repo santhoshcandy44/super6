@@ -1,4 +1,4 @@
-package com.lts360.app.workers
+package com.lts360.app.workers.chat
 
 import android.content.Context
 import android.content.res.Resources.NotFoundException
@@ -26,7 +26,9 @@ import com.lts360.api.auth.managers.socket.SocketManager
 import com.lts360.api.auth.managers.socket.SocketConnectionException
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.notifications.NotificationIdManager
-import com.lts360.app.workers.download.downloadMediaAndCache
+import com.lts360.app.workers.chat.download.downloadMediaAndCache
+import com.lts360.app.workers.chat.utils.awaitConnectToSocket
+import com.lts360.app.workers.chat.utils.cacheThumbnailToAppSpecificFolder
 import com.lts360.pot.database.services.buildAndShowChatNotification
 import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
@@ -109,6 +111,8 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
 
         return try {
+            Log.e(TAG,"Await socket")
+
             socket = awaitConnectToSocket(socketManager, !App.isAppInForeground, true, queryString)
 
             if (socket.connected()) {
@@ -151,6 +155,10 @@ class FetchUserProfileWorker @AssistedInject constructor(
                             }
                         }
                     }
+
+
+                    Log.e(TAG,"Key received")
+
 
                     var publicKeyRecipientId: Long = -1
                     var publicKey: String? = null
@@ -683,6 +691,7 @@ class FetchUserProfileWorker @AssistedInject constructor(
                 }
 
             }else{
+                Log.e(TAG,"Socket is not connected")
                 throw SocketConnectionException("Socket is not connected")
             }
 
@@ -741,11 +750,11 @@ class FetchUserProfileWorker @AssistedInject constructor(
         }
     }
 
-    private fun finalizeSocket() {
+   suspend private fun finalizeSocket() {
         if (socketManager.isBackgroundSocket) {
             socketManager.destroySocket()
             if (App.isAppInForeground) {
-                socketManager.getSocket()
+                socketManager.initSocket()
             }
         }
     }

@@ -12,20 +12,28 @@
           "package_name": "com.lts360"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "300991981824-m4ovoojo09sklaqcvijandmnndduda0r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyD6VVZdn3aIErtcladDirIdvtCY5MrKvgg"
+          "current_key": "AIzaSyAId8ugNJ4CAGRF3vVoJ7212qJ7YgcXBu0"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "300991981824-m4ovoojo09sklaqcvijandmnndduda0r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
   ],
   "configuration_version": "1"
 }
-
-

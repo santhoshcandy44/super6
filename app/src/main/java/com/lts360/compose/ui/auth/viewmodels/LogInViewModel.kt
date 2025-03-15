@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Patterns.EMAIL_ADDRESS
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.gson.Gson
 import com.lts360.App
 import com.lts360.api.Utils.Result
@@ -20,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -29,7 +32,6 @@ class LogInViewModel @Inject constructor(
     val context: Context,
     private val authRepository: AuthRepository,
 ) : ViewModel() {
-
 
 
     private val _email = MutableStateFlow("")
@@ -111,6 +113,10 @@ class LogInViewModel @Inject constructor(
     }
 
 
+    fun setLoading(isLoading: Boolean) {
+        _isLoading.value = isLoading
+    }
+
 
     fun onLegacyEmailLogin(
         email: String,
@@ -118,22 +124,23 @@ class LogInViewModel @Inject constructor(
         onSuccess: () -> Unit,
         onError: (String) -> Unit,
     ) {
-        viewModelScope.launch{
+        viewModelScope.launch {
             try {
                 _isLoading.value = true
                 when (val result = legacyEmailLogin(email, password)) {
                     is Result.Success -> {
                         val data = Gson().fromJson(result.data.data, LogInResponse::class.java)
                         (context.applicationContext as App).setIsInvalidSession(false)
-                        withContext(Dispatchers.IO){
+                        withContext(Dispatchers.IO) {
                             authRepository.updateProfileIfNeeded(data.userDetails)
                         }
                         authRepository.saveEmailSignInInfo(data.accessToken, data.refreshToken)
                         authRepository.saveUserId(data.userId)
                         onSuccess()  // Proceed to next step or navigate to OTP screen
                     }
+
                     is Result.Error -> {
-                        errorMessage= mapExceptionToError(result.error).errorMessage
+                        errorMessage = mapExceptionToError(result.error).errorMessage
                         onError(errorMessage)
                     }
                 }
@@ -145,7 +152,6 @@ class LogInViewModel @Inject constructor(
             }
         }
     }
-
 
 
     fun onGoogleSignIn(idToken: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
@@ -162,7 +168,7 @@ class LogInViewModel @Inject constructor(
                             authRepository.updateProfileIfNeeded(data.userDetails)
                         }
 
-                        authRepository.saveGoogleSignInInfo(data.accessToken,data.refreshToken)
+                        authRepository.saveGoogleSignInInfo(data.accessToken, data.refreshToken)
                         authRepository.saveUserId(data.userId)
 
                         onSuccess()
@@ -188,11 +194,10 @@ class LogInViewModel @Inject constructor(
     }
 
 
-
-
     // Method to handle registration
     private suspend fun legacyEmailLogin(
-        email: String, password: String): Result<ResponseReply> {
+        email: String, password: String
+    ): Result<ResponseReply> {
 
         return try {
             val response = AuthClient.instance.create(AuthService::class.java)
@@ -211,7 +216,8 @@ class LogInViewModel @Inject constructor(
                 }
             } else {
                 val errorBody = response.errorBody()?.string()
-                val errorMessage = try {Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                val errorMessage = try {
+                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
                 } catch (e: Exception) {
                     "An unknown error occurred"
                 }
@@ -222,8 +228,6 @@ class LogInViewModel @Inject constructor(
 
         }
     }
-
-
 
 
     fun onGoogleSignInOAuth(
@@ -250,12 +254,18 @@ class LogInViewModel @Inject constructor(
                 val loginResponse = response.body()
 
                 if (loginResponse != null && loginResponse.isSuccessful) {
-                    Result.Success(loginResponse)
+
+                    val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
+                    try {
+                        FirebaseAuth.getInstance().signInWithCredential(firebaseCredential)
+                            .await()
+                        Result.Success(loginResponse)
+                    } catch (e: Exception) {
+                        Result.Error(Exception("Failed to log in try again"))
+                    }
 
                 } else {
-                    val errorMessage = "Failed, try again later..."
-                    Result.Error(Exception(errorMessage))
-
+                    Result.Error(Exception("Failed to log in try again"))
                 }
             } else {
 

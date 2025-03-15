@@ -146,7 +146,8 @@ fun LoginScreen(
                 focusManager.clearFocus()
             }
             isClickable = false
-            viewModel.onGoogleSignInOAuth(context, onSuccess = { idToken ->
+            viewModel.onGoogleSignInOAuth(context,
+                onSuccess = { idToken ->
                 viewModel.onGoogleSignIn(idToken, onSuccess = {
 
                     isClickable = true
@@ -168,6 +169,7 @@ fun LoginScreen(
                 }
 
             }) {
+                viewModel.setLoading(false)
                 isClickable = true
                 Toast.makeText(context, it, Toast.LENGTH_SHORT)
                     .show()

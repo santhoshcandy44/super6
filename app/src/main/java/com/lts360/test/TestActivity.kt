@@ -1,66 +1,57 @@
 package com.lts360.test
 
 
-import android.app.Activity
 import android.content.res.Configuration
 import android.graphics.Paint
+import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import coil3.compose.AsyncImage
+import com.google.android.gms.common.Scopes
 import com.lts360.R
-import com.lts360.compose.ui.auth.repos.AuthRepository
+import com.lts360.compose.ui.main.HomeScreen
 import com.lts360.compose.ui.theme.AppTheme
-import com.lts360.libs.imagepicker.utils.redirectToAppSettings
-import com.lts360.libs.visualpicker.GalleryVisualPagerActivityResultContracts
+import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+
 
 /*      var items by remember { mutableStateOf(emptyList<NewsArticle>()) }
 
@@ -102,59 +93,49 @@ class TestActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         setContent {
-
 
             AppTheme {
 
                 Surface {
-
-
-
-
                     val context = LocalContext.current
+                    var data: Uri? by remember { mutableStateOf(null) }
                     val launcher = rememberLauncherForActivityResult(
-                        GalleryVisualPagerActivityResultContracts
-                            .PickMultipleVisuals()
-                    ) { uris ->
+                        GalleryPagerActivityResultContracts
+                            .PickSingleImage()
+                    ) { uri ->
 
+                        data = uri
                     }
 
-                    Box(
+                    Column(
                         Modifier
                             .fillMaxSize()
                             .background(Color.Black)
-                            .clickable {
-                                launcher.launch(Unit)
-                            }
+                            .padding(16.dp)
                     ) {
 
+                        Button({}, modifier = Modifier.fillMaxWidth(),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 8.dp
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Click")
+                        }
 
-                        /*
-                                                DonutChart(
-                                                    listOf(10, 30, 40, 15, 5),
-                                                    listOf(
-                                                        Color(0xFF7B4F98),  // Purple
-                                                        Color(0xFF34A853),  // Green
-                                                        Color(0xFFFBBC05),  // Yellow
-                                                        Color(0xFF4285F4),  // Blue
-                                                        Color(0xFFDB4437)   // Red
-                                                    ),
-                                                    size = 500.dp,
-                                                    modifier = Modifier.align(Alignment.Center)
-                                                        .background(Color.Yellow)
-                                                )*/
+                        ElevatedButton({}, elevation = ButtonDefaults.elevatedButtonElevation(
+                            defaultElevation = 8.dp
+                        ), modifier = Modifier.fillMaxWidth(), shape = RectangleShape) {
+                            Text("Click")
+                        }
 
                     }
+
                 }
             }
         }
     }
-
-
-
-
 
 
     @Composable

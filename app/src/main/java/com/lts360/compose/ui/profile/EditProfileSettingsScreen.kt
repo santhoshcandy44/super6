@@ -1,12 +1,11 @@
 package com.lts360.compose.ui.profile
 
-import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -37,6 +36,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,7 +52,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.dropUnlessResumed
+import com.lts360.BuildConfig
 import com.lts360.R
 import com.lts360.components.utils.InputStreamRequestBody
 import com.lts360.compose.transformations.PlaceholderTransformation
@@ -61,26 +63,9 @@ import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.libs.imagecrop.CropProfilePicActivityContracts
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
-import okhttp3.MediaType
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import okio.BufferedSink
+import java.io.File
 import java.io.InputStream
-
-
-fun createRequestBodyFromInputStream(inputStream: InputStream, mediaType: String): RequestBody {
-
-    return object : RequestBody() {
-        override fun contentType(): MediaType? {
-            return mediaType.toMediaTypeOrNull()
-        }
-
-        override fun writeTo(sink: BufferedSink) {
-            inputStream.copyTo(sink.outputStream()) // Copy the input stream to the output sink
-        }
-    }
-}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,9 +81,9 @@ fun EditProfileSettingsScreen(
 
     val userId = viewModel.userId
 
-    val purpleGradientBrush = Brush.linearGradient(
-        colors = listOf(Color(0xFF6200EE), Color(0xFF9747ff), Color(0xFFBB86FC))
-    )
+    val purpleGradientBrush = Brush.linearGradient(colors = listOf(Color(0xFF6200EE),
+        Color(0xFF9747ff), Color(0xFFBB86FC)))
+
     val userProfile by viewModel.userProfile.collectAsState()
 
 
@@ -110,8 +95,7 @@ fun EditProfileSettingsScreen(
 
     val context = LocalContext.current
 
-
-    var isPickerLaunched by rememberSaveable { mutableStateOf(false) }
+    var profilePickerState by rememberSaveable { mutableStateOf(false) }
 
 
     fun startUploadFile(uri: Uri) {
@@ -130,7 +114,7 @@ fun EditProfileSettingsScreen(
         }
 
         if (displayName == null) {
-            return
+            throw NullPointerException("Display name is null")
         }
 
         val imagePart =
@@ -150,10 +134,11 @@ fun EditProfileSettingsScreen(
         CropProfilePicActivityContracts.ImageCropper()
     ) { uri ->
         uri?.let {
-            return@let startUploadFile(it)
+            startUploadFile(it)
         }
     }
 
+    var isImagePickerLauncherLaunched by rememberSaveable { mutableStateOf(false) }
     val imagePickerLauncher =
         rememberLauncherForActivityResult(GalleryPagerActivityResultContracts.PickSingleImage()) { uri: Uri? ->
 
@@ -178,7 +163,7 @@ fun EditProfileSettingsScreen(
                             // Step 5: Check the aspect ratio (1:1)
                             if (width == height) {
 
-                                return@let startUploadFile(selectedUri)
+                                startUploadFile(selectedUri)
 
                             } else {
                                 cropLauncher.launch(selectedUri)
@@ -196,11 +181,28 @@ fun EditProfileSettingsScreen(
                 }
             }
 
-            isPickerLaunched = false
+            isImagePickerLauncherLaunched = false
         }
 
+    var isCameraPickerLauncherLaunched by rememberSaveable { mutableStateOf(false) }
 
-    // Determine progress color based on health status
+    var cameraPickerUri: Uri? = remember { null }
+
+    val cameraImagePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+
+    ) { isCaptured ->
+        if (isCaptured) {
+            cameraPickerUri?.let {
+                startUploadFile(it)
+            }
+        }
+
+        isCameraPickerLauncherLaunched = false
+    }
+
+
+// Determine progress color based on health status
     val progressColor = when (healthStatus) {
         "Poor" -> Color.Red
         "Weak" -> Color(0xFFFFA500) // Orange color
@@ -208,7 +210,7 @@ fun EditProfileSettingsScreen(
         else -> Color.Unspecified
     }
 
-    // Calculate track color as an alpha version of the original color
+// Calculate track color as an alpha version of the original color
     val trackColor = progressColor.copy(alpha = 0.3f) // Adjust alpha value as needed
 
     Scaffold(
@@ -350,11 +352,7 @@ fun EditProfileSettingsScreen(
                                     .align(Alignment.BottomEnd),
 
                                 onClick = {
-                                    if (isPickerLaunched)
-                                        return@IconButton
-                                    isPickerLaunched = true
-
-                                    imagePickerLauncher.launch(Unit)
+                                    profilePickerState = true
                                 }) {
 
                                 Icon(
@@ -506,21 +504,32 @@ fun EditProfileSettingsScreen(
             }
 
 
+
+            TakeProfilePictureSheet(
+                profilePickerState,
+                {
+                    if (isImagePickerLauncherLaunched)
+                        return@TakeProfilePictureSheet
+                    isImagePickerLauncherLaunched = true
+                    imagePickerLauncher.launch(Unit)
+                    profilePickerState = false
+                }, {
+                    if (isCameraPickerLauncherLaunched)
+                        return@TakeProfilePictureSheet
+                    isCameraPickerLauncherLaunched = true
+
+                    cameraPickerUri = FileProvider.getUriForFile(
+                        context, "${BuildConfig.APPLICATION_ID}.provider",
+                        File(context.cacheDir, "IMG_${System.currentTimeMillis()}.jpg")
+                    )
+                    cameraImagePickerLauncher.launch(cameraPickerUri!!)
+                    profilePickerState = false
+                }, {
+                    profilePickerState = false
+                })
+
+
         }
     }
 
-}
-
-
-fun getRealPathFromURI(context: Context, uri: Uri): String {
-    val projection = arrayOf(MediaStore.Images.Media.DATA)
-    val cursor = context.contentResolver.query(uri, projection, null, null, null)
-    if (cursor != null) {
-        val columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-        cursor.moveToFirst()
-        val filePath = cursor.getString(columnIndex)
-        cursor.close()
-        return filePath
-    }
-    return uri.path ?: ""
 }

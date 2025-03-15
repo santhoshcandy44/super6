@@ -1,4 +1,4 @@
-package com.lts360.app.workers.upload.models
+package com.lts360.app.workers.chat.upload.models
 
 
 

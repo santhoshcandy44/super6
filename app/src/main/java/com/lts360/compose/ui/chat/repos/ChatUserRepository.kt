@@ -14,7 +14,7 @@ import com.lts360.app.database.models.chat.MessageMediaMetadata
 import com.lts360.app.database.models.chat.MessageProcessingData
 import com.lts360.app.database.models.chat.MessageWithReply
 import com.lts360.app.database.models.chat.PublicKeyVersion
-import com.lts360.app.workers.getFolderTypeByExtension
+import com.lts360.app.workers.chat.utils.getFolderTypeByExtension
 import com.lts360.compose.ui.auth.repos.encryptFile
 import com.lts360.compose.ui.chat.viewmodels.ItemType
 import com.lts360.compose.ui.chat.viewmodels.MessageItem

@@ -1,8 +1,10 @@
-package com.lts360.app.workers
+package com.lts360.app.workers.chat.utils
 
 import android.content.Context
+import android.util.Log
 import com.lts360.api.auth.managers.socket.SocketManager
 import com.lts360.api.auth.managers.socket.SocketConnectionException
+import com.lts360.components.utils.LogUtils.TAG
 import io.socket.client.Socket
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -152,12 +154,14 @@ fun getFileCategoryByExtension(extension: String): String {
 
 
 // Helper suspend function to handle socket connection
-suspend fun awaitConnectToSocket(socketManager: SocketManager, isBackground:Boolean=true, isForceNew:Boolean = false, queryParam:String =""): Socket = withContext(Dispatchers.IO) {
+suspend fun awaitConnectToSocket(socketManager: SocketManager, isBackground:Boolean=true,
+                                 isForceNew:Boolean = false, queryParam:String ="", from:String="Worker"): Socket = withContext(Dispatchers.IO) {
 
    val socketDeferred = CompletableDeferred<Socket>()
 
-    socketManager.getSocket(
+    socketManager.initSocket(
         onSuccess = {
+            Log.e(TAG,"OnSuccess socket")
             if (!socketDeferred.isCompleted) { // Check if the Deferred is not already completed
                 socketDeferred.complete(it) // Complete with the socket if not yet completed
             }
@@ -168,7 +172,8 @@ suspend fun awaitConnectToSocket(socketManager: SocketManager, isBackground:Bool
         },
         isBackground = isBackground,
         isForceNew = isForceNew,
-        queryParam = queryParam
+        queryParam = queryParam,
+        from
 
     )
 

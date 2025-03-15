@@ -1,4 +1,4 @@
-package com.lts360.app.workers
+package com.lts360.app.workers.chat
 
 import android.content.Context
 import android.util.Log
@@ -20,6 +20,9 @@ import com.lts360.api.auth.services.CommonService
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.daos.notification.NotificationDao
 import com.lts360.app.database.models.chat.Message
+import com.lts360.app.workers.chat.utils.awaitConnectToSocket
+import com.lts360.app.workers.chat.utils.cacheThumbnailToAppSpecificFolder
+import com.lts360.app.workers.chat.utils.getFolderTypeByExtension
 import com.lts360.components.utils.LogUtils
 import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
 import com.lts360.compose.ui.auth.repos.decryptFile
@@ -384,11 +387,11 @@ class VisualMediaChatMessageProcessor @AssistedInject constructor(
     }
 
 
-    fun finalizeSocket() {
+    private suspend fun finalizeSocket() {
         if (socketManager.isBackgroundSocket) {
             socketManager.destroySocket()
             if (App.isAppInForeground) {
-                socketManager.getSocket()
+                socketManager.initSocket()
             }
         }
     }

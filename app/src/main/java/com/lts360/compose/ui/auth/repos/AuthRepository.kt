@@ -2,16 +2,14 @@ package com.lts360.compose.ui.auth.repos
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
 import com.google.gson.Gson
+import com.lts360.BuildConfig
 import com.lts360.R
 import com.lts360.api.Utils.Result
 import com.lts360.api.app.AccountSettingsService
@@ -25,11 +23,10 @@ import com.lts360.api.common.CommonClient
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.UserProfileInfo
+import com.lts360.app.database.daos.profile.UserLocationDao
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.UserLocation
 import com.lts360.app.database.models.profile.UserProfile
-import com.lts360.app.database.daos.profile.UserLocationDao
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -50,14 +47,12 @@ class AuthRepository @Inject constructor(
     val userLocationDao: UserLocationDao,
 ) {
 
-
     private val filesDir = context.filesDir
-
 
     suspend fun googleSignInOAuth(
         context: Context,
-        success: (String) -> Unit,
-        failure: (String) -> Unit,
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit,
     ) {
         try {
             val rawNonce = UUID.randomUUID().toString()
@@ -69,14 +64,16 @@ class AuthRepository @Inject constructor(
                 digest.fold("") { str, it -> str + "%02x".format(it) }
             } catch (e: NoSuchAlgorithmException) {
                 e.printStackTrace()
-                failure("Failed to log in try again")
+                onError("Failed to log in try again")
                 return
             }
 
             val credentialManager = CredentialManager.create(context)
+
+
             val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(context.getString(R.string.google_client_id))
+                .setServerClientId(BuildConfig.GOOGLE_SIGN_IN_OAUTH_WEB_CLIENT_ID)
                 .setAutoSelectEnabled(true)
                 .setNonce(hashedNonce)
                 .build()
@@ -97,36 +94,23 @@ class AuthRepository @Inject constructor(
                 .createFrom(credential.data)
 
             val idToken = googleIdTokenCredential.idToken
-
-            val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
-            FirebaseAuth.getInstance().signInWithCredential(firebaseCredential)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        success(idToken)
-                    } else {
-                        Log.e(TAG,"${task.exception?.message}")
-                        failure("Failed to log in try again")
-                    }
-                }
-
-
+            onSuccess(idToken)
             // Process the Google ID token credential as needed
         } catch (e: GetCredentialException) {
             e.printStackTrace()
-            failure("Failed to log in try again")
+            onError("Failed to log in try again")
         } catch (e: GoogleIdTokenParsingException) {
             e.printStackTrace()
-            failure("Failed to log in try again")
+            onError("Failed to log in try again")
         } catch (e: IOException) {
             // Handle network issues, such as no connectivity
-            failure("Network error. Please check your internet connection and try again.")
+            onError("Network error. Please check your internet connection and try again.")
         } catch (e: Exception) {
             // Handle any other unexpected exceptions
-            failure("An unexpected error occurred. Please try again.")
+            onError("An unexpected error occurred. Please try again.")
         }
 
     }
-
 
     suspend fun updateProfileIfNeeded(userProfile: UserProfileInfo) {
         val existingLocation = userProfileDao.getUserProfileDetails(userProfile.userId)
@@ -144,9 +128,20 @@ class AuthRepository @Inject constructor(
                 null
             }
 
-            val profileUpdatedAt = if (updatedProfilePicUrl != null) userProfile.updatedAt else existingProfile?.updatedAt
-            val userProfileData =
-                createUserProfile(userProfile, updatedProfilePicUrl, profileUpdatedAt)
+            val profileUpdatedAt =
+                if (updatedProfilePicUrl != null) userProfile.updatedAt else existingProfile?.updatedAt
+            val userProfileData = UserProfile(
+                    userId = userProfile.userId,
+                    firstName = userProfile.firstName,
+                    lastName = userProfile.lastName,
+                    email = userProfile.email,
+                    profilePicUrl = updatedProfilePicUrl,
+                    accountType = userProfile.accountType,
+                    createdAt = userProfile.createdAt,
+                    updatedAt = profileUpdatedAt,
+                    about = userProfile.about
+                )
+
             userProfileDao.insert(userProfileData)
 
         }
@@ -169,25 +164,6 @@ class AuthRepository @Inject constructor(
         }
 
 
-
-    }
-
-    private fun createUserProfile(
-        userProfile: UserProfileInfo,
-        updatedProfilePicUrl: String?,
-        profileUpdatedAt: String?,
-    ): UserProfile {
-        return UserProfile(
-            userId = userProfile.userId,
-            firstName = userProfile.firstName,
-            lastName = userProfile.lastName,
-            email = userProfile.email,
-            profilePicUrl = updatedProfilePicUrl,
-            accountType = userProfile.accountType,
-            createdAt = userProfile.createdAt,
-            updatedAt = profileUpdatedAt,
-            about = userProfile.about
-        )
     }
 
     private suspend fun downloadAndSaveProfileImage(imageUrl: String): String? {

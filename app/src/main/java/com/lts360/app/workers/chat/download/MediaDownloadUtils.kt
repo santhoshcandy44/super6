@@ -1,9 +1,9 @@
-package com.lts360.app.workers.download
+package com.lts360.app.workers.chat.download
 
 import android.content.Context
 import com.lts360.api.app.AppClient
 import com.lts360.api.auth.services.CommonService
-import com.lts360.app.workers.getFolderTypeByExtension
+import com.lts360.app.workers.chat.utils.getFolderTypeByExtension
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive

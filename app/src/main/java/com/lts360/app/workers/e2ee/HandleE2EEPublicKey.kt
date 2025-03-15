@@ -1,4 +1,4 @@
-package com.lts360.app.workers
+package com.lts360.app.workers.e2ee
 
 import android.util.Log
 import androidx.work.CoroutineWorker
@@ -21,35 +21,35 @@ class HandleE2EEPublicKey(appContext: android.content.Context, workerParams: Wor
 
     override suspend fun doWork(): Result {
 
-//
-//        when (val result = getE2EEPublicKey(-1)) {
-//            is com.super6.pot.utils.Result.Success -> {
-//
-//
-//                val data = Gson().fromJson<JSONObject>(result.data.data, JSONObject::class.java)
-//
-//                val publicKey = data.getString("public_key")
-//                val keyVersion = data.getString("key_version")
-//
-//
-//                publicKey?.let {
-//
-//                    if(keyVersion!=null){
-//
-//                    }else{
-//                        sendPublicKeyToServer()
-//                    }
-//                } ?: run {
-//                    sendPublicKeyToServer()
-//                }
-//
-//
-//            }
-//
-//            is com.super6.pot.utils.Result.Error -> {
-//
-//            }
-//        }
+/*
+        when (val result = getE2EEPublicKey(-1)) {
+            is com.super6.pot.utils.Result.Success -> {
+
+
+                val data = Gson().fromJson<JSONObject>(result.data.data, JSONObject::class.java)
+
+                val publicKey = data.getString("public_key")
+                val keyVersion = data.getString("key_version")
+
+
+                publicKey?.let {
+
+                    if(keyVersion!=null){
+
+                    }else{
+                        sendPublicKeyToServer()
+                    }
+                } ?: run {
+                    sendPublicKeyToServer()
+                }
+
+
+            }
+
+            is com.super6.pot.utils.Result.Error -> {
+
+            }
+        }*/
 
         // Retrieve the public key
         val keyPair = generateRSAKeyPair() // Or load the existing key pair from Keystore

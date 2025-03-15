@@ -1,4 +1,4 @@
-package com.lts360.app.workers
+package com.lts360.app.workers.chat
 
 import android.content.Context
 import android.util.Log
@@ -17,8 +17,10 @@ import com.lts360.app.database.models.chat.ChatMessageType
 import com.lts360.app.database.models.chat.Message
 import com.lts360.app.database.models.chat.MessageMediaMetadata
 import com.lts360.app.notifications.NotificationIdManager
-import com.lts360.app.workers.download.downloadMediaAndCache
+import com.lts360.app.workers.chat.download.downloadMediaAndCache
 import com.lts360.app.workers.helpers.ChatMessageHandlerWorkerHelper
+import com.lts360.app.workers.chat.utils.awaitConnectToSocket
+import com.lts360.app.workers.chat.utils.cacheThumbnailToAppSpecificFolder
 import com.lts360.components.utils.LogUtils
 import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
 import com.lts360.compose.ui.auth.repos.DecryptionStatus
@@ -616,11 +618,11 @@ class ChatMessageProcessor @AssistedInject constructor(
         return Result.success()
     }
 
-    private fun finalizeSocket() {
+    private suspend fun finalizeSocket() {
         if (socketManager.isBackgroundSocket) {
             socketManager.destroySocket()
             if (App.isAppInForeground) {
-                socketManager.getSocket()
+                socketManager.initSocket()
             }
         }
     }

@@ -15,6 +15,7 @@ import android.view.TextureView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -53,6 +54,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -84,9 +86,11 @@ import com.lts360.components.findActivity
 import com.lts360.compose.ui.enterFullScreenMode
 import com.lts360.compose.ui.exitFullScreenMode
 import com.lts360.compose.ui.theme.AppTheme
+import com.lts360.compose.utils.SafeDrawingBox
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 
-
+@AndroidEntryPoint
 class PlayerActivity : ComponentActivity(){
 
 
@@ -101,10 +105,6 @@ class PlayerActivity : ComponentActivity(){
         // Change the status bar color (example with cyan color)
 
         windowInsetsController.isAppearanceLightStatusBars = false // Light icons on dark background
-        window.apply {
-            statusBarColor=Color.Transparent.toArgb()
-
-        }
 
         enterFullScreenMode(this)
 
@@ -113,14 +113,24 @@ class PlayerActivity : ComponentActivity(){
         val videoHeight = intent.getIntExtra("videoHeight",0)
         val totalDuration = intent.getLongExtra("totalDuration",0L)
 
-
+        if (data == null) {
+            finish()
+            return
+        }
 
         setContent {
             AppTheme {
-                data?.let {
-                    VideoPlayerScreen(it,exoPlayer, videoWidth, videoHeight, totalDuration){
+
+                var fullScreenMode by remember { mutableStateOf(true) }
+
+                SafeDrawingBox(fullScreenMode) {
+
+                    VideoPlayerScreen(data, exoPlayer, videoWidth, videoHeight, totalDuration,{
+                        fullScreenMode = it
+                    }){
                         this@PlayerActivity.finish()
                     }
+
                 }
             }
         }
@@ -148,6 +158,7 @@ fun VideoPlayerScreen(
     videoWidth:Int,
     videoHeight:Int,
     totalDurationMillis:Long,
+    onFullScreenModeChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     onPopBackStack: () -> Unit
 ) {
@@ -159,13 +170,12 @@ fun VideoPlayerScreen(
 
     val textureView = remember { TextureView(context) }
 
-    // Play/Pause and Seekback/Seekforward button states
     var isPlaying by remember { mutableStateOf(false) }
-    var currentDurationMillis by remember { mutableStateOf(0L) }
+    var currentDurationMillis by remember { mutableLongStateOf(0L) }
 
-    var thumbSize = DpSize(14.dp, 14.dp)
+    val thumbSize = DpSize(14.dp, 14.dp)
     val interactionSource = remember { MutableInteractionSource() }
-    var trackHeight = 4.dp
+    val trackHeight = 4.dp
 
     // Control playback (Play/Pause)
     fun togglePlayPause() {
@@ -293,7 +303,7 @@ fun VideoPlayerScreen(
                 if (playbackState == Player.STATE_READY) {
                     // Fetch the total duration in milliseconds
                     /*
-                                        totalDurationMillis = exoPlayer.duration
+                    totalDurationMillis = exoPlayer.duration
                     */
 
                     if(exoPlayer.isPlaying){
@@ -353,6 +363,7 @@ fun VideoPlayerScreen(
         exoPlayer.addListener(listener)
         onDispose {
             exitFullScreenMode(context.findActivity())
+            onFullScreenModeChange(false)
             exoPlayer.removeListener(listener)
             exoPlayer.stop()
             exoPlayer.release()
@@ -392,6 +403,7 @@ fun VideoPlayerScreen(
     // Function to hide controls immediately
     fun hideControls() {
         enterFullScreenMode(context.findActivity())
+        onFullScreenModeChange(true)
         controlsVisible = false  // Hide controls
     }
 
@@ -437,6 +449,7 @@ fun VideoPlayerScreen(
                         if (controlsVisible) {
                             hideControls()  // Hide controls immediately
                         } else {
+                            onFullScreenModeChange(false)
                             exitFullScreenMode(context.findActivity())
                             showControls()  // Show controls and reset the timer
                         }

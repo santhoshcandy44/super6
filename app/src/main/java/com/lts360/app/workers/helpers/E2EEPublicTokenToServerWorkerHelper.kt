@@ -7,7 +7,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.lts360.app.workers.HandleE2EEPublicKey
+import com.lts360.app.workers.e2ee.HandleE2EEPublicKey
 import java.util.concurrent.TimeUnit
 
 object E2EEPublicTokenToServerWorkerHelper {

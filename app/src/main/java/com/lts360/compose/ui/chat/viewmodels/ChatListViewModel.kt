@@ -2,19 +2,14 @@ package com.lts360.compose.ui.chat.viewmodels
 
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import coil3.ImageLoader
 import coil3.request.ImageRequest
-import coil3.request.SuccessResult
-import coil3.toBitmap
-import com.lts360.app.database.daos.chat.MessageDao
-import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.api.auth.managers.socket.SocketManager
 import com.lts360.app.database.daos.chat.ChatUserDao
+import com.lts360.app.database.daos.chat.MessageDao
+import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.app.database.models.chat.Message
 import com.lts360.app.database.models.chat.MessageWithReply
 import com.lts360.compose.ui.chat.ChatUserEventsManager
@@ -38,8 +33,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
-import java.io.FileOutputStream
 import javax.inject.Inject
 
 data class UserState(
@@ -154,47 +147,6 @@ class ChatListViewModel @Inject constructor(
 
         }
 
-    }
-
-
-    // Function to fetch and save image inline
-    suspend fun cacheProfilePic(imageUrl: String, fileName: String): String? {
-
-
-        val imageLoader = ImageLoader(context)
-        val request = ImageRequest.Builder(context)
-            .data(imageUrl)
-            .build()
-
-        val parent = File(context.filesDir, "/chats/Profile Pictures")
-
-        if (!parent.exists()) {
-            parent.mkdirs()
-        }
-
-
-        val result = (imageLoader.execute(request) as? SuccessResult)?.image
-        if (result != null) {
-            val file = File(parent, fileName)
-            try {
-                withContext(Dispatchers.IO) {
-                    FileOutputStream(file).use { outputStream ->
-                        val bitmap = result.toBitmap()
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
-                        outputStream.flush()
-                    }
-                }
-
-
-                return Uri.fromFile(file).toString()
-
-            } catch (e: Exception) {
-                return null
-            }
-        } else {
-
-            return null
-        }
     }
 
 
@@ -790,22 +742,6 @@ class ChatListViewModel @Inject constructor(
 
 
     }
-
-    /*
-        private fun updateProfilePicBitmap(recipientId: Long, profilePicBitmap: Bitmap?) {
-            val userStateIndex =
-                _userStates.value.indexOfFirst { it.chatUser.recipientId == recipientId }
-            if (userStateIndex == -1) return  // User not found
-
-            // Get the current state and create an updated state with the new profile pic bitmap
-            val userState = _userStates.value[userStateIndex]
-            val updatedState = userState.copy(profilePicBitmap = profilePicBitmap)
-
-            // Update the user state in the list
-            _userStates.value = _userStates.value.toMutableList().apply {
-                set(userStateIndex, updatedState)
-            }
-        }*/
 
 
     private fun updateLastMessage(recipientId: Long, lastMessage: Message?) {

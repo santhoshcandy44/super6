@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -45,46 +46,46 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.util.UnstableApi
 import coil3.compose.AsyncImage
 import com.lts360.components.findActivity
 import com.lts360.compose.ui.enterFullScreenMode
 import com.lts360.compose.ui.exitFullScreenMode
 import com.lts360.compose.ui.theme.AppTheme
+import com.lts360.compose.utils.SafeDrawingBox
+import dagger.hilt.android.AndroidEntryPoint
 
 
-
-class ImagesSliderActivity : ComponentActivity(){
-
-
+@AndroidEntryPoint
+class ImagesSliderActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window,false)
-        val windowInsetsController = WindowInsetsControllerCompat(window, window.decorView)
-        // Change the status bar color (example with cyan color)
-
-        windowInsetsController.isAppearanceLightStatusBars = false // Light icons on dark background
-        window.apply {
-            statusBarColor=Color.Transparent.toArgb()
-        }
-
         enterFullScreenMode(this)
 
         val data = intent.data
-        val imageWidth = intent.getIntExtra("imageWidth",0)
-        val imageHeight = intent.getIntExtra("imageHeight",0)
+        val imageWidth = intent.getIntExtra("imageWidth", 0)
+        val imageHeight = intent.getIntExtra("imageHeight", 0)
+
+        if (data == null) {
+            finish()
+            return
+        }
 
         setContent {
+
+            var fullScreenMode by remember { mutableStateOf(true) }
+
             AppTheme {
-                data?.let {
-                    ImagesSliderScreen(it, imageWidth, imageHeight,{
+                SafeDrawingBox(fullScreenMode) {
+                    ImagesSliderScreen(data, imageWidth, imageHeight, {
+                        fullScreenMode = it
+                    }, {
                         this@ImagesSliderActivity.finish()
                     })
                 }
@@ -95,17 +96,15 @@ class ImagesSliderActivity : ComponentActivity(){
 }
 
 
-
-
-
 @androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImagesSliderScreen(
     imageUri: Uri,
-    imageWidth:Int,
-    imageHeight:Int,
-    onPopBackStack:()-> Unit,
+    imageWidth: Int,
+    imageHeight: Int,
+    onFullScreenModeChange: (Boolean) -> Unit,
+    onPopBackStack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Get context and initialize ExoPlayer
@@ -118,6 +117,7 @@ fun ImagesSliderScreen(
     fun hideControls() {
         enterFullScreenMode(context.findActivity())
         controlsVisible = false  // Hide controls
+        onFullScreenModeChange(true)
     }
 
     // Handler and runnable to hide controls after 10 seconds of inactivity
@@ -153,7 +153,7 @@ fun ImagesSliderScreen(
             .clip(RectangleShape) // Clip the box content
             .fillMaxSize()
             .background(Color.Black)
-            .pointerInput(Unit){
+            .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = {
                         // If controls are visible, hide them
@@ -161,6 +161,7 @@ fun ImagesSliderScreen(
                             hideControls()  // Hide controls immediately
                         } else {
                             exitFullScreenMode(context.findActivity())
+                            onFullScreenModeChange(false)
                             showControls()  // Show controls and reset the timer
                         }
                     }
@@ -182,9 +183,7 @@ fun ImagesSliderScreen(
     ) {
 
 
-        if(imageWidth>0 && imageHeight>0){
-
-
+        if (imageWidth > 0 && imageHeight > 0) {
 
 
             AsyncImage(
@@ -194,8 +193,7 @@ fun ImagesSliderScreen(
 
                 modifier = Modifier
                     .align(Alignment.Center) // keep the image centralized into the Box
-                    .aspectRatio(imageWidth.toFloat()/imageHeight.toFloat())
-
+                    .aspectRatio(imageWidth.toFloat() / imageHeight.toFloat())
                     .graphicsLayer(
                         // Zooming with bounds
                         scaleX = maxOf(.5f, minOf(10f, scale)),
@@ -204,17 +202,18 @@ fun ImagesSliderScreen(
                         translationX = offsetX,
                         translationY = offsetY
                     ),
-                )
+            )
 
 
         }
 
 
 
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .align(Alignment.TopCenter)
-            .systemBarsPadding()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+                .systemBarsPadding()
         ) {
 
             // Animated TopAppBar
@@ -240,18 +239,22 @@ fun ImagesSliderScreen(
                     title = {
                         Text("Photo", style = MaterialTheme.typography.titleMedium)
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent,
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
                         titleContentColor = Color.White,
-                        actionIconContentColor = Color.White)
+                        actionIconContentColor = Color.White
+                    )
                 )
             }
 
         }
 
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .align(Alignment.BottomCenter)
-            .systemBarsPadding()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .systemBarsPadding()
+        ) {
 
             AnimatedVisibility(
                 visible = controlsVisible,
@@ -279,7 +282,6 @@ fun ImagesSliderScreen(
                             .padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.Center
                     ) {
-
 
 
                     }

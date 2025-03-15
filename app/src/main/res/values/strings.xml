@@ -42,10 +42,8 @@
 
     <string name="terms_and_conditions">https://lts360.com/terms-and-conditions/</string>
 
-
     <string name="help_and_support">support@lts360.com</string>
 
-    <string name="google_client_id">300991981824-hc227gi8ekeb49lovllu30i41cofl46u.apps.googleusercontent.com</string>
 
     <string name="default_notification_channel_id">general_announcements_channel</string>
 

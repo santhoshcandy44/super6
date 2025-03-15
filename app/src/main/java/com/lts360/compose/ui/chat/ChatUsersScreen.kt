@@ -69,7 +69,7 @@ import com.lts360.R
 import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.app.database.models.chat.ChatMessageStatus
 import com.lts360.app.database.models.chat.ChatUser
-import com.lts360.app.workers.lastMessageTimestamp
+import com.lts360.app.workers.chat.utils.lastMessageTimestamp
 import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
 import com.lts360.compose.ui.chat.viewmodels.UserState
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar

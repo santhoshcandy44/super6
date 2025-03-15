@@ -29,7 +29,9 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
@@ -42,6 +44,9 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.IndicatorBox
+import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -72,19 +77,17 @@ import com.lts360.compose.ui.main.common.NoInternetScreen
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
+import com.lts360.compose.ui.theme.icons
 import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SecondsScreen(
-    navController: NavController,
     onNavigateUpSecondsDetailedScreen: (UsedProductListing) -> Unit,
     showChooseIndustriesSheet: () -> Unit,
-    homeViewModel:HomeViewModel,
     viewModel: SecondsViewmodel,
-    ) {
-
+) {
 
 
     val searchQuery = viewModel.submittedQuery
@@ -125,8 +128,6 @@ fun SecondsScreen(
     }
 
 
-
-
     val lazyGridState = rememberLazyGridState()
 
 
@@ -162,7 +163,6 @@ fun SecondsScreen(
                 }
             }
     }
-
 
 
     val statusCallback: (NetworkConnectivityManager.STATUS) -> Unit = {
@@ -213,18 +213,21 @@ fun SecondsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-    ){
+    ) {
 
-        Column(modifier = Modifier.fillMaxSize()){
+        Column(modifier = Modifier.fillMaxSize()) {
 
 
             Box(
                 modifier = Modifier
                     .fillMaxSize() // This makes the Box take up the entire available space
-
+                    .pullToRefresh(
+                        isRefreshingItems, pullToRefreshState,
+                        enabled = !(initialLoadState && items.isEmpty())
+                    ) {
+                        onRefresh()
+                    }
             ) {
-
-
 
 
                 if (initialLoadState && items.isEmpty()) {
@@ -265,19 +268,18 @@ fun SecondsScreen(
                     }
 
                 } else {
-                    val nestedScrollConnection = rememberNestedScrollInteropConnection() // Enables nested scroll behavior
 
-                    PullToRefreshBox(
-                        state = pullToRefreshState,
+                    Box(
                         modifier = Modifier.fillMaxSize(),
-                        isRefreshing = isRefreshingItems,
-                        onRefresh = onRefresh
-                    ) {
+
+                        ) {
 
                         // Handle no internet case
                         if (hasNetworkError) {
-                            Box(modifier = Modifier.fillMaxSize()
-                                .nestedScroll(nestedScrollConnection) // Enables nested scrolling
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState()) // Enables nested scrolling
                             ) {
                                 NoInternetScreen(modifier = Modifier.align(Alignment.Center)) {
                                     onRetry()
@@ -286,8 +288,11 @@ fun SecondsScreen(
                         }
                         // Handle empty state after loading
                         else if (!isLoadingItems && !hasAppendError && items.isEmpty()) {
-                            Box(modifier = Modifier.fillMaxSize()
-                                .nestedScroll(nestedScrollConnection) // Enables nested scrolling
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState()) // Enables nested scrolling
+
                             ) {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -315,7 +320,8 @@ fun SecondsScreen(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                                 contentPadding = PaddingValues(horizontal = 8.dp),
                                 modifier = Modifier
-                                    .fillMaxSize()) {
+                                    .fillMaxSize()
+                            ) {
 
                                 items(items) { usedProductListing ->
 
@@ -369,13 +375,10 @@ fun SecondsScreen(
                                                             .show()
 
 
-
                                                     })
 
 
-                                            }
-
-                                            else {
+                                            } else {
 
                                                 viewModel.directUpdateServiceIsBookMarked(
                                                     usedProductListing.productId,
@@ -386,8 +389,6 @@ fun SecondsScreen(
                                                     viewModel.userId,
                                                     usedProductListing,
                                                     onSuccess = {
-
-
 
 
                                                         viewModel.directUpdateServiceIsBookMarked(
@@ -428,7 +429,7 @@ fun SecondsScreen(
 
                                 // Loading indicator for appending more items
                                 if (isLoadingItems) {
-                                    item (span = { GridItemSpan(maxLineSpan) }){
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.Center,
@@ -449,7 +450,7 @@ fun SecondsScreen(
 
                                 // Handle errors for appending items
                                 if (hasAppendError) {
-                                    item (span = { GridItemSpan(maxLineSpan) }){
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.Center,
@@ -476,7 +477,7 @@ fun SecondsScreen(
 
 
                                 if (!hasMoreItems) {
-                                    item (span = { GridItemSpan(maxLineSpan) }){
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.Center,
@@ -493,18 +494,16 @@ fun SecondsScreen(
 
                         }
 
-
-
-
-
                     }
-
 
                 }
 
 
-
-
+                Indicator(
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    isRefreshing = isRefreshingItems,
+                    state = pullToRefreshState
+                )
             }
         }
 
@@ -549,9 +548,9 @@ fun SecondsScreen(
                             // Bookmark Icon
                             Icon(
                                 painter = if (nonNullSelectedItem.isBookmarked) painterResource(
-                                    R.drawable.ic_bookmarked
+                                    MaterialTheme.icons.bookmarkedRed
                                 ) else painterResource(
-                                    R.drawable.ic_dark_bookmark
+                                    MaterialTheme.icons.bookmark
                                 ),
                                 contentDescription = "Bookmark",
                                 modifier = Modifier.size(24.dp),
@@ -630,21 +629,26 @@ fun SecondsScreen(
         }
 
 
-
     }
 
 }
 
 
 @Composable
-fun UsedProductListingCard(signInMethod:String, usedProductListing:UsedProductListing, onItemClicked:()-> Unit, onFavouriteClicked:()->Unit){
+fun UsedProductListingCard(
+    signInMethod: String,
+    usedProductListing: UsedProductListing,
+    onItemClicked: () -> Unit,
+    onFavouriteClicked: () -> Unit
+) {
 
     val greenColor = Color(0xFF1BB24B)
 
 
-    OutlinedCard(onClick =onItemClicked
+    OutlinedCard(
+        onClick = onItemClicked
 
-    ){
+    ) {
         Column(
             modifier = Modifier
                 .wrapContentSize(),
@@ -657,7 +661,7 @@ fun UsedProductListingCard(signInMethod:String, usedProductListing:UsedProductLi
                     .aspectRatio(1f)
             ) {
 
-                if(usedProductListing.images.isNotEmpty()){
+                if (usedProductListing.images.isNotEmpty()) {
                     AsyncImage(
                         usedProductListing.images[0].imageUrl,
                         contentDescription = null,
@@ -667,7 +671,7 @@ fun UsedProductListingCard(signInMethod:String, usedProductListing:UsedProductLi
                 }
 
 
-                if(signInMethod!="guest"){
+                if (signInMethod != "guest") {
 
                     // 🔹 Favorite Icon Background Box
                     Box(
@@ -675,9 +679,11 @@ fun UsedProductListingCard(signInMethod:String, usedProductListing:UsedProductLi
                             .align(Alignment.TopEnd) // 🔹 Positions it at the top-right
                             .padding(8.dp) // 🔹 Adds spacing from edges
                             .size(32.dp) // 🔹 Fixed size
-                            .background(Color.LightGray.copy(alpha = 0.4f),
+                            .background(
+                                Color.LightGray.copy(alpha = 0.4f),
                                 shape = CircleShape
-                            ).clickable {
+                            )
+                            .clickable {
 
                                 onFavouriteClicked()
 
@@ -688,11 +694,13 @@ fun UsedProductListingCard(signInMethod:String, usedProductListing:UsedProductLi
                         Image(
                             imageVector = Icons.Default.FavoriteBorder,
                             contentDescription = null,
-                            colorFilter = ColorFilter.tint(if(usedProductListing.isBookmarked){
-                                Color.Red
-                            }else{
-                                Color.White
-                            }),
+                            colorFilter = ColorFilter.tint(
+                                if (usedProductListing.isBookmarked) {
+                                    Color.Red
+                                } else {
+                                    Color.White
+                                }
+                            ),
                             modifier = Modifier.size(24.dp) // 🔹 Set proper size (without extra padding)
                         )
                     }
@@ -704,7 +712,8 @@ fun UsedProductListingCard(signInMethod:String, usedProductListing:UsedProductLi
 
             Column(modifier = Modifier.padding(8.dp)) {
 
-                Text(usedProductListing.name,
+                Text(
+                    usedProductListing.name,
                     maxLines = 1,
                     style = MaterialTheme.typography.titleMedium,
                     overflow = TextOverflow.Ellipsis
@@ -725,12 +734,11 @@ fun UsedProductListingCard(signInMethod:String, usedProductListing:UsedProductLi
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        usedProductListing.price.toString()+ getCurrencySymbol(usedProductListing.priceUnit),
+                        usedProductListing.price.toString() + getCurrencySymbol(usedProductListing.priceUnit),
                         style = MaterialTheme.typography.headlineSmall,
                         color = greenColor
                     )
                 }
-
 
 
             }

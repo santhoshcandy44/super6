@@ -8,7 +8,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.lts360.app.workers.HandleFcmTokenWorker
+import com.lts360.app.workers.fcm.HandleFcmTokenWorker
 import java.util.concurrent.TimeUnit
 
 

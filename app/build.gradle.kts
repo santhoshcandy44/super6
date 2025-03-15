@@ -1,4 +1,4 @@
-import com.android.build.api.dsl.Packaging
+
 
 plugins {
     id("com.android.application")
@@ -27,11 +27,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String" ,"DEBUG_BASE_URL","\"http://192.168.113.85:3000\"")
-        buildConfigField("String" ,"DEBUG_SOCKET_BASE_URL","\"http://192.168.113.85:3080\"")
-        buildConfigField("String" ,"BASE_URL","\"https://api.lts360.com\"")
-        buildConfigField("String" ,"SOCKET_BASE_URL","\"https://chat.lts360.com\"")
-        buildConfigField("String" ,"REFERER","\"referer.lts360.com\"")
+
+
+/*        buildConfigField("String" ,"BASE_URL","\"http://192.168.15.85:3000\"")
+        buildConfigField("String" ,"SOCKET_BASE_URL","\"http://192.168.15.85:3080\"")*/
 
         vectorDrawables {
             useSupportLibrary = true
@@ -59,8 +58,23 @@ android {
     }
 
 
+
+
     buildTypes {
+
+        debug {
+            buildConfigField("String", "BASE_URL", "\"http://192.168.15.85:3000\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"http://192.168.15.85:3080\"")
+          /*  buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")*/
+            buildConfigField("String", "REFERER", "\"referer.lts360.com\"")
+            buildConfigField("String", "GOOGLE_SIGN_IN_OAUTH_WEB_CLIENT_ID", "\"300991981824-m4ovoojo09sklaqcvijandmnndduda0r.apps.googleusercontent.com\"")
+        }
         release {
+            buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")
+            buildConfigField("String", "REFERER", "\"referer.lts360.com\"")
+            buildConfigField("String", "GOOGLE_SIGN_IN_OAUTH_WEB_CLIENT_ID", "\"300991981824-m4ovoojo09sklaqcvijandmnndduda0r.apps.googleusercontent.com\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -182,9 +196,13 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-analytics")
 
-    // AndroidX Credentials and Google Play Services
-    implementation("androidx.credentials:credentials:1.3.0")
-    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    // Google Play Services
+
+    implementation("androidx.credentials:credentials:1.5.0")
+    // optional - needed for credentials support from play services, for devices running
+    // Android 13 and below.
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
     //oAuth Google

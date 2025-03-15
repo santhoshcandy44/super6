@@ -9,9 +9,9 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.lts360.app.workers.ChatMessageProcessor
-import com.lts360.app.workers.FetchUserProfileWorker
-import com.lts360.app.workers.VisualMediaChatMessageProcessor
+import com.lts360.app.workers.chat.ChatMessageProcessor
+import com.lts360.app.workers.chat.FetchUserProfileWorker
+import com.lts360.app.workers.chat.VisualMediaChatMessageProcessor
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.TimeUnit

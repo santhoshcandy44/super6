@@ -176,7 +176,7 @@ import com.lts360.app.database.models.chat.Message
 import com.lts360.app.database.models.chat.MessageMediaMetadata
 import com.lts360.app.database.models.chat.MessageWithReply
 import com.lts360.app.database.models.chat.ThumbnailLoader.getThumbnailBitmap
-import com.lts360.app.workers.getFileExtension
+import com.lts360.app.workers.chat.utils.getFileExtension
 import com.lts360.components.findActivity
 import com.lts360.components.utils.compressImageAsByteArray
 import com.lts360.components.utils.isUriExist

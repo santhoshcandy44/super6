@@ -156,7 +156,8 @@ fun RegisterScreen(
                 focusManager.clearFocus()
                 isClickable = false
                 delay(1000)
-                viewModel.onGoogleSignUpOAuth(context, onSuccess = { idToken ->
+                viewModel.onGoogleSignUpOAuth(context,
+                    onSuccess = { idToken ->
                     viewModel.onGoogleSignUp(idToken, accountType.name, onSuccess = {
                         isClickable = true
                         onNavigateUpOnBoarding()
@@ -169,6 +170,7 @@ fun RegisterScreen(
                     }
 
                 }) {
+                    viewModel.setLoading(false)
                     isClickable = true
                     Toast.makeText(context, it, Toast.LENGTH_SHORT)
                         .show()

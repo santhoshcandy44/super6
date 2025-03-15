@@ -40,7 +40,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -93,14 +92,12 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ServiceScreen(
-    navController: NavController,
+fun ServicesScreen(
     onNavigateUpServiceDetailedScreen: (Service) -> Unit,
     onNavigateUpServiceOwnerProfile: (Service, Long) -> Unit,
     showChooseIndustriesSheet: () -> Unit,
-    onPopBackStack: () -> Unit,
-    homeViewModel: HomeViewModel,
-    viewModel: ServicesViewModel) {
+    viewModel: ServicesViewModel
+) {
 
 
     val userId = viewModel.userId
@@ -110,32 +107,16 @@ fun ServiceScreen(
 
     val context = LocalContext.current
 
-    // Collect state from ViewModel
-//    val searchOldQuery by viewModel.searchOldQuery.collectAsState()
-
-//    val serviceItems by viewModel.serviceItems.collectAsState()
-//    val isLoading by viewModel.isLoading.collectAsState()
-//    val errorMessage by viewModel.errorMessage.collectAsState()
     val selectedItem by viewModel.selectedItem.collectAsState()
 
 
     // Get CoroutineScope
     val scope = rememberCoroutineScope()
 
-    // Initialize the ModalBottomSheetState with default value
 
     val serviceInfoBottomSheetState = rememberModalBottomSheetState()
 
     val commentsModalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-//    val lazyPagingServices: LazyPagingItems<Service> = viewModel.services.collectAsLazyPagingItems()
-
-//    val cachedData by viewModel.cachedData.collectAsState() // Your cached data state
-
-
-//    val items: List<Service> = cachedData
-
-    val focusManager = LocalFocusManager.current
 
 
     val initialLoadState by viewModel.pageSource.initialLoadState.collectAsState()
@@ -160,8 +141,6 @@ fun ServiceScreen(
             }
         }
     }
-
-
 
 
     val lazyListState = rememberLazyListState()
@@ -223,13 +202,11 @@ fun ServiceScreen(
 
 
     val onRefresh: () -> Unit = {
-
         viewModel.pageSource.setRefreshingItems(true)
         connectivityManager.checkForSeconds(
             Handler(Looper.getMainLooper()), statusCallback,
             4000
         )
-
     }
 
 
@@ -243,9 +220,6 @@ fun ServiceScreen(
 
 
     val pullToRefreshState = rememberPullToRefreshState()
-
-
-
 
 
 
@@ -313,9 +287,6 @@ fun ServiceScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp) // Adjust the space between items
 
                         ) {
-/*                                (lazyPagingServices.loadState.refresh as? LoadState.Error)?.error?.let { error ->
-                                    mapExceptionToError(error)
-                                } is Error.NoInternet */
 
                             // Handle no internet case
                             if (hasNetworkError) {
@@ -328,7 +299,6 @@ fun ServiceScreen(
                                 }
                             }
 
-//                                lazyPagingServices.loadState.refresh !is LoadState.Loading && lazyPagingServices.itemCount == 0
                             // Handle empty state after loading
                             else if (!isLoadingItems && !hasAppendError && items.isEmpty()) {
                                 item {
@@ -355,28 +325,13 @@ fun ServiceScreen(
                             // Handle loaded items
                             else {
 
-                                /*                                    val itemCount = lazyPagingServices.itemCount
-                                                                    items(
-                                                                        count = if (itemCount > 0) itemCount else items.size,
-                                                                        contentType = if (itemCount > 0) {
-                                                                            lazyPagingServices.itemContentType { "ServiceItems" }
-                                                                        } else {
-                                                                            { "ServiceItems" }
-                                                                        }
-                                                                    ) { index ->
-                                                                        // Access the item based on the current state
-                                                                        val item = if (itemCount > 0) {
-                                                                            lazyPagingServices[index]!!
-                                                                        } else {
-                                                                            items[index] // Fallback to cached data
-                                                                        }*/
 
                                 items(items) { item ->
 
                                     ServiceCard(
                                         onItemClick = {
                                             onNavigateUpServiceDetailedScreen(item)
-                                        } ,
+                                        },
                                         onItemOptionClick = {
                                             viewModel.setSelectedItem(item)
                                             scope.launch {
@@ -494,13 +449,11 @@ fun ServiceScreen(
 
                         }
 
-//                            PullRefreshIndicator(lazyPagingServices.loadState.refresh is LoadState.Loading,
-//                                pullToRefreshState, Modifier.align(Alignment.TopCenter))
+
                     }
 
 
                 }
-
 
             }
         }
@@ -643,9 +596,9 @@ fun ServiceScreen(
                             // Bookmark Icon
                             Icon(
                                 painter = if (nonNullSelectedItem.isBookmarked) painterResource(
-                                    R.drawable.ic_bookmarked
+                                    MaterialTheme.icons.bookmarkedRed
                                 ) else painterResource(
-                                    R.drawable.ic_dark_bookmark
+                                    MaterialTheme.icons.bookmark
                                 ),
                                 contentDescription = "Bookmark",
                                 modifier = Modifier.size(24.dp),
@@ -736,7 +689,6 @@ fun ServiceScreen(
                 modifier = Modifier.safeDrawingPadding()
             ) {
                 ServiceReviewsNavHost(userId, selectedItem, viewModel)
-
             }
 
         }

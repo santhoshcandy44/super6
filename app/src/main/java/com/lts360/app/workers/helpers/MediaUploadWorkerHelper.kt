@@ -8,8 +8,8 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.lts360.app.workers.upload.MediaUploadWorker
-import com.lts360.app.workers.upload.models.FileUploadInfo
+import com.lts360.app.workers.chat.upload.MediaUploadWorker
+import com.lts360.app.workers.chat.upload.models.FileUploadInfo
 import java.util.concurrent.TimeUnit
 
 object MediaUploadWorkerHelper {

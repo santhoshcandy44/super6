@@ -1,4 +1,4 @@
-package com.lts360.app.workers.upload
+package com.lts360.app.workers.chat.upload
 
 import android.app.NotificationManager
 import android.content.Context
@@ -12,7 +12,7 @@ import com.lts360.api.auth.managers.socket.SocketConnectionException
 import com.lts360.api.auth.managers.socket.SocketManager
 import com.lts360.app.database.models.chat.ChatMessageStatus
 import com.lts360.app.database.models.chat.MessageProcessingData
-import com.lts360.app.workers.awaitConnectToSocket
+import com.lts360.app.workers.chat.utils.awaitConnectToSocket
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
 import com.lts360.compose.ui.chat.repos.UploadWorkerUtilRepository
 import com.lts360.compose.ui.chat.viewmodels.FileUploadState
@@ -689,11 +689,11 @@ class MediaUploadWorker @AssistedInject constructor(
     }
 
 
-    private fun finalizeSocket() {
+    private suspend fun finalizeSocket() {
         if (socketManager.isBackgroundSocket) {
             socketManager.destroySocket()
             if (App.isAppInForeground) {
-                socketManager.getSocket()
+                socketManager.initSocket()
             }
         }
     }

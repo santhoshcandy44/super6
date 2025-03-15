@@ -1,4 +1,4 @@
-package com.lts360.app.workers.upload
+package com.lts360.app.workers.chat.upload
 
 import android.app.NotificationManager
 import android.content.Context
@@ -13,7 +13,7 @@ import com.lts360.api.auth.managers.socket.SocketConnectionException
 import com.lts360.api.auth.managers.socket.SocketManager
 import com.lts360.app.database.models.chat.ChatMessageStatus
 import com.lts360.app.database.models.chat.MessageProcessingData
-import com.lts360.app.workers.awaitConnectToSocket
+import com.lts360.app.workers.chat.utils.awaitConnectToSocket
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
 import com.lts360.compose.ui.chat.repos.UploadWorkerUtilRepository
 import com.lts360.compose.ui.chat.viewmodels.FileUploadState
@@ -119,8 +119,8 @@ class VisualMediaUploadWorker @AssistedInject constructor(
         return try {
             socket = awaitConnectToSocket(socketManager, !App.isAppInForeground)
 
-
             try {
+
                 if (publicKey.isEmpty() || keyVersion == -1L) {
 
                     return withTimeout<Result>(30_000) { // Timeout set to 30 seconds
@@ -185,6 +185,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                         }
                     }
                 }
+
             } catch (e: TimeoutCancellationException) {
                 e.printStackTrace()
                 // Handle timeout
@@ -193,7 +194,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                 e.printStackTrace()
                 throw e
             }
-
 
             val thumbnailData = uploadWorkerUtilRepository.getFileThumbDataByMessageId(messageId)
                 ?: return Result.failure()
@@ -323,6 +323,9 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             uploadWorkerUtilRepository.updateLastSentThumbnailByteOffsetByMessageId(messageId, -1)
             Result.success()
         } catch (e: Exception) {
+
+            e.printStackTrace()
+
 
             when (e) {
                 is SocketConnectionException, is UploadFailedException
@@ -1148,11 +1151,11 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
     }
 
-    private fun finalizeSocket() {
+   suspend private fun finalizeSocket() {
         if (socketManager.isBackgroundSocket) {
             socketManager.destroySocket()
             if (App.isAppInForeground) {
-                socketManager.getSocket()
+                socketManager.initSocket()
             }
         }
     }

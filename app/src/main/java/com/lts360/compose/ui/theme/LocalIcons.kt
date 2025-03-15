@@ -5,6 +5,7 @@ import com.lts360.R
 data class LocalIcons(
     val interest: Int,
     val bookmark: Int,
+    val bookmarkedRed:Int,
     val manageSeconds: Int,
     val manageServices: Int,
     val settings: Int,
@@ -29,6 +30,7 @@ data class LocalIcons(
 val LightIcons = LocalIcons(
     interest = R.drawable.ic_light_interest,
     bookmark = R.drawable.ic_light_bookmark,
+    bookmarkedRed = R.drawable.ic_bookmarked,
     settings = R.drawable.ic_light_settings,
     manageServices = R.drawable.ic_light_manage_services,
     manageSeconds = R.drawable.ic_light_manage_seconds,
@@ -54,6 +56,7 @@ val LightIcons = LocalIcons(
 val DarkIcons = LocalIcons(
     interest = R.drawable.ic_dark_interest,
     bookmark = R.drawable.ic_dark_bookmark,
+    bookmarkedRed = R.drawable.ic_bookmarked,
     settings = R.drawable.ic_dark_settings,
     manageServices = R.drawable.ic_dark_manage_services,
     manageSeconds = R.drawable.ic_dark_manage_seconds,

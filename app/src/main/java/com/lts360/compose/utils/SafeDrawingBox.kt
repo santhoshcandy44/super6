@@ -11,18 +11,27 @@ import androidx.compose.ui.Modifier
 import com.lts360.compose.ui.theme.customColorScheme
 
 @Composable
-fun SafeDrawingBox(content: @Composable () -> Unit) {
+fun SafeDrawingBox(
+    fullScreenMode: Boolean = false,
+    content: @Composable () -> Unit
+) {
     Box(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.secondary)
-            .statusBarsPadding()
+            .then(
+                if (!fullScreenMode) Modifier.statusBarsPadding()
+                else Modifier
+            )
     ) {
         Box(
             Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.customColorScheme.navigationBarColor)
-                .navigationBarsPadding()
+                .then(
+                    if (!fullScreenMode) Modifier.navigationBarsPadding()
+                    else Modifier
+                )
         ) {
             content()
         }

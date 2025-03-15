@@ -64,10 +64,7 @@ fun LoadImageGalleryWithPermissions(
         // State to handle permission request
         var isInitial by remember {
             mutableStateOf(
-                ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as Activity,
-                    android.Manifest.permission.READ_MEDIA_IMAGES
-                )
+                true
             )
         }
 

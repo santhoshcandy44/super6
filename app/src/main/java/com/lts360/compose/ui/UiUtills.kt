@@ -18,7 +18,6 @@ import java.util.Currency
 import java.util.concurrent.TimeUnit
 
 
-
 class NoRippleInteractionSource : MutableInteractionSource {
 
     override val interactions: Flow<Interaction> = emptyFlow()
@@ -34,21 +33,10 @@ fun enterFullScreenMode(activity: Activity) {
         activity.window.decorView
     )
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        // For Android 11 and above, use the new API for immersive full screen
-        windowInsetsController.hide(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
-        windowInsetsController.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    windowInsetsController.hide(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
+    windowInsetsController.systemBarsBehavior =
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
-
-    } else {
-        // For lower versions, use the legacy method
-        activity.window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_FULLSCREEN
-                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                )
-    }
 }
 
 fun exitFullScreenMode(activity: Activity) {
@@ -56,17 +44,10 @@ fun exitFullScreenMode(activity: Activity) {
         activity.window,
         activity.window.decorView
     )
+    windowInsetsController.show(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
+    windowInsetsController.systemBarsBehavior =
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        windowInsetsController.show(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
-        windowInsetsController.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
-    } else {
-        // Show the system bars for lower versions
-        activity.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-
-    }
 }
 
 fun getRoundedBitmap(bitmap: Bitmap): Bitmap {
@@ -91,7 +72,6 @@ fun getRoundedBitmap(bitmap: Bitmap): Bitmap {
 }
 
 
-
 fun serviceReviewsFormatTimestamp(timestamp: Long): String {
     val currentTime = System.currentTimeMillis()
     val difference = currentTime - timestamp
@@ -110,7 +90,6 @@ fun serviceReviewsFormatTimestamp(timestamp: Long): String {
         else -> "$years year${if (years > 1) "s" else ""} ago"
     }
 }
-
 
 
 fun getCurrencySymbol(priceUnit: String): String {

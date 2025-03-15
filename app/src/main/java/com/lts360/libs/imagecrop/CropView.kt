@@ -213,12 +213,6 @@ fun CropView(
 
                 // Calculate the change in size
                 val deltaChange = newSize - cropSize
-                Log.e(TAG, "maxSize ${maxSize}")
-                Log.e(TAG, "deltaDp ${deltaDp}")
-                Log.e(TAG, "cropRectSize ${cropRectSize}")
-                Log.e(TAG, "cropSize ${cropSize}")
-                Log.e(TAG, "newSize ${newSize}")
-
 
                 val maxOffsetX = (parentWidth.value - cropSize.value).dp
                 val maxOffsetY = (parentHeight.value - cropSize.value).dp
@@ -231,10 +225,9 @@ fun CropView(
                     if (offsetX + deltaDp > maxOffsetX) {
                         offsetX -= deltaChange
 
-                        if (offsetY - deltaDp < maxOffsetY) {
+                        if (offsetX > 0.dp && offsetY - deltaDp < maxOffsetY) {
                             offsetY -= deltaChange
                         }
-                        Log.e(TAG, "X exceeds on the right side")
                     }
 
                     // If the bottom boundary is exceeded
@@ -243,19 +236,16 @@ fun CropView(
                         if (offsetX + deltaDp < maxOffsetX) {
                             offsetX -= deltaChange / 2
                         }
-                        Log.e(TAG, "Y exceeds on the bottom side")
                     }
 
                     // If the left boundary is exceeded
                     if (offsetX < 0.dp) {
                         offsetX = 0.dp // Prevent moving beyond the left edge
-                        Log.e(TAG, "X exceeds on the left side")
                     }
 
                     // If the top boundary is exceeded
                     if (offsetY < 0.dp) {
                         offsetY = 0.dp // Prevent moving beyond the top edge
-                        Log.e(TAG, "Y exceeds on the top side")
                     }
 
                 } else {
@@ -263,7 +253,6 @@ fun CropView(
                     // If no boundaries are exceeded, expand the crop area symmetrically
                     offsetX -= deltaChange / 2
                     offsetY -= deltaChange / 2
-                    Log.e(TAG, "No bounds bottom")
 
                 }
 
@@ -306,7 +295,6 @@ fun CropView(
                         offsetX -= deltaChange
                         if (offsetY - deltaXDp < maxOffsetY) {
                             offsetY -= deltaChange
-                            Log.e(TAG, "Right touched bounds")
                         }
 
                     }
@@ -316,20 +304,17 @@ fun CropView(
                         offsetY -= deltaChange
                         if (offsetX - deltaXDp < maxOffsetX) {
                             offsetX -= deltaChange
-                            Log.e(TAG, "Bottom touched bounds")
                         }
 
                     }
 
                     // If the left boundary is exceeded
                     if (offsetX < 0.dp) {
-                        Log.e(TAG, "Left touched bounds")
                         offsetX = 0.dp // Prevent moving beyond the left edge
                     }
 
                     // If the top boundary is exceeded
                     if (offsetY < 0.dp) {
-                        Log.e(TAG, "Top touched bounds")
                         offsetY = 0.dp // Prevent moving beyond the top edge
                     }
 
@@ -375,7 +360,6 @@ fun CropView(
                     // If the right boundary is exceeded
                     if (offsetX + deltaXDp > maxOffsetX) {
                         offsetX -= deltaChange
-                        Log.e(TAG, "Right touched bounds")
                     }
 
                     // If the bottom boundary is exceeded
@@ -386,19 +370,15 @@ fun CropView(
 
                     // If the left boundary is exceeded
                     if (offsetX < 0.dp) {
-                        Log.e(TAG, "Left touched bounds")
                         offsetX = 0.dp // Prevent moving beyond the left edge
                     }
 
                     // If the top boundary is exceeded
                     if (offsetY < 0.dp) {
-                        Log.e(TAG, "Top touched bounds")
                         offsetY = 0.dp // Prevent moving beyond the top edge
                     }
 
                 } else {
-                    Log.e(TAG, "No bounds")
-
                     // If no boundaries are exceeded, expand the crop area symmetrically
                     offsetX -= deltaChange / 2
                     offsetY -= deltaChange / 2

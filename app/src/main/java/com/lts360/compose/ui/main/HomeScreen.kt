@@ -59,7 +59,7 @@ import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
-import com.lts360.compose.ui.services.ServiceScreen
+import com.lts360.compose.ui.services.ServicesScreen
 import com.lts360.compose.ui.usedproducts.SecondsScreen
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import kotlinx.coroutines.delay
@@ -393,7 +393,7 @@ fun HomeScreen(
                                         } else if (boards[pagerState.currentPage] == "Second Hands") {
                                             viewModel.navigateToOverlay(
                                                 navController, BottomBar.NestedSeconds(
-                                                    secondsViewModel.getKey() +1,
+                                                    secondsViewModel.getKey() + 1,
                                                     searchQuery.text,
                                                     true
 
@@ -432,8 +432,7 @@ fun HomeScreen(
                             boards,
                             pagerState,
                             servicesContent = {
-                                ServiceScreen(
-                                    navController,
+                                ServicesScreen(
                                     {
                                         viewModel.setSelectedServiceItem(it)
                                         servicesViewModel.setSelectedItem(it)
@@ -447,20 +446,16 @@ fun HomeScreen(
                                     {
                                         showChooseIndustriesSheet()
                                     },
-                                    onPopBackStack,
-                                    viewModel,
                                     servicesViewModel
                                 )
                             }, secondsContent = {
                                 SecondsScreen(
-                                    navController,
                                     {
                                         viewModel.setSelectedUsedProductListingItem(it)
                                         secondsViewModel.setSelectedItem(it)
                                         onNavigateUpUsedProductListingDetailedScreen()
                                     },
                                     {},
-                                    viewModel,
                                     secondsViewModel
                                 )
 
@@ -476,8 +471,7 @@ fun HomeScreen(
                     } else {
 
                         if (nestedType == "Services") {
-                            ServiceScreen(
-                                navController,
+                            ServicesScreen(
                                 {
                                     viewModel.setSelectedServiceItem(it)
                                     servicesViewModel.setSelectedItem(it)
@@ -491,22 +485,18 @@ fun HomeScreen(
                                 {
                                     showChooseIndustriesSheet()
                                 },
-                                onPopBackStack,
-                                viewModel,
                                 servicesViewModel
                             )
                         }
 
                         if (nestedType == "Second Hands") {
                             SecondsScreen(
-                                navController,
                                 {
                                     viewModel.setSelectedUsedProductListingItem(it)
                                     secondsViewModel.setSelectedItem(it)
                                     onNavigateUpUsedProductListingDetailedScreen()
                                 },
                                 {},
-                                viewModel,
                                 secondsViewModel
                             )
                         }
@@ -634,14 +624,27 @@ fun HomeScreen(
                     }
 
 
+                    fun reloadItems() {
+                        if (boards[pagerState.currentPage] == "Services") {
+                            servicesViewModel.updateLastLoadedItemPosition(-1)
+                            servicesViewModel.refresh(userId, searchQuery.text)
+                        }
+                        if (boards[pagerState.currentPage] == "Second Hands") {
+                            secondsViewModel.updateLastLoadedItemPosition(-1)
+                            secondsViewModel.refresh(userId, searchQuery.text)
+                        }
+                        coroutineScope.launch {
+                            modalBottomSheetState.hide()
+                        }
+                    }
+
                     if (signInMethod == "guest") {
 
                         GuestUserLocationAccessBottomSheetScreen(
                             modalBottomSheetState.currentValue,
                             { currentLocation ->
-                                viewModel.setGuestCurrentLocation(
-                                    userId, currentLocation
-                                )
+                                viewModel.setGuestCurrentLocation(userId, currentLocation)
+                                reloadItems()
                                 Toast.makeText(
                                     context,
                                     "Location updated successfully",
@@ -653,6 +656,7 @@ fun HomeScreen(
                                 viewModel.setGuestRecentLocation(
                                     userId, recentLocation
                                 )
+                                reloadItems()
                                 Toast.makeText(
                                     context,
                                     "Location updated successfully",
@@ -660,6 +664,7 @@ fun HomeScreen(
                                 ).show()
                             },
                             { district, callback ->
+                                callback()
                                 viewModel.setGuestCurrentLocation(
                                     userId, CurrentLocation(
                                         district.coordinates.latitude,
@@ -668,14 +673,12 @@ fun HomeScreen(
                                         "approximate"
                                     )
                                 )
+                                reloadItems()
                                 Toast.makeText(
                                     context,
                                     "Location updated successfully",
                                     Toast.LENGTH_SHORT
                                 ).show()
-
-                                callback()
-
                             },
                             {
                                 coroutineScope.launch {
@@ -689,32 +692,22 @@ fun HomeScreen(
 
                     } else {
 
+
                         UserLocationBottomSheetScreen(
                             bottomSheetNavController,
                             modalBottomSheetState.currentValue,
                             { currentLocation ->
                                 viewModel.setCurrentLocation(currentLocation, {
-                                    Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                        .show()
-                                    servicesViewModel.updateLastLoadedItemPosition(-1)
-                                    servicesViewModel.refresh(userId, searchQuery.text)
-                                    coroutineScope.launch {
-                                        modalBottomSheetState.hide()
-                                    }
+                                    Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                    reloadItems()
                                 }) {
-                                    Toast
-                                        .makeText(context, it, Toast.LENGTH_SHORT)
-                                        .show()
+                                    Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                                 }
                             },
                             { recentLocation ->
                                 viewModel.setRecentLocation(recentLocation, {
                                     Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                                    servicesViewModel.updateLastLoadedItemPosition(-1)
-                                    servicesViewModel.refresh(userId, searchQuery.text)
-                                    coroutineScope.launch {
-                                        modalBottomSheetState.expand()
-                                    }
+                                    reloadItems()
                                 }) {
                                     Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                                 }
@@ -728,17 +721,10 @@ fun HomeScreen(
                                         "approximate"
                                     ), {
                                         callback()
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                            .show()
-                                        servicesViewModel.updateLastLoadedItemPosition(-1)
-                                        servicesViewModel.refresh(userId, searchQuery.text)
-                                        coroutineScope.launch {
-                                            modalBottomSheetState.expand()
-                                        }
+                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                        reloadItems()
                                     }) {
-                                    Toast
-                                        .makeText(context, it, Toast.LENGTH_SHORT)
-                                        .show()
+                                    Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                                 }
                             },
                             {
@@ -757,7 +743,6 @@ fun HomeScreen(
 
         }
     }
-
 
 
 }
