@@ -62,6 +62,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.lts360.R
 import com.lts360.components.utils.openUrlInCustomTab
 import com.lts360.compose.ui.auth.viewmodels.RegisterViewModel
+import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.utils.NavigatorSubmitButton
 import kotlinx.coroutines.delay
@@ -427,7 +428,7 @@ fun LoadingDialog() {
                 .background(Color.White, shape = RoundedCornerShape(8.dp)) // Rounded corners
                 .padding(16.dp) // Padding for the dialog
         ) {
-            CircularProgressIndicator(
+            CircularProgressIndicatorLegacy(
                 modifier = Modifier
                     .padding(8.dp) // Padding around the indicator
             )

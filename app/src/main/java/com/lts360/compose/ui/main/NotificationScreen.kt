@@ -204,38 +204,29 @@ fun NotificationScreen(navController: NavHostController,
                         LazyColumn(
                             state = listState,
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(top = 8.dp)
+                                .fillMaxSize(),
 
                         ) {
 
                             if (notifications.any { it.status == "un_read" }) {
-
-
                                 item {
                                     // "Mark All as Read" Button
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 4.dp),
+                                            .padding(8.dp),
                                         horizontalArrangement = Arrangement.End // Aligns the button to the end
                                     ) {
-                                        TextButton(
-                                            onClick = {
+                                        Text(
+                                            text = "Mark All as Read",
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.clickable {
                                                 viewModel.markAllAsRead()
-                                            },
-                                        ) {
-                                            Text(
-                                                text = "Mark All as Read",
-                                                textAlign = TextAlign.Center
-                                            )
-                                        }
+                                            }
+                                        )
+
                                     }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
                                 }
-
                             }
 
 
@@ -244,20 +235,13 @@ fun NotificationScreen(navController: NavHostController,
                                 notifications,
                             ) { index, notification ->
 
-
                                 NotificationCard(notification, index) {
                                     bottomSheetValue=true
                                     viewModel.setSelectedItem(notification)
                                 }
-
-
                             }
-
-
                         }
                     }
-
-
                 }
 
             }

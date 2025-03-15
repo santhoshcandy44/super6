@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -53,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -71,6 +73,8 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.lts360.R
 import com.lts360.api.models.service.UsedProductListing
+import com.lts360.components.utils.LogUtils.TAG
+import com.lts360.compose.ui.chat.ChatContent
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.getCurrencySymbol
 import com.lts360.compose.ui.main.common.NoInternetScreen
@@ -142,19 +146,37 @@ fun SecondsScreen(
         snapshotFlow { lazyGridState.layoutInfo }
             .collect { layoutInfo ->
 
+
                 // Check if the last item is visible
-                val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull {
+                    (it.key as? String)?.startsWith("grid_items_") == true
+                }?.index
 
 
-                if (lastVisibleItemIndex != null
-                    && lastVisibleItemIndex == items.size - 1
-                    && !hasAppendError
+                Log.e(
+                    TAG, "Checking ${
+                        if (!isLoadingItems
+                            && hasMoreItems
+                            && !hasAppendError
+                            && lastVisibleItemIndex != null
+                            && lastVisibleItemIndex == items.size - 1
+                            && lastVisibleItemIndex >= lastLoadedItemPosition
+                        ) {
+                            "run bay"
+                        } else "Failed"
+                    }"
+                )
+
+                if (!isLoadingItems
                     && hasMoreItems
-                    && !isLoadingItems
-//                    && !isLoading
+                    && !hasAppendError
+                    && lastVisibleItemIndex != null
+                    && lastVisibleItemIndex == items.size - 1
                     && lastVisibleItemIndex >= lastLoadedItemPosition
                 ) {
-                    viewModel.updateLastLoadedItemPosition(lastVisibleItemIndex)
+                    Log.e(TAG, "Entered")
+
+                    viewModel.updateLastLoadedItemPosition(if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex)
                     // Call nextPage if last item is visible and not currently loading
                     viewModel.nextPage(
                         userId,
@@ -169,6 +191,7 @@ fun SecondsScreen(
         when (it) {
             NetworkConnectivityManager.STATUS.STATUS_CONNECTED -> {
                 viewModel.updateLastLoadedItemPosition(-1)
+                Log.e(TAG, "Refreshed")
                 viewModel.refresh(userId, searchQuery)
 
             }
@@ -323,7 +346,9 @@ fun SecondsScreen(
                                     .fillMaxSize()
                             ) {
 
-                                items(items) { usedProductListing ->
+                                items(
+                                    items,
+                                    key = { "grid_items_${it.productId}" }) { usedProductListing ->
 
 
                                     UsedProductListingCard(

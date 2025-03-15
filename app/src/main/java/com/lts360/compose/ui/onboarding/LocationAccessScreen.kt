@@ -186,6 +186,7 @@ fun LocationAccessScreen(
             }
 
         },
+        sheetDragHandle = null,
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
         sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),

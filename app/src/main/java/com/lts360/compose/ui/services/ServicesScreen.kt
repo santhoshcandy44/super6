@@ -154,18 +154,18 @@ fun ServicesScreen(
             .collect { layoutInfo ->
 
                 // Check if the last item is visible
-                val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull {
+                    (it.key as? String)?.startsWith("lazy_items_") == true
+                }?.index
 
-
-                if (lastVisibleItemIndex != null
-                    && lastVisibleItemIndex == items.size - 1
-                    && !hasAppendError
+                if (!isLoadingItems
                     && hasMoreItems
-                    && !isLoadingItems
-//                    && !isLoading
+                    && !hasAppendError
+                    && lastVisibleItemIndex != null
+                    && lastVisibleItemIndex == items.size - 1
                     && lastVisibleItemIndex >= lastLoadedItemPosition
                 ) {
-                    viewModel.updateLastLoadedItemPosition(lastVisibleItemIndex)
+                    viewModel.updateLastLoadedItemPosition(if(lastLoadedItemPosition==-1) 0 else lastVisibleItemIndex)
                     // Call nextPage if last item is visible and not currently loading
                     viewModel.nextPage(
                         userId,
@@ -326,7 +326,7 @@ fun ServicesScreen(
                             else {
 
 
-                                items(items) { item ->
+                                items(items, key = {"lazy_items_${it.serviceId}"}) { item ->
 
                                     ServiceCard(
                                         onItemClick = {
