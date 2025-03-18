@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
@@ -145,7 +146,7 @@ fun DetailedUsedProductListingScreen(
 
                     },
 
-                    shape = RectangleShape,
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(text = "Send message", color = Color.White)
@@ -537,7 +538,6 @@ fun DetailedUsedProductListingInfo(
         }
 
 
-
         // Send Message Button (if not the service owner)
         if (userId != service.user.userId) {
             item(key = "sendMessage-${service.productId}") {
@@ -545,7 +545,6 @@ fun DetailedUsedProductListingInfo(
                 SendMessageButton(chatButtonClicked)
             }
         }
-
     }
 
 }

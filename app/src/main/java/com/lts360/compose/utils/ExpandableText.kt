@@ -101,8 +101,6 @@ fun ExpandableText(
                     append(match.value) // Link style (blue)
                 }
 
-
-
                 pop()
 
                 currentIndex = match.range.last + 1
@@ -115,63 +113,66 @@ fun ExpandableText(
         }
 
 
+
+        val finalizedText = buildAnnotatedString {
+            if (clickable) {
+                if (isExpanded) {
+                    // Display the full text and "Show Less" button when expanded.
+                    append(annotatedString)
+
+                    withLink(
+                        LinkAnnotation.Clickable(
+                            tag = showLessText,
+                            styles = TextLinkStyles(
+                                style = showLessStyle
+                            )
+                        ) {
+
+                            if (clickable) {
+                                isExpanded = !isExpanded
+                            }
+                        }
+                    ) {
+                        append(showLessText)
+                    }
+
+
+                } else {
+
+                    // Display truncated text and "Show More" button when collapsed.
+                    val adjustText =
+                        annotatedString.substring(startIndex = 0, endIndex = lastCharIndex)
+                            .dropLast(showMoreText.length)
+                            .dropLastWhile { Character.isWhitespace(it) || it == '.' }
+                    append(adjustText)
+
+
+                    withLink(
+                        LinkAnnotation.Clickable(
+                            tag = showMoreText,
+                            styles = TextLinkStyles(
+                                style = showMoreStyle
+                            )
+                        ) {
+                            if (clickable) {
+                                isExpanded = !isExpanded
+                            }
+                        }
+                    ) {
+                        append(showMoreText)
+                    }
+
+                }
+            } else {
+                // Display the full text when not clickable.
+                append(annotatedString)
+            }
+        }
+
         // Text composable with buildAnnotatedString to handle "Show More" and "Show Less" buttons.
         Text(
             modifier = textModifier,
-            text = buildAnnotatedString {
-                if (clickable) {
-                    if (isExpanded) {
-                        // Display the full text and "Show Less" button when expanded.
-                        append(annotatedString)
-
-                        withLink(
-                            LinkAnnotation.Clickable(
-                                tag = showLessText,
-                                styles = TextLinkStyles(
-                                    style = showLessStyle
-                                )
-                            ) {
-
-                                if (clickable) {
-                                    isExpanded = !isExpanded
-                                }
-                            }
-                        ) {
-                            append(showLessText)
-                        }
-
-
-                    } else {
-
-                        // Display truncated text and "Show More" button when collapsed.
-                        val adjustText =
-                            annotatedString.substring(startIndex = 0, endIndex = lastCharIndex)
-                                .dropLast(showMoreText.length)
-                                .dropLastWhile { Character.isWhitespace(it) || it == '.' }
-                        append(adjustText)
-
-
-                        withLink(
-                            LinkAnnotation.Clickable(
-                                tag = showMoreText,
-                                styles = TextLinkStyles(
-                                    style = showMoreStyle
-                                )
-                            ) {
-                                if (clickable) {
-                                    isExpanded = !isExpanded
-                                }
-                            }
-                        ) {
-                            append(showMoreText)
-                        }
-
-                    }
-                } else {
-                    // Display the full text when not clickable.
-                    append(annotatedString)
-                }
-            },
+            text = finalizedText,
             // Set max lines based on the expanded state.
             maxLines = if (isExpanded) Int.MAX_VALUE else collapsedMaxLine,
             fontStyle = fontStyle,

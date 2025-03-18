@@ -148,25 +148,28 @@ fun LoadVisualGalleryWithPermissions(
                 ) {
 
                     if (showRationale) {
-                        // If permissions are not granted, show a button to request them
-                        Text(
-                            "Images/Videos Permission is required.",
-                            color = Color.White,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(8.dp))
 
-                        Button(
+                        if(!isInitial){
+                            // If permissions are not granted, show a button to request them
+                            Text(
+                                "Images/Videos Permission is required.",
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
 
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(
-                                    0xFFFE8B02,
-                                )
-                            ),
-                            onClick = {
-                                redirectToAppSettings(context)
-                            }) {
-                            Text("Allow Permissions", color = Color.White)
+                            Button(
+
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(
+                                        0xFFFE8B02,
+                                    )
+                                ),
+                                onClick = {
+                                    redirectToAppSettings(context)
+                                }) {
+                                Text("Allow Permissions", color = Color.White)
+                            }
                         }
                     } else {
 
@@ -297,25 +300,27 @@ fun LoadVisualGalleryWithPermissions(
                 ) {
 
                     if (showRationale) {
-                        // If permissions are not granted, show a button to request them
-                        Text(
-                            "Storage Permission is required.",
-                            color = Color.White,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(8.dp))
+                        if(!isInitial){
+                            // If permissions are not granted, show a button to request them
+                            Text(
+                                "Storage Permission is required.",
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
 
-                        Button(
+                            Button(
 
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(
-                                    0xFFFE8B02,
-                                )
-                            ),
-                            onClick = {
-                                redirectToAppSettings(context)
-                            }) {
-                            Text("Allow Permissions", color = Color.White)
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(
+                                        0xFFFE8B02,
+                                    )
+                                ),
+                                onClick = {
+                                    redirectToAppSettings(context)
+                                }) {
+                                Text("Allow Permissions", color = Color.White)
+                            }
                         }
                     } else {
 

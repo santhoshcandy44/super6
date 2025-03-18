@@ -60,7 +60,7 @@ import com.lts360.libs.imagepicker.utils.redirectToAppSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TakeProfilePictureSheet(
+fun  TakeProfilePictureSheet(
     sheetState:Boolean,
     onGallerySelected: () -> Unit,
     onCameraSelected: () -> Unit,
@@ -130,9 +130,7 @@ fun TakeProfilePictureSheet(
                 setPermissionsGranted(true)
             }
         }
-        onPauseOrDispose {
-
-        }
+        onPauseOrDispose {}
     }
 
 

@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -42,11 +41,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.IndicatorBox
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -54,35 +50,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.lts360.R
 import com.lts360.api.models.service.UsedProductListing
-import com.lts360.components.utils.LogUtils.TAG
-import com.lts360.compose.ui.chat.ChatContent
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.getCurrencySymbol
 import com.lts360.compose.ui.main.common.NoInternetScreen
-import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
+import com.lts360.compose.ui.services.ServiceCard
+import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.theme.icons
+import com.lts360.compose.ui.utils.FormatterUtils
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -153,20 +151,6 @@ fun SecondsScreen(
                 }?.index
 
 
-                Log.e(
-                    TAG, "Checking ${
-                        if (!isLoadingItems
-                            && hasMoreItems
-                            && !hasAppendError
-                            && lastVisibleItemIndex != null
-                            && lastVisibleItemIndex == items.size - 1
-                            && lastVisibleItemIndex >= lastLoadedItemPosition
-                        ) {
-                            "run bay"
-                        } else "Failed"
-                    }"
-                )
-
                 if (!isLoadingItems
                     && hasMoreItems
                     && !hasAppendError
@@ -174,7 +158,6 @@ fun SecondsScreen(
                     && lastVisibleItemIndex == items.size - 1
                     && lastVisibleItemIndex >= lastLoadedItemPosition
                 ) {
-                    Log.e(TAG, "Entered")
 
                     viewModel.updateLastLoadedItemPosition(if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex)
                     // Call nextPage if last item is visible and not currently loading
@@ -191,7 +174,6 @@ fun SecondsScreen(
         when (it) {
             NetworkConnectivityManager.STATUS.STATUS_CONNECTED -> {
                 viewModel.updateLastLoadedItemPosition(-1)
-                Log.e(TAG, "Refreshed")
                 viewModel.refresh(userId, searchQuery)
 
             }
@@ -272,9 +254,6 @@ fun SecondsScreen(
                                 }
                             }
                         } else {
-                            /* items(3) {
-                                 ShimmerServiceCard()
-                             }*/
 
                             item {
                                 Box(modifier = Modifier.fillParentMaxSize()) {
@@ -660,14 +639,12 @@ fun SecondsScreen(
 
 
 @Composable
-fun UsedProductListingCard(
+private fun UsedProductListingCard(
     signInMethod: String,
     usedProductListing: UsedProductListing,
     onItemClicked: () -> Unit,
     onFavouriteClicked: () -> Unit
 ) {
-
-    val greenColor = Color(0xFF1BB24B)
 
 
     OutlinedCard(
@@ -706,8 +683,9 @@ fun UsedProductListingCard(
                             .size(32.dp) // 🔹 Fixed size
                             .background(
                                 Color.LightGray.copy(alpha = 0.4f),
-                                shape = CircleShape
+                                CircleShape
                             )
+                            .clip(CircleShape)
                             .clickable {
 
                                 onFavouriteClicked()
@@ -750,18 +728,26 @@ fun UsedProductListingCard(
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 3,
                         minLines = 3,
-                        overflow = TextOverflow.Clip
+                        overflow = TextOverflow.Clip,
+                        color =
+                        MaterialTheme.customColorScheme.textVariant1
+
                     )
                 }
+
 
                 // 🔹 Aligns the price to the END
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        usedProductListing.price.toString() + getCurrencySymbol(usedProductListing.priceUnit),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = greenColor
+                        FormatterUtils.formatCurrency(
+                            usedProductListing.price,
+                            usedProductListing.priceUnit
+                        ),
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -771,6 +757,38 @@ fun UsedProductListingCard(
         }
     }
 }
+
+
+fun formatCreatedAt(timestamp: Long): String {
+    val now = LocalDate.now()
+
+    // Convert timestamp to LocalDate
+    val createdAt = Instant.ofEpochMilli(timestamp)
+        .atZone(ZoneId.systemDefault())  // Adjust the ZoneId if needed (e.g., UTC)
+        .toLocalDate()
+
+
+    val daysBetween = now.toEpochDay() - createdAt.toEpochDay()
+
+    val label = when {
+        createdAt.isEqual(now) -> {
+            // If the message date is today, format with time (h:mm a)
+            val time = Instant.ofEpochMilli(timestamp)
+                .atZone(ZoneId.systemDefault())  // Adjust ZoneId if needed
+                .toLocalTime()
+            time.format(DateTimeFormatter.ofPattern("h:mm a"))  // Format as "h:mm a"
+        }
+
+        createdAt.isEqual(now.minusDays(1)) -> "Yesterday"  // If the message date is yesterday
+        daysBetween in 1..6 -> createdAt.format(DateTimeFormatter.ofPattern("EEEE"))  // For the last 7 days (including today and yesterday)
+        else -> createdAt.format(DateTimeFormatter.ofPattern("MMM d, yy"))  // For dates outside the last 7 days
+    }
+
+    return label
+
+}
+
+
 
 
 

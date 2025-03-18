@@ -93,6 +93,7 @@ sealed class MediaDownloadState {
 
     @Serializable
     data object Downloaded : MediaDownloadState()
+
     @Serializable
     data object Failed : MediaDownloadState()
 }
@@ -124,7 +125,7 @@ sealed class FileUploadState {
     object Started : FileUploadState()
 
     @Serializable
-    data class Retry(val reason:String): FileUploadState()
+    data class Retry(val reason: String) : FileUploadState()
 
     @Serializable
     object Completed : FileUploadState()
@@ -155,7 +156,6 @@ class ChatViewModel @Inject constructor(
     val chatUserDao: ChatUserDao,
     val messageDao: MessageDao
 ) : ViewModel() {
-
 
 
     val chatUsersProfileImageLoader = repository.chatUsersProfileImageLoader
@@ -267,7 +267,7 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
 
-            launch(Dispatchers.IO){
+            launch(Dispatchers.IO) {
                 repository.getPublicKeyWithVersionByRecipientId(recipientId).collectLatest {
                     e2eeCredentials = it
                 }
@@ -293,7 +293,10 @@ class ChatViewModel @Inject constructor(
                             viewModelScope.launch {
                                 _onlineStatus.value = ""
                                 _isTyping.value = false
-                                socket!!.off("chat:onlineStatus-${recipientId}", onlineStatusHandler)
+                                socket!!.off(
+                                    "chat:onlineStatus-${recipientId}",
+                                    onlineStatusHandler
+                                )
                                 socket!!.off("chat:typing", typingHandler)
                             }
 
@@ -307,8 +310,6 @@ class ChatViewModel @Inject constructor(
 
 
     }
-
-
 
 
     private val _uploadStates = MutableStateFlow<Map<Long, FileUploadState>>(emptyMap())
@@ -329,7 +330,6 @@ class ChatViewModel @Inject constructor(
     }
 
 
-
     fun updateMessage(id: Long, message: ChatMessageStatus) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.updateMessage(
@@ -338,7 +338,6 @@ class ChatViewModel @Inject constructor(
             ) // This returns the inserted row ID
         }
     }
-
 
 
     fun updateDownloadState(messageId: Long, state: MediaDownloadState) {
@@ -387,7 +386,7 @@ class ChatViewModel @Inject constructor(
                     )
                 }
 
-                "gif" ->{
+                "gif" -> {
                     // Handle image type files (JPEG, PNG, etc.)
                     Message(
                         chatId = chatId,
@@ -402,6 +401,7 @@ class ChatViewModel @Inject constructor(
                         status = ChatMessageStatus.QUEUED_MEDIA,
                     )
                 }
+
                 "video" -> {
                     // Handle document files (PDF, Word, Excel, etc.)
                     Message(
@@ -476,7 +476,7 @@ class ChatViewModel @Inject constructor(
 
     fun insertMediaMessageAndSend(
         originalFile: File,
-        mediaUri:String,
+        mediaUri: String,
         senderId: Long,
         recipientId: Long,
         senderMessageId: Long = -1L,
@@ -639,7 +639,8 @@ class ChatViewModel @Inject constructor(
 
         try {
             onRetry()
-            MediaUploadWorkerHelper.doMediaUpload((context.applicationContext as App),
+            MediaUploadWorkerHelper.doMediaUpload(
+                (context.applicationContext as App),
                 FileUploadInfo(
                     chatId = chatId,
                     senderId = senderId,
@@ -668,12 +669,12 @@ class ChatViewModel @Inject constructor(
     fun downloadMediaAndUpdateMessage(
         context: Activity,
         messageId: Long,
-        senderId:Long,
+        senderId: Long,
         mediaDownloadUrl: String,
         cachedFileAbsPath: String?,
         fileMetadata: MessageMediaMetadata
     ) {
-        downloadJobs[messageId] = viewModelScope.launch(Dispatchers.IO){
+        downloadJobs[messageId] = viewModelScope.launch(Dispatchers.IO) {
             updateDownloadState(messageId, MediaDownloadState.Started)
             try {
 
@@ -753,7 +754,10 @@ class ChatViewModel @Inject constructor(
                                             put("download_url", mediaDownloadUrl)
                                             put("sender", senderId)
                                             put("recipient_id", recipientId)
-                                            put("message_id", messageId) // Add the inserted message ID to JSON
+                                            put(
+                                                "message_id",
+                                                messageId
+                                            ) // Add the inserted message ID to JSON
                                         }, Ack {
                                             continuation.resume(Unit) { cause, value, context ->
                                                 // Acknowledgment received, log it
@@ -763,8 +767,6 @@ class ChatViewModel @Inject constructor(
                                 }
 
 
-
-
                                 val mediaFile = getAppSpecificMediaFolder(context, originalFileName)
 
                                 when (val decryptedFile = decryptFile(cachedFile, mediaFile)) {
@@ -772,7 +774,8 @@ class ChatViewModel @Inject constructor(
 
                                         // Cache the decrypted file
                                         decryptedFile.decryptedFile.let {
-                                            updateDownloadState(messageId,
+                                            updateDownloadState(
+                                                messageId,
                                                 MediaDownloadState.Downloaded
                                             )
                                             if (fileMetadata.fileMimeType.startsWith("image/")
@@ -913,7 +916,10 @@ class ChatViewModel @Inject constructor(
                                         put("download_url", mediaDownloadUrl)
                                         put("sender", senderId)
                                         put("recipient_id", recipientId)
-                                        put("message_id", messageId) // Add the inserted message ID to JSON
+                                        put(
+                                            "message_id",
+                                            messageId
+                                        ) // Add the inserted message ID to JSON
                                     }, Ack {
                                         continuation.resume(Unit) { cause, value, context ->
                                             // Acknowledgment received, log it
@@ -928,7 +934,8 @@ class ChatViewModel @Inject constructor(
 
                                     // Cache the decrypted file
                                     decryptedFile.decryptedFile.also {
-                                        updateDownloadState(messageId,
+                                        updateDownloadState(
+                                            messageId,
                                             MediaDownloadState.Downloaded
                                         )
                                         if (fileMetadata.fileMimeType.startsWith("image/")
@@ -1119,8 +1126,6 @@ class ChatViewModel @Inject constructor(
     }
 
 
-
-
     fun createBlurredThumbnailAndWriteGifDataToAppSpecificFolder(
         context: Activity,
         data: ByteArray,
@@ -1170,7 +1175,7 @@ class ChatViewModel @Inject constructor(
             val byteArrayOutputStream = ByteArrayOutputStream()
 
             thumbnailBitmap.compress(
-                if (mediaExtension == ".jpg" || mediaExtension == ".jpeg" || mediaExtension ==  ".gif")
+                if (mediaExtension == ".jpg" || mediaExtension == ".jpeg" || mediaExtension == ".gif")
                     Bitmap.CompressFormat.JPEG
                 else if (mediaExtension == ".png") Bitmap.CompressFormat.PNG
                 else if (mediaExtension == ".webp")
@@ -1300,7 +1305,7 @@ class ChatViewModel @Inject constructor(
             val byteArrayOutputStream = ByteArrayOutputStream()
 
             thumbnailBitmap.compress(
-                if (mediaExtension == ".jpg" || mediaExtension == ".jpeg" || mediaExtension ==  ".gif")
+                if (mediaExtension == ".jpg" || mediaExtension == ".jpeg" || mediaExtension == ".gif")
                     Bitmap.CompressFormat.JPEG
                 else if (mediaExtension == ".png") Bitmap.CompressFormat.PNG
                 else if (mediaExtension == ".webp")
@@ -1457,8 +1462,9 @@ class ChatViewModel @Inject constructor(
                             setDataSource(file.absolutePath)
                             thumbnail = getFrameAtTime(0)
 
-                            rotation = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull()
-                                ?: 0  // Fallback to 0 if rotation is null or invalid
+                            rotation =
+                                extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull()
+                                    ?: 0  // Fallback to 0 if rotation is null or invalid
 
 
                             videoWidth =
@@ -1610,8 +1616,9 @@ class ChatViewModel @Inject constructor(
                             setDataSource(openFileDescriptor.fileDescriptor)
                             thumbnail = getFrameAtTime(0)
 
-                            rotation = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull()
-                                ?: 0  // Fallback to 0 if rotation is null or invalid
+                            rotation =
+                                extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull()
+                                    ?: 0  // Fallback to 0 if rotation is null or invalid
 
 
                             videoWidth =
@@ -1660,7 +1667,6 @@ class ChatViewModel @Inject constructor(
                         )
 
                     val cachedDir = context.getExternalFilesDir(null)
-
 
 
                     val cachedDirectory = File(cachedDir, fileCategoryAndTypeByExtension.first)
@@ -1916,8 +1922,12 @@ class ChatViewModel @Inject constructor(
                                                                         args[0] as String
 
 
-                                                                    val queuedReceivedData = args[1] as? JSONObject
-                                                                    val queuedStatus = queuedReceivedData?.optString("status")
+                                                                    val queuedReceivedData =
+                                                                        args[1] as? JSONObject
+                                                                    val queuedStatus =
+                                                                        queuedReceivedData?.optString(
+                                                                            "status"
+                                                                        )
                                                                     if (queuedStatus != null && queuedStatus == "KEY_ERROR") {
                                                                         viewModelScope.launch {
                                                                             repository.updateMessage(
@@ -1943,7 +1953,6 @@ class ChatViewModel @Inject constructor(
                                                                     }
 
 
-
                                                                 }
                                                             })
 
@@ -1952,8 +1961,7 @@ class ChatViewModel @Inject constructor(
                                             }
 
 
-                                        }
-                                        else if (status != null && status == "USER_NOT_ACTIVE_ERROR") {
+                                        } else if (status != null && status == "USER_NOT_ACTIVE_ERROR") {
                                             viewModelScope.launch {
                                                 repository.updateMessage(
                                                     insertedId,
@@ -2031,8 +2039,10 @@ class ChatViewModel @Inject constructor(
                                                         // Handle the acknowledgment from the server
                                                         if (args.isNotEmpty()) {
                                                             val queuedResponse = args[0] as String
-                                                            val queuedReceivedData = args[1] as? JSONObject
-                                                            val queuedStatus = queuedReceivedData?.optString("status")
+                                                            val queuedReceivedData =
+                                                                args[1] as? JSONObject
+                                                            val queuedStatus =
+                                                                queuedReceivedData?.optString("status")
                                                             if (queuedStatus != null && queuedStatus == "KEY_ERROR") {
                                                                 viewModelScope.launch {
                                                                     repository.updateMessage(
@@ -2040,8 +2050,7 @@ class ChatViewModel @Inject constructor(
                                                                         ChatMessageStatus.FAILED
                                                                     )
                                                                 }
-                                                            }
-                                                            else if (queuedStatus != null && queuedStatus == "USER_NOT_ACTIVE_ERROR") {
+                                                            } else if (queuedStatus != null && queuedStatus == "USER_NOT_ACTIVE_ERROR") {
                                                                 viewModelScope.launch {
                                                                     repository.updateMessage(
                                                                         it.id,
@@ -2116,39 +2125,10 @@ class ChatViewModel @Inject constructor(
 
 
     fun formatMessageReceived(timestamp: Long): String {
-        /*
-                val now = LocalDate.now()
-        */
 
-        // Convert timestamp to LocalDate
-        /*
-                val messageLocalDate = Instant.ofEpochMilli(timestamp)
-                    .atZone(ZoneId.systemDefault())  // Adjust the ZoneId if needed (e.g., UTC)
-                    .toLocalDate()
-        */
-
-        // Calculate days between the current date and message date
-//        val daysBetween = now.toEpochDay() - messageLocalDate.toEpochDay()
-
-        // Determine the grouping label
-        val time = Instant.ofEpochMilli(timestamp)
+        return Instant.ofEpochMilli(timestamp)
             .atZone(ZoneId.systemDefault())  // Adjust ZoneId if needed
-            .toLocalTime()
-
-        /*  val label = when {
-              messageLocalDate.isEqual(now) -> {
-                  // If the message date is today, format with time (h:mm a)
-                  val time = Instant.ofEpochMilli(timestamp)
-                      .atZone(ZoneId.systemDefault())  // Adjust ZoneId if needed
-                      .toLocalTime()
-                  time.format(DateTimeFormatter.ofPattern("h:mm a"))  // Format as "h:mm a"
-              }
-              messageLocalDate.isEqual(now.minusDays(1)) -> "Yesterday"  // If the message date is yesterday
-              daysBetween in 1..6 -> messageLocalDate.format(DateTimeFormatter.ofPattern("EEEE"))  // For the last 7 days (including today and yesterday)
-              else -> messageLocalDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))  // For dates outside the last 7 days
-          }
-  */
-        return time.format(DateTimeFormatter.ofPattern("h:mm a"))  // Format as "h:mm a"
+            .toLocalTime().format(DateTimeFormatter.ofPattern("h:mm a"))  // Format as "h:mm a"
 
     }
 

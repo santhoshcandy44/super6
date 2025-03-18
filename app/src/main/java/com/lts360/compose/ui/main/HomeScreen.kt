@@ -305,13 +305,6 @@ fun HomeScreen(
                                 viewModel.setSearchQuery("")
                                 viewModel.setSearching(false)
                             },
-                            focusRequesterEnabled = false,
-                            onFocus = {
-                                if (it) {
-
-                                    viewModel.setSearching(true)
-                                }
-                            }
                         )
 
                     }
@@ -412,12 +405,6 @@ fun HomeScreen(
                                 viewModel.setSearchQuery("")
                                 viewModel.setSearching(false)
                             },
-                            onFocus = {
-                                if (it) {
-                                    viewModel.setSearching(true)
-                                }
-                            },
-                            focusRequesterEnabled = false,
                             isBackButtonEnabled = false
                         )
 

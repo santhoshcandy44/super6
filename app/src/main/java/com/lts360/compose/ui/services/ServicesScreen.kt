@@ -343,8 +343,6 @@ fun ServicesScreen(
                                         },
 
                                         onReviewsClicked = {
-
-
                                             scope.launch {
                                                 commentsModalBottomSheetState.expand()
                                             }
@@ -354,8 +352,6 @@ fun ServicesScreen(
                                             }
 
                                             viewModel.loadReViewsSelectedItem(item)
-
-
                                         },
                                         location = item.location?.geo,
                                         distance = item.distance?.let {

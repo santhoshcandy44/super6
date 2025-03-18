@@ -32,15 +32,18 @@ private val Shapes = Shapes(
 
 
 data class CustomColorScheme(
-    val navigationBarColor:Color,
+    val navigationBarColor: Color,
     val linkColor: Color,
     val chatTextLinkColor: Color,
     val searchBarColor: Color,
-    val moreActionsContainerColor:Color,
-    val shimmerContainer:Color,
-    val shimmerColor:Color,
-    val serviceSurfaceContainer:Color,
-    val colorScheme: ColorScheme)
+    val moreActionsContainerColor: Color,
+    val shimmerContainer: Color,
+    val shimmerColor: Color,
+    val serviceSurfaceContainer: Color,
+    val colorScheme: ColorScheme,
+
+    val textVariant1:Color
+)
 
 private val DarkColorPalette = darkColorScheme(
     primary = Color(0xFF00BFFF),
@@ -68,30 +71,33 @@ private val LightColorPalette = lightColorScheme(
     background = Color.White,
     surface = Color.White,
     surfaceContainer = Color.White,
-    secondaryContainer =  Color(red = 232, green = 222, blue = 248),
+    secondaryContainer = Color(red = 232, green = 222, blue = 248),
     primaryContainer = Color(0xFF00BFFF),
-    onSecondaryContainer = Color(0xFF00BFFF) ,
+    onSecondaryContainer = Color(0xFF00BFFF),
     onSurface = Color.Black,
-    onPrimary =  Color.White,
+    onPrimary = Color.White,
     onSecondary = Color.Black,
     onBackground = Color.Black,
     error = Color.Red, // Use your custom error color here
-    surfaceContainerLow =Color.White,
+    surfaceContainerLow = Color.White,
     surfaceContainerHighest = Color.White,
     surfaceContainerHigh = Color.White, //Like swipe refresh indicator
-    surfaceVariant =Color(0xFF1E1E1E),
-)
+    surfaceVariant = Color(0xFF1E1E1E),
+
+    )
 
 
 val CustomDarkColorScheme = CustomColorScheme(
     navigationBarColor = Color.Black,
     linkColor = Color(0xFFBBDEFB), // Light Blue for dark theme
     chatTextLinkColor = Color(0xFF1E88E5), // Bright Blue for light theme
-    searchBarColor= Color(0xFF1E1E1E),
-    moreActionsContainerColor =Color(0xFF1E1E1E),
+    searchBarColor = Color(0xFF1E1E1E),
+    moreActionsContainerColor = Color(0xFF1E1E1E),
     shimmerContainer = Color(0xFF1E1E1E),
     shimmerColor = Color.Black,
     serviceSurfaceContainer = Color(0xFF1E1E1E),
+    textVariant1 = Color.White,
+
     colorScheme = DarkColorPalette // Include the dark color palette
 )
 
@@ -99,27 +105,30 @@ val CustomLightColorScheme = CustomColorScheme(
     navigationBarColor = Color.White,
     linkColor = Color(0xFF1E88E5), // Bright Blue for light theme
     chatTextLinkColor = Color(0xFF1E88E5), // Bright Blue for light theme
-    searchBarColor= Color(0xFFF1F3F4),
+    searchBarColor = Color(0xFFF1F3F4),
 
     moreActionsContainerColor = Color(0xFFF8F8F8),
     shimmerContainer = Color.LightGray,
     shimmerColor = Color.White,
     serviceSurfaceContainer = Color(0xFFFFFAF6),
+
+    textVariant1 = Color(0xFF4F5563),
+
     colorScheme = LightColorPalette, // Include the light color palette
+
+
 )
 
 
 val LocalCustomColorScheme = staticCompositionLocalOf { CustomLightColorScheme }
 
-val LocalCustomIcons = staticCompositionLocalOf { LightIcons}
-
+val LocalCustomIcons = staticCompositionLocalOf { LightIcons }
 
 
 val CustomFontFamily = FontFamily(
     Font(R.font.helvetica), // Regular font
     Font(R.font.helvetica_bold, FontWeight.Bold) // Bold font
 )
-
 
 
 val customTypography = Typography(
@@ -159,7 +168,10 @@ fun AppTheme(
     val customColorScheme = if (darkTheme) CustomDarkColorScheme else CustomLightColorScheme
     val icons = if (darkTheme) LightIcons else DarkIcons
 
-    CompositionLocalProvider(LocalCustomColorScheme provides customColorScheme, LocalCustomIcons provides icons) {
+    CompositionLocalProvider(
+        LocalCustomColorScheme provides customColorScheme,
+        LocalCustomIcons provides icons
+    ) {
         MaterialTheme(
             colorScheme = customColorScheme.colorScheme,
             shapes = Shapes,

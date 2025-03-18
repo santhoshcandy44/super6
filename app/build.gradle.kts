@@ -271,7 +271,7 @@ dependencies {
     implementation("com.google.zxing:core:3.5.1")
     implementation("androidx.datastore:datastore-preferences:1.1.3")
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
-
+    implementation("org.apache.commons:commons-math3:3.6.1")
 }
 
 java {

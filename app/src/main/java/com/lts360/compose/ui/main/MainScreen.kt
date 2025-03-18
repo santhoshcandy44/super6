@@ -60,6 +60,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -70,6 +71,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.R
 import com.lts360.app.database.models.chat.ChatUser
@@ -105,7 +108,7 @@ fun MainScreen(
     onNavigateUpBookmarkedServices: () -> Unit,
     onNavigateUpGuestManageIndustriesAndInterests: () -> Unit,
     onNavigateUpChatWindow: (ChatUser, Int, Long, String) -> Unit,
-    onNavigateUpUsedProductListing:()-> Unit
+    onNavigateUpUsedProductListing: () -> Unit
 ) {
 
 
@@ -135,7 +138,8 @@ fun MainScreen(
         bottomSheetState = rememberStandardBottomSheetState(
             SheetValue.Hidden,
             skipHiddenState = false
-        ))
+        )
+    )
 
     val selectedIndustriesCount by viewModel.selectedIndustriesCount.collectAsState()
 
@@ -226,26 +230,24 @@ fun MainScreen(
     var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
 
 
-
-    val navController = rememberCustomBottomNavController(lastEntry,
+    val navController = rememberCustomBottomNavController(
+        lastEntry,
         homeViewModel.isSelectedServiceItemNull(),
         homeViewModel.isSelectedServiceOwnerServiceItemNull(),
         homeViewModel.isSelectedUsedProductListingItemNull(),
         homeViewModel.isSelectedServiceOwnerUsedProductListingItemNull()
 
-        )
-
-
-    val allowedScreens = listOf(
-        BottomBar.Home::class,
-        BottomBar.NestedServices::class,
-        BottomBar.Chats::class,
-        BottomBar.Notifications::class,
-        BottomBar.More::class
     )
 
-    // Step 2: Get the list of allowed screens' qualified names
-    val allowedRoutes = allowedScreens.map { it.qualifiedName.orEmpty() }
+
+    val allowedScreens: List<BottomBar> = listOf(
+        BottomBar.Home(),
+        BottomBar.NestedServices(),
+        BottomBar.NestedSeconds(),
+        BottomBar.Chats,
+        BottomBar.Notifications,
+        BottomBar.More
+    )
 
 
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -260,31 +262,35 @@ fun MainScreen(
     val bottomNavVisibility by viewModel.bottomNavVisibility.collectAsState()
 
 
-
-    var isHomeScreen by rememberSaveable{
+    var isHomeScreen by rememberSaveable {
         mutableStateOf(false)
     }
 
 
+    var currentScreen by remember { mutableStateOf<BottomBar?>(null) }
 
     // Step 6: Use LaunchedEffect to update the visibility of the bottom bar based on the route
     LaunchedEffect(currentBackStackEntry) {
         // Step 3: Get the current route and clean it (remove path and query parameters)
-        val currentRoute = currentBackStackEntry?.destination?.route
+        val destination = currentBackStackEntry?.destination
 
-        val cleanedRoute = currentRoute
-            ?.replace(Regex("/\\{[^}]+\\}"), "") // Remove path parameters
-            ?.replace(Regex("\\?.*"), "")?.trim() // Remove query parameters and trim whitespace
+        val firstDestination = destination?.hierarchy?.firstOrNull()
 
-        // Step 4: Check if the current route is in the allowed routes list
-        val isAllowedBottomBar = cleanedRoute != null && allowedRoutes.contains(cleanedRoute)
-
-        // If the route is allowed, update the bottom navigation visibility
-        if (cleanedRoute != null) {
-            viewModel.updateBottomNavVisibility(isAllowedBottomBar)
+        currentScreen = allowedScreens.find { screen ->
+            firstDestination?.hasRoute(screen::class) == true
         }
 
-        isHomeScreen = cleanedRoute != null && allowedScreens[0].qualifiedName.orEmpty() == cleanedRoute
+        val isAllowedBottomBar = destination?.hierarchy?.any { nonNullDestination ->
+            allowedScreens.any { nonNullDestination.hasRoute(it::class) }
+        } == true
+
+        viewModel.updateBottomNavVisibility(isAllowedBottomBar)
+
+        isHomeScreen = destination?.hierarchy?.any { nonNullDestination ->
+            nonNullDestination.hasRoute(BottomBar.Home::class)
+        } == true
+
+
     }
 
     var dockedFloatingActionButtonVisibility by rememberSaveable { mutableStateOf(false) } // Initially hidden
@@ -299,7 +305,7 @@ fun MainScreen(
         BottomSheetScaffold(
             sheetContent = {
 
-                if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+                if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
                     if (sheetContent == "guest_industries" && selectedIndustriesCount == 0) {
 
                         Surface {
@@ -329,7 +335,10 @@ fun MainScreen(
                                 coroutineScope.launch {
                                     bottomSheetScaffoldState.bottomSheetState.hide()
                                 }
-                                onManageIndustriesAndInterestsNavigateUp(userId, "update_industries")
+                                onManageIndustriesAndInterestsNavigateUp(
+                                    userId,
+                                    "update_industries"
+                                )
                             }
                         }
 
@@ -373,10 +382,19 @@ fun MainScreen(
                 floatingActionButton = {
 
                     if (isHomeScreen && dockedFloatingActionButtonVisibility) {
-                        FloatingActionButton(onNavigateUpUsedProductListing,
+                        FloatingActionButton(
+                            onNavigateUpUsedProductListing,
                             shape = CircleShape,
-                            modifier = Modifier.offset(y = 50.dp),
-                            elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp)) {
+                            modifier = Modifier
+                                .offset(y = 50.dp)
+                                .shadow(0.dp),
+                            elevation = FloatingActionButtonDefaults.elevation(
+                                2.dp,
+                                2.dp,
+                                2.dp,
+                                2.dp
+                            )
+                        ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                         }
                     }
@@ -394,10 +412,11 @@ fun MainScreen(
 //                    scrollBehavior,
                             messageCount,
                             notificationCount,
-                            {
-                                sheetContent = "welcome"
-                            }
-                        )
+                            currentScreen
+
+                        ) {
+                            sheetContent = "welcome"
+                        }
                     }
 
 
@@ -460,7 +479,7 @@ fun MainScreen(
                         if (!isSheetIsClosedAlready) {
                             sheetContent = "valid_user_industries"
                         }
-                    },{
+                    }, {
                         dockedFloatingActionButtonVisibility = it
                     })
 

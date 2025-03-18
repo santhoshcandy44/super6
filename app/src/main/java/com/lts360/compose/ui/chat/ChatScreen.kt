@@ -19,11 +19,8 @@ fun ChatScreen(
     chatListViewModel: ChatListViewModel,
     viewModel: ChatViewModel,
     onNavigateImageSlider: (Uri, Int, Int) -> Unit,
-    onPopBackStack: () -> Unit,
-
-    ) {
-
-
+    onPopBackStack: () -> Unit
+) {
 
     BackHandler {
         onPopBackStack()
@@ -93,15 +90,16 @@ fun ChatScreen(
                     val collectedAllMessages =
                         chatListViewModel.flattenMessagesWithHeaders(messages)
 
-               /*     if (userState?.chatUser == null) {
-                        return@collect
-                    }
-*/
+                    /*     if (userState?.chatUser == null) {
+                             return@collect
+                         }
+     */
                     val lastVisibleItem = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()
 
                     if (lastVisibleItem != null) {
 
-                        val pageSize = if (lastLoadedItemId != -1L) chatListViewModel.SELECTED_CHAT_USER_MESSAGES_SIZE_AFTER_INITIAL_LOAD else chatListViewModel.SELECTED_CHAT_USER_MESSAGES_SIZE
+                        val pageSize =
+                            if (lastLoadedItemId != -1L) chatListViewModel.SELECTED_CHAT_USER_MESSAGES_SIZE_AFTER_INITIAL_LOAD else chatListViewModel.SELECTED_CHAT_USER_MESSAGES_SIZE
 
                         val isNearEnd =
                             lastVisibleItem.index >= if (lastLoadedItemId != -1L) allMessages.size - chatListViewModel.SELECTED_CHAT_USER_MESSAGES_SIZE_AFTER_INITIAL_LOAD else
@@ -110,11 +108,13 @@ fun ChatScreen(
 
                         if (isNearEnd) {
 
-                            val lastMessage = collectedAllMessages.lastOrNull { it.itemType == ItemType.MESSAGE }
+                            val lastMessage =
+                                collectedAllMessages.lastOrNull { it.itemType == ItemType.MESSAGE }
 
                             val lastMessageId = lastMessage?.message?.receivedMessage?.id
 
-                            val size = if (lastLoadedItemId != -1L) pageSize else chatListViewModel.SELECTED_CHAT_USER_MESSAGES_SIZE_AFTER_INITIAL_LOAD
+                            val size =
+                                if (lastLoadedItemId != -1L) pageSize else chatListViewModel.SELECTED_CHAT_USER_MESSAGES_SIZE_AFTER_INITIAL_LOAD
 
                             if (lastMessageId != null && (lastLoadedItemId == -1L || lastMessageId < lastLoadedItemId)) {
                                 // Update the lastLoadedItemId to prevent loading the same message

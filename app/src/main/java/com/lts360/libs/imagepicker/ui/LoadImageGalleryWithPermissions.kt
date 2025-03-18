@@ -1,9 +1,9 @@
 package com.lts360.libs.imagepicker.ui
 
 import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -18,7 +18,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,14 +30,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
-import com.lts360.libs.imagepicker.ImagePickerViewModel
 import com.lts360.libs.imagepicker.utils.redirectToAppSettings
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Composable
 fun LoadImageGalleryWithPermissions(
@@ -47,7 +40,6 @@ fun LoadImageGalleryWithPermissions(
 ) {
 
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 
@@ -144,26 +136,30 @@ fun LoadImageGalleryWithPermissions(
                 ) {
 
                     if (!showRationale) {
-                        // If permissions are not granted, show a button to request them
-                        Text(
-                            "Images Permission is required.",
-                            color = Color.White,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(8.dp))
 
-                        Button(
+                        if (!isInitial) {
+                            // If permissions are not granted, show a button to request them
+                            Text(
+                                "Images Permission is required.",
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
 
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(
-                                    0xFFFE8B02,
-                                )
-                            ),
-                            onClick = {
-                                redirectToAppSettings(context)
-                            }) {
-                            Text("Allow Permissions", color = Color.White)
+                            Button(
+
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(
+                                        0xFFFE8B02,
+                                    )
+                                ),
+                                onClick = {
+                                    redirectToAppSettings(context)
+                                }) {
+                                Text("Allow Permission", color = Color.White)
+                            }
                         }
+
                     } else {
 
 
@@ -188,7 +184,7 @@ fun LoadImageGalleryWithPermissions(
                                         arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES)
                                     )
                                 }) {
-                                Text("Allow Permissions", color = Color.White)
+                                Text("Allow Permission", color = Color.White)
                             }
                         }
                     }
@@ -199,17 +195,24 @@ fun LoadImageGalleryWithPermissions(
     } else {
 
 
+        val permissionToGrant = android.Manifest.permission.READ_EXTERNAL_STORAGE
+
+        val shouldShowRequestPermissionRationale: () -> Boolean = {
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                context as Activity,
+                permissionToGrant
+            )
+        }
+
         var showRationale by remember {
             mutableStateOf(
-                ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as Activity, android.Manifest.permission.READ_EXTERNAL_STORAGE
-                )
+                shouldShowRequestPermissionRationale()
             )
         }
 
         val hasPermissionGranted: () -> Boolean = {
             ContextCompat.checkSelfPermission(
-                context, android.Manifest.permission.READ_EXTERNAL_STORAGE
+                context, permissionToGrant
             ) == PackageManager.PERMISSION_GRANTED
         }
 
@@ -232,8 +235,7 @@ fun LoadImageGalleryWithPermissions(
         val requestPermissions = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestMultiplePermissions()
         ) { permissions ->
-            val permissionGranted =
-                permissions[android.Manifest.permission.READ_EXTERNAL_STORAGE] == true
+            val permissionGranted = permissions[permissionToGrant] == true
 
             // Update state based on the permissions result
             if (permissionGranted) {
@@ -243,10 +245,7 @@ fun LoadImageGalleryWithPermissions(
                 isInitial = false
 
                 // Check if the user has permanently denied the permission
-                showRationale = ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as Activity, android.Manifest.permission.READ_EXTERNAL_STORAGE
-                )
-
+                showRationale = shouldShowRequestPermissionRationale()
                 // Optionally, show rationale or notify the user why these permissions are required
             }
         }
@@ -258,18 +257,19 @@ fun LoadImageGalleryWithPermissions(
                     readPermissionGranted = true
                 }
             }
-            onPauseOrDispose {
+            onPauseOrDispose {}
+        }
 
-            }
+        val requestPermission: () -> Unit = {
+            requestPermissions.launch(
+                arrayOf(
+                    permissionToGrant
+                )
+            )
         }
 
         LaunchedEffect(Unit) {
-            // Request both permissions at once
-            requestPermissions.launch(
-                arrayOf(
-                    android.Manifest.permission.READ_EXTERNAL_STORAGE
-                )
-            )
+            requestPermission()
         }
 
         // Column to show the UI for requesting permissions or displaying the gallery
@@ -288,27 +288,32 @@ fun LoadImageGalleryWithPermissions(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
+
                     if (!showRationale) {
-                        // If permissions are not granted, show a button to request them
-                        Text(
-                            "Storage Permission is required.",
-                            color = Color.White,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(8.dp))
 
-                        Button(
+                        if (!isInitial) {
+                            // If permissions are not granted, show a button to request them
+                            Text(
+                                "Storage Permission is required.",
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
 
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(
-                                    0xFFFE8B02,
-                                )
-                            ),
-                            onClick = {
-                                redirectToAppSettings(context)
-                            }) {
-                            Text("Allow Permissions", color = Color.White)
+                            Button(
+
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(
+                                        0xFFFE8B02,
+                                    )
+                                ),
+                                onClick = {
+                                    redirectToAppSettings(context)
+                                }) {
+                                Text("Allow Permissions", color = Color.White)
+                            }
                         }
+
                     } else {
 
 
@@ -328,12 +333,7 @@ fun LoadImageGalleryWithPermissions(
                                     )
                                 ),
                                 onClick = {
-                                    // Request both permissions at once
-                                    requestPermissions.launch(
-                                        arrayOf(
-                                            android.Manifest.permission.READ_EXTERNAL_STORAGE
-                                        )
-                                    )
+                                    requestPermission()
                                 }) {
                                 Text("Allow Permissions", color = Color.White)
                             }

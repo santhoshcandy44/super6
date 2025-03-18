@@ -163,7 +163,7 @@ fun BottomNavHost(
 
         }
 
-        slideComposable<BottomNavRoutes.DetailedService> { backStackEntry ->
+        noTransitionComposable<BottomNavRoutes.DetailedService> { backStackEntry ->
 
 
             val args = backStackEntry.toRoute<BottomNavRoutes.DetailedService>()
@@ -227,7 +227,7 @@ fun BottomNavHost(
 
         }
 
-        slideComposable<BottomNavRoutes.ServiceOwnerProfile> { backStackEntry ->
+        noTransitionComposable<BottomNavRoutes.ServiceOwnerProfile> { backStackEntry ->
 
             val key = backStackEntry.toRoute<BottomNavRoutes.ServiceOwnerProfile>().key
 
@@ -367,7 +367,7 @@ fun BottomNavHost(
 
         }
 
-        slideComposable<BottomNavRoutes.DetailedSeconds> { backStackEntry ->
+        noTransitionComposable<BottomNavRoutes.DetailedSeconds> { backStackEntry ->
 
 
             val args = backStackEntry.toRoute<BottomNavRoutes.DetailedSeconds>()
@@ -448,7 +448,7 @@ fun BottomNavHost(
 
         }
 
-        slideComposable<BottomNavRoutes.SecondsOwnerProfile> { backStackEntry ->
+        noTransitionComposable<BottomNavRoutes.SecondsOwnerProfile> { backStackEntry ->
             val key = backStackEntry.toRoute<BottomNavRoutes.SecondsOwnerProfile>().key
 
             val parentBackStackEntry = remember {
@@ -550,7 +550,6 @@ fun BottomNavHost(
                 viewmodel
             ) { navController.popBackStack() }
         }
-
 
 
         noTransitionComposable<BottomBar.Chats> {

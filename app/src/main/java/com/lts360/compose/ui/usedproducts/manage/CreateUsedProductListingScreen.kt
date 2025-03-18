@@ -54,6 +54,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +75,7 @@ import com.lts360.compose.ui.chat.createImagePartForUri
 import com.lts360.compose.ui.chat.getFileExtensionFromImageFormat
 import com.lts360.compose.ui.chat.isValidImageDimensions
 import com.lts360.compose.ui.main.CreateUsedProductListingLocationBottomSheetScreen
+import com.lts360.compose.ui.profile.TakeProfilePictureSheet
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.ui.services.manage.ExposedDropdownCountry
 import com.lts360.compose.ui.services.manage.ReloadImageIconButton
@@ -81,6 +83,7 @@ import com.lts360.compose.ui.services.manage.RemoveImageIconButton
 import com.lts360.compose.ui.services.manage.UploadServiceImagesContainer
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
+import com.lts360.libs.utils.createFileDCIMExternalStorage
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -136,6 +139,8 @@ fun CreateUsedProductListingScreen(
     val context = LocalContext.current
 
 
+
+
     // Create a launcher for picking multiple images
     val pickImagesLauncher = rememberLauncherForActivityResult(
         GalleryPagerActivityResultContracts.PickMultipleImages(MAX_IMAGES)
@@ -170,7 +175,7 @@ fun CreateUsedProductListingScreen(
 
     // Create a launcher for picking multiple images
     val pickSingleImageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        GalleryPagerActivityResultContracts.PickSingleImage()
     ) { uri ->
 
         if (refreshImageIndex != -1) {
@@ -193,14 +198,76 @@ fun CreateUsedProductListingScreen(
     }
 
 
+
+    var pickerSheetState by rememberSaveable { mutableStateOf(false) }
+    var cameraData: Uri? by rememberSaveable { mutableStateOf(null) }
+    var requestedData: Uri? by rememberSaveable { mutableStateOf(null) }
+
+
+
+    val cameraPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { isSuccess ->
+
+        if (refreshImageIndex != -1) {
+            requestedData?.let {
+                val result = isValidImageDimensions(context, it)
+                val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
+
+                viewModel.updateContainer(
+                    refreshImageIndex,
+                    it.toString(),
+                    result.width,
+                    result.height,
+                    result.format.toString(),
+                    errorMessage = errorMessage
+                )
+            }
+        }else{
+            // Check if the number of selected images is less than 12
+            if (imageContainers.size < MAX_IMAGES) {
+                if (isSuccess) {
+                    requestedData?.let {
+                        cameraData = it
+                        val result = isValidImageDimensions(context, it)
+                        val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
+                        viewModel.addContainer(
+                            requestedData.toString(),
+                            result.width,
+                            result.height,
+                            result.format.toString(),
+                            errorMessage = errorMessage
+                        )
+                        requestedData = null
+                    }
+
+                } else {
+                    // Get the ContentResolver
+                    requestedData?.let {
+                        context.contentResolver.delete(it, null, null)
+                    }
+                    requestedData = null
+                }
+
+            } else {
+                // Show a toast message if the image limit is reached
+                Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
+        // Reset picker launch flag
+        isPickerLaunch = false
+    }
+
+
+    val coroutineScope = rememberCoroutineScope()
+
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             SheetValue.Hidden,
             skipHiddenState = false
         )
     )
-
-    val coroutineScope = rememberCoroutineScope()
 
     BackHandler {
         if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
@@ -510,14 +577,8 @@ fun CreateUsedProductListingScreen(
                                         )
 
                                         ReloadImageIconButton {
-                                            if (isPickerLaunch)
-                                                return@ReloadImageIconButton
-
-                                            isPickerLaunch = true
                                             refreshImageIndex = index
-                                            pickSingleImageLauncher.launch(
-                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                            )
+                                            pickerSheetState = true
                                         }
 
                                         RemoveImageIconButton {
@@ -544,15 +605,7 @@ fun CreateUsedProductListingScreen(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             UploadServiceImagesContainer(imageContainersError) {
-
-                                if (isPickerLaunch)
-                                    return@UploadServiceImagesContainer
-
-                                isPickerLaunch = true
-
-                                pickImagesLauncher.launch(
-                                    Unit
-                                )
+                                pickerSheetState = true
                             }
 
                         }
@@ -623,7 +676,7 @@ fun CreateUsedProductListingScreen(
 
 
                                     Button(
-                                        shape = RectangleShape,
+                                        shape = RoundedCornerShape(8.dp),
                                         onClick = {
                                             if (viewModel.validateAll()) {
 
@@ -733,6 +786,32 @@ fun CreateUsedProductListingScreen(
         }
     }
 
+
+
+    TakeProfilePictureSheet(pickerSheetState, onGallerySelected = {
+        if (isPickerLaunch)
+            return@TakeProfilePictureSheet
+        isPickerLaunch = true
+        if(refreshImageIndex!=-1){
+            pickSingleImageLauncher.launch(Unit)
+        }else{
+            pickImagesLauncher.launch(Unit)
+        }
+        pickerSheetState = false
+    }, onCameraSelected = {
+        createFileDCIMExternalStorage(
+            context = context,
+            "Lts360/Seconds"
+        )?.let {
+            requestedData = it
+            cameraPickerLauncher.launch(
+                it
+            )
+        }
+        pickerSheetState = false
+    }) {
+        pickerSheetState = false
+    }
 
 
     if (isPublishing) {

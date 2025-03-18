@@ -4,6 +4,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -76,6 +77,7 @@ import com.lts360.compose.ui.chat.createImagePartForUri
 import com.lts360.compose.ui.chat.getFileExtensionFromImageFormat
 import com.lts360.compose.ui.chat.isValidImageDimensions
 import com.lts360.compose.ui.main.ManagePublishedUsedProductListingLocationBottomSheetScreen
+import com.lts360.compose.ui.profile.TakeProfilePictureSheet
 import com.lts360.compose.ui.services.manage.DeleteServiceBottomSheet
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.ui.services.manage.ExposedDropdownCountry
@@ -85,6 +87,7 @@ import com.lts360.compose.ui.services.manage.UploadServiceImagesContainer
 import com.lts360.compose.ui.services.manage.models.ContainerType
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
+import com.lts360.libs.utils.createFileDCIMExternalStorage
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -163,13 +166,14 @@ fun ManagePublishedUsedProductListingScreen(
                 }
 
             }
-            // Reset picker launch flag
-            isPickerLaunch = false
         } else {
             // Show a toast message if the image limit is reached
             Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
                 .show()
         }
+
+        // Reset picker launch flag
+        isPickerLaunch = false
     }
 
 
@@ -199,8 +203,66 @@ fun ManagePublishedUsedProductListingScreen(
     }
 
 
-    val coroutineScope = rememberCoroutineScope()
+    var pickerSheetState by rememberSaveable { mutableStateOf(false) }
+    var cameraData: Uri? by rememberSaveable { mutableStateOf(null) }
+    var requestedData: Uri? by rememberSaveable { mutableStateOf(null) }
 
+    val cameraPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { isSuccess ->
+
+        if (refreshImageIndex != -1) {
+            requestedData?.let {
+                val result = isValidImageDimensions(context, it)
+                val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
+
+                viewModel.updateContainer(
+                    refreshImageIndex,
+                    it.toString(),
+                    result.width,
+                    result.height,
+                    result.format.toString(),
+                    errorMessage = errorMessage
+                )
+            }
+        }else{
+            // Check if the number of selected images is less than 12
+            if (imageContainers.size < MAX_IMAGES) {
+                if (isSuccess) {
+                    requestedData?.let {
+                        cameraData = it
+                        val result = isValidImageDimensions(context, it)
+                        val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
+                        viewModel.addContainer(
+                            requestedData.toString(),
+                            result.width,
+                            result.height,
+                            result.format.toString(),
+                            errorMessage = errorMessage
+                        )
+                        requestedData = null
+                    }
+
+                } else {
+                    // Get the ContentResolver
+                    requestedData?.let {
+                        context.contentResolver.delete(it, null, null)
+                    }
+                    requestedData = null
+                }
+
+            } else {
+                // Show a toast message if the image limit is reached
+                Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
+        // Reset picker launch flag
+        isPickerLaunch = false
+    }
+
+
+    val coroutineScope = rememberCoroutineScope()
 
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -553,14 +615,8 @@ fun ManagePublishedUsedProductListingScreen(
                                         )
 
                                         ReloadImageIconButton {
-                                            if (isPickerLaunch)
-                                                return@ReloadImageIconButton
-
-                                            isPickerLaunch = true
                                             refreshImageIndex = index
-                                            pickSingleImageLauncher.launch(
-                                                Unit
-                                            )
+                                            pickerSheetState = true
                                         }
 
                                         RemoveImageIconButton {
@@ -589,15 +645,7 @@ fun ManagePublishedUsedProductListingScreen(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             UploadServiceImagesContainer(imageContainersError) {
-
-                                if (isPickerLaunch)
-                                    return@UploadServiceImagesContainer
-
-                                isPickerLaunch = true
-
-                                pickImagesLauncher.launch(
-                                    Unit
-                                )
+                                pickerSheetState = true
                             }
 
                         }
@@ -674,7 +722,7 @@ fun ManagePublishedUsedProductListingScreen(
                                             0xFF57D457
                                         )
                                     ),
-                                    shape = RectangleShape,
+                                    shape = RoundedCornerShape(8.dp),
                                     onClick = {
 
                                         editableService?.let { nonNullSelectedUsedProductListing ->
@@ -782,7 +830,7 @@ fun ManagePublishedUsedProductListingScreen(
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color.Red
                                     ),
-                                    shape = RectangleShape,
+                                    shape = RoundedCornerShape(8.dp),
                                     onClick = {
                                         bottomSheetState = true
                                     },
@@ -843,6 +891,31 @@ fun ManagePublishedUsedProductListingScreen(
     }
 
 
+
+    TakeProfilePictureSheet(pickerSheetState, onGallerySelected = {
+        if (isPickerLaunch)
+            return@TakeProfilePictureSheet
+        isPickerLaunch = true
+        if(refreshImageIndex!=-1){
+            pickSingleImageLauncher.launch(Unit)
+        }else{
+            pickImagesLauncher.launch(Unit)
+        }
+        pickerSheetState = false
+    }, onCameraSelected = {
+        createFileDCIMExternalStorage(
+            context = context,
+            "Lts360/Seconds"
+        )?.let {
+            requestedData = it
+            cameraPickerLauncher.launch(
+                it
+            )
+        }
+        pickerSheetState = false
+    }) {
+        pickerSheetState = false
+    }
 
 
     if (isPublishing) {

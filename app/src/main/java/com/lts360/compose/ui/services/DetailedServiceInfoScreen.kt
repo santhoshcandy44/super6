@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
@@ -149,7 +150,7 @@ fun DetailedServiceScreen(
 
                     },
 
-                    shape = RectangleShape,
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(text = "Send message", color = Color.White)
@@ -175,8 +176,6 @@ fun FeedUserDetailedServiceInfoScreen(
 
 
     ) {
-
-
 
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod

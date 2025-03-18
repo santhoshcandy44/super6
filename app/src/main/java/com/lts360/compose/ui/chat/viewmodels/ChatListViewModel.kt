@@ -116,9 +116,6 @@ class ChatListViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
 
-
-            /*val profilePicUrl96By96Cache =
-                cacheProfilePic(profilePicUrl96By96, "profile_pic_url_96x96_${senderId}.jpg")*/
             chatUserDao.updateProfilePicUrls(
                 profileInfoUserId,
                 profilePicUrl,
@@ -246,20 +243,6 @@ class ChatListViewModel @Inject constructor(
                         val firstUnreadIndex =
                             allMessages.indexOfLast { it.itemType == ItemType.MESSAGE && !it.message!!.receivedMessage.read }
 
-
-                        /*
-                                                var profilePicBitmap: Bitmap? = null
-
-                                                profilePicBitmap = try {
-
-                                                    chatUser.userProfile.profilePicUrl96By96?.let {
-                                                        decodeBitmapForTargetSize(it)
-                                                    }
-                                                } catch (e: Exception) {
-                                                    e.printStackTrace()
-                                                    null
-                                                }*/
-
                         val updatedState = UserState(
                             messages = repository.groupMessagesByDay(messages),
                             chatUser = chatUser,
@@ -269,10 +252,7 @@ class ChatListViewModel @Inject constructor(
                             profileImageUrl = chatUser.userProfile.profilePicUrl.orEmpty(),
                             profileImageUrl96By96 = chatUser.userProfile.profilePicUrl96By96.orEmpty(),
                             isMessagesLoaded = true,
-                            firstVisibleItemIndex = if (firstUnreadIndex == -1) 0 else firstUnreadIndex,
-                            /*
-                                                        profilePicBitmap = profilePicBitmap
-                            */
+                            firstVisibleItemIndex = if (firstUnreadIndex == -1) 0 else firstUnreadIndex
                         )
 
                         // Find and update the user state if it exists, or add it if not
@@ -289,7 +269,6 @@ class ChatListViewModel @Inject constructor(
 
                 _isLoading.value = false
 
-
             }.join()
 
             launch {
@@ -298,7 +277,6 @@ class ChatListViewModel @Inject constructor(
                 }
                 loadChatUsersAndProfiles()
             }
-
 
             launch {
 
@@ -344,7 +322,6 @@ class ChatListViewModel @Inject constructor(
                                                 chatUser.recipientId,
                                                 false
                                             )
-
 
                                             chatUserEventsManager.unregisterListeners(
                                                 socketInstance,
@@ -560,7 +537,6 @@ class ChatListViewModel @Inject constructor(
                         updatedStates
                     }
 
-// Fetch profile info for each user in the updated list
                     _userStates.value.forEach { userState ->
                         fetchChatUserProfileInfo(userState.chatUser)
                     }

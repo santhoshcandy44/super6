@@ -123,7 +123,6 @@ data class UsedProductListing(
     @SerializedName("country")
     val country: String,
 
-
     @SerializedName("state")
     val state: String,
 

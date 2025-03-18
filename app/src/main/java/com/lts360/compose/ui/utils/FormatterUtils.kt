@@ -6,8 +6,30 @@ import java.text.NumberFormat
 import java.text.StringCharacterIterator
 import java.util.Currency
 import java.util.Locale
+import kotlin.math.max
 
 object FormatterUtils {
+
+
+
+    fun formatTimeSeconds(seconds: Float): String {
+        // Ensure seconds is non-negative to avoid negative values for hours, minutes, and seconds
+        val positiveSeconds = max(seconds, 0f)
+
+        // Calculate hours, minutes, and seconds based on the total seconds
+        val hours = (positiveSeconds / 3600).toInt() // 3600 seconds in an hour
+        val minutes = ((positiveSeconds % 3600) / 60).toInt() // Remaining minutes
+        val remainingSeconds = (positiveSeconds % 60).toInt() // Remaining seconds
+
+        // If hours > 0, show hours, minutes, and seconds in hh:mm:ss format
+        return if (hours > 0) {
+            String.format(Locale.ROOT, "%02d:%02d:%02d", hours, minutes, remainingSeconds)
+        } else {
+            // If hours == 0, show only minutes and seconds in mm:ss format
+            String.format(Locale.ROOT, "%02d:%02d", minutes, remainingSeconds)
+        }
+    }
+
 
     fun formatCurrency(amount: Double, currencyCode: String): String {
         val locale = when (currencyCode) {
@@ -16,13 +38,10 @@ object FormatterUtils {
             else -> Locale.getDefault()  // Default locale if currency code is unknown
         }
 
-        val currency = Currency.getInstance(currencyCode)
-
-        // Get an instance of NumberFormat for the appropriate currency
-        val format = NumberFormat.getCurrencyInstance(locale)
-        format.currency = currency  // Set the currency type
-
-        return format.format(amount)
+        return NumberFormat.getCurrencyInstance(locale)
+            .apply {
+                this.currency = Currency.getInstance(currencyCode)
+            }.format(amount)
     }
 
 
@@ -47,8 +66,6 @@ object FormatterUtils {
             ci.current()
         ) // Explicit Locale used
     }
-
-
 
 
     fun isValidEmail(email: String): Boolean {

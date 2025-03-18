@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,7 +46,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
@@ -216,18 +214,8 @@ fun ChatUsersScreen(
                     Column {
 
 
-                        /*    PullToRefreshBox(
-
-                                isRefreshing = false,
-                                onRefresh = {},
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center // Center content within the Box
-
-                            ) {}*/
-
                         SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
                             var isExpanded by remember { mutableStateOf(false) }
-                            val boundsTransform = { _: Rect, _: Rect -> tween<Rect>(550) }
                             var transitionItem by remember { mutableStateOf<UserState?>(null) }
 
                             BackHandler(isExpanded) {
@@ -559,8 +547,6 @@ fun ChatUsersScreen(
                                             val profilePicUrl96By96 =
                                                 nonNullTransitionItem.profileImageUrl96By96
 
-                                            /*       val profilePicBitmap =
-                                                       nonNullTransitionItem.profilePicBitmap*/
 
                                             val profilePicUrl96By96ImageRequest = ImageRequest.Builder(context)
                                                 .data(profilePicUrl96By96)
@@ -622,8 +608,6 @@ fun ChatUsersScreen(
                 }
             }
         })
-
-
 }
 
 

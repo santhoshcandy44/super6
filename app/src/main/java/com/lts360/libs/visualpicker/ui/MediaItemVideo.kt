@@ -2,7 +2,6 @@ package com.lts360.libs.visualpicker.ui
 
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,10 +30,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.components.utils.isUriExist
 import com.lts360.compose.ui.NoRippleInteractionSource
-import com.lts360.compose.ui.chat.formatTimeSeconds
+import com.lts360.compose.ui.utils.FormatterUtils.formatTimeSeconds
 import com.lts360.compose.ui.utils.getMiddleVideoThumbnail
 import com.lts360.libs.imagepicker.models.ImageMediaData
 import kotlinx.coroutines.Dispatchers

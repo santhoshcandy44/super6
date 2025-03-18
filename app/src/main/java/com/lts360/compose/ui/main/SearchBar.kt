@@ -23,7 +23,6 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,10 +30,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
@@ -42,6 +37,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lts360.compose.ui.NoRippleInteractionSource
 import com.lts360.compose.ui.theme.customColorScheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,21 +50,9 @@ fun SearchBar(
     onBackButtonClicked: () -> Unit,
     onClearClicked: () -> Unit,
     modifier: Modifier = Modifier,
-    onFocus: (Boolean) -> Unit,
-    focusRequesterEnabled: Boolean = true,
     isBackButtonEnabled: Boolean = true,
 ) {
 
-    // Conditionally create and use FocusRequester
-    val focusRequester = remember { FocusRequester() }
-
-
-    // If focusRequester is enabled, request focus once component is rendered
-    if (focusRequesterEnabled) {
-        LaunchedEffect(Unit) {
-            focusRequester.requestFocus()
-        }
-    }
 
 
     var recentQuery by remember(query) { mutableStateOf(query) }
@@ -129,21 +113,12 @@ fun SearchBar(
                 .fillMaxWidth()
                 .background(MaterialTheme.customColorScheme.searchBarColor, CircleShape)
                 .padding(8.dp)
-                .height(28.dp)
-                .focusRequester(focusRequester)
-                .onFocusChanged { focusState ->
-//                    onFocus(focusState.isFocused)
-                },
+                .height(28.dp),
 
             ) { innerTextField ->
             Row(modifier, verticalAlignment = Alignment.CenterVertically) {
 
-                IconButton(onClick = {
-                    coroutineScope.launch {
-                        delay(100) // Optional: Delay to ensure state is collected
-                        focusManager.clearFocus() // Clear focus after state update
-                    }
-                }) {
+                IconButton(onClick = {}, interactionSource = NoRippleInteractionSource()) {
                     Icon(
                         imageVector = Icons.Filled.Search,
                         contentDescription = "Search",

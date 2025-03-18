@@ -193,6 +193,7 @@ import com.lts360.compose.ui.main.MainActivity
 import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.theme.customColorScheme
+import com.lts360.compose.ui.utils.FormatterUtils.formatTimeSeconds
 import com.lts360.compose.ui.utils.FormatterUtils.humanReadableBytesSize
 import com.lts360.compose.ui.utils.getThumbnail
 import com.lts360.compose.ui.utils.getThumbnailFromPath
@@ -208,9 +209,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.Locale
 import javax.inject.Inject
-import kotlin.math.max
 
 
 @AndroidEntryPoint
@@ -5876,23 +5875,6 @@ fun AudioPlayerUI(filePath: String) {
 }
 
 
-fun formatTimeSeconds(seconds: Float): String {
-    // Ensure seconds is non-negative to avoid negative values for hours, minutes, and seconds
-    val positiveSeconds = max(seconds, 0f)
-
-    // Calculate hours, minutes, and seconds based on the total seconds
-    val hours = (positiveSeconds / 3600).toInt() // 3600 seconds in an hour
-    val minutes = ((positiveSeconds % 3600) / 60).toInt() // Remaining minutes
-    val remainingSeconds = (positiveSeconds % 60).toInt() // Remaining seconds
-
-    // If hours > 0, show hours, minutes, and seconds in hh:mm:ss format
-    return if (hours > 0) {
-        String.format(Locale.ROOT, "%02d:%02d:%02d", hours, minutes, remainingSeconds)
-    } else {
-        // If hours == 0, show only minutes and seconds in mm:ss format
-        String.format(Locale.ROOT, "%02d:%02d", minutes, remainingSeconds)
-    }
-}
 
 
 @Composable

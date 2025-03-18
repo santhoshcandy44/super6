@@ -13,7 +13,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,12 +21,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.R
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.NoRippleInteractionSource
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
-
+import kotlinx.serialization.Serializable
 
 @Composable
 fun BottomBar(
@@ -36,34 +34,46 @@ fun BottomBar(
 //              scrollBehavior:BottomAppBarScrollBehavior,
     messageCount: Int,
     notificationCount: Int,
-    onNavigateUpWelcomeScreenSheet: () -> Unit,
+    selectedScreen: BottomBar?,
+    onNavigateUpWelcomeScreenSheet: () -> Unit
 ) {
 
 
+
     val bottomBarItems = listOf(
-        BottomBarItem(title = "Home", selectedIcon = R.drawable.ic_filled_home, unSelectedIcon = R.drawable.ic_outlined_home),
-        BottomBarItem(title = "Chats", selectedIcon = R.drawable.ic_filled_chats, unSelectedIcon = R.drawable.ic_outlined_chats),
-        BottomBarItem(title = "Notifications", selectedIcon = R.drawable.ic_filled_notification , unSelectedIcon = R.drawable.ic_outlined_notification),
-        BottomBarItem(title = "More", selectedIcon = R.drawable.ic_filled_more, unSelectedIcon = R.drawable.ic_outlined_more)
+        BottomBarItem(
+            title = "Home",
+            selectedIcon = R.drawable.ic_filled_home,
+            unSelectedIcon = R.drawable.ic_outlined_home
+        ),
+        BottomBarItem(
+            title = "Chats",
+            selectedIcon = R.drawable.ic_filled_chats,
+            unSelectedIcon = R.drawable.ic_outlined_chats
+        ),
+        BottomBarItem(
+            title = "Notifications",
+            selectedIcon = R.drawable.ic_filled_notification,
+            unSelectedIcon = R.drawable.ic_outlined_notification
+        ),
+        BottomBarItem(
+            title = "More",
+            selectedIcon = R.drawable.ic_filled_more,
+            unSelectedIcon = R.drawable.ic_outlined_more
+        )
     )
 
-
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-
-
-    val currentRoute = navBackStackEntry?.destination?.route
-
-// Clean the current route by removing path and query parameters
-    val cleanedRoute = currentRoute
-        ?.replace(Regex("/\\{[^}]+\\}"), "") // Remove path parameters
-        ?.replace(Regex("\\?.*"), "")?.trim() // Optionally trim whitespace
 
 
     NavigationBar(
         tonalElevation = 0.dp,
-        modifier = Modifier.height(56.dp)
+        modifier = Modifier
+            .height(56.dp)
+
     ) {
+
         bottomBarItems.forEachIndexed { _, item ->
+
 
             val screen = when (item.title) {
                 "Home" -> BottomBar.Home()
@@ -80,19 +90,25 @@ fun BottomBar(
                 else -> 0
             }
 
+            val isSelected = selectedScreen?.let {
+                if (screen == BottomBar.Home())
+                    it == screen || it == BottomBar.NestedServices() || it == BottomBar.NestedSeconds()
+                else
+                    it == screen
+            } ?: false
+
+
             AddItem(
                 signInMethod = signInMethod,
                 bottomBarItem = item,
                 screen = screen,
-                isSelected =if(screen is BottomBar.Home)
-                    BottomBar.NestedServices::class.qualifiedName.orEmpty()==cleanedRoute
-                            || screen::class.qualifiedName.orEmpty() == cleanedRoute else screen::class.qualifiedName.orEmpty() == cleanedRoute,
+                isSelected = isSelected,
                 navController = navController,
                 badgeCount = badgeCount, // Pass badgeCount directly
-                onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet)
+                onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet
+            )
         }
     }
-
 
 }
 
@@ -128,12 +144,12 @@ fun RowScope.AddItem(
                         }
                     }
                 ) {
-                    if(isSelected){
+                    if (isSelected) {
                         Icon(
                             painter = painterResource(bottomBarItem.selectedIcon),
                             contentDescription = "Navigation Icon"
                         )
-                    }else{
+                    } else {
                         Icon(
                             painter = painterResource(bottomBarItem.unSelectedIcon),
                             contentDescription = "Navigation Icon"
@@ -183,4 +199,5 @@ fun RowScope.AddItem(
     )
 }
 
-data class BottomBarItem(val title: String, val unSelectedIcon: Int, val selectedIcon:Int)
+@Serializable
+data class BottomBarItem(val title: String, val unSelectedIcon: Int, val selectedIcon: Int)

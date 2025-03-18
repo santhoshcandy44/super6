@@ -3,55 +3,29 @@ package com.lts360.test
 
 import android.content.res.Configuration
 import android.graphics.Paint
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.android.gms.common.Scopes
 import com.lts360.R
-import com.lts360.compose.ui.chat.ImagesSliderScreen
-import com.lts360.compose.ui.main.HomeScreen
-import com.lts360.compose.ui.main.NotificationScreen
-import com.lts360.compose.ui.main.OnBoardUserLocationBottomSheetScreen
-import com.lts360.compose.ui.services.ImageSlider
-import com.lts360.compose.ui.services.ServicesScreen
 import com.lts360.compose.ui.theme.AppTheme
-import com.lts360.compose.ui.usedproducts.SecondsScreen
-import com.lts360.compose.ui.usedproducts.manage.SecondsImagesSliderScreen
-import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -99,50 +73,79 @@ class TestActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
 
             AppTheme {
 
                 Surface {
-                    val context = LocalContext.current
-                    var data: Uri? by remember { mutableStateOf(null) }
-                    val launcher = rememberLauncherForActivityResult(
-                        GalleryPagerActivityResultContracts
-                            .PickSingleImage()
-                    ) { uri ->
 
-                        data = uri
-                    }
 
-                    Column(
-                        Modifier
+                    Box(
+                        modifier = Modifier
                             .fillMaxSize()
                             .background(Color.Black)
-                            .padding(16.dp)
                     ) {
 
-                        Button({}, modifier = Modifier.fillMaxWidth(),
-                            elevation = ButtonDefaults.buttonElevation(
-                                defaultElevation = 8.dp
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text("Click")
-                        }
+                        val context = LocalContext.current
 
-                        ElevatedButton({}, elevation = ButtonDefaults.elevatedButtonElevation(
-                            defaultElevation = 8.dp
-                        ), modifier = Modifier.fillMaxWidth(), shape = RectangleShape) {
-                            Text("Click")
-                        }
 
+
+                        /*       val hasAudioRecordPermissionGranted = {
+                                   ContextCompat
+                                       .checkSelfPermission(
+                                           context,
+                                           android.Manifest.permission.RECORD_AUDIO
+                                       ) == PackageManager.PERMISSION_GRANTED
+                               }
+
+                               var showPermissionDialog by rememberSaveable {
+                                   mutableStateOf(
+                                       false
+                                   )
+                               }
+
+                               var startRecord by rememberSaveable {
+                                   mutableStateOf(
+                                       false
+                                   )
+                               }
+
+                               Button(
+                                   onClick = {
+
+                                       if (hasAudioRecordPermissionGranted()) {
+                                           startRecord = true
+                                       } else {
+                                           showPermissionDialog = true
+                                       }
+
+                                   }, shape = RoundedCornerShape(8.dp),
+                                   modifier = Modifier.align(Alignment.Center)
+                               ) {
+                                   Text("Record Audio")
+                               }
+
+                               if (startRecord) {
+                                   ChatRecordAudio()
+                               }
+
+                               if (showPermissionDialog) {
+                                   RecordAudioWithPermission(
+                                       {
+                                           showPermissionDialog = false
+                                       }
+                                   ) {
+                                       showPermissionDialog = false
+                                   }
+                               }*/
                     }
 
                 }
             }
         }
     }
+
+
 
 
     @Composable
