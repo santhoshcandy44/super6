@@ -78,7 +78,7 @@ import com.lts360.compose.ui.chat.getFileExtensionFromImageFormat
 import com.lts360.compose.ui.chat.isValidImageDimensions
 import com.lts360.compose.ui.main.ManagePublishedUsedProductListingLocationBottomSheetScreen
 import com.lts360.compose.ui.profile.TakeProfilePictureSheet
-import com.lts360.compose.ui.services.manage.DeleteServiceBottomSheet
+import com.lts360.compose.ui.services.manage.DeleteInfoBottomSheet
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.ui.services.manage.ExposedDropdownCountry
 import com.lts360.compose.ui.services.manage.ReloadImageIconButton
@@ -127,22 +127,20 @@ fun ManagePublishedUsedProductListingScreen(
     // Ensure containers reflect the latest state of imageContainers
     val imageContainers by viewModel.imageContainers.collectAsState()
 
-    /*
-        val isLoading by viewModel.isDraftLoading.collectAsState()
-    */
-    val isLoading = false
 
-    val isPublishing by viewModel.isPublishing.collectAsState()
-
+    val isLoading by viewModel.isLoading.collectAsState()
 
     val editableService by viewModel.selectedUsedProductListing.collectAsState()
+
+    val isUpdating by viewModel.isUpdating.collectAsState()
+    val isDeleting by viewModel.isDeleting.collectAsState()
+
 
     // Mutable state for isPickerLaunch and refreshImageIndex
     var isPickerLaunch by remember { mutableStateOf(false) }
     var refreshImageIndex by remember { mutableIntStateOf(-1) }
 
     val context = LocalContext.current
-
 
     // Create a launcher for picking multiple images
     val pickImagesLauncher = rememberLauncherForActivityResult(
@@ -307,6 +305,7 @@ fun ManagePublishedUsedProductListingScreen(
 
     BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
+        sheetShape = RectangleShape,
         sheetContent = {
 
             if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
@@ -696,7 +695,6 @@ fun ManagePublishedUsedProductListingScreen(
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
 
                                 )
 
@@ -705,24 +703,18 @@ fun ManagePublishedUsedProductListingScreen(
                                 }
                             }
 
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
 
 
                         item(span = { GridItemSpan(maxLineSpan) }) {
-                            // Upload Images Section
-                            Spacer(modifier = Modifier.height(8.dp))
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 // Action Buttons
                                 Button(
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(
-                                            0xFF57D457
-                                        )
-                                    ),
-                                    shape = RoundedCornerShape(8.dp),
+
                                     onClick = {
 
                                         editableService?.let { nonNullSelectedUsedProductListing ->
@@ -820,6 +812,12 @@ fun ManagePublishedUsedProductListingScreen(
                                         }
 
                                     },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(
+                                            0xFF57D457
+                                        )
+                                    ),
+                                    shape = RoundedCornerShape(8.dp),
                                     modifier = Modifier.fillMaxWidth()
 
                                 ) {
@@ -867,12 +865,12 @@ fun ManagePublishedUsedProductListingScreen(
         ) {
 
 
-            DeleteServiceBottomSheet("Are you sure you want to delete this product? This action cannot be undone.",
+            DeleteInfoBottomSheet("Are you sure you want to delete this product? This action cannot be undone.",
                 {
 
                     editableService?.let { editableServiceNonNull ->
-                        viewModel.onDeleteService(userId, editableService!!.productId, {
-                            viewModel.removeSelectedService(editableServiceNonNull.productId)
+                        viewModel.onDeleteSeconds(userId, editableService!!.productId, {
+                            viewModel.removeSelectedSeconds(editableServiceNonNull.productId)
                             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                             onPopBackStack()
 
@@ -918,7 +916,7 @@ fun ManagePublishedUsedProductListingScreen(
     }
 
 
-    if (isPublishing) {
+    if (isUpdating || isDeleting) {
         LoadingDialog()
     }
 

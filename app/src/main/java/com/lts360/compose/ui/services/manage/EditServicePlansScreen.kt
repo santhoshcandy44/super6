@@ -53,7 +53,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.google.gson.Gson
-import com.lts360.R
 import com.lts360.api.models.service.EditablePlan
 import com.lts360.api.models.service.EditablePlanFeature
 import com.lts360.api.models.service.Plan
@@ -66,9 +65,10 @@ import java.math.BigDecimal
 
 
 @Composable
-fun EditServicePlanScreen(navHostController: NavHostController,  onPopBackStack:()-> Unit,
-                          viewModel: PublishedServicesViewModel
-                          ) {
+fun EditServicePlanScreen(
+    onPopBackStack: () -> Unit,
+    viewModel: PublishedServicesViewModel
+) {
 
     val selectedService by viewModel.selectedService.collectAsState()
 
@@ -80,8 +80,10 @@ fun EditServicePlanScreen(navHostController: NavHostController,  onPopBackStack:
 
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize()
-        .imePadding()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
     ) {
         EditServicePlanContent(
             plansError = plansError,
@@ -156,7 +158,7 @@ private fun EditServicePlanContent(
     onRemovePlan: (EditablePlan) -> Unit,
     onUpdatePlan: (Int, ValidatedPlan) -> Unit,
     onUpdatePlans: (List<EditablePlan>) -> Unit,
-    onPopBackStack:()-> Unit
+    onPopBackStack: () -> Unit
 ) {
 
     Scaffold(
@@ -184,7 +186,7 @@ private fun EditServicePlanContent(
                 modifier = Modifier
                     .padding(paddingValues)
                     .fillMaxSize(),
-                contentPadding = PaddingValues(top = 8.dp, start = 16.dp, end = 16.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 item {
 
@@ -218,7 +220,6 @@ private fun EditServicePlanContent(
                         shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp)
                     ) {
                         Icon(
                             painter = painterResource(MaterialTheme.icons.add),
@@ -232,12 +233,15 @@ private fun EditServicePlanContent(
                         ErrorText(it)
                     }
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Button(
                         onClick = {
                             onUpdatePlans(plans.map {
                                 it.editablePlan
                             })
                         },
+                        shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Update Plans")
@@ -273,7 +277,8 @@ fun AddFeature(
                 .padding(end = 4.dp)
         ) {
             OutlinedTextField(
-                isError = if (onValidate || featureName.length > 40) featureName.trim().isEmpty() || featureName.length > 40 else false,
+                isError = if (onValidate || featureName.length > 40) featureName.trim()
+                    .isEmpty() || featureName.length > 40 else false,
                 value = featureName,
                 onValueChange = onFeatureNameChange,
                 label = { Text("Feature") })
@@ -305,7 +310,8 @@ fun AddFeature(
                 .padding(end = 4.dp)
         ) {
             OutlinedTextField(
-                isError = if (onValidate || featureValue.length > 10) featureValue.trim().isEmpty() || featureValue.length > 10 else false,
+                isError = if (onValidate || featureValue.length > 10) featureValue.trim()
+                    .isEmpty() || featureValue.length > 10 else false,
                 value = featureValue,
                 onValueChange = onFeatureValueChange,
                 label = { Text("Value") }
@@ -397,7 +403,7 @@ fun PlanItem(
         if (planFeatures.size >= 10) {
             Toast.makeText(context, "Maximum 10 features can be added", Toast.LENGTH_SHORT)
                 .show()
-        }else{
+        } else {
             planFeatures.add(EditablePlanFeature(featureName = "", featureValue = null))
             updatePlan()
         }
@@ -413,9 +419,11 @@ fun PlanItem(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             OutlinedTextField(
-                isError = if (onValidate || planName.length > 20) planName.trim().isEmpty() || planName.length > 20 else false,
+                isError = if (onValidate || planName.length > 20) planName.trim()
+                    .isEmpty() || planName.length > 20 else false,
                 value = planName,
                 onValueChange = { newValue ->
                     planName = newValue
@@ -460,7 +468,8 @@ fun PlanItem(
             ErrorText("Plan name cannot be empty")
         }
         OutlinedTextField(
-            isError = if (onValidate || planDescription.length > 200) planDescription.trim().isEmpty() || planDescription.length > 200 else false,
+            isError = if (onValidate || planDescription.length > 200) planDescription.trim()
+                .isEmpty() || planDescription.length > 200 else false,
             value = planDescription,
             onValueChange = { newValue ->
                 planDescription = newValue
@@ -594,64 +603,62 @@ fun PriceAndUnitSpinner(
     var expanded by remember { mutableStateOf(false) }
 
 
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
 
-            Column(modifier = Modifier.weight(1f)) {
-                OutlinedTextField(
-                    isError = if (onValidate) price.isEmpty() else false,
-                    value = price,
-                    onValueChange = onPriceChange,
-                    label = { Text("Price") },
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        keyboardType = KeyboardType.Number
-                    )
+        Column(modifier = Modifier.weight(1f)) {
+            OutlinedTextField(
+                isError = if (onValidate) price.isEmpty() else false,
+                value = price,
+                onValueChange = onPriceChange,
+                label = { Text("Price") },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number
                 )
-                if (onValidate && price.isEmpty()) {
-                    ErrorText("Plan price cannot be empty")
-                }
-
+            )
+            if (onValidate && price.isEmpty()) {
+                ErrorText("Plan price cannot be empty")
             }
 
+        }
 
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded },
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(4.dp))
+                .weight(1f)
+        ) {
+            OutlinedTextField(
+                value = selectedUnit,
+                onValueChange = { },
+                readOnly = true,
+                label = { Text("Currency") },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                },
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(4.dp))
-                    .weight(1f)
-            ) {
-                OutlinedTextField(
-                    value = selectedUnit,
-                    onValueChange = { },
-                    readOnly = true,
-                    label = { Text("Currency") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    },
-                    modifier = Modifier
-                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                        .fillMaxWidth()
-                )
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    .fillMaxWidth()
+            )
 
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    units.forEach { unit ->
-                        DropdownMenuItem(
-                            text = { Text(text = unit) },
-                            onClick = {
-                                onUnitChange(unit)
-                                expanded = false
-                            }
-                        )
-                    }
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                units.forEach { unit ->
+                    DropdownMenuItem(
+                        text = { Text(text = unit) },
+                        onClick = {
+                            onUnitChange(unit)
+                            expanded = false
+                        }
+                    )
                 }
             }
         }
@@ -671,63 +678,61 @@ fun DeliveryTimeAndUnitSpinner(
     var expanded by remember { mutableStateOf(false) }
 
 
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.weight(1f)
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                OutlinedTextField(
-                    isError = if (onValidate) deliveryTime.isEmpty() else false,
-                    value = deliveryTime,
-                    onValueChange = onDeliveryTimeChange,
-                    label = { Text("Delivery Time") },
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        keyboardType = KeyboardType.Number
-                    )
+            OutlinedTextField(
+                isError = if (onValidate) deliveryTime.isEmpty() else false,
+                value = deliveryTime,
+                onValueChange = onDeliveryTimeChange,
+                label = { Text("Delivery Time") },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number
                 )
-                if (onValidate && deliveryTime.isEmpty()) {
-                    ErrorText("Plan delivery time cannot be empty")
-                }
+            )
+            if (onValidate && deliveryTime.isEmpty()) {
+                ErrorText("Plan delivery time cannot be empty")
             }
+        }
 
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded },
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(4.dp))
+                .weight(1f)
+        ) {
+            OutlinedTextField(
+                value = selectedUnit,
+                onValueChange = { },
+                readOnly = true,
+                label = { Text("Duration") },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                },
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(4.dp))
-                    .weight(1f)
-            ) {
-                OutlinedTextField(
-                    value = selectedUnit,
-                    onValueChange = { },
-                    readOnly = true,
-                    label = { Text("Duration") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    },
-                    modifier = Modifier
-                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                        .fillMaxWidth()
-                )
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    .fillMaxWidth()
+            )
 
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    units.forEach { unit ->
-                        DropdownMenuItem(
-                            text = { Text(text = unit) },
-                            onClick = {
-                                onUnitChange(unit)
-                                expanded = false
-                            }
-                        )
-                    }
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                units.forEach { unit ->
+                    DropdownMenuItem(
+                        text = { Text(text = unit) },
+                        onClick = {
+                            onUnitChange(unit)
+                            expanded = false
+                        }
+                    )
                 }
             }
         }

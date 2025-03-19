@@ -1,11 +1,9 @@
 package com.lts360.compose.ui.usedproducts.manage
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,42 +32,38 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import coil3.compose.AsyncImage
 import com.lts360.api.Utils.ResultError
 import com.lts360.api.models.service.EditableUsedProductListing
-import com.lts360.compose.ui.profile.EditProfileFirstNameScreen
-import com.lts360.compose.ui.profile.EditProfileSettingsScreen
 import com.lts360.compose.ui.services.manage.NoInternetText
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PublishedUsedProductListingScreen(
-    isServiceCreated:Boolean?,
+    isSecondsCreated:Boolean?,
     onRemoveServiceCreatedState:()->Unit,
     onNavigateUp: (EditableUsedProductListing) -> Unit,
     viewModel: PublishedUsedProductsListingViewModel) {
 
     val userId = viewModel.userId
-    val publishedServices by viewModel.publishedUsedProductListings.collectAsState()
+    val publishedSeconds by viewModel.publishedUsedProductListings.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val refreshing by viewModel.refreshing.collectAsState()
     val resultError by viewModel.resultError.collectAsState()
 
-    LaunchedEffect(isServiceCreated){
-        isServiceCreated?.let {
-            viewModel.refreshPublishedServices(userId)
+    LaunchedEffect(isSecondsCreated){
+        isSecondsCreated?.let {
+            viewModel.refreshPublishedSeconds(userId)
             onRemoveServiceCreatedState()
         }
     }
 
+
     Box(modifier = Modifier.fillMaxSize()) {
 
-
         if (!isLoading) {
-
             PullToRefreshBox(
                 isRefreshing = refreshing,
-                onRefresh = { viewModel.refreshPublishedServices(userId) },
+                onRefresh = { viewModel.refreshPublishedSeconds(userId) },
                 modifier = Modifier.fillMaxSize()
             ) {
 
@@ -78,7 +72,7 @@ fun PublishedUsedProductListingScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
-                    if (publishedServices.isNotEmpty()) {
+                    if (publishedSeconds.isNotEmpty()) {
 
                         item{
                             Text(
@@ -87,13 +81,13 @@ fun PublishedUsedProductListingScreen(
                             )
                         }
 
-                        items(publishedServices) { publishedUsedProductListing ->
+                        items(publishedSeconds) { publishedUsedProductListing ->
                             UsedProductListingItem(
                                 title = publishedUsedProductListing.name,
                                 shortDescription = publishedUsedProductListing.description,
                                 status = publishedUsedProductListing.status,
                                 onClick = { _, serviceId ->
-                                    viewModel.setSelectedService(serviceId)
+                                    viewModel.setSelectedSeconds(serviceId)
                                     onNavigateUp(publishedUsedProductListing)
                                 },
                                 type = publishedUsedProductListing.status,
@@ -127,7 +121,7 @@ fun PublishedUsedProductListingScreen(
                                 }
                             }
                         } else {
-                            if (publishedServices.isEmpty()) {
+                            if (publishedSeconds.isEmpty()) {
                                 item {
                                     Box(modifier = Modifier.fillParentMaxSize()) {
                                         Text(

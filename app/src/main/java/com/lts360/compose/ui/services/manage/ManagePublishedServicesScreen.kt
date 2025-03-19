@@ -32,7 +32,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -46,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -74,9 +72,6 @@ fun ManagePublishedServicesScreen(
     viewModel: PublishedServicesViewModel
 ) {
 
-
-
-
     val userId = viewModel.userId
 
     val editableService by viewModel.selectedService.collectAsState()
@@ -91,11 +86,9 @@ fun ManagePublishedServicesScreen(
     }
 
 
-
     val context = LocalContext.current
 
     val isLoading by viewModel.isLoading.collectAsState()
-
 
     val sheetState = rememberModalBottomSheetState()
 
@@ -110,34 +103,32 @@ fun ManagePublishedServicesScreen(
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
 
-
-    Scaffold(
-
-        topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = onPopBackStack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back Icon"
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = onPopBackStack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back Icon"
+                            )
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = "Manage Published Service",
+                            style = MaterialTheme.typography.titleMedium
                         )
                     }
-                },
-                title = {
-                    Text(
-                        text = "Manage Published Service",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            )
-        }
-    ) { contentPadding ->
+                )
+            }
+        ) { contentPadding ->
 
-        Box(modifier = Modifier.fillMaxSize()) {
 
-            Surface(modifier = Modifier.padding(contentPadding)) {
-                ManagePublishedServicesContent(
+            Box(modifier = Modifier.padding(contentPadding)) {
+                ManagePublishedServicesOptions(
                     onManageServiceInfoClick = {
 
                         editableService?.let {
@@ -194,7 +185,7 @@ fun ManagePublishedServicesScreen(
                     ) {
 
 
-                        DeleteServiceBottomSheet("Are you sure you want to delete this service? This action cannot be undone.",
+                        DeleteInfoBottomSheet("Are you sure you want to delete this service? This action cannot be undone.",
                             {
 
                                 editableService?.let { editableServiceNonNull ->
@@ -218,82 +209,18 @@ fun ManagePublishedServicesScreen(
                 }
             }
 
-            if (isLoading) {
-                LoadingDialog()
-            }
+        }
+
+        if (isLoading) {
+            LoadingDialog()
         }
     }
-
 
 }
 
 
 @Composable
-fun DeleteServiceBottomSheet(
-    message: String,
-    onProceed: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .wrapContentSize()
-            .padding(24.dp)
-    ) {
-
-        // Message Text
-        Text(
-            text = message,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
-
-        // Buttons
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Proceed Button
-            Button(
-                onClick = onProceed,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                shape = RectangleShape
-            ) {
-                Text(
-                    text = "Proceed",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Cancel Button
-            OutlinedButton(
-                onClick = onCancel,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                shape = RectangleShape
-
-            ) {
-                Text(
-                    text = "Cancel",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun ManagePublishedServicesContent(
+private fun ManagePublishedServicesOptions(
     onManageServiceInfoClick: () -> Unit,
     onManageServiceThumbnailClick: () -> Unit,
 
@@ -367,7 +294,7 @@ private fun ManagePublishedServicesContent(
 
         // Delete button
         Button(
-            shape = RectangleShape,
+            shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
             onClick = onDeleteServiceClick,
             modifier = Modifier.fillMaxWidth(),
@@ -382,7 +309,7 @@ private fun ManagePublishedServicesContent(
 }
 
 @Composable
-fun ServiceOptionCard(
+private fun ServiceOptionCard(
     title: String,
     description: String,
     @DrawableRes icon: Int,
@@ -433,4 +360,65 @@ fun ServiceOptionCard(
 }
 
 
+@Composable
+fun DeleteInfoBottomSheet(
+    message: String,
+    onProceed: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .wrapContentSize()
+            .padding(24.dp)
+    ) {
 
+        // Message Text
+        Text(
+            text = message,
+            fontSize = 16.sp,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+
+        // Buttons
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Proceed Button
+            Button(
+                onClick = onProceed,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "Proceed",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Cancel Button
+            OutlinedButton(
+                onClick = onCancel,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                shape = RoundedCornerShape(8.dp)
+
+            ) {
+                Text(
+                    text = "Cancel",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}

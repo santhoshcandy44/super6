@@ -1,7 +1,6 @@
 package com.lts360.compose.ui.usedproducts.manage.viewmodels
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,18 +14,14 @@ import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.EditableLocation
 import com.lts360.api.models.service.EditableUsedProductListing
-import com.lts360.api.models.service.UsedProductListing
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.services.manage.models.CombinedContainer
 import com.lts360.compose.ui.services.manage.models.CombinedContainerFactory
-import com.lts360.compose.ui.services.manage.models.ContainerType
 import com.lts360.compose.ui.usedproducts.manage.UsedProductListingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
@@ -43,14 +38,17 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
 ) : ViewModel() {
 
 
+    // Retrieve the argument from the navigation
+    val userId: Long = UserSharedPreferencesManager.userId
+
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> get() = _isLoading
+    val isLoading = _isLoading.asStateFlow()
+
 
     private val _refreshing = MutableStateFlow(false)
-    val refreshing: StateFlow<Boolean> get() = _refreshing
+    val refreshing = _refreshing.asStateFlow()
 
 
-    // Define MutableStateFlow for service fields
     private val _title = MutableStateFlow("")
     val title = _title.asStateFlow()
 
@@ -59,16 +57,15 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
 
 
     // MutableStateFlow to manage the location bottom sheet visibility state
-    private val _price = MutableStateFlow<String>("")
+    private val _price = MutableStateFlow("")
     val price = _price.asStateFlow()
-
 
     val priceUnits = listOf("INR", "USD")
 
     // Get user's default currency from device locale
     private val userCurrency = Currency.getInstance(Locale.getDefault()).currencyCode
 
-    private val _priceUnit= MutableStateFlow<String>(if(userCurrency in priceUnits) userCurrency else "INR")
+    private val _priceUnit = MutableStateFlow<String>(if (userCurrency in priceUnits) userCurrency else "INR")
     val priceUnit = _priceUnit.asStateFlow()
 
     private val _priceUnitError = MutableStateFlow<String?>(null)
@@ -117,25 +114,26 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     val imageContainersError = _imageContainersError.asStateFlow()
 
 
-
-    // Retrieve the argument from the navigation
-    val userId: Long = UserSharedPreferencesManager.userId
-
     private val _resultError = MutableStateFlow<ResultError?>(null)
     val resultError = _resultError.asStateFlow()
 
     private var errorMessage: String = ""
 
-
-    private val containerFactory = CombinedContainerFactory()
-
     val publishedUsedProductListings = repository.publishedUsedProductListings
     val selectedUsedProductListing = repository.selectedUsedProductListing
 
-    private val _isPublishing = MutableStateFlow(false)
-    val isPublishing = _isPublishing.asStateFlow()
+    private var onCreateSecondsJob: Job? = null
 
-    private var onCreateServiceJob: Job? = null
+
+    private val _isUpdating = MutableStateFlow(false)
+    val isUpdating = _isUpdating.asStateFlow()
+
+    private val _isDeleting = MutableStateFlow(false)
+    val isDeleting = _isDeleting.asStateFlow()
+
+
+    private val containerFactory = CombinedContainerFactory()
+
 
     init {
 
@@ -155,7 +153,7 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     }
 
 
-    fun refreshPublishedServices(userId: Long) {
+    fun refreshPublishedSeconds(userId: Long) {
         _resultError.value = null
         viewModelScope.launch {
             _isLoading.value = true
@@ -170,26 +168,26 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         }
     }
 
-    fun isSelectedUsedProductListingNull():Boolean{
-        return selectedUsedProductListing.value==null
+    fun isSelectedUsedProductListingNull(): Boolean {
+        return selectedUsedProductListing.value == null
     }
 
-    fun setSelectedService(serviceId: Long) {
-        repository.setSelectedItem(serviceId)
+    fun setSelectedSeconds(secondsId: Long) {
+        repository.setSelectedItem(secondsId)
         selectedUsedProductListing.value?.let {
             loadManageProductInfoDetails(it)
         }
     }
 
-    fun removeSelectedService(serviceId: Long) {
-        repository.removeSelectedUsedProductListing(serviceId)
+    fun removeSelectedSeconds(secondsId: Long) {
+        repository.removeSelectedUsedProductListing(secondsId)
     }
 
-    fun inValidateSelectedService() {
+    fun inValidateSelectedSeconds() {
         repository.invalidateSelectedItem()
     }
 
-    private fun loadManageProductInfoDetails(publishedService: EditableUsedProductListing) {
+    private fun loadManageProductInfoDetails(publishedSeconds: EditableUsedProductListing) {
         // Reset all values before initializing
         _title.value = ""
         _titleError.value = null
@@ -205,31 +203,30 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         // Clear previous images if applicable
         _imageContainers.value = emptyList()
 
-        // Initialize with publishedService data
-        updateTitle(publishedService.name)
-        updateShortDescription(publishedService.description)
-        updateCountry(publishedService.country)
-        updateState(publishedService.state)
-        updateLocation(publishedService.location)
-        updatePrice(publishedService.price.toString())
-        updatePriceUnit(publishedService.priceUnit)
+        updateTitle(publishedSeconds.name)
+        updateShortDescription(publishedSeconds.description)
+        updateCountry(publishedSeconds.country)
+        updateState(publishedSeconds.state)
+        updateLocation(publishedSeconds.location)
+        updatePrice(publishedSeconds.price.toString())
+        updatePriceUnit(publishedSeconds.priceUnit)
 
-        loadImageContainers(publishedService.images.map {
+        loadImageContainers(publishedSeconds.images.map {
             containerFactory.createCombinedContainerForEditableImage(it)
         })
     }
 
-    fun onDeleteService(
+    fun onDeleteSeconds(
         userId: Long,
-        serviceId: Long,
+        secondsId: Long,
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit,
     ) {
 
         viewModelScope.launch {
-            _isLoading.value = true
+            _isDeleting.value = true
             try {
-                when (val result = deleteService(userId, serviceId)) {
+                when (val result = deleteSeconds(userId, secondsId)) {
                     is Result.Success -> {
                         onSuccess(result.data.message)
                     }
@@ -245,7 +242,7 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
                 errorMessage = "Something went wrong"
                 onError(errorMessage)
             } finally {
-                _isLoading.value = false // Reset loading state
+                _isDeleting.value = false // Reset loading state
             }
 
         }
@@ -253,15 +250,15 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     }
 
 
-    private suspend fun deleteService(
+    private suspend fun deleteSeconds(
         userId: Long,
-        serviceId: Long,
+        secondsId: Long,
     ): Result<ResponseReply> {
 
 
         return try {
             val response = AppClient.instance.create(ManageUsedProductListingService::class.java)
-                .deleteUsedProductListing(serviceId, userId)
+                .deleteUsedProductListing(secondsId, userId)
 
             if (response.isSuccessful) {
 
@@ -288,7 +285,6 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
             Result.Error(t)
         }
     }
-
 
 
     // Optionally add functions to update fields if required
@@ -338,10 +334,12 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
                 _price.value = "" // Clear the price if empty
                 _priceError.value = null // Clear error
             }
+
             newPrice.toDoubleOrNull() != null -> {
                 _price.value = newPrice
                 _priceError.value = null // Clear error
             }
+
             else -> {
                 _priceError.value = "Invalid price" // Optional: Set an error for invalid input
             }
@@ -421,14 +419,12 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     }
 
 
-
-    // Validation logic for serviceTitle
-    private fun validateServiceTitle(): Boolean {
+    private fun validateTitle(): Boolean {
         return if (_title.value.isBlank()) {
-            _titleError.value = "Service title cannot be empty"
+            _titleError.value = "Title cannot be empty"
             false
         } else if (_shortDescription.value.length > 100) {
-            _title.value = "Service title cannot be exceed 100 characters"
+            _title.value = "Seconds title cannot be exceed 100 characters"
             false
         } else {
             _titleError.value = null
@@ -442,7 +438,7 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
             _shortDescriptionError.value = "Short description cannot be empty"
             false
         } else if (_shortDescription.value.length > 250) {
-            _shortDescription.value = "Service short description cannot be exceed 250 characters"
+            _shortDescription.value = "Seconds short description cannot be exceed 250 characters"
             false
         } else {
             _shortDescriptionError.value = null
@@ -478,10 +474,10 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         return if (_price.value.isEmpty()) {
             _price.value = "Price must be selected"
             false
-        } else if(_price.value.toDoubleOrNull()==null){
+        } else if (_price.value.toDoubleOrNull() == null) {
             _price.value = "Price must be 0.00 format"
             false
-        }else {
+        } else {
             _priceError.value = null
             true
         }
@@ -504,10 +500,10 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         return if (_priceUnit.value.isEmpty()) {
             _priceUnitError.value = "Price unit must be selected"
             false
-        } else if(!priceUnits.contains(_priceUnit.value)) {
-            _priceUnitError.value="Invalid unit selected"
+        } else if (!priceUnits.contains(_priceUnit.value)) {
+            _priceUnitError.value = "Invalid unit selected"
             false
-        }else {
+        } else {
             _priceUnitError.value = null
             true
         }
@@ -528,7 +524,7 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     // Perform full validation
     fun validateAll(): Boolean {
 
-        val isServiceTitleValid = validateServiceTitle()
+        val isTitleValid = validateTitle()
         val isShortDescriptionValid = validateShortDescription()
         val isSelectedLocationValid = validateSelectedLocation()
         val isSelectedCountry = validateSelectedCountry()
@@ -537,7 +533,7 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         val isPriceUnitValid = validatePriceUnit()
         val isContainersValid = validateImageContainers()
 
-        return isServiceTitleValid && isShortDescriptionValid &&
+        return isTitleValid && isShortDescriptionValid &&
                 isSelectedLocationValid &&
                 isSelectedCountry
                 && isSelectedState
@@ -547,11 +543,11 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
 
 
     fun onUpdateUsedProductListing(
-        productId:RequestBody,
+        productId: RequestBody,
         title: RequestBody,
         shortDescription: RequestBody,
         price: RequestBody,
-        priceUnit:RequestBody,
+        priceUnit: RequestBody,
         state: RequestBody,
         country: RequestBody,
         images: List<MultipartBody.Part>,
@@ -560,10 +556,10 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit,
     ) {
-        onCreateServiceJob = viewModelScope.launch {
-            _isPublishing.value = true
+        onCreateSecondsJob = viewModelScope.launch {
+            _isUpdating.value = true
 
-            when (val result = createUsedProductListing(
+            when (val result = createOrUpdateUsedProductListing(
                 productId,
                 title,
                 shortDescription,
@@ -577,7 +573,8 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
             )) {
                 is Result.Success -> {
                     onSuccess(result.data.message)
-                    val editableUsedProductListing = Gson().fromJson(result.data.data,EditableUsedProductListing::class.java)
+                    val editableUsedProductListing =
+                        Gson().fromJson(result.data.data, EditableUsedProductListing::class.java)
                     repository.updateProductId(editableUsedProductListing)
                 }
 
@@ -587,12 +584,12 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
                 }
             }
 
-            _isPublishing.value = false
+            _isUpdating.value = false
         }
     }
 
-    private suspend fun createUsedProductListing(
-        productId:RequestBody,
+    private suspend fun createOrUpdateUsedProductListing(
+        productId: RequestBody,
         title: RequestBody,
         shortDescription: RequestBody,
         price: RequestBody,
@@ -602,7 +599,7 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         images: List<MultipartBody.Part>,
         location: RequestBody? = null,
         keepImageIds: RequestBody,
-        ): Result<ResponseReply> {
+    ): Result<ResponseReply> {
 
         return try {
             val response = AppClient.instance.create(ManageUsedProductListingService::class.java)
@@ -650,8 +647,6 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
 
         }
     }
-
-
 
 
 }

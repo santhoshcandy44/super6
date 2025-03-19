@@ -310,7 +310,6 @@ fun CreateServiceScreen(
                 },
                 viewModel,
                 false
-
             )
 
         },
@@ -715,7 +714,7 @@ fun CreateServiceScreen(
                                                 colors = ButtonDefaults.outlinedButtonColors(
                                                     contentColor = MaterialTheme.colorScheme.onSurface
                                                 ),
-                                                shape = RectangleShape,
+                                                shape = RoundedCornerShape(8.dp),
                                                 onClick = {
                                                     if (serviceTitle.isNotEmpty() && serviceShortDescription.isNotEmpty()) {
 
@@ -765,7 +764,7 @@ fun CreateServiceScreen(
                                                 colors = ButtonDefaults.outlinedButtonColors(
                                                     contentColor = MaterialTheme.colorScheme.onSurface
                                                 ),
-                                                shape = RectangleShape,
+                                                shape = RoundedCornerShape(8.dp),
                                                 onClick = {
 
                                                     if (serviceTitle.isNotEmpty() && serviceShortDescription.isNotEmpty()) {
@@ -817,7 +816,7 @@ fun CreateServiceScreen(
                                     }
 
                                     Button(
-                                        shape = RectangleShape,
+                                        shape = RoundedCornerShape(8.dp),
                                         onClick = {
                                             if (viewModel.validateAll()) {
 

@@ -86,7 +86,7 @@ import kotlinx.coroutines.Job
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditServiceImagesScreen(navHostController: NavHostController, onPopBackStack:()-> Unit, viewModel: PublishedServicesViewModel) {
+fun EditServiceImagesScreen(onPopBackStack:()-> Unit, viewModel: PublishedServicesViewModel) {
 
 
 
@@ -200,7 +200,7 @@ fun EditServiceImagesScreen(navHostController: NavHostController, onPopBackStack
 
     // Create a launcher for picking a single image
     val pickSingleImageLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia() // Or ActivityResultContracts.GetContent()
+        GalleryPagerActivityResultContracts.PickSingleImage()
     ) { uri ->
         uri?.let { visualUri ->
 
@@ -366,7 +366,7 @@ fun EditServiceImagesScreen(navHostController: NavHostController, onPopBackStack
                     viewModel.togglePickerLaunch()
                     viewModel.setRefreshImageIndex(it)
                     pickSingleImageLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        Unit
                     )
                 },
                 { containerId, ongoingReq ->
@@ -805,7 +805,7 @@ fun UploadServiceThumbnailContainer(
         CompositionLocalProvider(
             LocalMinimumInteractiveComponentSize provides 0.dp,
         ) {
-            Button(shape = RectangleShape,
+            Button(shape = RoundedCornerShape(8.dp),
                 onClick = {
                     pickerLaunchClicked()
                 },

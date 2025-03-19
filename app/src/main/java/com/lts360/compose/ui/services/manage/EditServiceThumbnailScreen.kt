@@ -5,11 +5,14 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -45,7 +48,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditServiceThumbnailScreen(
-    navHostController: NavHostController,
     onPopBackStack: () -> Unit,
     viewModel: PublishedServicesViewModel
 ) {
@@ -73,7 +75,7 @@ fun EditServiceThumbnailScreen(
         uri?.let {
             // Proceed if there are URIs to handle
             val result = isValidThumbnailDimensionsFormat(context, uri)
-            val errorMessage =when {
+            val errorMessage = when {
                 !result.isValidDimension -> "Invalid Dimension"
                 !result.isValidFormat -> "Invalid Format"
                 else -> null
@@ -117,110 +119,117 @@ fun EditServiceThumbnailScreen(
             // Toolbar
 
 
-            Column(
+            LazyColumn(
                 modifier = Modifier
-                    .padding(contentPadding)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(contentPadding),
+                contentPadding = PaddingValues(
+                    horizontal = 16.dp, vertical = 8.dp)
             ) {
 
-                thumbnailContainer?.let {
-                    UploadServiceThumbnailContainer(
-                        {
-                            if (isPickerLaunch)
-                                return@UploadServiceThumbnailContainer
+                item {
 
-                            isPickerLaunch = true
+                    thumbnailContainer?.let {
+                        UploadServiceThumbnailContainer(
+                            {
+                                if (isPickerLaunch)
+                                    return@UploadServiceThumbnailContainer
 
-                            pickThumbnailImageLauncher.launch(
-                                Unit
-                            )
-                        },it, it.path)
-                } ?: run {
-                    UploadServiceThumbnailContainer(
-                        {
+                                isPickerLaunch = true
 
-                            if (isPickerLaunch)
-                                return@UploadServiceThumbnailContainer
+                                pickThumbnailImageLauncher.launch(
+                                    Unit
+                                )
+                            }, it, it.path
+                        )
+                    } ?: run {
+                        UploadServiceThumbnailContainer(
+                            {
 
-                            isPickerLaunch = true
+                                if (isPickerLaunch)
+                                    return@UploadServiceThumbnailContainer
 
-                            pickThumbnailImageLauncher.launch(
-                                Unit
-                            )
-                        },
-                        imageUrl = selectedService?.thumbnail?.imageUrl,
-                        isPath = false
-                    )
-                }
+                                isPickerLaunch = true
 
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        selectedService?.let { service ->
+                                pickThumbnailImageLauncher.launch(
+                                    Unit
+                                )
+                            },
+                            imageUrl = selectedService?.thumbnail?.imageUrl,
+                            isPath = false
+                        )
+                    }
 
 
-                            // Assuming `selectedIndex` is defined and valid
-                            val userIdRequestBody =
-                                userId.toString().toRequestBody("text/plain".toMediaType())
-
-                            val imageIdRequestBody: RequestBody =
-                                (selectedService?.thumbnail?.imageId ?: -1)
-                                    .toString()  // Convert the integer (or null fallback) to a string
-                                    .toRequestBody("text/plain".toMediaType())
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            selectedService?.let { service ->
 
 
+                                // Assuming `selectedIndex` is defined and valid
+                                val userIdRequestBody =
+                                    userId.toString().toRequestBody("text/plain".toMediaType())
+
+                                val imageIdRequestBody: RequestBody =
+                                    (selectedService?.thumbnail?.imageId ?: -1)
+                                        .toString()  // Convert the integer (or null fallback) to a string
+                                        .toRequestBody("text/plain".toMediaType())
 
 
-                            if (viewModel.validateThumbnailContainer()) {
 
 
-                                thumbnailContainer?.let {
+                                if (viewModel.validateThumbnailContainer()) {
 
-                                    val imagePart = createImagePartForUri(
-                                        context,
-                                        Uri.parse(it.path),
-                                        "IMAGE_THUMBNAIL_${
-                                            getFileExtensionFromImageFormat(
-                                                it.format
-                                            )
-                                        }", it.format, "thumbnail"
-                                    )
 
-                                    if (imagePart == null) {
-                                        Toast.makeText(
+                                    thumbnailContainer?.let {
+
+                                        val imagePart = createImagePartForUri(
                                             context,
-                                            "Something went wrong on updating thumbnail",
-                                            Toast.LENGTH_SHORT
+                                            Uri.parse(it.path),
+                                            "IMAGE_THUMBNAIL_${
+                                                getFileExtensionFromImageFormat(
+                                                    it.format
+                                                )
+                                            }", it.format, "thumbnail"
                                         )
-                                            .show()
-                                        return@Button
-                                    }
 
-                                    viewModel.onUpdateServiceThumbnail(
-                                        userIdRequestBody,
-                                        service.serviceId,
-                                        imagePart,
-                                        imageIdRequestBody, {
+                                        if (imagePart == null) {
+                                            Toast.makeText(
+                                                context,
+                                                "Something went wrong on updating thumbnail",
+                                                Toast.LENGTH_SHORT
+                                            )
+                                                .show()
+                                            return@Button
+                                        }
+
+                                        viewModel.onUpdateServiceThumbnail(
+                                            userIdRequestBody,
+                                            service.serviceId,
+                                            imagePart,
+                                            imageIdRequestBody, {
+                                                Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                                    .show()
+                                            }
+                                        ) {
                                             Toast.makeText(context, it, Toast.LENGTH_SHORT)
                                                 .show()
                                         }
-                                    ) {
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                            .show()
+
                                     }
 
                                 }
-
                             }
-                        }
-                    }) {
-                    Text(
-                        text = "Update Service Thumbnail",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                        ) {
+                        Text(
+                            text = "Update Service Thumbnail",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
 
 

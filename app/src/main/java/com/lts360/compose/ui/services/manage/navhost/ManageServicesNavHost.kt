@@ -121,7 +121,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             val viewModel: PublishedServicesViewModel = publishedServicesViewModel
             val editableService by viewModel.selectedService.collectAsState()
             editableService?.let {
-                EditServiceInfoScreen(navController,{navController.popBackStack()}, viewModel)
+                EditServiceInfoScreen({navController.popBackStack()}, viewModel)
             }
         }
 
@@ -129,7 +129,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             val viewModel: PublishedServicesViewModel = publishedServicesViewModel
             val editableService by viewModel.selectedService.collectAsState()
             editableService?.let {
-                EditServiceThumbnailScreen(navController, {navController.popBackStack()}, viewModel)
+                EditServiceThumbnailScreen( {navController.popBackStack()}, viewModel)
             }
 
         }
@@ -139,7 +139,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             val editableService by viewModel.selectedService.collectAsState()
 
             editableService?.let {
-                EditServicePlanScreen(navController, {navController.popBackStack()}, viewModel)
+                EditServicePlanScreen({navController.popBackStack()}, viewModel)
             }
         }
 
@@ -147,7 +147,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             val viewModel: PublishedServicesViewModel = publishedServicesViewModel
             val editableService by viewModel.selectedService.collectAsState()
             editableService?.let {
-                EditServiceImagesScreen(navController, {navController.popBackStack()}, viewModel)
+                EditServiceImagesScreen({navController.popBackStack()}, viewModel)
             }
         }
 
@@ -155,7 +155,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             val viewModel: PublishedServicesViewModel = publishedServicesViewModel
             val editableService by viewModel.selectedService.collectAsState()
             editableService?.let {
-                EditServiceLocationScreen(navController, {navController.popBackStack()}, viewModel)
+                EditServiceLocationScreen({navController.popBackStack()}, viewModel)
             }
         }
 

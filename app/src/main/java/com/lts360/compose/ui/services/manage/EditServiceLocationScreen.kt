@@ -5,12 +5,16 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -47,11 +51,10 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditServiceLocationScreen(navHostController: NavHostController, onPopBackStack:()-> Unit,
-                              viewModel: PublishedServicesViewModel
-                              ) {
-
-
+fun EditServiceLocationScreen(
+    onPopBackStack: () -> Unit,
+    viewModel: PublishedServicesViewModel
+) {
 
 
     val isUpdating by viewModel.isUpdating.collectAsState()
@@ -60,7 +63,6 @@ fun EditServiceLocationScreen(navHostController: NavHostController, onPopBackSta
     val selectedService by viewModel.selectedService.collectAsState()
 
     val context = LocalContext.current
-
 
 
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
@@ -83,6 +85,7 @@ fun EditServiceLocationScreen(navHostController: NavHostController, onPopBackSta
 
     BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
+        sheetShape = RectangleShape,
         sheetContent = {
             EditLocationBottomSheetScreen(
                 bottomSheetScaffoldState.bottomSheetState.currentValue,
@@ -166,98 +169,93 @@ fun EditServiceLocationScreen(navHostController: NavHostController, onPopBackSta
                         })
                 },
                 content = { contentPadding ->
-                    Column(
+                    LazyColumn(
                         modifier = Modifier
-                            .padding(contentPadding)
-                            .padding(horizontal = 16.dp)
-                            .padding(top = 8.dp)
                             .fillMaxSize()
+                            .padding(contentPadding),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+
                     ) {
 
 
-                        LazyColumn(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            item {
+                        item {
+                            Text(
+                                text = "Edit Service Location",
+                                style = MaterialTheme.typography.titleMedium
+                            )
 
-                                Text(
-                                    text = "Edit Service Location",
-                                    style = MaterialTheme.typography.titleMedium
+                            Spacer(modifier = Modifier.height(8.dp))
+
+
+                            OutlinedTextField(
+                                value = location?.geo ?: "",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text(text = "Location") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            OutlinedButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        bottomSheetScaffoldState.bottomSheetState.expand()
+                                    }
+                                },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                ),
+                                shape = RectangleShape,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = "Choose Location",
+                                    modifier = Modifier.padding(end = 8.dp)
                                 )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-
-                                OutlinedTextField(
-                                    value = location?.geo ?: "",
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text(text = "Location") },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                OutlinedButton(
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            bottomSheetScaffoldState.bottomSheetState.expand()
-                                        }
-                                    },
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.onSurface
-                                    ),
-                                    shape = RectangleShape,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        Icons.Default.Add,
-                                        contentDescription = "Choose Location",
-                                        modifier = Modifier.padding(end = 8.dp)
-                                    )
-                                    Text("Choose Location")
-                                }
-
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Button(
-                                    onClick = {
-                                        selectedService?.let { nonNullSelectedService ->
-                                            if (viewModel.validateSelectedLocation()) {
-                                                viewModel.onUpdateServiceLocation(
-                                                    viewModel.userId,
-                                                    nonNullSelectedService.serviceId,
-                                                    location!!,
-                                                    {
-                                                        Toast.makeText(
-                                                            context, it, Toast.LENGTH_SHORT
-                                                        ).show()
-                                                    }, {
-                                                        Toast.makeText(
-                                                            context, it, Toast.LENGTH_SHORT
-                                                        ).show()
-                                                    }
-                                                )
-                                            }
-
-                                        }
-                                    },
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        contentColor = Color.White,
-                                        containerColor = MaterialTheme.colorScheme.primary
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                ) {
-
-                                    Text("Update Location")
-                                }
-
+                                Text("Choose Location")
                             }
 
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = {
+                                    selectedService?.let { nonNullSelectedService ->
+                                        if (viewModel.validateSelectedLocation()) {
+                                            viewModel.onUpdateServiceLocation(
+                                                viewModel.userId,
+                                                nonNullSelectedService.serviceId,
+                                                location!!,
+                                                {
+                                                    Toast.makeText(
+                                                        context, it, Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }, {
+                                                    Toast.makeText(
+                                                        context, it, Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            )
+                                        }
 
+                                    }
+                                },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color.White,
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            ) {
+
+                                Text("Update Location")
+                            }
                         }
+
+
                     }
 
                 }
