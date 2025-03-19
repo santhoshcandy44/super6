@@ -14,27 +14,27 @@ import coil3.request.SuccessResult
 import coil3.toBitmap
 import com.google.gson.Gson
 import com.lts360.App
+import com.lts360.api.auth.managers.socket.SocketConnectionException
+import com.lts360.api.auth.managers.socket.SocketManager
 import com.lts360.api.models.service.FeedUserProfileInfo
-import com.lts360.app.database.models.chat.ChatMessageStatus
-import com.lts360.app.database.models.chat.ChatMessageType
-import com.lts360.app.database.models.chat.Message
+import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.daos.chat.MessageDao
 import com.lts360.app.database.daos.chat.MessageMediaMetaDataDao
-import com.lts360.app.database.models.chat.MessageMediaMetadata
+import com.lts360.app.database.models.chat.ChatMessageStatus
+import com.lts360.app.database.models.chat.ChatMessageType
 import com.lts360.app.database.models.chat.ChatUser
-import com.lts360.api.auth.managers.socket.SocketManager
-import com.lts360.api.auth.managers.socket.SocketConnectionException
-import com.lts360.app.database.daos.chat.ChatUserDao
+import com.lts360.app.database.models.chat.Message
+import com.lts360.app.database.models.chat.MessageMediaMetadata
 import com.lts360.app.notifications.NotificationIdManager
 import com.lts360.app.workers.chat.download.downloadMediaAndCache
 import com.lts360.app.workers.chat.utils.awaitConnectToSocket
 import com.lts360.app.workers.chat.utils.cacheThumbnailToAppSpecificFolder
-import com.lts360.pot.database.services.buildAndShowChatNotification
 import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
 import com.lts360.compose.ui.auth.repos.DecryptionStatus
 import com.lts360.compose.ui.auth.repos.decryptFile
 import com.lts360.compose.ui.auth.repos.decryptMessage
+import com.lts360.pot.database.services.buildAndShowChatNotification
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.socket.client.Ack
@@ -111,7 +111,6 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
 
         return try {
-            Log.e(TAG,"Await socket")
 
             socket = awaitConnectToSocket(socketManager, !App.isAppInForeground, true, queryString)
 
@@ -119,7 +118,7 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
                 try {
                    val profile = withTimeout(300000) {
-                        suspendCancellableCoroutine { continuation ->
+                        suspendCancellableCoroutine<FeedUserProfileInfo>{ continuation ->
                             socket.emit("chat:getChatUserProfileInfo", JSONObject().apply {
                                 put("user_id", userId)
                                 put("recipient_id", senderId)
@@ -139,7 +138,7 @@ class FetchUserProfileWorker @AssistedInject constructor(
                                             FeedUserProfileInfo::class.java
                                         ) as FeedUserProfileInfo
 
-                                        continuation.resume(profile, null)
+                                        continuation.resume(profile, { _, _, _ -> })
                                     } else {
                                         val errorMessage = args.getOrNull(1)?.toString() ?: "Unknown error"
                                         continuation.resumeWithException(Exception("Error: $errorMessage"))
@@ -155,9 +154,6 @@ class FetchUserProfileWorker @AssistedInject constructor(
                             }
                         }
                     }
-
-
-                    Log.e(TAG,"Key received")
 
 
                     var publicKeyRecipientId: Long = -1

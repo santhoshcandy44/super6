@@ -120,6 +120,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.node.ModifierNodeElement
@@ -197,6 +198,7 @@ import com.lts360.compose.ui.utils.FormatterUtils.formatTimeSeconds
 import com.lts360.compose.ui.utils.FormatterUtils.humanReadableBytesSize
 import com.lts360.compose.ui.utils.getThumbnail
 import com.lts360.compose.ui.utils.getThumbnailFromPath
+import com.lts360.compose.ui.utils.touchConsumer
 import com.lts360.compose.utils.ChatMessageLinkPreviewHeader
 import com.lts360.compose.utils.ChatMessageLinkPreviewHeaderLoading
 import com.lts360.compose.utils.ExpandableText
@@ -353,7 +355,7 @@ fun openImageSliderActivity(context: Context, uri: Uri, imageWidth: Int, imageHe
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatContent(
+fun ChatPanel(
     chatUsersProfileImageLoader: ImageLoader,
     userProfileInfo: FeedUserProfileInfo,
     groupedMessages: Map<String, List<MessageWithReply>>,
@@ -367,6 +369,8 @@ fun ChatContent(
 
 
     val userId = viewModel.userId
+
+    val context = LocalContext.current
 
     var value by remember { mutableStateOf("") }
 
@@ -392,169 +396,23 @@ fun ChatContent(
     val selectedMessage by viewModel.selectedMessage.collectAsState()
     val selectedMessageMessageMediaMetadata by viewModel.selectedMessageMessageMediaMetadata.collectAsState()
 
+
     val coroutineScope = rememberCoroutineScope()
 
+    val replyMessageBottomSheetState = rememberModalBottomSheetState()
+
+    var replyMessageBottomSheet by rememberSaveable { mutableStateOf(false) }
 
     var showReplyContent by rememberSaveable { mutableStateOf(false) }
-
-
-    val sheetState = rememberModalBottomSheetState()
-
-    var bottomSheetState by rememberSaveable { mutableStateOf(false) }
-
 
     var highlightedMessageId by remember { mutableStateOf<Long?>(null) }
 
 
-    val scrolledBackgroundColor by animateColorAsState(
+    val highlightedMessageBackgroundColor by animateColorAsState(
         targetValue = if (highlightedMessageId != null) Color(0xFFE5F9FF) else Color.Unspecified,
         animationSpec = tween(durationMillis = 500),
         label = ""
     )
-
-
-
-    LaunchedEffect(groupedMessages) {
-        snapshotFlow { lazyListState.layoutInfo.visibleItemsInfo }
-            .collect { visibleItems ->
-                val firstVisibleItemIndex = visibleItems.firstOrNull()?.index ?: -1
-
-                // Flatten all messages from groupedMessages
-                val allMessages = groupedMessages.values.flatten()
-
-                highlightedMessageId?.let { nonNullHighlightedMessageId ->
-
-
-                    val isVisible = visibleItems
-                        .mapNotNull { it.key as? Long } // Convert visible items to their IDs
-                        .firstOrNull { id -> id == nonNullHighlightedMessageId } != null
-
-
-                    if (isVisible) {
-                        // Highlight the item if it's within the visible range
-                        delay(1500) // Delay to keep the highlight
-                        highlightedMessageId = null // Remove the highlight after 1 second
-                    }
-                }
-
-                if (firstVisibleItemIndex >= 0) {
-
-
-                    val unreadMessage = visibleItems
-                        .mapNotNull { it.key as? Long } // Convert visible items to their IDs
-                        .mapNotNull { id -> allMessages.find { it.receivedMessage.id == id } } // Find the message by ID
-                        .firstOrNull { !it.receivedMessage.read } // Find the first unread message
-
-
-                    unreadMessage?.let { nonNullUnreadMessage ->
-                        val unreadId =
-                            nonNullUnreadMessage.receivedMessage.id // Store the ID of the first unread message
-                        val unreadIndex =
-                            allMessages.indexOfFirst { it.receivedMessage.id == unreadId } // Find the index of that message
-
-                        // In reverse layout, take all messages starting from the unread message to the bottom of the list
-                        val unreadMessageIds = allMessages
-                            .takeLast(allMessages.size - unreadIndex) // Take all messages from the first unread to the end (reverse layout)
-                            .filter { !it.receivedMessage.read } // Filter unread messages
-                            .map { it.receivedMessage.id } // Get their IDs
-
-
-                        // If there are unread messages, mark them as read
-                        if (unreadMessageIds.isNotEmpty()) {
-                            viewModel.markMessageAsRead(unreadMessageIds)
-                        }
-                    }
-                        ?: run {
-
-
-                            val visibleMessage = visibleItems
-                                .mapNotNull { it.key as? Long }
-                                .firstNotNullOfOrNull { id -> allMessages.find { it.receivedMessage.id == id } }
-
-                            if (visibleMessage != null) {
-
-                                val messageIndex =
-                                    allMessages.indexOfFirst { it.receivedMessage.id == visibleMessage.receivedMessage.id } // Find the index of that message
-
-
-                                val messageIds = allMessages
-                                    .takeLast(allMessages.size - messageIndex) // Take all messages from the first unread to the end (reverse layout)
-                                    .filter { !it.receivedMessage.read } // Filter unread messages
-                                    .map { it.receivedMessage.id }
-
-                                if (messageIds.isNotEmpty()) {
-                                    viewModel.markMessageAsRead(messageIds)
-                                }
-
-                            }
-
-                        }
-
-                }
-
-
-                val lastHeader = visibleItems.lastOrNull { it.key.toString().startsWith("header-") }
-
-                if (lastHeader == null) {
-
-                    // If no header is found, find the most recent message (first visible message in reverse layout)
-                    val firstMessage = visibleItems
-                        .mapNotNull { visibleItem ->
-                            // Safely check if the key is a Long before attempting to use it
-                            (visibleItem.key as? Long)?.let { id ->
-                                allMessages.find { it.receivedMessage.id == id }  // Find the corresponding message in allMessages
-                            }
-                        }
-                        .lastOrNull()  // Get the most recent message from visible items
-
-                    firstMessage?.let { nonNullFirstMessage ->
-                        for ((key, messages) in groupedMessages) {
-                            // Find the message that matches the first visible message
-                            val foundMessage =
-                                messages.find { nonNullFirstMessage.receivedMessage.id == it.receivedMessage.id }
-
-                            if (foundMessage != null) {
-                                // If the message is found, we determine the header direction
-                                updatedHeader = Pair(
-                                    "down",
-                                    key
-                                )  // Scroll down (to older messages) in reverse layout
-                                break // Exit the loop once the header is found
-                            }
-                        }
-                    }
-                } else {
-
-                    // If a header is found, determine which direction to scroll
-                    val headerKey = lastHeader.key.toString()
-                    val currentHeader = headerKey.removePrefix("header-")
-
-                    val nextHeaderIndex =
-                        groupedMessages.keys.indexOf(currentHeader) + 1 // Find the next header key for reverse layout
-
-                    val lastHeaderNextItemIndex = lastHeader.index + 1
-
-                    // Check if the next item is visible in the layout
-                    val isNextItemVisible = visibleItems.any { it.index == lastHeaderNextItemIndex }
-
-                    // Now determine the scroll direction based on the reverse layout logic
-                    updatedHeader =
-                        if (nextHeaderIndex < groupedMessages.keys.size && isNextItemVisible) {
-                            // If there's a next header and it's visible, scroll "up" to the next group (newer messages in reverse)
-                            Pair(
-                                "up",
-                                groupedMessages.keys.elementAt(nextHeaderIndex)
-                            )  // Scroll up (to newer message group in reverse layout)
-                        } else {
-                            // Otherwise, scroll "down" to older messages
-                            Pair("down", currentHeader)  // Scroll down (to older message group)
-                        }
-                }
-
-
-            }
-
-    }
 
 
     val isGoToBottom by remember {
@@ -564,23 +422,17 @@ fun ChatContent(
     }
 
 
-    LaunchedEffect(bottomSheetState) {
+    var isLinkPreviewAvailable by remember { mutableStateOf(false) }
 
-        if (bottomSheetState) {
-            sheetState.expand()
-        } else {
-            sheetState.hide()
-        }
-    }
+    // State for the link preview
+    var linkPreviewData by remember { mutableStateOf<LinkPreviewData?>(null) }
 
 
-    val context = LocalContext.current
+    var isVisibleMediaLibrary by remember { mutableStateOf(false) }
 
 
-    val filePickerLauncher =
+    val documentTreeLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-
-
             try {
                 uri?.let { nonNullUri ->
 
@@ -945,12 +797,6 @@ fun ChatContent(
         }
 
 
-    var isLinkPreviewAvailable by remember { mutableStateOf(false) }
-
-    // State for the link preview
-    var linkPreviewData by remember { mutableStateOf<LinkPreviewData?>(null) }
-
-
     // Fetch link preview for the first link, if available.
     LaunchedEffect(value) {
 
@@ -976,6 +822,158 @@ fun ChatContent(
 
 
 
+    LaunchedEffect(groupedMessages) {
+        snapshotFlow { lazyListState.layoutInfo.visibleItemsInfo }
+            .collect { visibleItems ->
+                val firstVisibleItemIndex = visibleItems.firstOrNull()?.index ?: -1
+
+                // Flatten all messages from groupedMessages
+                val allMessages = groupedMessages.values.flatten()
+
+                highlightedMessageId?.let { nonNullHighlightedMessageId ->
+
+
+                    val isVisible = visibleItems
+                        .mapNotNull { it.key as? Long } // Convert visible items to their IDs
+                        .firstOrNull { id -> id == nonNullHighlightedMessageId } != null
+
+
+                    if (isVisible) {
+                        // Highlight the item if it's within the visible range
+                        delay(1500) // Delay to keep the highlight
+                        highlightedMessageId = null // Remove the highlight after 1 second
+                    }
+                }
+
+                if (firstVisibleItemIndex >= 0) {
+
+
+                    val unreadMessage = visibleItems
+                        .mapNotNull { it.key as? Long } // Convert visible items to their IDs
+                        .mapNotNull { id -> allMessages.find { it.receivedMessage.id == id } } // Find the message by ID
+                        .firstOrNull { !it.receivedMessage.read } // Find the first unread message
+
+
+                    unreadMessage?.let { nonNullUnreadMessage ->
+                        val unreadId =
+                            nonNullUnreadMessage.receivedMessage.id // Store the ID of the first unread message
+                        val unreadIndex =
+                            allMessages.indexOfFirst { it.receivedMessage.id == unreadId } // Find the index of that message
+
+                        // In reverse layout, take all messages starting from the unread message to the bottom of the list
+                        val unreadMessageIds = allMessages
+                            .takeLast(allMessages.size - unreadIndex) // Take all messages from the first unread to the end (reverse layout)
+                            .filter { !it.receivedMessage.read } // Filter unread messages
+                            .map { it.receivedMessage.id } // Get their IDs
+
+
+                        // If there are unread messages, mark them as read
+                        if (unreadMessageIds.isNotEmpty()) {
+                            viewModel.markMessageAsRead(unreadMessageIds)
+                        }
+                    }
+                        ?: run {
+
+
+                            val visibleMessage = visibleItems
+                                .mapNotNull { it.key as? Long }
+                                .firstNotNullOfOrNull { id -> allMessages.find { it.receivedMessage.id == id } }
+
+                            if (visibleMessage != null) {
+
+                                val messageIndex =
+                                    allMessages.indexOfFirst { it.receivedMessage.id == visibleMessage.receivedMessage.id } // Find the index of that message
+
+
+                                val messageIds = allMessages
+                                    .takeLast(allMessages.size - messageIndex) // Take all messages from the first unread to the end (reverse layout)
+                                    .filter { !it.receivedMessage.read } // Filter unread messages
+                                    .map { it.receivedMessage.id }
+
+                                if (messageIds.isNotEmpty()) {
+                                    viewModel.markMessageAsRead(messageIds)
+                                }
+
+                            }
+
+                        }
+
+                }
+
+
+                val lastHeader = visibleItems.lastOrNull { it.key.toString().startsWith("header-") }
+
+                if (lastHeader == null) {
+
+                    // If no header is found, find the most recent message (first visible message in reverse layout)
+                    val firstMessage = visibleItems
+                        .mapNotNull { visibleItem ->
+                            // Safely check if the key is a Long before attempting to use it
+                            (visibleItem.key as? Long)?.let { id ->
+                                allMessages.find { it.receivedMessage.id == id }  // Find the corresponding message in allMessages
+                            }
+                        }
+                        .lastOrNull()  // Get the most recent message from visible items
+
+                    firstMessage?.let { nonNullFirstMessage ->
+                        for ((key, messages) in groupedMessages) {
+                            // Find the message that matches the first visible message
+                            val foundMessage =
+                                messages.find { nonNullFirstMessage.receivedMessage.id == it.receivedMessage.id }
+
+                            if (foundMessage != null) {
+                                // If the message is found, we determine the header direction
+                                updatedHeader = Pair(
+                                    "down",
+                                    key
+                                )  // Scroll down (to older messages) in reverse layout
+                                break // Exit the loop once the header is found
+                            }
+                        }
+                    }
+                } else {
+
+                    // If a header is found, determine which direction to scroll
+                    val headerKey = lastHeader.key.toString()
+                    val currentHeader = headerKey.removePrefix("header-")
+
+                    val nextHeaderIndex =
+                        groupedMessages.keys.indexOf(currentHeader) + 1 // Find the next header key for reverse layout
+
+                    val lastHeaderNextItemIndex = lastHeader.index + 1
+
+                    // Check if the next item is visible in the layout
+                    val isNextItemVisible = visibleItems.any { it.index == lastHeaderNextItemIndex }
+
+                    // Now determine the scroll direction based on the reverse layout logic
+                    updatedHeader =
+                        if (nextHeaderIndex < groupedMessages.keys.size && isNextItemVisible) {
+                            // If there's a next header and it's visible, scroll "up" to the next group (newer messages in reverse)
+                            Pair(
+                                "up",
+                                groupedMessages.keys.elementAt(nextHeaderIndex)
+                            )  // Scroll up (to newer message group in reverse layout)
+                        } else {
+                            // Otherwise, scroll "down" to older messages
+                            Pair("down", currentHeader)  // Scroll down (to older message group)
+                        }
+                }
+
+
+            }
+
+    }
+
+
+
+    LaunchedEffect(replyMessageBottomSheet) {
+
+        if (replyMessageBottomSheet) {
+            replyMessageBottomSheetState.expand()
+        } else {
+            replyMessageBottomSheetState.hide()
+        }
+    }
 
 
 
@@ -1057,6 +1055,7 @@ fun ChatContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
+
         ) {
 
             if (!isMessagesLoaded) {
@@ -1069,6 +1068,7 @@ fun ChatContent(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+
                 ) {
 
                     Box(
@@ -1081,7 +1081,13 @@ fun ChatContent(
                             state = lazyListState,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .align(Alignment.BottomCenter),
+                                .align(Alignment.BottomCenter)
+                                .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
+                                    pass = PointerEventPass.Initial,
+                                    onDown = {
+                                        isVisibleMediaLibrary = false
+                                    }
+                                ) else Modifier),
                             reverseLayout = true
                         ) {
 
@@ -1096,10 +1102,11 @@ fun ChatContent(
                                                 .fillMaxWidth()
                                                 .then(
 
-
                                                     // Apply background color only if highlightedMessageId is equal to message.receivedMessage.id
                                                     if (highlightedMessageId == message.receivedMessage.id) {
-                                                        Modifier.background(scrolledBackgroundColor)
+                                                        Modifier.background(
+                                                            highlightedMessageBackgroundColor
+                                                        )
                                                     } else {
                                                         Modifier // No background if the condition is false
                                                     }
@@ -1350,22 +1357,24 @@ fun ChatContent(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .then(
-
-
                                                     // Apply background color only if highlightedMessageId is equal to message.receivedMessage.id
                                                     if (highlightedMessageId == message.receivedMessage.id) {
-                                                        Modifier.background(scrolledBackgroundColor)  // Apply Yellow background if the condition is true
+                                                        Modifier.background(
+                                                            highlightedMessageBackgroundColor
+                                                        )  // Apply Yellow background if the condition is true
                                                     } else {
                                                         Modifier // No background if the condition is false
                                                     }
                                                 )
                                                 .pointerInput(message) {
+
                                                     detectTapGestures(
                                                         onLongPress = {
                                                             viewModel.setSelectedMessage(message.receivedMessage)
-                                                            bottomSheetState = true
+                                                            replyMessageBottomSheet = true
                                                         }
                                                     )
+
                                                 }
                                                 .padding(horizontal = 16.dp)
 
@@ -1675,119 +1684,90 @@ fun ChatContent(
                             }
                         }
 
-                        if (isGoToBottom) {
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                        ) {
+
                             Box(
                                 modifier = Modifier
-                                    .wrapContentSize()
-                                    .align(Alignment.BottomEnd)
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-
+                                    .fillMaxWidth()
+                                    .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
+                                        pass = PointerEventPass.Initial,
+                                        onDown = {
+                                            isVisibleMediaLibrary = false
+                                        }
+                                    ) else Modifier)
                             ) {
-                                FloatingActionButton(
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            lazyListState.animateScrollToItem(0)
-                                        }
-                                    },
-                                    modifier = Modifier.size(32.dp)
 
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.KeyboardDoubleArrowDown,
-                                        contentDescription = "Scroll to Bottom",
-                                        tint = Color.White
-                                    )
+                                if (isTyping) {
+                                    CustomWavyTypingIndicator()
+                                }
+
+                                if (isGoToBottom) {
+                                    Box(
+                                        modifier = Modifier
+                                            .wrapContentSize()
+                                            .align(Alignment.BottomEnd)
+                                            .padding(horizontal = 16.dp, vertical = 8.dp)
+
+
+                                    ) {
+                                        FloatingActionButton(
+                                            onClick = {
+                                                coroutineScope.launch {
+                                                    lazyListState.animateScrollToItem(0)
+                                                }
+                                            },
+                                            modifier = Modifier.size(32.dp)
+
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.KeyboardDoubleArrowDown,
+                                                contentDescription = "Scroll to Bottom",
+                                                tint = Color.White
+                                            )
+                                        }
+
+                                    }
                                 }
 
                             }
+
+                            AnimatedChooseMediaLibrary(
+                                isVisibleMediaLibrary,
+                                onChooseLibraryClick = {
+                                    documentTreeLauncher.launch(arrayOf("*/*"))
+                                    isVisibleMediaLibrary = false
+                                })
+
                         }
 
 
-                        if (isTyping) {
-                            CustomWavyTypingIndicator()
-                        }
                     }
 
 
-                    /*
-                                        HorizontalDivider(color = Color(0xFFE0E0E0), thickness = 1.dp)
-                    */
 
-
-                    selectedMessage?.let {
-                        if (showReplyContent) {
-
-                            when (it.type) {
-                                ChatMessageType.TEXT -> {
-                                    ReplyMessageContent(
-                                        it.content,
-                                        "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                        viewModel.formatMessageReceived(it.timestamp)
-                                    ) {
-                                        showReplyContent = false
-                                        viewModel.setSelectedMessage(null)
-                                    }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .imePadding()
+                            .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
+                                pass = PointerEventPass.Initial,
+                                onDown = {
+                                    isVisibleMediaLibrary = false
                                 }
+                            ) else Modifier),
+                    ) {
+                        selectedMessage?.let {
+                            if (showReplyContent) {
 
-                                ChatMessageType.IMAGE -> {
-
-                                    selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
-                                        ReplyMessageVisualMediaContent(
-                                            it.content,
-                                            selectedMessageMessageMediaMetadata.fileAbsolutePath
-                                                ?: selectedMessageMessageMediaMetadata.fileThumbPath,
-                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                            viewModel.formatMessageReceived(it.timestamp)
-                                        ) {
-                                            showReplyContent = false
-                                            viewModel.setSelectedMessage(null)
-                                        }
-                                    }
-                                }
-
-                                ChatMessageType.GIF -> {
-
-                                    selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
-                                        ReplyMessageVisualMediaContent(
-                                            it.content,
-                                            selectedMessageMessageMediaMetadata.fileAbsolutePath
-                                                ?: selectedMessageMessageMediaMetadata.fileThumbPath,
-                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                            viewModel.formatMessageReceived(it.timestamp)
-                                        ) {
-                                            showReplyContent = false
-                                            viewModel.setSelectedMessage(null)
-                                        }
-                                    }
-                                }
-
-                                ChatMessageType.AUDIO -> {
-
-                                    selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
-
+                                when (it.type) {
+                                    ChatMessageType.TEXT -> {
                                         ReplyMessageContent(
-                                            "${it.content} ${
-                                                formatTimeSeconds(
-                                                    selectedMessageMessageMediaMetadata.totalDuration / 1000f
-                                                )
-
-                                            }",
-                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                            viewModel.formatMessageReceived(it.timestamp)
-                                        ) {
-                                            showReplyContent = false
-                                            viewModel.setSelectedMessage(null)
-                                        }
-                                    }
-                                }
-
-                                ChatMessageType.VIDEO -> {
-
-                                    selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
-                                        ReplyMessageVideoMediaContent(
                                             it.content,
-                                            getThumbnailBitmap(selectedMessageMessageMediaMetadata.thumbData),
-                                            selectedMessageMessageMediaMetadata.fileAbsolutePath,
                                             "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
                                             viewModel.formatMessageReceived(it.timestamp)
                                         ) {
@@ -1796,38 +1776,116 @@ fun ChatContent(
                                         }
                                     }
 
-                                }
+                                    ChatMessageType.IMAGE -> {
 
-                                ChatMessageType.FILE -> {
-                                    ReplyMessageContent(
-                                        it.content,
-                                        "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                        viewModel.formatMessageReceived(it.timestamp)
-                                    ) {
-                                        showReplyContent = false
-                                        viewModel.setSelectedMessage(null)
+                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
+                                            ReplyMessageVisualMediaContent(
+                                                it.content,
+                                                selectedMessageMessageMediaMetadata.fileAbsolutePath
+                                                    ?: selectedMessageMessageMediaMetadata.fileThumbPath,
+                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                viewModel.formatMessageReceived(it.timestamp)
+                                            ) {
+                                                showReplyContent = false
+                                                viewModel.setSelectedMessage(null)
+                                            }
+                                        }
+                                    }
+
+                                    ChatMessageType.GIF -> {
+
+                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
+                                            ReplyMessageVisualMediaContent(
+                                                it.content,
+                                                selectedMessageMessageMediaMetadata.fileAbsolutePath
+                                                    ?: selectedMessageMessageMediaMetadata.fileThumbPath,
+                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                viewModel.formatMessageReceived(it.timestamp)
+                                            ) {
+                                                showReplyContent = false
+                                                viewModel.setSelectedMessage(null)
+                                            }
+                                        }
+                                    }
+
+                                    ChatMessageType.AUDIO -> {
+
+                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
+
+                                            ReplyMessageContent(
+                                                "${it.content} ${
+                                                    formatTimeSeconds(
+                                                        selectedMessageMessageMediaMetadata.totalDuration / 1000f
+                                                    )
+
+                                                }",
+                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                viewModel.formatMessageReceived(it.timestamp)
+                                            ) {
+                                                showReplyContent = false
+                                                viewModel.setSelectedMessage(null)
+                                            }
+                                        }
+                                    }
+
+                                    ChatMessageType.VIDEO -> {
+
+                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
+                                            ReplyMessageVideoMediaContent(
+                                                it.content,
+                                                getThumbnailBitmap(
+                                                    selectedMessageMessageMediaMetadata.thumbData
+                                                ),
+                                                selectedMessageMessageMediaMetadata.fileAbsolutePath,
+                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                viewModel.formatMessageReceived(it.timestamp)
+                                            ) {
+                                                showReplyContent = false
+                                                viewModel.setSelectedMessage(null)
+                                            }
+                                        }
+
+                                    }
+
+                                    ChatMessageType.FILE -> {
+                                        ReplyMessageContent(
+                                            it.content,
+                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                            viewModel.formatMessageReceived(it.timestamp)
+                                        ) {
+                                            showReplyContent = false
+                                            viewModel.setSelectedMessage(null)
+                                        }
                                     }
                                 }
+
                             }
+                        }
 
+
+
+                        if (isLinkPreviewAvailable) {
+                            linkPreviewData?.let {
+                                ChatMessageLinkPreviewHeader(it)
+                            } ?: run {
+                                ChatMessageLinkPreviewHeaderLoading()
+                            }
                         }
                     }
 
-
-                    if (isLinkPreviewAvailable) {
-                        linkPreviewData?.let {
-                            ChatMessageLinkPreviewHeader(it)
-                        } ?: run {
-                            ChatMessageLinkPreviewHeaderLoading()
-                        }
-                    }
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight()
                             .padding(8.dp)
-                            .imePadding(),
+                            .imePadding()
+                            .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
+                                pass = PointerEventPass.Initial,
+                                onDown = {
+                                    isVisibleMediaLibrary = false
+                                }
+                            ) else Modifier),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
 
@@ -1841,14 +1899,12 @@ fun ChatContent(
                                     userProfileInfo.userId
                                 ) // Handle typing event
 
-
                             }, Modifier
                                 .heightIn(min = 48.dp)
                                 .weight(1f)
                         ) {
 
-                            filePickerLauncher.launch(arrayOf("*/*"))
-
+                            isVisibleMediaLibrary = !isVisibleMediaLibrary
                         }
 
 
@@ -1883,10 +1939,8 @@ fun ChatContent(
                                         linkPreviewData = null
                                     }
                                 },
-                                /*
-                                                                modifier = Modifier.padding(start = 8.dp)
-                                */
-                            ) {
+
+                                ) {
                                 Icon(
                                     painter = painterResource(R.drawable.ic_send), // Replace with actual drawable
                                     contentDescription = "Send",
@@ -1899,7 +1953,6 @@ fun ChatContent(
                     }
 
                 }
-
 
 
 
@@ -1953,16 +2006,16 @@ fun ChatContent(
         }
 
 
-        if (bottomSheetState) {
+        if (replyMessageBottomSheet) {
             // Modal Bottom Sheet Layout
             ModalBottomSheet(
                 modifier = Modifier
                     .safeDrawingPadding(),
                 onDismissRequest = {
-                    bottomSheetState = false
+                    replyMessageBottomSheet = false
                 },
                 shape = RectangleShape, // Set shape to square (rectangle)
-                sheetState = sheetState,
+                sheetState = replyMessageBottomSheetState,
                 dragHandle = null // Remove the drag handle
             ) {
 
@@ -1978,7 +2031,7 @@ fun ChatContent(
                                 .fillMaxWidth()
                                 .clickable {
                                     showReplyContent = true
-                                    bottomSheetState = false
+                                    replyMessageBottomSheet = false
                                 }
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -2005,7 +2058,7 @@ fun ChatContent(
                                     .fillMaxWidth()
                                     .clickable {
                                         clipboardManager.setText(AnnotatedString(it.content))
-                                        bottomSheetState = false
+                                        replyMessageBottomSheet = false
                                     }
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -5875,8 +5928,6 @@ fun AudioPlayerUI(filePath: String) {
 }
 
 
-
-
 @Composable
 fun BoxScope.RetryMediaButton(
     modifier: Modifier = Modifier.align(Alignment.Center),
@@ -6075,8 +6126,6 @@ fun BoxScope.UploadingMediaButton(
     progressPercentage: Int,
     onUploadCancel: () -> Unit,
 ) {
-
-
 
 
     Box(

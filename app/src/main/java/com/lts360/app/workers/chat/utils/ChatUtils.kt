@@ -161,7 +161,6 @@ suspend fun awaitConnectToSocket(socketManager: SocketManager, isBackground:Bool
 
     socketManager.initSocket(
         onSuccess = {
-            Log.e(TAG,"OnSuccess socket")
             if (!socketDeferred.isCompleted) { // Check if the Deferred is not already completed
                 socketDeferred.complete(it) // Complete with the socket if not yet completed
             }

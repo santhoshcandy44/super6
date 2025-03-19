@@ -133,7 +133,7 @@ fun NotificationChatScreen(
                 }
         }
 
-        ChatContent(
+        ChatPanel(
             viewModel.chatUsersProfileImageLoader,
             it.chatUser.userProfile,
             messages,

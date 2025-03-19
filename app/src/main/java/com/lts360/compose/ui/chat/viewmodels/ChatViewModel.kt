@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -32,6 +33,7 @@ import com.lts360.app.workers.chat.utils.getFolderTypeByExtension
 import com.lts360.app.workers.helpers.MediaUploadWorkerHelper
 import com.lts360.app.workers.helpers.VisualMediaUploadWorkerHelper
 import com.lts360.app.workers.chat.upload.models.FileUploadInfo
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.components.utils.compressImageAsByteArray
 import com.lts360.components.utils.isUriExist
 import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
@@ -1789,17 +1791,6 @@ class ChatViewModel @Inject constructor(
     private var typingJob: Job? = null
     private val typingTimeout = 1000L // 1 second timeout
 
-    // Function to send typing event
-    private fun sendTypingEvent(userId: Long, recipientId: Long, isTyping: Boolean) {
-        val jsonData = JSONObject().apply {
-            put("user_id", userId)
-            put("recipient_id", recipientId)
-            put("is_typing", isTyping)
-        }
-
-        // Emit the typing event via socket
-        socket?.emit("chat:typing", jsonData)
-    }
 
     // Function to handle typing logic
     fun onUserTyping(userId: Long, recipientId: Long) {
@@ -1814,6 +1805,16 @@ class ChatViewModel @Inject constructor(
             delay(typingTimeout)
             sendTypingEvent(userId, recipientId, false)
         }
+    }
+
+    // Function to send typing event
+    private fun sendTypingEvent(userId: Long, recipientId: Long, isTyping: Boolean) {
+        // Emit the typing event via socket
+        socket?.emit("chat:typing",  JSONObject().apply {
+            put("user_id", userId)
+            put("recipient_id", recipientId)
+            put("is_typing", isTyping)
+        })
     }
 
 

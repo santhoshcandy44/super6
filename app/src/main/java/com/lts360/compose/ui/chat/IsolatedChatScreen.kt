@@ -131,7 +131,7 @@ fun IsolatedChatScreen(
             }
     }
 
-    ChatContent(
+    ChatPanel(
         viewModel.chatUsersProfileImageLoader,
         userState.chatUser.userProfile,
         messages,

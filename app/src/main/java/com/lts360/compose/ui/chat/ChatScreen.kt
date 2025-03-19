@@ -137,7 +137,7 @@ fun ChatScreen(
                 }
         }
 
-        ChatContent(
+        ChatPanel(
             chatListViewModel.chatUsersProfileImageLoader,
             nonNullUserState.chatUser.userProfile,
             messages,
