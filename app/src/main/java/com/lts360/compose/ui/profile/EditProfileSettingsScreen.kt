@@ -505,17 +505,17 @@ fun EditProfileSettingsScreen(
 
 
 
-            TakeProfilePictureSheet(
+            TakePictureSheet(
                 profilePickerState,
                 {
                     if (isImagePickerLauncherLaunched)
-                        return@TakeProfilePictureSheet
+                        return@TakePictureSheet
                     isImagePickerLauncherLaunched = true
                     imagePickerLauncher.launch(Unit)
                     profilePickerState = false
                 }, {
                     if (isCameraPickerLauncherLaunched)
-                        return@TakeProfilePictureSheet
+                        return@TakePictureSheet
                     isCameraPickerLauncherLaunched = true
 
                     cameraPickerUri = FileProvider.getUriForFile(

@@ -10,6 +10,7 @@ import android.os.VibratorManager
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.OptIn
+import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraSelector
@@ -18,8 +19,8 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -30,6 +31,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,6 +56,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
@@ -72,11 +75,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -92,6 +97,8 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
+import com.lts360.libs.camera.ui.CameraPreview
+import com.lts360.libs.camera.ui.TorchButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
@@ -141,6 +148,7 @@ fun QRScannerCameraScreen() {
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var cameraSelector by remember { mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA) }
     var previewUseCase by remember { mutableStateOf<androidx.camera.core.Preview?>(null) }
+    var surfaceRequest by remember { mutableStateOf<SurfaceRequest?>(null) }
     var imageCaptureUseCase by remember { mutableStateOf<ImageCapture?>(null) }
 
     val context = LocalContext.current
@@ -150,6 +158,7 @@ fun QRScannerCameraScreen() {
     var isQrDetected by remember { mutableStateOf(false) }
 
     var camera by remember { mutableStateOf<Camera?>(null) }
+    var flashEnabled by rememberSaveable { mutableStateOf(false) }
 
 
     fun startCapture() {
@@ -158,7 +167,11 @@ fun QRScannerCameraScreen() {
 
         // Create Preview use case
         previewUseCase = androidx.camera.core.Preview.Builder().build()
-
+            .apply {
+                setSurfaceProvider { newSurfaceRequest ->
+                    surfaceRequest = newSurfaceRequest
+                }
+            }
         // Create ImageCapture use case
         imageCaptureUseCase = ImageCapture.Builder().build()
 
@@ -193,6 +206,9 @@ fun QRScannerCameraScreen() {
     fun stopCapture() {
         // Unbind all use cases, which stops capturing
         cameraProvider?.unbindAll()
+        surfaceRequest = null
+        previewUseCase = null
+        imageCaptureUseCase = null
         camera = null
         // Release the camera provider if no longer needed
         cameraProvider = null
@@ -257,9 +273,28 @@ fun QRScannerCameraScreen() {
 
     // Camera preview and UI controls
     Box(modifier = Modifier.fillMaxSize()) {
-        CameraPreview(previewUseCase = previewUseCase)
+        surfaceRequest?.let {
+            CameraPreview(it)
+        }
         camera?.let {
-            TorchButton(it.cameraControl)
+            TorchButton(flashEnabled,{
+                camera?.cameraControl?.let {
+                    if (flashEnabled) {
+                        it.enableTorch(false)
+                    } else {
+                        it.enableTorch(true)
+                    }
+
+                    flashEnabled = !flashEnabled
+                    // Toggle torch/flash state (CameraX flash support needs to be implemented)
+                    Toast.makeText(
+                        context,
+                        "Flash: ${if (flashEnabled) "On" else "Off"}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+            })
         }
         QRCodeZoomEffectOverlay(
             modifier = Modifier.zIndex(1f),
@@ -324,23 +359,7 @@ fun processImageForQrCode(
 }
 
 
-@Composable
-fun CameraPreview(
-    previewUseCase: androidx.camera.core.Preview?
-) {
-    val context = LocalContext.current
-    val previewView = remember { PreviewView(context) }
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        AndroidView(
-            factory = { previewView },
-            modifier = Modifier.fillMaxSize()
-        )
-        previewUseCase?.surfaceProvider = previewView.surfaceProvider
-    }
-}
 
 
 @Composable
@@ -782,35 +801,3 @@ fun QRCodeZoomEffectOverlay(modifier: Modifier = Modifier, stopAnimation: Boolea
     }
 }
 
-
-@Composable
-fun BoxScope.TorchButton(cameraControl: CameraControl) {
-    var flashEnabled by rememberSaveable { mutableStateOf(false) }
-    val context = LocalContext.current
-    IconButton(
-        onClick = {
-            if (flashEnabled) {
-                cameraControl.enableTorch(false)
-            } else {
-                cameraControl.enableTorch(true)
-            }
-
-            flashEnabled = !flashEnabled
-            // Toggle torch/flash state (CameraX flash support needs to be implemented)
-            Toast.makeText(
-                context,
-                "Flash: ${if (flashEnabled) "On" else "Off"}",
-                Toast.LENGTH_SHORT
-            ).show()
-        },
-        modifier = Modifier
-            .padding(8.dp)
-            .align(Alignment.TopStart)
-    ) {
-        Icon(
-            imageVector = if (flashEnabled) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
-            contentDescription = "Toggle Flash",
-            tint = Color.White
-        )
-    }
-}

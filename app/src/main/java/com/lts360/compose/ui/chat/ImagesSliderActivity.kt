@@ -82,7 +82,7 @@ class ImagesSliderActivity : ComponentActivity() {
             var fullScreenMode by remember { mutableStateOf(true) }
 
             AppTheme {
-                SafeDrawingBox(fullScreenMode) {
+                SafeDrawingBox(isFullScreenMode = fullScreenMode) {
                     ImagesSliderScreen(data, imageWidth, imageHeight, {
                         fullScreenMode = it
                     }, {

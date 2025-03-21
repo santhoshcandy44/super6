@@ -71,6 +71,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -269,24 +271,21 @@ fun MainScreen(
 
     var currentScreen by remember { mutableStateOf<BottomBar?>(null) }
 
+
     // Step 6: Use LaunchedEffect to update the visibility of the bottom bar based on the route
     LaunchedEffect(currentBackStackEntry) {
         // Step 3: Get the current route and clean it (remove path and query parameters)
-        val destination = currentBackStackEntry?.destination
-
-        val firstDestination = destination?.hierarchy?.firstOrNull()
+        val hierarchy = currentBackStackEntry?.destination?.hierarchy
 
         currentScreen = allowedScreens.find { screen ->
-            firstDestination?.hasRoute(screen::class) == true
+            hierarchy?.firstOrNull()?.hasRoute(screen::class) == true
         }
 
-        val isAllowedBottomBar = destination?.hierarchy?.any { nonNullDestination ->
+        viewModel.updateBottomNavVisibility(hierarchy?.any { nonNullDestination ->
             allowedScreens.any { nonNullDestination.hasRoute(it::class) }
-        } == true
+        } == true)
 
-        viewModel.updateBottomNavVisibility(isAllowedBottomBar)
-
-        isHomeScreen = destination?.hierarchy?.any { nonNullDestination ->
+        isHomeScreen = hierarchy?.any { nonNullDestination ->
             nonNullDestination.hasRoute(BottomBar.Home::class)
         } == true
 

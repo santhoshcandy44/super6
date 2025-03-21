@@ -205,6 +205,7 @@ import com.lts360.compose.utils.ExpandableText
 import com.lts360.compose.utils.SafeDrawingBox
 import com.lts360.compose.utils.ScrollBarConfig
 import com.lts360.compose.utils.verticalScrollWithScrollbar
+import com.lts360.libs.visualpicker.GalleryVisualPagerActivityResultContracts
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -431,232 +432,263 @@ fun ChatPanel(
     var isVisibleMediaLibrary by remember { mutableStateOf(false) }
 
 
-    val documentTreeLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            try {
-                uri?.let { nonNullUri ->
-
-                    context.contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    )
-
-                    if (showReplyContent) {
-                        showReplyContent = false
-                    }
-                    selectedMessage?.let {
-                        viewModel.setSelectedMessage(null)
-                    }
+    fun processMediaUri(uri: Uri) {
+        try {
 
 
-                    val contentResolver = context.contentResolver
-
-                    // Query to get the file name
-                    val cursor = contentResolver.query(nonNullUri, null, null, null, null)
-
-                    val (fileName, fileSize) = cursor?.use {
-                        if (it.moveToFirst()) {
-                            val name =
-                                it.getString(it.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
-                            val size = it.getLong(it.getColumnIndexOrThrow(OpenableColumns.SIZE))
-                            name to size
-                        } else {
-                            null to 0L  // Default values if no data is found
-                        }
-                    } ?: (null to 0L)  // Default values if cursor is null
+            if (showReplyContent) {
+                showReplyContent = false
+            }
+            selectedMessage?.let {
+                viewModel.setSelectedMessage(null)
+            }
 
 
-                    // If file name is null, show a toast and return
-                    if (fileName == null || fileSize == 0L) {
-                        Toast.makeText(context, "Error processing media", Toast.LENGTH_SHORT).show()
-                        return@let
-                    }
+            val contentResolver = context.contentResolver
 
-                    val mimeType = contentResolver.getType(nonNullUri)
-                    var width: Int
-                    var height: Int
+            // Query to get the file name
+            val cursor = contentResolver.query(uri, null, null, null, null)
 
-
-                    val mediaExtension = getFileExtension(fileName)
-
-
-
-
-                    mimeType?.let { nonNullMimeType ->
-                        if (nonNullMimeType.startsWith("image")) {
+            val (fileName, fileSize) = cursor?.use {
+                if (it.moveToFirst()) {
+                    val name =
+                        it.getString(it.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+                    val size = it.getLong(it.getColumnIndexOrThrow(OpenableColumns.SIZE))
+                    name to size
+                } else {
+                    null to 0L  // Default values if no data is found
+                }
+            } ?: (null to 0L)  // Default values if cursor is null
 
 
-                            if (mediaExtension == ".gif") {
+            // If file name is null, show a toast and return
+            if (fileName == null || fileSize == 0L) {
+                Toast.makeText(context, "Error processing media", Toast.LENGTH_SHORT).show()
+                return
+            }
 
-                                contentResolver.openInputStream(nonNullUri)?.use { stream ->
+            val mimeType = contentResolver.getType(uri)
+            var width: Int
+            var height: Int
 
-                                    val imageBytes = stream.readBytes()
+            val mediaExtension = getFileExtension(fileName)
 
-                                    val options =
-                                        BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                                    BitmapFactory.decodeByteArray(
-                                        imageBytes,
-                                        0,
-                                        imageBytes.size,
-                                        options
-                                    )
-                                    width = options.outWidth
-                                    height = options.outHeight
+            mimeType?.let { nonNullMimeType ->
+                if (nonNullMimeType.startsWith("image")) {
 
+                    if (mediaExtension == ".gif") {
 
-                                    /*       if (width > 1280 || height > 1280 || imageBytes.size > 1048576) {
-                                        letCompressedImageBytes = compressImage(imageBytes)
-                                    }*/
+                        contentResolver.openInputStream(uri)?.use { stream ->
 
+                            val imageBytes = stream.readBytes()
 
+                            val options =
+                                BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            BitmapFactory.decodeByteArray(
+                                imageBytes,
+                                0,
+                                imageBytes.size,
+                                options
+                            )
+                            width = options.outWidth
+                            height = options.outHeight
 
+                            /*
+                            if (width > 1280 || height > 1280 || imageBytes.size > 1048576) {
+                                letCompressedImageBytes = compressImage(imageBytes)
+                            }*/
 
-                                    viewModel.createBlurredThumbnailAndWriteGifDataToAppSpecificFolder(
-                                        context.findActivity(),
-                                        imageBytes,
-                                        fileName
-                                    )?.let { file ->
-
-
-                                        val originalFile = file.second
-
-                                        val fileUri = FileProvider.getUriForFile(
-                                            context,
-                                            "${context.packageName}.provider", // File provider authority
-                                            originalFile
-                                        )
-
-                                        viewModel.insertVisualMediaMessageAndSend(
-                                            file.first,
-                                            userId,
-                                            viewModel.recipientId,
-                                            originalFile.name,
-                                            fileUri.toString(),
-                                            originalFile.length(),
-                                            width,
-                                            height,
-                                            selectedMessage?.senderMessageId ?: -1,
-                                            selectedMessage?.id ?: -1
-                                        )
-
-                                    } ?: run {
-                                        Toast.makeText(
-                                            context,
-                                            "Error processing media",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-
-                                } ?: run {
-                                    Toast.makeText(
-                                        context,
-                                        "Error processing media",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+                            viewModel.createBlurredThumbnailAndWriteGifDataToAppSpecificFolder(
+                                context.findActivity(),
+                                imageBytes,
+                                fileName
+                            )?.let { file ->
 
 
-                            } else {
-                                contentResolver.openInputStream(nonNullUri)?.use { stream ->
+                                val originalFile = file.second
 
-                                    val imageBytes = stream.readBytes()
+                                val fileUri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.provider", // File provider authority
+                                    originalFile
+                                )
 
-                                    val options =
-                                        BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                                    BitmapFactory.decodeByteArray(
-                                        imageBytes,
-                                        0,
-                                        imageBytes.size,
-                                        options
-                                    )
-                                    width = options.outWidth
-                                    height = options.outHeight
+                                viewModel.insertVisualMediaMessageAndSend(
+                                    file.first,
+                                    userId,
+                                    viewModel.recipientId,
+                                    originalFile.name,
+                                    fileUri.toString(),
+                                    originalFile.length(),
+                                    width,
+                                    height,
+                                    selectedMessage?.senderMessageId ?: -1,
+                                    selectedMessage?.id ?: -1
+                                )
 
-
-                                    var letCompressedImageBytes = imageBytes
-
-                                    if (width > 1280 || height > 1280 || imageBytes.size > 1048576) {
-                                        letCompressedImageBytes =
-                                            compressImageAsByteArray(imageBytes)
-                                    }
-
-
-
-
-                                    viewModel.createBlurredThumbnailAndWriteDataToAppSpecificFolder(
-                                        context.findActivity(),
-                                        letCompressedImageBytes,
-                                        fileName
-                                    )?.let { file ->
-
-
-                                        val originalFile = file.second
-
-                                        val fileUri = FileProvider.getUriForFile(
-                                            context,
-                                            "${context.packageName}.provider", // File provider authority
-                                            originalFile
-                                        )
-
-                                        viewModel.insertVisualMediaMessageAndSend(
-                                            file.first,
-                                            userId,
-                                            viewModel.recipientId,
-                                            originalFile.name,
-                                            fileUri.toString(),
-                                            originalFile.length(),
-                                            width,
-                                            height,
-                                            selectedMessage?.senderMessageId ?: -1,
-                                            selectedMessage?.id ?: -1
-                                        )
-
-                                    } ?: run {
-                                        Toast.makeText(
-                                            context,
-                                            "Error processing media",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-
-                                } ?: run {
-                                    Toast.makeText(
-                                        context,
-                                        "Error processing media",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+                            } ?: run {
+                                Toast.makeText(
+                                    context,
+                                    "Error processing media",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
 
+                        } ?: run {
+                            Toast.makeText(
+                                context,
+                                "Error processing media",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
 
-                        } else if (nonNullMimeType.startsWith("video")) {
 
-                            coroutineScope.launch {
-                                if (fileSize > 64 * 1024 * 1024) {
+                    } else {
+                        contentResolver.openInputStream(uri)?.use { stream ->
 
-                                    viewModel.createBlurredThumbnailVideoFromUriAndWriteDataToAppSpecificFolder(
+                            val imageBytes = stream.readBytes()
+
+                            val options =
+                                BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            BitmapFactory.decodeByteArray(
+                                imageBytes,
+                                0,
+                                imageBytes.size,
+                                options
+                            )
+                            width = options.outWidth
+                            height = options.outHeight
+
+
+                            var letCompressedImageBytes = imageBytes
+
+                            if (width > 1280 || height > 1280 || imageBytes.size > 1048576) {
+                                letCompressedImageBytes =
+                                    compressImageAsByteArray(imageBytes)
+                            }
+
+                            viewModel.createBlurredThumbnailAndWriteDataToAppSpecificFolder(
+                                context.findActivity(),
+                                letCompressedImageBytes,
+                                fileName
+                            )?.let { file ->
+
+
+                                val originalFile = file.second
+
+                                val fileUri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.provider", // File provider authority
+                                    originalFile
+                                )
+
+                                viewModel.insertVisualMediaMessageAndSend(
+                                    file.first,
+                                    userId,
+                                    viewModel.recipientId,
+                                    originalFile.name,
+                                    fileUri.toString(),
+                                    originalFile.length(),
+                                    width,
+                                    height,
+                                    selectedMessage?.senderMessageId ?: -1,
+                                    selectedMessage?.id ?: -1
+                                )
+
+                            } ?: run {
+                                Toast.makeText(
+                                    context,
+                                    "Error processing media",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                        } ?: run {
+                            Toast.makeText(
+                                context,
+                                "Error processing media",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+
+                } else if (nonNullMimeType.startsWith("video")) {
+
+                    coroutineScope.launch {
+                        if (fileSize > 64 * 1024 * 1024) {
+
+                            viewModel.createBlurredThumbnailVideoFromUriAndWriteDataToAppSpecificFolder(
+                                context.findActivity(),
+                                uri,
+                                fileName
+                            )?.let { file ->
+
+                                width = file.second.first
+                                height = file.second.second
+
+
+                                viewModel.insertVisualMediaMessageAndSend(
+                                    file.first,
+                                    userId,
+                                    viewModel.recipientId,
+                                    fileName,
+                                    uri.toString(),
+                                    fileSize,
+                                    width,
+                                    height,
+                                    selectedMessage?.senderMessageId ?: -1,
+                                    selectedMessage?.id ?: -1,
+                                    file.second.third
+                                )
+
+                            } ?: run {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(
+                                        context,
+                                        "Error processing media",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+
+                            }
+
+                        } else {
+
+                            contentResolver.openInputStream(uri)
+                                ?.let { nonNullInputStream ->
+
+                                    viewModel.createBlurredThumbnailVideoAndWriteDataToAppSpecificFolder(
                                         context.findActivity(),
-                                        nonNullUri,
+                                        nonNullInputStream,
                                         fileName
                                     )?.let { file ->
 
                                         width = file.second.first
                                         height = file.second.second
 
+                                        val originalFile = file.third
+
+                                        val fileUri = FileProvider.getUriForFile(
+                                            context,
+                                            "${context.packageName}.provider", // File provider authority
+                                            originalFile
+                                        )
 
                                         viewModel.insertVisualMediaMessageAndSend(
                                             file.first,
                                             userId,
                                             viewModel.recipientId,
-                                            fileName,
-                                            nonNullUri.toString(),
-                                            fileSize,
+                                            originalFile.name,
+                                            fileUri.toString(),
+                                            originalFile.length(),
                                             width,
                                             height,
                                             selectedMessage?.senderMessageId ?: -1,
                                             selectedMessage?.id ?: -1,
                                             file.second.third
                                         )
+
 
                                     } ?: run {
                                         withContext(Dispatchers.Main) {
@@ -669,114 +701,57 @@ fun ChatPanel(
 
                                     }
 
-                                } else {
-
-                                    contentResolver.openInputStream(nonNullUri)
-                                        ?.let { nonNullInputStream ->
-
-                                            viewModel.createBlurredThumbnailVideoAndWriteDataToAppSpecificFolder(
-                                                context.findActivity(),
-                                                nonNullInputStream,
-                                                fileName
-                                            )?.let { file ->
-
-                                                width = file.second.first
-                                                height = file.second.second
-
-                                                val originalFile = file.third
-
-                                                val fileUri = FileProvider.getUriForFile(
-                                                    context,
-                                                    "${context.packageName}.provider", // File provider authority
-                                                    originalFile
-                                                )
-
-                                                viewModel.insertVisualMediaMessageAndSend(
-                                                    file.first,
-                                                    userId,
-                                                    viewModel.recipientId,
-                                                    originalFile.name,
-                                                    fileUri.toString(),
-                                                    originalFile.length(),
-                                                    width,
-                                                    height,
-                                                    selectedMessage?.senderMessageId ?: -1,
-                                                    selectedMessage?.id ?: -1,
-                                                    file.second.third
-                                                )
-
-
-                                            } ?: run {
-                                                withContext(Dispatchers.Main) {
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Error processing media",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-
-                                            }
-
-                                        }
-
                                 }
 
-                            }
+                        }
 
-                        } else {
+                    }
 
-                            contentResolver.openInputStream(nonNullUri)?.readBytes()
-                                ?.let { nonNullMediaBytes ->
+                } else {
 
-                                    viewModel.writeDataToAppSpecificFolder(
-                                        context.findActivity(),
-                                        nonNullMediaBytes,
-                                        fileName
-                                    )?.let { file ->
+                    contentResolver.openInputStream(uri)?.readBytes()
+                        ?.let { nonNullMediaBytes ->
 
-                                        val totalDuration = if (mimeType.startsWith("audio")) {
-                                            val retriever = MediaMetadataRetriever()
-                                            try {
-                                                retriever.setDataSource(file.absolutePath)
-                                                val durationStr =
-                                                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                                                durationStr?.toLong()
-                                                    ?: 0L // Return the duration in milliseconds
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                                -1L // Return 0 in case of any error
-                                            } finally {
-                                                retriever.release()
-                                            }
-                                        } else {
-                                            -1L // Return -1 if not an audio file
-                                        }
+                            viewModel.writeDataToAppSpecificFolder(
+                                context.findActivity(),
+                                nonNullMediaBytes,
+                                fileName
+                            )?.let { file ->
 
-                                        val mediaUri = FileProvider.getUriForFile(
-                                            context,
-                                            "${context.packageName}.provider", // File provider authority
-                                            file
-                                        )
-                                        viewModel.insertMediaMessageAndSend(
-                                            file,
-                                            mediaUri.toString(),
-                                            userId,
-                                            viewModel.recipientId,
-                                            selectedMessage?.senderMessageId ?: -1,
-                                            selectedMessage?.id ?: -1,
-                                            totalDuration
-                                        )
-
-                                    } ?: run {
-                                        Toast.makeText(
-                                            context,
-                                            "Error processing media",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                val totalDuration = if (mimeType.startsWith("audio")) {
+                                    val retriever = MediaMetadataRetriever()
+                                    try {
+                                        retriever.setDataSource(file.absolutePath)
+                                        val durationStr =
+                                            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                                        durationStr?.toLong()
+                                            ?: 0L // Return the duration in milliseconds
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        -1L // Return 0 in case of any error
+                                    } finally {
+                                        retriever.release()
                                     }
+                                } else {
+                                    -1L // Return -1 if not an audio file
+                                }
 
+                                val mediaUri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.provider", // File provider authority
+                                    file
+                                )
+                                viewModel.insertMediaMessageAndSend(
+                                    file,
+                                    mediaUri.toString(),
+                                    userId,
+                                    viewModel.recipientId,
+                                    selectedMessage?.senderMessageId ?: -1,
+                                    selectedMessage?.id ?: -1,
+                                    totalDuration
+                                )
 
-                                } ?: run {
+                            } ?: run {
                                 Toast.makeText(
                                     context,
                                     "Error processing media",
@@ -784,17 +759,48 @@ fun ChatPanel(
                                 ).show()
                             }
 
-                        }
+
+                        } ?: run {
+                        Toast.makeText(
+                            context,
+                            "Error processing media",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
 
                 }
-            } catch (e: Exception) {
-                Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT)
-                    .show()
             }
 
-
+        } catch (e: Exception) {
+            Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT)
+                .show()
         }
+    }
+
+    val documentTreeLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+            if(isVisibleMediaLibrary){
+                isVisibleMediaLibrary = false
+            }
+            it?.let {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+                processMediaUri(it)
+            }
+        }
+
+    val galleryVisualLauncher = rememberLauncherForActivityResult(
+        GalleryVisualPagerActivityResultContracts.PickSingleVisual()
+    ) {
+        if(isVisibleMediaLibrary){
+            isVisibleMediaLibrary = false
+        }
+        it?.let {
+            processMediaUri(it)
+        }
+    }
 
 
     // Fetch link preview for the first link, if available.
@@ -1738,8 +1744,11 @@ fun ChatPanel(
 
                             AnimatedChooseMediaLibrary(
                                 isVisibleMediaLibrary,
-                                onChooseLibraryClick = {
+                                onChooseLibrary = {
                                     documentTreeLauncher.launch(arrayOf("*/*"))
+                                    isVisibleMediaLibrary = false
+                                }, onChooseGallery = {
+                                    galleryVisualLauncher.launch(Unit)
                                     isVisibleMediaLibrary = false
                                 })
 

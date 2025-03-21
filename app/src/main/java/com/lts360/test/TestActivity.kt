@@ -1,6 +1,7 @@
 package com.lts360.test
 
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Paint
@@ -9,8 +10,11 @@ import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -19,6 +23,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,8 +40,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lts360.R
+import com.lts360.compose.ui.profile.TakePictureSheet
 import com.lts360.compose.ui.theme.AppTheme
-import com.lts360.compose.ui.usedproducts.manage.ManagePublishedUsedProductListingScreen
 import com.lts360.compose.ui.utils.touchConsumer
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.SerialName
@@ -83,7 +88,6 @@ class TestActivity : ComponentActivity() {
         }
     }
 
-
     fun getLocalIpAddress(context: Context): String? {
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -113,20 +117,41 @@ class TestActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-
             AppTheme {
-
                 Surface {
-
-
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                     ) {
 
+                        val cameraLauncher = rememberLauncherForActivityResult(
+                            CameraVisualPickerActivityContracts.TakeCameraMedia()
+                        ) {
 
-                        ParentConsumesClick()
+                            it?.let {
+                                Toast.makeText(
+                                    this@TestActivity,
+                                    "Image captured",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }?: run {
+                                Toast.makeText(
+                                    this@TestActivity,
+                                    "Failed to capture",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
 
+                        }
+
+
+
+                        Button({
+                            cameraLauncher.launch(Unit)
+
+                        }) {
+                            Text("Open camera")
+                        }
 
                         /*       val hasAudioRecordPermissionGranted = {
                                    ContextCompat
@@ -177,15 +202,11 @@ class TestActivity : ComponentActivity() {
                                    }
                                }*/
                     }
-
                 }
             }
         }
+
     }
-
-
-
-
 
 
     @Preview
@@ -206,18 +227,18 @@ class TestActivity : ComponentActivity() {
             contentAlignment = Alignment.Center
         ) {
 
-            Text("ks;ad;as", modifier = Modifier.pointerInput(Unit){
+            Text("ks;ad;as", modifier = Modifier.pointerInput(Unit) {
                 detectTapGestures(onTap = {
                     Toast.makeText(context, "Tap clicked", Toast.LENGTH_SHORT).show()
 
                 })
             })
 
-        /*    Button(onClick = {
-                Toast.makeText(context, "Child clicked", Toast.LENGTH_SHORT).show()
-            }) {
-                Text("Click Me")
-            }*/
+            /*    Button(onClick = {
+                    Toast.makeText(context, "Child clicked", Toast.LENGTH_SHORT).show()
+                }) {
+                    Text("Click Me")
+                }*/
         }
     }
 

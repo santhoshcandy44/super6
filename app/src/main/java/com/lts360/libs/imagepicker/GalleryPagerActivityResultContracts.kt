@@ -18,7 +18,7 @@ class GalleryPagerActivityResultContracts {
 
         override fun createIntent(context: Context, input: Unit): Intent {
 
-            return Intent(context, GalleyImagesPagerActivity::class.java)
+            return Intent(context, GalleryImagesPagerActivity::class.java)
                 .apply {
                     putExtra("is_single", true)
                 }
@@ -47,7 +47,7 @@ class GalleryPagerActivityResultContracts {
         }
 
         override fun createIntent(context: Context, input: Unit): Intent {
-            return Intent(context, GalleyImagesPagerActivity::class.java)
+            return Intent(context, GalleryImagesPagerActivity::class.java)
                 .apply {
                     putExtra("is_single", false)
                     putExtra("max_items", maxItems)

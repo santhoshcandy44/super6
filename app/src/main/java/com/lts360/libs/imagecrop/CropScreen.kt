@@ -45,7 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.lts360.test.ClockWiseCircularProgressBar
+import com.lts360.libs.ui.ClockWiseCircularProgressBar
 import com.lts360.libs.ui.ScaleView
 import kotlin.math.abs
 import kotlin.math.min

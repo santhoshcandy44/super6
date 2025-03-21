@@ -63,10 +63,10 @@ android {
     buildTypes {
 
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://3.108.54.251:3000\"")
-            buildConfigField("String", "SOCKET_BASE_URL", "\"http://3.108.54.251:3080\"")
-         /*   buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
-            buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")*/
+   /*         buildConfigField("String", "BASE_URL", "\"http://3.108.54.251:3000\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"http://3.108.54.251:3080\"")*/
+            buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")
             buildConfigField("String", "REFERER", "\"referer.lts360.com\"")
             buildConfigField("String", "GOOGLE_SIGN_IN_OAUTH_WEB_CLIENT_ID", "\"300991981824-m4ovoojo09sklaqcvijandmnndduda0r.apps.googleusercontent.com\"")
         }
@@ -250,7 +250,9 @@ dependencies {
     implementation("androidx.camera:camera-core:1.4.1")
     implementation("androidx.camera:camera-camera2:1.4.1")
     implementation("androidx.camera:camera-lifecycle:1.4.1")
-    implementation("androidx.camera:camera-view:1.4.1")
+    implementation("androidx.camera:camera-compose:1.5.0-alpha06")
+    implementation("androidx.camera:camera-video:1.4.1" ) // For video recording
+    implementation("androidx.camera:camera-effects:1.4.1")
 
     // ExifInterface
     implementation("androidx.exifinterface:exifinterface:1.4.0")

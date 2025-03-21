@@ -27,27 +27,28 @@ class NoRippleInteractionSource : MutableInteractionSource {
     override fun tryEmit(interaction: Interaction) = true
 }
 
-fun enterFullScreenMode(activity: Activity) {
-    val windowInsetsController = WindowInsetsControllerCompat(
+fun enterFullScreenMode(activity: Activity, enableSwipeUp: Boolean = true) {
+    WindowInsetsControllerCompat(
         activity.window,
         activity.window.decorView
-    )
+    ).apply {
 
-    windowInsetsController.hide(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
-    windowInsetsController.systemBarsBehavior =
-        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
+        hide(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
+        if (enableSwipeUp) {
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
 }
 
 fun exitFullScreenMode(activity: Activity) {
-    val windowInsetsController = WindowInsetsControllerCompat(
+    WindowInsetsControllerCompat(
         activity.window,
         activity.window.decorView
-    )
-    windowInsetsController.show(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
-    windowInsetsController.systemBarsBehavior =
-        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
+    ).apply {
+        show(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
+        systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
 }
 
 fun getRoundedBitmap(bitmap: Bitmap): Bitmap {

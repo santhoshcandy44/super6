@@ -77,7 +77,7 @@ import com.lts360.compose.ui.chat.createImagePartForUri
 import com.lts360.compose.ui.chat.getFileExtensionFromImageFormat
 import com.lts360.compose.ui.chat.isValidImageDimensions
 import com.lts360.compose.ui.main.ManagePublishedUsedProductListingLocationBottomSheetScreen
-import com.lts360.compose.ui.profile.TakeProfilePictureSheet
+import com.lts360.compose.ui.profile.TakePictureSheet
 import com.lts360.compose.ui.services.manage.DeleteInfoBottomSheet
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.ui.services.manage.ExposedDropdownCountry
@@ -890,9 +890,9 @@ fun ManagePublishedUsedProductListingScreen(
 
 
 
-    TakeProfilePictureSheet(pickerSheetState, onGallerySelected = {
+    TakePictureSheet(pickerSheetState, onGallerySelected = {
         if (isPickerLaunch)
-            return@TakeProfilePictureSheet
+            return@TakePictureSheet
         isPickerLaunch = true
         if(refreshImageIndex!=-1){
             pickSingleImageLauncher.launch(Unit)

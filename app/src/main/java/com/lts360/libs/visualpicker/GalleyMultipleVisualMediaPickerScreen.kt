@@ -62,7 +62,7 @@ fun GalleryMultipleVisualsPickerScreen(
     ) {
 
         // List of titles for the tabs
-        val tabTitles = listOf("Photos", "Album")
+        val tabTitles = listOf("All Visuals", "Album")
         // Pager state to track the current page
         val pagerState = rememberPagerState(pageCount = { tabTitles.size })
 

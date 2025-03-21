@@ -22,19 +22,16 @@ import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LibraryAdd
+import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Contextual
@@ -49,10 +46,13 @@ private sealed class ChooseMediaLibraryIcon(
     data object Camera : ChooseMediaLibraryIcon(Icons.Default.Camera, Color(0xFF2196F3))
 
     @Serializable
-    data object Image : ChooseMediaLibraryIcon(Icons.Default.Image, Color(0xFFFF4081))
+    data object Library : ChooseMediaLibraryIcon(Icons.Default.LibraryAdd, Color(0xFF4CAF50))
 
     @Serializable
-    data object Library : ChooseMediaLibraryIcon(Icons.Default.LibraryAdd, Color(0xFF4CAF50))
+    data object Gallery : ChooseMediaLibraryIcon(Icons.Default.Photo, Color(0xFF8B5DFF))
+
+    @Serializable
+    data object Image : ChooseMediaLibraryIcon(Icons.Default.Image, Color(0xFFFF4081))
 
     @Serializable
     data object Video : ChooseMediaLibraryIcon(Icons.Default.VideoLibrary, Color(0xFFFF5722))
@@ -61,9 +61,9 @@ private sealed class ChooseMediaLibraryIcon(
     data object Folder : ChooseMediaLibraryIcon(Icons.Default.Folder, Color(0xFF9C27B0))
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnimatedChooseMediaLibrary(isVisible: Boolean, onChooseLibraryClick: () -> Unit) {
+fun AnimatedChooseMediaLibrary(isVisible: Boolean, onChooseLibrary: () -> Unit,
+                               onChooseGallery: () -> Unit) {
 
     AnimatedVisibility(
         visible = isVisible,
@@ -84,10 +84,11 @@ fun AnimatedChooseMediaLibrary(isVisible: Boolean, onChooseLibraryClick: () -> U
 /*
                     ChooseMediaLibraryIcon.Camera,
 */
-/*
+                    ChooseMediaLibraryIcon.Gallery,
+                    ChooseMediaLibraryIcon.Library,
+                    /*
                     ChooseMediaLibraryIcon.Image,
 */
-                    ChooseMediaLibraryIcon.Library,
                 /*    ChooseMediaLibraryIcon.Video,
                     ChooseMediaLibraryIcon.Folder*/
                 )
@@ -97,15 +98,14 @@ fun AnimatedChooseMediaLibrary(isVisible: Boolean, onChooseLibraryClick: () -> U
 
                         when (mediaLibraryOption) {
 
-                    /*        ChooseMediaLibraryIcon.Camera -> {}
+                            ChooseMediaLibraryIcon.Camera -> {}
 
                             ChooseMediaLibraryIcon.Folder -> {}
-                            ChooseMediaLibraryIcon.Image -> {}*/
-                            ChooseMediaLibraryIcon.Library -> onChooseLibraryClick()
+                            ChooseMediaLibraryIcon.Image -> {}
+                            ChooseMediaLibraryIcon.Gallery -> onChooseGallery()
+                            ChooseMediaLibraryIcon.Library -> onChooseLibrary()
 
-/*
                             ChooseMediaLibraryIcon.Video -> {}
-*/
                         }
 
                     }

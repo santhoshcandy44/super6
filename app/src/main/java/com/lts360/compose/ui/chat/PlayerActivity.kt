@@ -122,12 +122,12 @@ class PlayerActivity : ComponentActivity(){
         setContent {
             AppTheme {
 
-                var fullScreenMode by remember { mutableStateOf(true) }
+                var isFullScreenMode by remember { mutableStateOf(true) }
 
-                SafeDrawingBox(fullScreenMode) {
+                SafeDrawingBox(isFullScreenMode = isFullScreenMode) {
 
                     VideoPlayerScreen(data, exoPlayer, videoWidth, videoHeight, totalDuration,{
-                        fullScreenMode = it
+                        isFullScreenMode = it
                     }){
                         this@PlayerActivity.finish()
                     }

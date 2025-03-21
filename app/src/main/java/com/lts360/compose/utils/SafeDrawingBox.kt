@@ -8,28 +8,31 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.lts360.compose.ui.theme.customColorScheme
 
 @Composable
 fun SafeDrawingBox(
-    fullScreenMode: Boolean = false,
-    content: @Composable () -> Unit
+    statusBarColor:Color = MaterialTheme.colorScheme.secondary,
+    navigationBarColor:Color = MaterialTheme.customColorScheme.navigationBarColor,
+    isFullScreenMode: Boolean = false,
+    content: @Composable () -> Unit,
 ) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.secondary)
+            .background(statusBarColor)
             .then(
-                if (!fullScreenMode) Modifier.statusBarsPadding()
+                if (!isFullScreenMode) Modifier.statusBarsPadding()
                 else Modifier
             )
     ) {
         Box(
             Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.customColorScheme.navigationBarColor)
+                .background(navigationBarColor)
                 .then(
-                    if (!fullScreenMode) Modifier.navigationBarsPadding()
+                    if (!isFullScreenMode) Modifier.navigationBarsPadding()
                     else Modifier
                 )
         ) {

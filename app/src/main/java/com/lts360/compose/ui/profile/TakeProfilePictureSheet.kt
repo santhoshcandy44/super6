@@ -7,7 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,17 +21,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
-import androidx.compose.material.icons.filled.CameraEnhance
 import androidx.compose.material.icons.filled.Photo
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -48,24 +41,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.DialogProperties
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LifecycleResumeEffect
-import com.lts360.libs.imagepicker.utils.redirectToAppSettings
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun  TakeProfilePictureSheet(
-    sheetState:Boolean,
+fun TakePictureSheet(
+    sheetState: Boolean,
     onGallerySelected: () -> Unit,
     onCameraSelected: () -> Unit,
-    onDismissRequest:()->Unit,
-
+    onDismissRequest: () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -100,12 +88,11 @@ fun  TakeProfilePictureSheet(
 
     // Register the permission request callback for multiple permissions
     val requestPermissions = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val cameraPermissionGranted = permissions[android.Manifest.permission.CAMERA] == true
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isPermissionGranted ->
 
         // Update state based on the permissions result
-        if (cameraPermissionGranted) {
+        if (isPermissionGranted) {
             setPermissionsGranted(true)
         } else {
             setPermissionsGranted(false)
@@ -115,7 +102,7 @@ fun  TakeProfilePictureSheet(
             )
             if (!showRationale) {
                 isShowingDialogRationale = true
-            }else{
+            } else {
                 isShowingPermissionRequestDialog = true
             }
             // Optionally, show rationale or notify the user why these permissions are required
@@ -124,17 +111,9 @@ fun  TakeProfilePictureSheet(
 
 
 
-    LifecycleResumeEffect(Unit) {
-        if (!permissionsGranted) {
-            if (hasPermissionGranted()) {
-                setPermissionsGranted(true)
-            }
-        }
-        onPauseOrDispose {}
-    }
 
 
-    if(sheetState){
+    if (sheetState) {
         Box(modifier = Modifier.fillMaxSize()) {
 
 
@@ -232,9 +211,7 @@ fun  TakeProfilePictureSheet(
                                                 } else {
                                                     // Request both permissions at once
                                                     requestPermissions.launch(
-                                                        arrayOf(
-                                                            android.Manifest.permission.CAMERA
-                                                        )
+                                                        android.Manifest.permission.CAMERA
                                                     )
                                                 }
                                             }
@@ -269,170 +246,4 @@ fun  TakeProfilePictureSheet(
         }
     }
 
-
-
-
-    if (isShowingPermissionRequestDialog) {
-
-        CameraPermissionRequestDialog({
-            isShowingPermissionRequestDialog = false
-            requestPermissions.launch(
-                arrayOf(android.Manifest.permission.CAMERA)
-            )
-        }, {
-            onDismissRequest()
-            isShowingPermissionRequestDialog = false
-        })
-    }
-
-    if (isShowingDialogRationale) {
-
-        CameraPermissionRationaleDialog({
-            onDismissRequest()
-            isShowingDialogRationale = false
-            redirectToAppSettings(context)
-        }, {
-            onDismissRequest()
-            isShowingDialogRationale = false
-        })
-    }
-
-
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CameraPermissionRequestDialog(
-    onAllowPermissionClicked: () -> Unit,
-    onDismissRequest: () -> Unit,
-
-    ) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        BasicAlertDialog(
-            onDismissRequest = onDismissRequest,
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-            modifier = Modifier.clip(RoundedCornerShape(16.dp))
-        ) {
-            Surface {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-                    Image(
-                        imageVector = Icons.Filled.CameraEnhance,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(120.dp),
-                        colorFilter = ColorFilter.tint(Color(0xFF9394f0))
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Camera Permission Required",
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        "To take photos camera permission is required",
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Button(
-                            onClick = onAllowPermissionClicked,
-                            shape = CircleShape,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8B02)),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                        ) {
-                            Text("Allow")
-                        }
-                        OutlinedButton(
-                            onClick = onDismissRequest,
-                            shape = CircleShape,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                        ) {
-                            Text("Dismiss")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CameraPermissionRationaleDialog(
-    onAllowPermissionClicked: () -> Unit,
-    onDismissRequest: () -> Unit,
-) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        BasicAlertDialog(
-            onDismissRequest = onDismissRequest,
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-            modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
-        ) {
-            Surface {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-                    Image(
-                        imageVector = Icons.Filled.CameraEnhance,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(120.dp),
-                        colorFilter = ColorFilter.tint(Color(0xFF9394f0))
-
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        "Camera Permission Required",
-                        style = MaterialTheme.typography.titleMedium,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-
-                    Text(
-                        "To take photos camera permission is required. >> Settings >> Camera >> Allow",
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = onAllowPermissionClicked,
-                        shape = CircleShape,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8B02)),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Settings")
-                    }
-                }
-            }
-        }
-    }
 }

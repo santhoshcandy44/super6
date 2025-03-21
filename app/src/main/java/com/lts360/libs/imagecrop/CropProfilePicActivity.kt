@@ -10,44 +10,68 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContract
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.FileProvider
+import androidx.core.view.WindowInsetsControllerCompat
 import com.lts360.BuildConfig
+import com.lts360.compose.ui.theme.AppTheme
+import com.lts360.compose.utils.SafeDrawingBox
+import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
-
-class CropProfilePicActivity: ComponentActivity(){
+@AndroidEntryPoint
+class CropProfilePicActivity : ComponentActivity() {
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        window.apply {
+            WindowInsetsControllerCompat(this, decorView).apply {
+                isAppearanceLightStatusBars = false
+                isAppearanceLightNavigationBars = false
+            }
+        }
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         val uri = intent.data
-        if(uri == null){
+        if (uri == null) {
             setResult(RESULT_OK, null)
             finish()
             return
         }
         setContent {
-            CropScreen(uri,{ bitmap ->
-                setResult(
-                    RESULT_OK, Intent()
-                    .apply {
-                        data =  bitmap?.let { nonNullBitmap ->
-                            saveBitmapToCache(this@CropProfilePicActivity,nonNullBitmap)?.let {
-                                FileProvider.getUriForFile(this@CropProfilePicActivity,
-                                    "${BuildConfig.APPLICATION_ID}.provider",
-                                    it)
-                            }
-                        }
-                    })
+            AppTheme {
+                Surface {
+                    SafeDrawingBox(statusBarColor = Color.Black, navigationBarColor = Color.Black){
+                        CropScreen(uri, { bitmap ->
+                            setResult(
+                                RESULT_OK, Intent()
+                                    .apply {
+                                        data = bitmap?.let { nonNullBitmap ->
+                                            saveBitmapToCache(
+                                                this@CropProfilePicActivity,
+                                                nonNullBitmap
+                                            )?.let {
+                                                FileProvider.getUriForFile(
+                                                    this@CropProfilePicActivity,
+                                                    "${BuildConfig.APPLICATION_ID}.provider",
+                                                    it
+                                                )
+                                            }
+                                        }
+                                    })
 
-                finish()
-            })
+                            finish()
+                        })
+                    }
+                }
+            }
         }
     }
-
 
     private fun saveBitmapToCache(context: Context, bitmap: Bitmap): File? {
         try {
@@ -75,11 +99,10 @@ class CropProfilePicActivity: ComponentActivity(){
 }
 
 
-
 class CropProfilePicActivityContracts {
 
 
-    class ImageCropper : ActivityResultContract<Uri, Uri?>(){
+    class ImageCropper : ActivityResultContract<Uri, Uri?>() {
 
         override fun createIntent(context: Context, input: Uri): Intent {
             return Intent(context, CropProfilePicActivity::class.java)

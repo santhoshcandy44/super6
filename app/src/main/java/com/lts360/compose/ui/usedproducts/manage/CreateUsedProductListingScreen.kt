@@ -5,7 +5,6 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,7 +59,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
@@ -75,7 +73,7 @@ import com.lts360.compose.ui.chat.createImagePartForUri
 import com.lts360.compose.ui.chat.getFileExtensionFromImageFormat
 import com.lts360.compose.ui.chat.isValidImageDimensions
 import com.lts360.compose.ui.main.CreateUsedProductListingLocationBottomSheetScreen
-import com.lts360.compose.ui.profile.TakeProfilePictureSheet
+import com.lts360.compose.ui.profile.TakePictureSheet
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.ui.services.manage.ExposedDropdownCountry
 import com.lts360.compose.ui.services.manage.ReloadImageIconButton
@@ -788,9 +786,9 @@ fun CreateUsedProductListingScreen(
 
 
 
-    TakeProfilePictureSheet(pickerSheetState, onGallerySelected = {
+    TakePictureSheet(pickerSheetState, onGallerySelected = {
         if (isPickerLaunch)
-            return@TakeProfilePictureSheet
+            return@TakePictureSheet
         isPickerLaunch = true
         if(refreshImageIndex!=-1){
             pickSingleImageLauncher.launch(Unit)
