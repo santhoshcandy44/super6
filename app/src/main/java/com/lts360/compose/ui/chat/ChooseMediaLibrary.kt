@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -62,8 +61,10 @@ private sealed class ChooseMediaLibraryIcon(
 }
 
 @Composable
-fun AnimatedChooseMediaLibrary(isVisible: Boolean, onChooseLibrary: () -> Unit,
-                               onChooseGallery: () -> Unit) {
+fun AnimatedChooseMediaLibrary(isVisible: Boolean,
+                               onChooseLibrary: () -> Unit,
+                               onChooseGallery: () -> Unit,
+                               onChooseCamera: () -> Unit) {
 
     AnimatedVisibility(
         visible = isVisible,
@@ -81,9 +82,7 @@ fun AnimatedChooseMediaLibrary(isVisible: Boolean, onChooseLibrary: () -> Unit,
 
                 // Convert into a list
                 val mediaLibraryOptions = listOf(
-/*
                     ChooseMediaLibraryIcon.Camera,
-*/
                     ChooseMediaLibraryIcon.Gallery,
                     ChooseMediaLibraryIcon.Library,
                     /*
@@ -98,7 +97,7 @@ fun AnimatedChooseMediaLibrary(isVisible: Boolean, onChooseLibrary: () -> Unit,
 
                         when (mediaLibraryOption) {
 
-                            ChooseMediaLibraryIcon.Camera -> {}
+                            ChooseMediaLibraryIcon.Camera -> onChooseCamera()
 
                             ChooseMediaLibraryIcon.Folder -> {}
                             ChooseMediaLibraryIcon.Image -> {}

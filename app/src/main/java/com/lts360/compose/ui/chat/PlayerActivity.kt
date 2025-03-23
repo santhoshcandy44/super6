@@ -95,7 +95,7 @@ import kotlinx.coroutines.delay
 class PlayerActivity : ComponentActivity(){
 
 
-    lateinit var exoPlayer:ExoPlayer
+    private lateinit var exoPlayer:ExoPlayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -467,11 +467,8 @@ fun VideoPlayerScreen(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .aspectRatio(videoWidth.toFloat()/videoHeight.toFloat()),
-                factory = { context ->
-
-
+                factory = {
                     exoPlayer.setVideoTextureView(textureView)
-
                     textureView
                 },
                 update = { textureView ->

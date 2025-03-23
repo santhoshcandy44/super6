@@ -1,6 +1,7 @@
 package com.lts360.compose.ui.chat
 
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -147,6 +148,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.lifecycle.lifecycleScope
@@ -182,6 +184,7 @@ import com.lts360.components.findActivity
 import com.lts360.components.utils.compressImageAsByteArray
 import com.lts360.components.utils.isUriExist
 import com.lts360.compose.ui.auth.navhost.noTransitionComposable
+import com.lts360.compose.ui.chat.camera.CameraVisualPickerActivityContracts
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
 import com.lts360.compose.ui.chat.viewmodels.ChatActivityViewModel
 import com.lts360.compose.ui.chat.viewmodels.ChatViewModel
@@ -430,7 +433,11 @@ fun ChatPanel(
 
 
     var isVisibleMediaLibrary by remember { mutableStateOf(false) }
-
+    val hideMediaLibrary : ()-> Unit= {
+        if(isVisibleMediaLibrary){
+            isVisibleMediaLibrary = false
+        }
+    }
 
     fun processMediaUri(uri: Uri) {
         try {
@@ -613,7 +620,8 @@ fun ChatPanel(
                     }
 
 
-                } else if (nonNullMimeType.startsWith("video")) {
+                }
+                else if (nonNullMimeType.startsWith("video")) {
 
                     coroutineScope.launch {
                         if (fileSize > 64 * 1024 * 1024) {
@@ -777,11 +785,30 @@ fun ChatPanel(
         }
     }
 
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        CameraVisualPickerActivityContracts.TakeCameraMedia()
+    ) {
+        if(isVisibleMediaLibrary){
+            hideMediaLibrary()
+        }
+
+        it?.let {
+            processMediaUri(it)
+        }?: run {
+            Toast.makeText(
+                context,
+                "Failed to capture",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+    }
+
+
     val documentTreeLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
-            if(isVisibleMediaLibrary){
-                isVisibleMediaLibrary = false
-            }
+            hideMediaLibrary()
             it?.let {
                 context.contentResolver.takePersistableUriPermission(
                     it,
@@ -794,9 +821,7 @@ fun ChatPanel(
     val galleryVisualLauncher = rememberLauncherForActivityResult(
         GalleryVisualPagerActivityResultContracts.PickSingleVisual()
     ) {
-        if(isVisibleMediaLibrary){
-            isVisibleMediaLibrary = false
-        }
+        hideMediaLibrary()
         it?.let {
             processMediaUri(it)
         }
@@ -1091,7 +1116,7 @@ fun ChatPanel(
                                 .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
                                     pass = PointerEventPass.Initial,
                                     onDown = {
-                                        isVisibleMediaLibrary = false
+                                        hideMediaLibrary()
                                     }
                                 ) else Modifier),
                             reverseLayout = true
@@ -1703,7 +1728,7 @@ fun ChatPanel(
                                     .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
                                         pass = PointerEventPass.Initial,
                                         onDown = {
-                                            isVisibleMediaLibrary = false
+                                            hideMediaLibrary()
                                         }
                                     ) else Modifier)
                             ) {
@@ -1744,12 +1769,16 @@ fun ChatPanel(
 
                             AnimatedChooseMediaLibrary(
                                 isVisibleMediaLibrary,
+                                onChooseCamera = {
+                                    cameraLauncher.launch(Unit)
+                                    hideMediaLibrary()
+                                },
                                 onChooseLibrary = {
                                     documentTreeLauncher.launch(arrayOf("*/*"))
-                                    isVisibleMediaLibrary = false
+                                    hideMediaLibrary()
                                 }, onChooseGallery = {
                                     galleryVisualLauncher.launch(Unit)
-                                    isVisibleMediaLibrary = false
+                                    hideMediaLibrary()
                                 })
 
                         }
@@ -1766,7 +1795,7 @@ fun ChatPanel(
                             .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
                                 pass = PointerEventPass.Initial,
                                 onDown = {
-                                    isVisibleMediaLibrary = false
+                                    hideMediaLibrary()
                                 }
                             ) else Modifier),
                     ) {
@@ -1892,7 +1921,7 @@ fun ChatPanel(
                             .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
                                 pass = PointerEventPass.Initial,
                                 onDown = {
-                                    isVisibleMediaLibrary = false
+                                    hideMediaLibrary()
                                 }
                             ) else Modifier),
                         verticalAlignment = Alignment.CenterVertically
@@ -1902,6 +1931,8 @@ fun ChatPanel(
                             value,
                             textFieldState,
                             {
+                                hideMediaLibrary()
+
                                 value = it
                                 viewModel.onUserTyping(
                                     userId,
@@ -2414,6 +2445,7 @@ fun RepliedMessageVisualMediaContent(
 }
 
 
+@SuppressLint("UseKtx")
 @Composable
 fun RepliedMessageVideoMediaContent(
     selectedMessage: String,
@@ -2432,7 +2464,7 @@ fun RepliedMessageVideoMediaContent(
 
         filepath?.let {
             // Run the heavy work in background thread
-            if (isUriExist(context, Uri.parse(it))) {
+            if (isUriExist(context, it.toUri())) {
                 // Using a coroutine to load the thumbnail in the background
                 thumbnail = withContext(Dispatchers.IO) {
 
@@ -2806,6 +2838,7 @@ fun ReplyMessageVisualMediaContent(
 }
 
 
+@SuppressLint("UseKtx")
 @Composable
 fun ReplyMessageVideoMediaContent(
     selectedMessage: String,
@@ -2825,11 +2858,11 @@ fun ReplyMessageVideoMediaContent(
     LaunchedEffect(filepath) {
         filepath?.let {
             // Run the heavy work in background thread
-            if (isUriExist(context, Uri.parse(it))) {
+            if (isUriExist(context, it.toUri())) {
                 // Using a coroutine to load the thumbnail in the background
                 thumbnail = withContext(Dispatchers.IO) {
                     // Create the video thumbnail in background thread
-                    MediaMetadataRetriever().getThumbnail(context, Uri.parse(it))
+                    MediaMetadataRetriever().getThumbnail(context, it.toUri())
                 }
             }
         }
@@ -3224,8 +3257,8 @@ fun ChatMeImageMessageItem(
                 .padding(4.dp)
                 .clickable {
                     fileAbsPath?.let {
-                        if (isUriExist(context, Uri.parse(fileAbsPath))) {
-                            onNavigateImageSlider(Uri.parse(fileAbsPath), width, height)
+                        if (isUriExist(context, fileAbsPath.toUri())) {
+                            onNavigateImageSlider(fileAbsPath.toUri(), width, height)
                         } else {
                             Toast
                                 .makeText(context, "Media is not exist", Toast.LENGTH_SHORT)
@@ -3512,11 +3545,11 @@ fun ChatMeVideoMessageItem(
 
     LaunchedEffect(mediaMetadata?.fileAbsolutePath) {
         mediaMetadata?.fileAbsolutePath?.let {
-            if (isUriExist(context, Uri.parse(it))) {
+            if (isUriExist(context, it.toUri())) {
                 // Using a coroutine to load the thumbnail in the background
                 thumbnail = withContext(Dispatchers.IO) {
                     // Create the video thumbnail in background thread
-                    MediaMetadataRetriever().getThumbnail(context, Uri.parse(it))
+                    MediaMetadataRetriever().getThumbnail(context, it.toUri())
                 }
             }
         }
@@ -3551,11 +3584,11 @@ fun ChatMeVideoMessageItem(
                 .clickable {
                     fileAbsPath?.let { nonNullFileAbsPath ->
 
-                        if (isUriExist(context, Uri.parse(nonNullFileAbsPath))) {
+                        if (isUriExist(context, nonNullFileAbsPath.toUri())) {
 
                             mediaMetadata.let {
                                 onNavigateVideoPlayer(
-                                    Uri.parse(nonNullFileAbsPath),
+                                    nonNullFileAbsPath.toUri(),
                                     it.width,
                                     it.height,
                                     it.totalDuration
@@ -3563,8 +3596,7 @@ fun ChatMeVideoMessageItem(
                             }
 
                         } else {
-                            Toast
-                                .makeText(context, "Media is not exist", Toast.LENGTH_SHORT)
+                            Toast.makeText(context, "Media is not exist", Toast.LENGTH_SHORT)
                                 .show()
                         }
                     }
@@ -4762,7 +4794,7 @@ fun ChatOtherImageMessageItem(
                                     .makeText(context, "Media is not exist", Toast.LENGTH_SHORT)
                                     .show()
                             } else {
-                                onNavigateImageSlider(Uri.parse(mediaAbsPath), width, height)
+                                onNavigateImageSlider(mediaAbsPath.toUri(), width, height)
 
                             }
                         }
@@ -5013,7 +5045,7 @@ fun ChatOtherVideoMessageItem(
                                         .show()
                                 } else {
                                     onNavigateVideoPlayer(
-                                        Uri.parse(it),
+                                        it.toUri(),
                                         nonNullFileMetaData.width,
                                         nonNullFileMetaData.height,
                                         nonNullFileMetaData.totalDuration
@@ -5801,6 +5833,7 @@ fun OverAllOtherRepliedMessageItem(
     }
 }
 
+@SuppressLint("UseKtx")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AudioPlayerUI(filePath: String) {
@@ -5816,7 +5849,7 @@ fun AudioPlayerUI(filePath: String) {
     val mediaPlayer = remember { MediaPlayer() }
 
     DisposableEffect(filePath) {
-        mediaPlayer.setDataSource(context, Uri.parse(filePath))
+        mediaPlayer.setDataSource(context, filePath.toUri())
         mediaPlayer.prepareAsync()
         mediaPlayer.setOnPreparedListener {
             duration = mediaPlayer.duration.toLong()
@@ -5938,8 +5971,8 @@ fun AudioPlayerUI(filePath: String) {
 
 
 @Composable
-fun BoxScope.RetryMediaButton(
-    modifier: Modifier = Modifier.align(Alignment.Center),
+fun RetryMediaButton(
+    modifier: Modifier = Modifier,
     onRetry: () -> Unit,
 ) {
     Box(
@@ -5977,10 +6010,10 @@ fun BoxScope.RetryMediaButton(
 
 
 @Composable
-fun BoxScope.DownloadMediaButton(
-    fileSize: Long = -1,
-    modifier: Modifier = Modifier.align(Alignment.Center),
-    onDownloadClick: () -> Unit,
+fun DownloadMediaButton(
+    fileSize: Long,
+    modifier: Modifier = Modifier,
+    onDownloadClick: () -> Unit
 ) {
     Box(
         modifier = modifier

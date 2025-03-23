@@ -1,7 +1,6 @@
 package com.lts360.test
 
 
-import android.content.ContentValues
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Paint
@@ -10,8 +9,6 @@ import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -40,7 +37,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lts360.R
-import com.lts360.compose.ui.profile.TakePictureSheet
+import com.lts360.compose.ui.chat.ChatScreen
+import com.lts360.compose.ui.chat.camera.CameraVisualPickerActivityContracts
+import com.lts360.compose.ui.main.MoreScreen
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.utils.touchConsumer
 import dagger.hilt.android.AndroidEntryPoint
@@ -115,6 +114,8 @@ class TestActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
 
         setContent {
             AppTheme {

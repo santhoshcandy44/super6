@@ -1,5 +1,6 @@
-package com.lts360.libs.camera.ui
+package com.lts360.libs.media.ui.permissions
 
+import android.graphics.drawable.Icon
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraEnhance
+import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,18 +30,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CameraPermissionRequestDialog(
+fun PermissionRequestDialog(
+    icon: ImageVector,
+    permissionLabel: String,
+    permissionDescription: String,
     onAllowPermissionClicked: () -> Unit,
     onDismissRequest: () -> Unit,
-    dismissButtonEnabled:Boolean = true
-    ) {
+    iconSize: Dp = 80.dp,
+    dismissButtonEnabled: Boolean = true
+) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         BasicAlertDialog(
             onDismissRequest = onDismissRequest,
@@ -56,23 +63,22 @@ fun CameraPermissionRequestDialog(
                 ) {
 
                     Image(
-                        imageVector = Icons.Filled.CameraEnhance,
+                        imageVector = icon,
                         contentDescription = null,
                         modifier = Modifier
-                            .size(120.dp),
+                            .size(iconSize),
                         colorFilter = ColorFilter.tint(Color(0xFF9394f0))
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Camera Permission Required",
+                        "$permissionLabel Permission Required",
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
-
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        "To take photos camera permission is required",
+                        permissionDescription,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
@@ -95,7 +101,7 @@ fun CameraPermissionRequestDialog(
                             Text("Allow")
                         }
 
-                        if(dismissButtonEnabled){
+                        if (dismissButtonEnabled) {
                             OutlinedButton(
                                 onClick = onDismissRequest,
                                 shape = CircleShape,

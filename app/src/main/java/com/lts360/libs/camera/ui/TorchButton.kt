@@ -39,7 +39,7 @@ fun TorchButton(flashEnabled: Boolean, onFlashToggle:()-> Unit) {
 
 
         Image(
-            imageVector =  if (flashEnabled) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
+            imageVector =  if (flashEnabled) Icons.Filled.FlashOff else Icons.Filled.FlashOn,
             contentDescription = null,
             colorFilter = ColorFilter.tint(Color.White),
             modifier = Modifier

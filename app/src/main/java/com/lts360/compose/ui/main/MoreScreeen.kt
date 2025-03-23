@@ -25,7 +25,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -51,11 +50,9 @@ import com.lts360.R
 import com.lts360.components.utils.openUrlInCustomTab
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.AccountType
-import com.lts360.compose.ui.chat.ChatScreen
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.shimmerLoadingAnimation
 import com.lts360.compose.ui.theme.customColorScheme
-import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.viewmodels.MoreViewModel
 
 
@@ -323,7 +320,9 @@ fun MoreScreen(
                     if (signInMethod == "guest") {
                         Column(
                             modifier = Modifier
-                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor, RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                    RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
                         ) {
                             // Settings Item
                             AccountManagementItem(
@@ -366,6 +365,7 @@ fun MoreScreen(
                         Column(
                             modifier = Modifier
                                 .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
                         ) {
                             // Settings Item
                             AccountManagementItem(
@@ -419,6 +419,7 @@ fun MoreScreen(
 
                                     modifier = Modifier
                                         .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                                        .clip(RoundedCornerShape(8.dp))
                                 ) {
                                     AccountManagementItem(
                                         color = Color(
@@ -436,6 +437,7 @@ fun MoreScreen(
                                 Column(
                                     modifier = Modifier
                                         .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                                        .clip(RoundedCornerShape(8.dp))
                                 ) {
                                     AccountManagementItem(
                                         color = Color(
@@ -464,6 +466,7 @@ fun MoreScreen(
                     Column(
                         modifier = Modifier
                             .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(8.dp))
                     ) {
                         ActionItem(
                             color = Color.Black,
@@ -478,6 +481,7 @@ fun MoreScreen(
                     Column(
                         modifier = Modifier
                             .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(8.dp))
                     ) {
 
 
