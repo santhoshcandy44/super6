@@ -87,7 +87,7 @@ import com.lts360.compose.ui.services.manage.UploadServiceImagesContainer
 import com.lts360.compose.ui.services.manage.models.ContainerType
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
-import com.lts360.libs.utils.createFileDCIMExternalStorage
+import com.lts360.libs.utils.createImageFileDCIMExternalStorage
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -901,7 +901,7 @@ fun ManagePublishedUsedProductListingScreen(
         }
         pickerSheetState = false
     }, onCameraSelected = {
-        createFileDCIMExternalStorage(
+        createImageFileDCIMExternalStorage(
             context = context,
             "Lts360/Seconds"
         )?.let {

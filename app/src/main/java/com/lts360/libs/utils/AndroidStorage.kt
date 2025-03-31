@@ -9,7 +9,7 @@ import java.util.Date
 import java.util.Locale
 
 
-fun createFileDCIMExternalStorage(context: Context, folderName:String): Uri? {
+fun createImageFileDCIMExternalStorage(context: Context, folderName:String): Uri? {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
 
     val contentValues = ContentValues().apply {
