@@ -62,7 +62,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -92,12 +91,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 
 @AndroidEntryPoint
-class PlayerActivity : ComponentActivity(){
-
+class ChatPlayerActivity : ComponentActivity(){
 
     private lateinit var exoPlayer:ExoPlayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         exoPlayer = ExoPlayer.Builder(applicationContext).build()
 
@@ -122,14 +121,10 @@ class PlayerActivity : ComponentActivity(){
         setContent {
             AppTheme {
 
-                var isFullScreenMode by remember { mutableStateOf(true) }
 
-                SafeDrawingBox(isFullScreenMode = isFullScreenMode) {
-
-                    VideoPlayerScreen(data, exoPlayer, videoWidth, videoHeight, totalDuration,{
-                        isFullScreenMode = it
-                    }){
-                        this@PlayerActivity.finish()
+                SafeDrawingBox(isFullScreenMode = true) {
+                    VideoPlayerScreen(data, exoPlayer, videoWidth, videoHeight, totalDuration){
+                        this@ChatPlayerActivity.finish()
                     }
 
                 }
@@ -153,13 +148,12 @@ class PlayerActivity : ComponentActivity(){
 @androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VideoPlayerScreen(
+private fun VideoPlayerScreen(
     videoUri: Uri,
     exoPlayer: ExoPlayer,
     videoWidth:Int,
     videoHeight:Int,
     totalDurationMillis:Long,
-    onFullScreenModeChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     onPopBackStack: () -> Unit
 ) {
@@ -364,7 +358,6 @@ fun VideoPlayerScreen(
         exoPlayer.addListener(listener)
         onDispose {
             exitFullScreenMode(context.findActivity())
-            onFullScreenModeChange(false)
             exoPlayer.removeListener(listener)
             exoPlayer.stop()
             exoPlayer.release()
@@ -404,7 +397,6 @@ fun VideoPlayerScreen(
     // Function to hide controls immediately
     fun hideControls() {
         enterFullScreenMode(context.findActivity())
-        onFullScreenModeChange(true)
         controlsVisible = false  // Hide controls
     }
 
@@ -450,7 +442,6 @@ fun VideoPlayerScreen(
                         if (controlsVisible) {
                             hideControls()  // Hide controls immediately
                         } else {
-                            onFullScreenModeChange(false)
                             exitFullScreenMode(context.findActivity())
                             showControls()  // Show controls and reset the timer
                         }

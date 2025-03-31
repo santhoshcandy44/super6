@@ -26,23 +26,19 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavHostController
 import com.lts360.api.models.service.UsedProductListing
+import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.services.ImageSlider
-import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
 
 
 @Composable
 fun SecondsImagesSliderScreen(
-    key:Int,
-    navHostController: NavHostController,
     selectedImagePosition: Int, viewModel: SecondsViewmodel,
     onPopBackStack:()-> Unit
 
 ) {
-
     val selectedService by viewModel.selectedItem.collectAsState()
 
     SecondsImagesSliderScreenContent(selectedService, selectedImagePosition, onPopBackStack)
@@ -51,46 +47,35 @@ fun SecondsImagesSliderScreen(
 
 @Composable
 fun FeedUserSecondsImagesSliderScreen(
-    navHostController: NavHostController,
     selectedImagePosition: Int,
     viewModel: SecondsOwnerProfileViewModel,
     onPopBackStack:()-> Unit
 
 ) {
-
     val selectedService by viewModel.selectedItem.collectAsState()
 
     SecondsImagesSliderScreenContent(selectedService, selectedImagePosition, onPopBackStack)
 }
 
-
 @Composable
 fun BookmarkedSecondsSliderScreen(
-    navHostController: NavHostController,
     selectedImagePosition: Int,
     viewModel: BookmarksViewModel,
     onPopBackStack:()-> Unit
 
 ) {
-
-
     val selectedService by viewModel.selectedItem.collectAsState()
-
-
     val item = selectedService
+
     if(item !is UsedProductListing) return
 
     SecondsImagesSliderScreenContent(item, selectedImagePosition, onPopBackStack)
-
 }
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SecondsImagesSliderScreenContent(selectedService: UsedProductListing?, selectedImagePosition: Int, onPopBackStack:()-> Unit) {
-
-
+private fun SecondsImagesSliderScreenContent(selectedService: UsedProductListing?, selectedImagePosition: Int,
+                                             onPopBackStack:()-> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -134,9 +119,7 @@ fun SecondsImagesSliderScreenContent(selectedService: UsedProductListing?, selec
                 } ?: emptyList())
 
             }
-
         })
-
 }
 
 

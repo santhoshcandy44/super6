@@ -1,18 +1,14 @@
 package com.lts360.test
 
 
-import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Paint
-import android.net.ConnectivityManager
-import android.net.LinkProperties
-import android.net.Network
-import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -37,20 +33,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lts360.R
+import com.lts360.compose.ui.chat.ChatImagesSliderActivity
+import com.lts360.compose.ui.chat.ChatPlayerActivity
 import com.lts360.compose.ui.chat.camera.CameraVisualPickerActivityContracts
-import com.lts360.compose.ui.main.profile.ServiceOwnerProfileScreen
-import com.lts360.compose.ui.services.DetailedServiceScreen
 import com.lts360.compose.ui.theme.AppTheme
-import com.lts360.compose.ui.usedproducts.DetailedUsedProductListingScreen
-import com.lts360.compose.ui.usedproducts.FeedUserDetailedSecondsInfoScreen
-import com.lts360.compose.ui.usedproducts.SecondsScreen
-import com.lts360.compose.ui.usedproducts.manage.SecondsServiceOwnerProfileScreen
 import com.lts360.compose.ui.utils.touchConsumer
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.net.Inet4Address
-import java.net.InetAddress
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -91,32 +81,8 @@ class TestActivity : ComponentActivity() {
         }
     }
 
-    fun getLocalIpAddress(context: Context): String? {
-        val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val activeNetwork: Network? = connectivityManager.activeNetwork
-        val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
-
-        // Check if the active network is a Wi-Fi connection
-        if (networkCapabilities != null && networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-            val linkProperties: LinkProperties? =
-                connectivityManager.getLinkProperties(activeNetwork)
-            val linkAddresses = linkProperties?.linkAddresses
-
-            // Iterate through the link addresses to find the IPv4 address
-            linkAddresses?.forEach { linkAddress ->
-                val inetAddress: InetAddress = linkAddress.address
-                if (inetAddress is Inet4Address) {  // Check for IPv4 address
-                    return inetAddress.hostAddress
-                }
-            }
-        }
-
-        return null
-    }
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
             AppTheme {

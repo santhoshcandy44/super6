@@ -416,8 +416,6 @@ fun BottomNavHost(
 
             selectedItem?.let {
                 SecondsImagesSliderScreen(
-                    key,
-                    navController,
                     selectedImagePosition,
                     viewModel
                 ) { navController.popBackStack() }
@@ -521,7 +519,6 @@ fun BottomNavHost(
                 hiltViewModel(remember { navController.getBackStackEntry<BottomNavRoutes.SecondsOwnerProfile>() })
 
             FeedUserSecondsImagesSliderScreen(
-                navController,
                 selectedImagePosition,
                 viewmodel
             ) { navController.popBackStack() }

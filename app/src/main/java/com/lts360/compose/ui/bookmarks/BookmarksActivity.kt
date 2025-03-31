@@ -263,7 +263,6 @@ class BookmarksActivity : ComponentActivity() {
 
                                 selectedItem?.let {
                                     BookmarkedSecondsSliderScreen(
-                                        navController,
                                         selectedImagePosition,
                                         bookmarksViewModel
                                     ) { navController.popBackStack() }
@@ -344,7 +343,6 @@ class BookmarksActivity : ComponentActivity() {
                                 val selectedItem by secondsOwnerProfileViewModel.selectedItem.collectAsState()
                                 selectedItem?.let {
                                     FeedUserSecondsImagesSliderScreen(
-                                        navController,
                                         selectedImagePosition,
                                         secondsOwnerProfileViewModel
                                     ) { navController.popBackStack() }

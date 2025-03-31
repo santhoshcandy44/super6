@@ -337,7 +337,7 @@ fun openPlayerActivity(
     totalDuration: Long
 ) {
     context.startActivity(
-        Intent(context, PlayerActivity::class.java).apply {
+        Intent(context, ChatPlayerActivity::class.java).apply {
             setDataAndType(uri, "video/*")
             putExtra("videoWidth", videoWidth)
             putExtra("videoHeight", videoHeight)
@@ -348,7 +348,7 @@ fun openPlayerActivity(
 
 fun openImageSliderActivity(context: Context, uri: Uri, imageWidth: Int, imageHeight: Int) {
     context.startActivity(
-        Intent(context, ImagesSliderActivity::class.java).apply {
+        Intent(context, ChatImagesSliderActivity::class.java).apply {
             setDataAndType(uri, "image/*")
             putExtra("imageWidth", imageWidth)
             putExtra("imageHeight", imageHeight)

@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -60,9 +61,10 @@ import dagger.hilt.android.AndroidEntryPoint
 
 
 @AndroidEntryPoint
-class ImagesSliderActivity : ComponentActivity() {
+class ChatImagesSliderActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window,false)
         enterFullScreenMode(this)
@@ -77,15 +79,10 @@ class ImagesSliderActivity : ComponentActivity() {
         }
 
         setContent {
-
-            var fullScreenMode by remember { mutableStateOf(true) }
-
             AppTheme {
-                SafeDrawingBox(isFullScreenMode = fullScreenMode) {
+                SafeDrawingBox(isFullScreenMode = true) {
                     ImagesSliderScreen(data, imageWidth, imageHeight, {
-                        fullScreenMode = it
-                    }, {
-                        this@ImagesSliderActivity.finish()
+                        this@ChatImagesSliderActivity.finish()
                     })
                 }
             }
@@ -98,11 +95,10 @@ class ImagesSliderActivity : ComponentActivity() {
 @androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImagesSliderScreen(
+private fun ImagesSliderScreen(
     imageUri: Uri,
     imageWidth: Int,
     imageHeight: Int,
-    onFullScreenModeChange: (Boolean) -> Unit,
     onPopBackStack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -116,7 +112,6 @@ fun ImagesSliderScreen(
     fun hideControls() {
         enterFullScreenMode(context.findActivity())
         controlsVisible = false  // Hide controls
-        onFullScreenModeChange(true)
     }
 
     // Handler and runnable to hide controls after 10 seconds of inactivity
@@ -160,7 +155,6 @@ fun ImagesSliderScreen(
                             hideControls()  // Hide controls immediately
                         } else {
                             exitFullScreenMode(context.findActivity())
-                            onFullScreenModeChange(false)
                             showControls()  // Show controls and reset the timer
                         }
                     }

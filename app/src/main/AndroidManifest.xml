@@ -136,13 +136,13 @@
 
 
         <activity
-            android:name=".compose.ui.chat.PlayerActivity"
+            android:name=".compose.ui.chat.ChatPlayerActivity"
             android:configChanges="orientation|screenSize|layoutDirection"
             android:exported="true"
             android:theme="@style/Theme.PlayerActivity" />
 
         <activity
-            android:name=".compose.ui.chat.ImagesSliderActivity"
+            android:name=".compose.ui.chat.ChatImagesSliderActivity"
             android:configChanges="orientation|screenSize|layoutDirection"
             android:exported="true"
             android:theme="@style/Theme.PlayerActivity" />
