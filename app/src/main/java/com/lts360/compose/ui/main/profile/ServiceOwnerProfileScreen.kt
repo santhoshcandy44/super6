@@ -5,6 +5,7 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -30,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -55,7 +55,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavHostController
 import com.lts360.R
@@ -65,8 +64,8 @@ import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
-import com.lts360.compose.ui.services.ServiceOwnerProfileViewModel
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
+import com.lts360.compose.ui.services.ServiceOwnerProfileViewModel
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -80,8 +79,7 @@ fun ServiceOwnerProfileScreen(
     onNavigateUpDetailedService: (Int) -> Unit,
     servicesViewModel: ServicesViewModel,
     viewModel: ServiceOwnerProfileViewModel
-
-    ) {
+) {
 
 
     val userId = servicesViewModel.userId
@@ -91,12 +89,11 @@ fun ServiceOwnerProfileScreen(
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
 
-    ServiceOwnerProfileContent(
+    ServiceOwnerProfile(
         selectedParentService,
-        navHostController,
         {
             if (job?.isActive == true) {
-                return@ServiceOwnerProfileContent
+                return@ServiceOwnerProfile
             }
 
             job = scope.launch {
@@ -131,17 +128,11 @@ fun ServiceOwnerProfileScreen(
 @Composable
 fun BookmarkedServiceOwnerProfileScreen(
     navHostController: NavHostController,
-    onNavigateUpChat: (
-        ChatUser,
-        Int, Long, FeedUserProfileInfo
-    ) -> Unit,
+    onNavigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpDetailedService: () -> Unit,
     servicesViewModel: BookmarksViewModel,
-    viewModel: ServiceOwnerProfileViewModel,
-
-    ) {
-
-
+    viewModel: ServiceOwnerProfileViewModel
+) {
 
     val userId = servicesViewModel.userId
     val selectedParentService by servicesViewModel.selectedItem.collectAsState()
@@ -151,34 +142,34 @@ fun BookmarkedServiceOwnerProfileScreen(
 
     val item = selectedParentService
 
-    if(item !is Service) return
+    if (item !is Service) return
 
-    ServiceOwnerProfileContent(item, navHostController, {
+    ServiceOwnerProfile(
+        item, {
 
-        item.let { nonNullSelectedService ->
+            item.let { nonNullSelectedService ->
 
-            if (job?.isActive == true) {
-                return@ServiceOwnerProfileContent
+                if (job?.isActive == true) {
+                    return@ServiceOwnerProfile
+                }
+
+                job = scope.launch {
+                    val selectedChatUser =
+                        servicesViewModel.getChatUser(userId, nonNullSelectedService.user)
+                    val selectedChatId = selectedChatUser.chatId
+
+                    onNavigateUpChat(
+                        selectedChatId,
+                        nonNullSelectedService.user.userId,
+                        nonNullSelectedService.user
+                    )
+                }
+
             }
 
-            job = scope.launch {
-                val selectedChatUser =
-                    servicesViewModel.getChatUser(userId, nonNullSelectedService.user)
-                val selectedChatId = selectedChatUser.chatId
-
-                onNavigateUpChat(
-                    selectedChatUser,
-                    selectedChatId,
-                    nonNullSelectedService.user.userId,
-                    nonNullSelectedService.user
-                )
-            }
-
-        }
-
-    }, {
-        onNavigateUpDetailedService()
-    } ,
+        }, {
+            onNavigateUpDetailedService()
+        },
         {
             navHostController.popBackStack()
         },
@@ -190,9 +181,8 @@ fun BookmarkedServiceOwnerProfileScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ServiceOwnerProfileContent(
+private fun ServiceOwnerProfile(
     selectedParentService: Service?,
-    navHostController: NavHostController,
     onNavigateUpChat: () -> Unit,
     onNavigateUpDetailedService: (Service) -> Unit,
     onPopBackStack: () -> Unit,
@@ -201,16 +191,9 @@ fun ServiceOwnerProfileContent(
 
 
     val userId = viewModel.userId
-    // Collect the UserProfile state from the ViewModel
-    /*
-        val isLoading by viewModel.isLoading.collectAsState()
-    */
-    /*
-
-        val services by viewModel.services.collectAsState()
-    */
-
     val signInMethod = viewModel.signInMethod
+
+    val context = LocalContext.current
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -228,19 +211,14 @@ fun ServiceOwnerProfileContent(
         }
     }
 
-    val context = LocalContext.current
-
 
     val sheetState = rememberModalBottomSheetState()
 
-    // Observe the state from ViewModel
     var bottomSheetState by rememberSaveable { mutableStateOf(false) }
 
     val selectedItem by viewModel.selectedItem.collectAsState()
 
     val createdServices = remember(selectedParentService) { selectedParentService?.createdServices }
-
-
 
     LaunchedEffect(bottomSheetState) {
         if (bottomSheetState) {
@@ -249,8 +227,6 @@ fun ServiceOwnerProfileContent(
             sheetState.hide()
         }
     }
-
-
 
 
     BottomSheetScaffold(
@@ -286,66 +262,60 @@ fun ServiceOwnerProfileContent(
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     ) { innerPadding ->
 
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    navigationIcon = {
-                        IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back Icon"
-                            )
-                        }
-                    },
-                    title = {
-                        Text(text = "Profile", style = MaterialTheme.typography.titleMedium)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back Icon"
+                        )
                     }
-                )
-            }
-        ) { contentPadding ->
-            Box(modifier = Modifier.padding(contentPadding)) {
-
-
-                selectedParentService?.let {
-
-                    ServiceOwnerProfile(
-                        createdServices ?: emptyList(),
-                        /*    isLoading,*/
-                        userId,
-                        it.user,
-                        {
-                            selectedParentService?.let {
-                                if (it.user.userId != userId) {
-                                    ProfileInfoChatUser(
-                                        it.user.profilePicUrl,
-                                        it.user.isOnline
-                                    ) {
-
-                                        if (signInMethod == "guest") {
-                                            coroutineScope.launch {
-                                                bottomSheetScaffoldState.bottomSheetState.expand()
-                                            }
-                                        } else {
-                                            onNavigateUpChat()
-                                        }
-                                    }
-                                }
-
-                            }
-                        }, {
-                            viewModel.setSelectedItem(it)
-                            onNavigateUpDetailedService(it)
-                        }, {
-                            viewModel.setSelectedItem(it)
-                            bottomSheetState = true
-
-                        })
-
-                } ?: run {
-                    LoadingServiceOwnerProfileScreen()
+                },
+                title = {
+                    Text(text = "Profile", style = MaterialTheme.typography.titleMedium)
                 }
-            }
+            )
 
+            selectedParentService?.let { nonNullSelectedService ->
+
+                ServiceOwnerProfile(
+                    createdServices ?: emptyList(),
+                    nonNullSelectedService.user,
+                    {
+                        if (nonNullSelectedService.user.userId != userId) {
+                            ProfileInfoChatUser(
+                                nonNullSelectedService.user.profilePicUrl,
+                                nonNullSelectedService.user.isOnline
+                            ) {
+
+                                if (signInMethod == "guest") {
+                                    coroutineScope.launch {
+                                        bottomSheetScaffoldState.bottomSheetState.expand()
+                                    }
+                                } else {
+                                    onNavigateUpChat()
+                                }
+                            }
+                        }
+
+                    }, {
+                        viewModel.setSelectedItem(it)
+                        onNavigateUpDetailedService(it)
+                    }, {
+                        viewModel.setSelectedItem(it)
+                        bottomSheetState = true
+
+                    })
+
+            } ?: run {
+                LoadingServiceOwnerProfileScreen()
+            }
 
             if (bottomSheetState) {
                 ModalBottomSheet(
@@ -499,42 +469,43 @@ fun ServiceOwnerProfileContent(
                                 }
 
                             }
-                            Row(modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedItem?.let {
-                                        try {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedItem?.let {
+                                            try {
 
-                                            val shareIntent = Intent().apply {
-                                                action = Intent.ACTION_SEND
-                                                putExtra(
-                                                    Intent.EXTRA_TEXT,
-                                                    it.shortCode
-                                                )  // Text you want to share
-                                                type = "text/plain"  // MIME type for text
+                                                val shareIntent = Intent().apply {
+                                                    action = Intent.ACTION_SEND
+                                                    putExtra(
+                                                        Intent.EXTRA_TEXT,
+                                                        it.shortCode
+                                                    )  // Text you want to share
+                                                    type = "text/plain"  // MIME type for text
+                                                }
+                                                // Start the share intent
+                                                context.startActivity(
+                                                    Intent.createChooser(
+                                                        shareIntent,
+                                                        "Share via"
+                                                    )
+                                                )
+                                            } catch (e: ActivityNotFoundException) {
+
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "No app to open",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    .show()
                                             }
-                                            // Start the share intent
-                                            context.startActivity(
-                                                Intent.createChooser(
-                                                    shareIntent,
-                                                    "Share via"
-                                                )
-                                            )
-                                        } catch (e: ActivityNotFoundException) {
 
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "No app to open",
-                                                    Toast.LENGTH_SHORT
-                                                )
-                                                .show()
                                         }
 
                                     }
-
-                                }
-                                .padding(16.dp),
+                                    .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
 
 
@@ -561,8 +532,8 @@ fun ServiceOwnerProfileContent(
                 }
 
             }
-
         }
+
     }
 
 }
@@ -638,8 +609,6 @@ fun LoadingServiceOwnerProfileScreen() {
 @Composable
 private fun ServiceOwnerProfile(
     userServices: List<Service>,
-    /*   isLoading: Boolean,*/
-    userId: Long,
     userProfile: FeedUserProfileInfo,
     onChatClick: @Composable BoxScope.() -> Unit,
     onNavigateUpDetailedService: (Service) -> Unit,
@@ -650,14 +619,9 @@ private fun ServiceOwnerProfile(
         modifier = Modifier
             .fillMaxSize()
     ) {
-
-
         LazyColumn(
-            contentPadding = PaddingValues(
-                top = 16.dp,
-                start = 16.dp,
-                end = 16.dp
-            )
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
 
             item {
@@ -676,8 +640,6 @@ private fun ServiceOwnerProfile(
 
             if (userServices.isNotEmpty()) {
                 item {
-                    // Available Services Section
-                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "Available Services",
                         style = MaterialTheme.typography.titleMedium
@@ -686,7 +648,6 @@ private fun ServiceOwnerProfile(
 
 
                 items(userServices) { service ->
-                    Spacer(modifier = Modifier.height(8.dp))
                     ProfileServicesSection(
                         service.thumbnail?.imageUrl,
                         service.title,
@@ -696,18 +657,6 @@ private fun ServiceOwnerProfile(
                     )
                 }
             }
-
-            /*   if (isLoading) {
-                   item {
-                       Row(
-                           modifier = Modifier.fillMaxWidth(),
-                           horizontalArrangement = Arrangement.Center
-                       ) {
-                           CircularProgressIndicator() // Show loading state
-                       }
-                   }
-               } else {
-               }*/
         }
 
         onChatClick()

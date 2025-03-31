@@ -1,11 +1,11 @@
 package com.lts360.compose.ui.usedproducts
 
 import android.content.Intent
-import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +24,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,7 +34,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -55,7 +52,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -68,7 +64,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
-import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.placeholder
@@ -81,9 +76,10 @@ import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
-import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
+import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
+import com.lts360.compose.ui.services.SendMessageButton
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.utils.ExpandableText
@@ -92,12 +88,10 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun DetailedUsedProductListingScreen(
-    key: Int,
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
-    onNavigateUpForceJoinNow: () -> Unit,
-    onUsedProductListingOwnerProfileClicked:(Long)-> Unit,
+    onUsedProductListingOwnerProfileClicked: (Long) -> Unit,
     viewModel: SecondsViewmodel
 ) {
 
@@ -113,7 +107,6 @@ fun DetailedUsedProductListingScreen(
         userId,
         selectedItem,
         onNavigateUpSlider,
-        onNavigateUpForceJoinNow,
         {
             selectedItem?.let {
                 onUsedProductListingOwnerProfileClicked(it.user.userId)
@@ -162,15 +155,12 @@ fun DetailedUsedProductListingScreen(
 @Composable
 fun FeedUserDetailedSecondsInfoScreen(
     navHostController: NavHostController,
-    key: Int,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
-    onNavigateUpForceJoinNow: () -> Unit,
-    servicesViewModel: SecondsViewmodel,
     viewModel: SecondsOwnerProfileViewModel = hiltViewModel(remember {
         navHostController.getBackStackEntry<BottomNavRoutes.SecondsOwnerProfile>()
-    })) {
-
+    })
+) {
 
 
     val userId = viewModel.userId
@@ -186,7 +176,6 @@ fun FeedUserDetailedSecondsInfoScreen(
         userId,
         selectedItem,
         onNavigateUpSlider,
-        onNavigateUpForceJoinNow,
         {},
         {
 
@@ -234,8 +223,7 @@ fun BookmarkedDetailedUsedProductListingInfoScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
-    onNavigateUpForceJoinNow: () -> Unit,
-    onNavigateUpServiceOwnerProfile: (Long) -> Unit,
+    onNavigateUpSecondsOwnerProfile: (Long) -> Unit,
     viewModel: BookmarksViewModel,
 ) {
 
@@ -255,9 +243,8 @@ fun BookmarkedDetailedUsedProductListingInfoScreen(
         userId,
         item,
         onNavigateUpSlider,
-        onNavigateUpForceJoinNow,
         {
-            onNavigateUpServiceOwnerProfile(item.user.userId)
+            onNavigateUpSecondsOwnerProfile(item.user.userId)
         },
         {
 
@@ -300,13 +287,10 @@ fun BookmarkedDetailedUsedProductListingInfoScreen(
 fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
-    navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
-    onNavigateUpForceJoinNow: () -> Unit,
-    servicesViewModel: BookmarksViewModel,
+    navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
     viewModel: SecondsOwnerProfileViewModel
 
-    ) {
-
+) {
 
 
     val userId = viewModel.userId
@@ -328,41 +312,37 @@ fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
         userId,
         item,
         onNavigateUpSlider,
-        onNavigateUpForceJoinNow,
         {},
         {
 
-            item?.let {
-                Button(
-                    onClick = dropUnlessResumed {
+            Button(
+                onClick = dropUnlessResumed {
 
-                        if (job?.isActive == true) {
-                            return@dropUnlessResumed
+                    if (job?.isActive == true) {
+                        return@dropUnlessResumed
+                    }
+
+                    job = scope.launch {
+                        val selectedChatUser = viewModel.getChatUser(userId, item.user)
+                        val selectedChatId = selectedChatUser.chatId
+
+                        if (signInMethod == "guest") {
+                            it()
+                        } else {
+                            navigateUpChat(
+                                selectedChatId,
+                                item.user.userId,
+                                item.user
+                            )
                         }
+                    }
 
-                        job = scope.launch {
-                            val selectedChatUser = viewModel.getChatUser(userId, it.user)
-                            val selectedChatId = selectedChatUser.chatId
+                },
 
-                            if (signInMethod == "guest") {
-                                it()
-                            } else {
-                                navigateUpChat(
-                                    selectedChatUser,
-                                    selectedChatId,
-                                    it.user.userId,
-                                    it.user
-                                )
-                            }
-                        }
-
-                    },
-
-                    shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(text = "Send message", color = Color.White)
-                }
+                shape = RectangleShape,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = "Send message", color = Color.White)
             }
 
         }
@@ -372,21 +352,18 @@ fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
 }
 
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailedUsedProductListingContent(
     userId: Long,
-    selectedService: UsedProductListing?,
+    selectedSeconds: UsedProductListing?,
     onNavigateUpSlider: (Int) -> Unit,
-    onNavigateUpForceJoinNow: () -> Unit,
-    onUsedProductListingOwnerProfileClicked:()-> Unit,
+    onUsedProductListingOwnerProfileClicked: () -> Unit,
     onChatButtonClicked: @Composable (() -> Unit) -> Unit,
-    onPopBackStack: () -> Unit,
-
+    onPopBackStack: () -> Unit
 ) {
+
+    val context = LocalContext.current
 
 
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
@@ -398,7 +375,6 @@ fun DetailedUsedProductListingContent(
 
     val coroutineScope = rememberCoroutineScope()
 
-    val context = LocalContext.current
 
 
     BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
@@ -439,7 +415,6 @@ fun DetailedUsedProductListingContent(
         },
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
         sheetSwipeEnabled = true, // Allow gestures to hide/show bottom sheet
-
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -458,90 +433,78 @@ fun DetailedUsedProductListingContent(
                 }
             )
         }
-    ) {
+    ) { paddingValues ->
 
+        Box(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
+            selectedSeconds?.let {
+                DetailedUsedProductListingInfo(
+                    userId,
+                    it,
+                    onNavigateUpSlider,
+                    onUsedProductListingOwnerProfileClicked
 
-        Scaffold { paddingValues ->
-
-            Box(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
-            ) {
-                selectedService?.let {
-                    DetailedUsedProductListingInfo(
-                        userId,
-                        it,
-                        onNavigateUpSlider,
-                        onUsedProductListingOwnerProfileClicked
-
-                    ) {
-                        onChatButtonClicked {
-                            coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.expand()
-                            }
+                ) {
+                    onChatButtonClicked {
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.expand()
                         }
                     }
-                } ?: run {
-
-                    LoadingDetailedServiceInfo()
                 }
+            } ?: run {
+                LoadingDetailedSecondsInfo()
             }
-
-
         }
+
     }
 }
 
 @Composable
 fun DetailedUsedProductListingInfo(
     userId: Long,
-    service: UsedProductListing,
+    seconds: UsedProductListing,
     onNavigateUpSlider: (Int) -> Unit,
-    onUsedProductListingOwnerProfileClicked:()-> Unit,
+    onUsedProductListingOwnerProfileClicked: () -> Unit,
     chatButtonClicked: @Composable () -> Unit
 ) {
-    // Set up the top bar with the toolbar and title
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp)
+        contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
 
-        // Service Owner
-        item(key = "serviceOwner-${service.user.userId}") {
-            ServiceOwner(
-                "${service.user.firstName} ${service.user.lastName ?: ""}",
-                service.user.profilePicUrl,
-                "${service.country}/${service.state}",
-                service.user.isOnline,
+        item(key = "secondsOwner-${seconds.user.userId}") {
+            SecondsOwner(
+                "${seconds.user.firstName} ${seconds.user.lastName ?: ""}",
+                seconds.user.profilePicUrl,
+                "${seconds.country}/${seconds.state}",
+                seconds.user.isOnline,
                 onUsedProductListingOwnerProfileClicked
             )
         }
 
-        // Image Slider
-        item(key = "serviceImages-${service.productId}") {
-            ServiceImagesSliderDetailedServiceInfo(service.images, onNavigateUpSlider)
+        item(key = "secondsImages-${seconds.productId}") {
+            SecondsImagesSliderDetailedSecondsInfo(seconds.images, onNavigateUpSlider)
         }
 
-        // Service Title and Description
-        item(key = "serviceDescription-${service.productId}") {
-            ServiceDescription(
-                service.name,
-                service.description,
+        item(key = "secondsDescription-${seconds.productId}") {
+            SecondsDescription(
+                seconds.name,
+                seconds.description,
                 formatCurrency(
-                    service.price,
-                    service.priceUnit
+                    seconds.price,
+                    seconds.priceUnit
                 )
             )
         }
 
-
-        // Send Message Button (if not the service owner)
-        if (userId != service.user.userId) {
-            item(key = "sendMessage-${service.productId}") {
-                Spacer(modifier = Modifier.height(8.dp))
+        if (userId != seconds.user.userId) {
+            item(key = "sendMessage-${seconds.productId}") {
                 SendMessageButton(chatButtonClicked)
             }
         }
@@ -550,8 +513,7 @@ fun DetailedUsedProductListingInfo(
 }
 
 @Composable
-fun LoadingDetailedServiceInfo() {
-    // Set up the top bar with the toolbar and title
+private fun LoadingDetailedSecondsInfo() {
 
     LazyColumn(
         modifier = Modifier
@@ -560,8 +522,7 @@ fun LoadingDetailedServiceInfo() {
         contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp)
     ) {
 
-        // Service Owner
-        item(key = "serviceOwner-${0}") {
+        item(key = "secondsOwner-${0}") {
 
 
             Row(
@@ -587,7 +548,7 @@ fun LoadingDetailedServiceInfo() {
                     ShimmerBox {
                         Text(
                             color = Color.Transparent,
-                            text = "Service owner name", // Replace with your data
+                            text = "Seconds owner name", // Replace with your data
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.bodyMedium
@@ -602,7 +563,7 @@ fun LoadingDetailedServiceInfo() {
                         ShimmerBox {
                             Text(
                                 color = Color.Transparent,
-                                text = "Service from and verified icon",
+                                text = "Seconds from and verified icon",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -612,16 +573,14 @@ fun LoadingDetailedServiceInfo() {
         }
 
         // Image Slider
-        item(key = "serviceImages-${0}") {
+        item(key = "SecondsImages-${0}") {
 
             ShimmerBox {
-                Box(modifier = Modifier.aspectRatio(16 / 9f)) {
-                }
+                Spacer(modifier = Modifier.aspectRatio(16 / 9f))
             }
         }
 
-        // Service Title and Description
-        item(key = "serviceDescription-${0}") {
+        item(key = "secondsDescription-${0}") {
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -656,35 +615,29 @@ fun LoadingDetailedServiceInfo() {
 }
 
 @Composable
-fun ServiceOwner(
-    serviceOwner: String,
+private fun SecondsOwner(
+    secondsOwner: String,
     urlImage: String?,
-    serviceFrom: String,
+    secondsFrom: String,
     isOnline: Boolean,
-    onUsedProductListingClicked:()->Unit
+    onUsedProductListingClicked: () -> Unit
 ) {
 
     val context = LocalContext.current
 
-    val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(context)
-            .data(urlImage)
-            .placeholder(R.drawable.user_placeholder)
-            .error(R.drawable.user_placeholder)
-            .build()
-    )
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp).clickable { onUsedProductListingClicked() },
+            .clickable { onUsedProductListingClicked() },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier.size(40.dp)
-        ) {
-            Image(
-                painter = painter, // Replace with your image resource
+        Box(modifier = Modifier.size(40.dp)) {
+            AsyncImage(
+                ImageRequest.Builder(context)
+                    .data(urlImage)
+                    .placeholder(R.drawable.user_placeholder)
+                    .error(R.drawable.user_placeholder)
+                    .build(),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
@@ -701,7 +654,8 @@ fun ServiceOwner(
                         .background(
                             Color.Green,
                             shape = CircleShape
-                        ) // Use your drawable resource if necessary
+                        )
+                        .clip(CircleShape)
                 )
             }
 
@@ -711,7 +665,7 @@ fun ServiceOwner(
 
         Column {
             Text(
-                text = serviceOwner, // Replace with your data
+                text = secondsOwner,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium
@@ -719,12 +673,12 @@ fun ServiceOwner(
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = serviceFrom,
+                    text = secondsFrom,
                     style = MaterialTheme.typography.bodyMedium
 
                 )
                 Image(
-                    painter = painterResource(id = R.drawable.ic_verified_service), // Replace with your drawable
+                    painter = painterResource(id = R.drawable.ic_verified_service),
                     contentDescription = null,
                     modifier = Modifier
                         .size(16.dp)
@@ -736,10 +690,10 @@ fun ServiceOwner(
 }
 
 @Composable
-private fun ServiceDescription(
+private fun SecondsDescription(
     name: String,
     description: String,
-    price:String
+    price: String
 ) {
 
 
@@ -747,7 +701,6 @@ private fun ServiceDescription(
         modifier = Modifier.fillMaxSize()
     ) {
 
-        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = name, // Replace with your data
@@ -790,50 +743,16 @@ private fun ServiceDescription(
 }
 
 @Composable
-private fun ServiceImagesSliderDetailedServiceInfo(
+private fun SecondsImagesSliderDetailedSecondsInfo(
     images: List<Image>,
     onNavigateUpSlider: (Int) -> Unit,
 ) {
 
 
-    val context = LocalContext.current
-
     val lifecycleOwner = LocalLifecycleOwner.current
-
-    // Create a pager state to manage the pager's state
-    val pagerState = rememberPagerState(pageCount = { images.size })
-
-    val cellConfiguration = if (LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE) {
-        StaggeredGridCells.Adaptive(minSize = 175.dp)
-    } else StaggeredGridCells.Fixed(2)
 
 
     if (images.isNotEmpty()) {
-
-
-        /*       LazyHorizontalStaggeredGrid(
-                   rows = cellConfiguration,
-                   contentPadding = PaddingValues(16.dp),
-                   verticalArrangement = Arrangement.spacedBy(16.dp),
-                   horizontalItemSpacing = 16.dp,
-                   modifier = Modifier
-                       .fillMaxWidth()
-                       .width(100.dp)  // Maintain a 16:9 aspect ratio
-               ) {
-                   itemsIndexed(images) { index, image ->
-                       AsyncImage(
-                           model = image.imageUrl,  // Use the URL for the image
-                           contentDescription = null,
-                           contentScale = ContentScale.Fit,  // Adjust content scale based on your needs
-                           modifier = Modifier
-                               .clickable {
-                                   executeIfResumed(lifecycleOwner) {
-                                       onNavigateUpSlider(index)  // Pass the index of the image
-                                   }
-                               }
-                       )
-                   }
-               }*/
 
         LazyRow(
             modifier = Modifier
@@ -841,7 +760,7 @@ private fun ServiceImagesSliderDetailedServiceInfo(
                 .aspectRatio(16 / 9f)
                 .background(MaterialTheme.customColorScheme.serviceSurfaceContainer),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            contentPadding = PaddingValues(8.dp)
         ) {
             itemsIndexed(images) { index, image ->
                 AsyncImage(
@@ -850,7 +769,9 @@ private fun ServiceImagesSliderDetailedServiceInfo(
                     contentScale = ContentScale.Fit,  // Adjust content scale based on your needs
                     modifier = Modifier
                         .wrapContentWidth()
-                        .clickable {
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }) {
                             dropUnlessResumedV2(lifecycleOwner) {
                                 onNavigateUpSlider(index)  // Pass the index of the image
                             }
@@ -863,7 +784,3 @@ private fun ServiceImagesSliderDetailedServiceInfo(
 
 }
 
-@Composable
-fun SendMessageButton(chatButtonClicked: @Composable () -> Unit) {
-    chatButtonClicked()
-}

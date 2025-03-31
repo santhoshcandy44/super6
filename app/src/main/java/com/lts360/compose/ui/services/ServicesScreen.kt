@@ -78,6 +78,7 @@ import coil3.size.Size
 import com.lts360.R
 import com.lts360.api.models.service.Service
 import com.lts360.compose.dropUnlessResumedV2
+import com.lts360.compose.ui.NoRippleInteractionSource
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.main.common.NoInternetScreen
@@ -341,16 +342,13 @@ fun ServicesScreen(
                                         onItemProfileClick = {
                                             onNavigateUpServiceOwnerProfile(item, item.user.userId)
                                         },
-
                                         onReviewsClicked = {
                                             scope.launch {
                                                 commentsModalBottomSheetState.expand()
                                             }
-
                                             if (selectedItem == item) {
                                                 return@ServiceCard
                                             }
-
                                             viewModel.loadReViewsSelectedItem(item)
                                         },
                                         location = item.location?.geo,
@@ -363,8 +361,6 @@ fun ServicesScreen(
                                         },
                                         userName = "${item.user.firstName} ${item.user.lastName ?: ""}",
                                         profileImageUrl = item.user.profilePicUrl,
-                                        imageWidth = item.thumbnail?.width ?: 0,
-                                        imageHeight = item.thumbnail?.height ?: 0,
                                         isUserOnline = item.user.isOnline,
                                         serviceThumbnailUrl = item.thumbnail?.imageUrl,
                                         serviceTitle = item.title,
@@ -703,8 +699,6 @@ fun ServiceCard(
     profileImageUrl: String?,
     isUserOnline: Boolean,
     serviceThumbnailUrl: String?,
-    imageWidth: Int,
-    imageHeight: Int,
     serviceTitle: String,
     serviceDescription: String,
     startingPrice: String,
@@ -719,24 +713,14 @@ fun ServiceCard(
 ) {
 
 
+    val context = LocalContext.current
+
     var bookMarkStatus by remember(isBookmarked) { mutableStateOf(isBookmarked) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val context = LocalContext.current
-
-    val painter = rememberAsyncImagePainter(
-        model = ImageRequest.Builder(context)
-            .data(profileImageUrl) // Set the image URL
-            .placeholder(R.drawable.user_placeholder) // Placeholder image
-            .error(R.drawable.user_placeholder) // Error image in case of failure
-            .build()
-    )
-
-
 
     Card(
-
         onClick = dropUnlessResumed {
             onItemClick()
         },
@@ -744,10 +728,9 @@ fun ServiceCard(
             .fillMaxWidth(),
         shape = RoundedCornerShape(8.dp), // Remove rounded corners
         elevation = CardDefaults.cardElevation(2.dp),
-
+        interactionSource = NoRippleInteractionSource()
         ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Location Info
 
             location?.let {
 
@@ -772,7 +755,6 @@ fun ServiceCard(
                 }
             }
 
-
             distance?.let {
                 Text(
                     text = it,
@@ -782,63 +764,64 @@ fun ServiceCard(
             }
 
 
-            // Profile Bar
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple()
-                        ) {
-                            dropUnlessResumedV2(lifecycleOwner) {
-                                onItemProfileClick()
-                            }
-                        }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Text(
-                        text = userName,
-                        modifier = Modifier.padding(horizontal = 4.dp),
-                        maxLines = 2,
-                        style = MaterialTheme.typography.bodyMedium,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Box(modifier = Modifier) {
-                        Image(
-                            painter = painter,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                        )
-
-                        if (isUserOnline) {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .background(Color.Green, CircleShape)
-                                    .align(Alignment.BottomEnd)
-                            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        dropUnlessResumedV2(lifecycleOwner) {
+                            onItemProfileClick()
                         }
                     }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    text = userName,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    maxLines = 2,
+                    style = MaterialTheme.typography.bodyMedium,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.width(8.dp))
 
-                    IconButton(onClick = {
-                        onItemOptionClick()
-                    }, content = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_more_vertical_dots),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
+                Box(modifier = Modifier) {
+                    AsyncImage(
+                        ImageRequest.Builder(context)
+                            .data(profileImageUrl) // Set the image URL
+                            .placeholder(R.drawable.user_placeholder) // Placeholder image
+                            .error(R.drawable.user_placeholder) // Error image in case of failure
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    )
+
+                    if (isUserOnline) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .background(Color.Green, CircleShape)
+                                .align(Alignment.BottomEnd)
                         )
-                    })
-
+                    }
                 }
+
+                IconButton(onClick = {
+                    onItemOptionClick()
+                }, content = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_more_vertical_dots),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                })
+
             }
 
 
@@ -847,8 +830,8 @@ fun ServiceCard(
                 .data(serviceThumbnailUrl) // Use placeholder drawable if imageUrl is null
                 .build()
 
-//            val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-//            val aspectRatio = imageWidth.toFloat() / imageHeight.toFloat()
+/*            val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+            val aspectRatio = imageWidth.toFloat() / imageHeight.toFloat()*/
 
             AsyncImage(
                 model = imageRequest,
@@ -1063,8 +1046,8 @@ fun ShimmerServiceCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
 
-                    if (enableBookmarkedServiceIcon) {
-                        /*     Icon(
+                /*    if (enableBookmarkedServiceIcon) {
+                             Icon(
                                  if (bookMarkStatus) painterResource(
                                      R.drawable.ic_bookmarked
                                  ) else painterResource(
@@ -1074,14 +1057,11 @@ fun ShimmerServiceCard(
                                  contentDescription = null,
                                  modifier = Modifier
                                      .size(32.dp)
-                             )*/
-                    }
+                             )
+                    }*/
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End,
-
-                        ) {
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End) {
                         ShimmerBox {
                             Text(
                                 text = "Starting from",
@@ -1099,7 +1079,6 @@ fun ShimmerServiceCard(
                                 style = MaterialTheme.typography.titleLarge
                             )
                         }
-
                     }
                 }
             }

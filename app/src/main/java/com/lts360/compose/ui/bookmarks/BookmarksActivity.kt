@@ -120,9 +120,6 @@ class BookmarksActivity : ComponentActivity() {
                                                     putExtra("recipient_id", recipientId)
 
                                                 })
-                                    },
-                                    onNavigateUpForceJoinNow = {
-
                                     }, bookmarksViewModel
                                 )
                             }
@@ -135,11 +132,9 @@ class BookmarksActivity : ComponentActivity() {
 
                                 selectedItem?.let {
                                     BookmarkedImagesSliderScreen(
-                                        navController,
                                         selectedImagePosition,
-                                        bookmarksViewModel,
-                                        { navController.popBackStack() }
-                                    )
+                                        bookmarksViewModel
+                                    ) { navController.popBackStack() }
                                 }
                             }
 
@@ -149,7 +144,7 @@ class BookmarksActivity : ComponentActivity() {
                                 selectedItem?.let {
                                     BookmarkedServiceOwnerProfileScreen(
                                         navController,
-                                        onNavigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
+                                        onNavigateUpChat = { chatId, recipientId, feedUserProfile ->
                                             context.startActivity(
                                                 Intent(context, IsolatedChatActivity::class.java)
                                                     .apply {
@@ -185,7 +180,7 @@ class BookmarksActivity : ComponentActivity() {
                                                 BookMarkRoutes.DetailedServiceFeedUserImagesSlider(it)
                                             )
                                         },
-                                        { chatUser, chatId, recipientId, feedUserProfile ->
+                                        { chatId, recipientId, feedUserProfile ->
 
                                             context.startActivity(
                                                 Intent(context, IsolatedChatActivity::class.java)
@@ -201,11 +196,7 @@ class BookmarksActivity : ComponentActivity() {
 
                                                     })
 
-                                        }, {
-
-                                        },
-                                        bookmarksViewModel,
-                                        servicesOwnerProfileViewModel
+                                        }, servicesOwnerProfileViewModel
                                     )
                                 }
 
@@ -218,11 +209,9 @@ class BookmarksActivity : ComponentActivity() {
                                 val selectedItem by servicesOwnerProfileViewModel.selectedItem.collectAsState()
                                 selectedItem?.let {
                                     FeedUserImagesSliderScreen(
-                                        navController,
                                         selectedImagePosition,
-                                        servicesOwnerProfileViewModel,
-                                        { navController.popBackStack() }
-                                    )
+                                        servicesOwnerProfileViewModel
+                                    ) { navController.popBackStack() }
                                 }
 
                             }
@@ -254,9 +243,6 @@ class BookmarksActivity : ComponentActivity() {
 
                                                 })
                                     },
-                                    onNavigateUpForceJoinNow = {
-
-                                    },
                                     {
                                         navController.navigate(
                                             BookMarkRoutes.SecondsOwnerProfile(
@@ -279,9 +265,8 @@ class BookmarksActivity : ComponentActivity() {
                                     BookmarkedSecondsSliderScreen(
                                         navController,
                                         selectedImagePosition,
-                                        bookmarksViewModel,
-                                        { navController.popBackStack() }
-                                    )
+                                        bookmarksViewModel
+                                    ) { navController.popBackStack() }
                                 }
                             }
 
@@ -290,7 +275,7 @@ class BookmarksActivity : ComponentActivity() {
                                 selectedItem?.let {
                                     BookmarkedSecondsOwnerProfileScreen(
                                         navController,
-                                        onNavigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
+                                        onNavigateUpChat = { chatId, recipientId, feedUserProfile ->
                                             context.startActivity(
                                                 Intent(context, IsolatedChatActivity::class.java)
                                                     .apply {
@@ -328,7 +313,7 @@ class BookmarksActivity : ComponentActivity() {
                                                 )
                                             )
                                         },
-                                        { chatUser, chatId, recipientId, feedUserProfile ->
+                                        { chatId, recipientId, feedUserProfile ->
 
                                             context.startActivity(
                                                 Intent(context, IsolatedChatActivity::class.java)
@@ -344,8 +329,7 @@ class BookmarksActivity : ComponentActivity() {
 
                                                     })
 
-                                        }, {
-                                        }, bookmarksViewModel,
+                                        },
                                         secondsOwnerProfileViewModel
                                     )
                                 }
@@ -362,9 +346,8 @@ class BookmarksActivity : ComponentActivity() {
                                     FeedUserSecondsImagesSliderScreen(
                                         navController,
                                         selectedImagePosition,
-                                        secondsOwnerProfileViewModel,
-                                        { navController.popBackStack() }
-                                    )
+                                        secondsOwnerProfileViewModel
+                                    ) { navController.popBackStack() }
                                 }
 
                             }

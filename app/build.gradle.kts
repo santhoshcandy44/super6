@@ -159,11 +159,11 @@ dependencies {
     // Jetpack Compose BOM
     implementation(platform("androidx.compose:compose-bom:2025.02.00"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.02.00"))
-    debugImplementation("androidx.compose.ui:ui-tooling:1.7.8")
     implementation("androidx.compose.ui:ui:1.7.8")
     implementation("androidx.compose.ui:ui-test:1.7.8")
     implementation("androidx.compose.ui:ui-graphics:1.7.8")
     implementation("androidx.compose.ui:ui-tooling-preview:1.7.8")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.7.8")
 
     // Compose UI Testing
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.7.8")

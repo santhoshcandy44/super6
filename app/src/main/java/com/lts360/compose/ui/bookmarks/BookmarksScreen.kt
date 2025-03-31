@@ -58,7 +58,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.lts360.R
 import com.lts360.api.Utils.ResultError
@@ -279,8 +278,6 @@ fun BookmarksScreen(
                                         profileImageUrl = item.user.profilePicUrl,
                                         isUserOnline = item.user.isOnline,
                                         serviceThumbnailUrl = item.thumbnail?.imageUrl,
-                                        imageWidth = if (item.images.isNotEmpty()) item.images[0].width else 0,
-                                        imageHeight = if (item.images.isNotEmpty()) item.images[0].height else 0,
                                         serviceTitle = item.title,
                                         serviceDescription = item.shortDescription,
                                         startingPrice = formatCurrency(

@@ -1,19 +1,12 @@
 package com.lts360.compose.ui.main.navhosts
 
 import android.content.Intent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -180,7 +173,6 @@ fun BottomNavHost(
 
             selectedItem?.let {
                 DetailedServiceScreen(
-                    key,
                     navController,
                     onNavigateUpSlider = {
                         navController.navigate(BottomNavRoutes.DetailedServiceImagesSlider(key, it))
@@ -191,8 +183,6 @@ fun BottomNavHost(
                             recipientId,
                             UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
                         )
-                    },
-                    {
                     },
                     viewModel
                 )
@@ -218,8 +208,6 @@ fun BottomNavHost(
 
             selectedItem?.let {
                 ImagesSliderScreen(
-                    key,
-                    navController,
                     selectedImagePosition,
                     viewModel
                 ) { navController.popBackStack() }
@@ -290,7 +278,6 @@ fun BottomNavHost(
             selectedItem?.let {
                 FeedUserDetailedServiceInfoScreen(
                     navController,
-                    key,
                     {
                         navController.navigate(
                             BottomNavRoutes.DetailedServiceFeedUserImagesSlider(
@@ -307,7 +294,7 @@ fun BottomNavHost(
                             UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
                         )
 
-                    }, {}, servicesViewModel
+                    }, servicesViewModel
                 )
             }
 
@@ -322,7 +309,6 @@ fun BottomNavHost(
                 hiltViewModel(remember { navController.getBackStackEntry<BottomNavRoutes.ServiceOwnerProfile>() })
 
             FeedUserImagesSliderScreen(
-                navController,
                 selectedImagePosition,
                 serviceOwnerProfileViewModel
             ) { navController.popBackStack() }
@@ -380,13 +366,13 @@ fun BottomNavHost(
             }
 
 
-            val viewModel: SecondsViewmodel = hiltViewModel(parentBackStackEntry, key = "seconds_${key}")
+            val viewModel: SecondsViewmodel =
+                hiltViewModel(parentBackStackEntry, key = "seconds_${key}")
 
             val selectedItem by viewModel.selectedItem.collectAsState()
 
             selectedItem?.let {
                 DetailedUsedProductListingScreen(
-                    key,
                     navController,
                     onNavigateUpSlider = {
                         navController.navigate(BottomNavRoutes.DetailedSecondsImagesSlider(key, it))
@@ -398,9 +384,7 @@ fun BottomNavHost(
                             UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
                         )
                     },
-                    {
 
-                    },
                     { serviceOwnerId ->
                         navController.navigate(
                             BottomNavRoutes.SecondsOwnerProfile(serviceOwnerId, args.key),
@@ -409,13 +393,6 @@ fun BottomNavHost(
                     },
                     viewModel
                 )
-            } ?: run {
-                Box(modifier=Modifier
-                    .fillMaxSize()
-                    .background(Color.Yellow)){
-
-                    Text("${key}")
-                }
             }
         }
 
@@ -513,7 +490,6 @@ fun BottomNavHost(
             selectedItem?.let {
                 FeedUserDetailedSecondsInfoScreen(
                     navController,
-                    key,
                     {
                         navController.navigate(
                             BottomNavRoutes.DetailedSecondsFeedUserImagesSlider(
@@ -530,7 +506,7 @@ fun BottomNavHost(
                             UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
                         )
 
-                    }, {}, viewmodel
+                    }
                 )
             }
 
@@ -580,7 +556,8 @@ fun BottomNavHost(
 
         noTransitionComposable<BottomBar.More> {
 
-            MoreScreen(navController, onProfileNavigateUp = {
+            MoreScreen(
+                navController, onProfileNavigateUp = {
                 onProfileNavigateUp()
             }, onAccountAndProfileSettingsNavigateUp = { accountType ->
                 onAccountAndProfileSettingsNavigateUp(accountType)

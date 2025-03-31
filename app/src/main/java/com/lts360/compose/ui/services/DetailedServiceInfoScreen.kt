@@ -1,12 +1,12 @@
 package com.lts360.compose.ui.services
 
 import android.content.Intent
-import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -39,7 +38,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Tab
@@ -61,7 +59,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -102,11 +99,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun DetailedServiceScreen(
-    key: Int,
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
-    onNavigateUpForceJoinNow: () -> Unit,
     viewModel: ServicesViewModel
 ) {
 
@@ -118,11 +113,10 @@ fun DetailedServiceScreen(
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
 
-    DetailedServiceInfoContent(
+    DetailedServiceInfo(
         userId,
         selectedItem,
         onNavigateUpSlider,
-        onNavigateUpForceJoinNow,
         {
             selectedItem?.let {
                 Button(
@@ -167,15 +161,11 @@ fun DetailedServiceScreen(
 @Composable
 fun FeedUserDetailedServiceInfoScreen(
     navHostController: NavHostController,
-    key: Int,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
-    onNavigateUpForceJoinNow: () -> Unit,
     servicesViewModel: ServicesViewModel,
-    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navHostController.getBackStackEntry<BottomNavRoutes.ServiceOwnerProfile>() }),
-
-
-    ) {
+    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navHostController.getBackStackEntry<BottomNavRoutes.ServiceOwnerProfile>() })
+) {
 
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
@@ -186,11 +176,10 @@ fun FeedUserDetailedServiceInfoScreen(
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
 
-    DetailedServiceInfoContent(
+    DetailedServiceInfo(
         userId,
         selectedItem,
         onNavigateUpSlider,
-        onNavigateUpForceJoinNow,
         {
 
             selectedItem?.let {
@@ -233,19 +222,13 @@ fun FeedUserDetailedServiceInfoScreen(
 }
 
 
-
 @Composable
 fun BookmarkedFeedUserDetailedServiceInfoScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
-    navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
-    onNavigateUpForceJoinNow: () -> Unit,
-    servicesViewModel: BookmarksViewModel,
-    viewModel: ServiceOwnerProfileViewModel,
-
-
-    ) {
-
+    navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
+    viewModel: ServiceOwnerProfileViewModel
+) {
 
 
     val userId = viewModel.userId
@@ -253,16 +236,15 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
 
     val selectedItem by viewModel.selectedItem.collectAsState()
     val item = selectedItem
-    if(item !is Service) return
+    if (item !is Service) return
 
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
 
-    DetailedServiceInfoContent(
+    DetailedServiceInfo(
         userId,
         item,
         onNavigateUpSlider,
-        onNavigateUpForceJoinNow,
         {
 
             item.let {
@@ -281,7 +263,6 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
                                 it()
                             } else {
                                 navigateUpChat(
-                                    selectedChatUser,
                                     selectedChatId,
                                     it.user.userId,
                                     it.user
@@ -305,16 +286,11 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
 }
 
 
-
-
-
-
 @Composable
 fun BookmarkedDetailedServiceInfoScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
-    onNavigateUpForceJoinNow: () -> Unit,
     viewModel: BookmarksViewModel,
 ) {
 
@@ -328,13 +304,12 @@ fun BookmarkedDetailedServiceInfoScreen(
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
 
     val item = selectedItem
-    if(item !is Service) return
+    if (item !is Service) return
 
-    DetailedServiceInfoContent(
+    DetailedServiceInfo(
         userId,
         item,
         onNavigateUpSlider,
-        onNavigateUpForceJoinNow,
         {
 
             item.let {
@@ -375,16 +350,16 @@ fun BookmarkedDetailedServiceInfoScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailedServiceInfoContent(
+private fun DetailedServiceInfo(
     userId: Long,
     selectedService: Service?,
     onNavigateUpSlider: (Int) -> Unit,
-    onNavigateUpForceJoinNow: () -> Unit,
     onChatButtonClicked: @Composable (() -> Unit) -> Unit,
     onPopBackStack: () -> Unit
 
 ) {
 
+    val context = LocalContext.current
 
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -395,7 +370,6 @@ fun DetailedServiceInfoContent(
 
     val coroutineScope = rememberCoroutineScope()
 
-    val context = LocalContext.current
 
 
     BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
@@ -434,9 +408,8 @@ fun DetailedServiceInfoContent(
                 }
             }
         },
-        sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetSwipeEnabled = true, // Allow gestures to hide/show bottom sheet
-
+        sheetPeekHeight = 0.dp,
+        sheetSwipeEnabled = true,
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -456,103 +429,82 @@ fun DetailedServiceInfoContent(
             )
         }
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            selectedService?.let {
 
 
-        Scaffold { paddingValues ->
+                // Set up the top bar with the toolbar and title
 
-            Box(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
-            ) {
-                selectedService?.let {
-                    DetailedServiceInfo(
-                        userId,
-                        it,
-                        onNavigateUpSlider,
-                    ) {
-                        onChatButtonClicked {
-                            coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.expand()
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    // Service Owner
+                    item(key = "serviceOwner-${it.user.userId}") {
+                        ServiceOwner(
+                            "${it.user.firstName} ${it.user.lastName ?: ""}",
+                            it.user.profilePicUrl,
+                            "${it.country}/${it.state}",
+                            it.user.isOnline
+                        )
+                    }
+
+                    // Image Slider
+                    item(key = "serviceImages-${it.serviceId}") {
+                        ServiceImagesSliderDetailedServiceInfo(it.images, onNavigateUpSlider)
+                    }
+
+                    // Service Title and Description
+                    item(key = "serviceDescription-${it.serviceId}") {
+                        ServiceDescription(
+                            it.title,
+                            it.shortDescription,
+                            it.longDescription,
+                            formatCurrency(
+                                it.plans[0].planPrice.toDouble(),
+                                it.plans[0].planPriceUnit
+                            )
+                        )
+                    }
+
+                    // Plan and Tabs
+                    item(key = "planTabs-${it.serviceId}") {
+                        PlanTabs(it.plans)
+                    }
+
+                    // Send Message Button (if not the service owner)
+                    if (userId != it.user.userId) {
+                        item(key = "sendMessage-${it.serviceId}") {
+                            SendMessageButton {
+                                onChatButtonClicked {
+                                    coroutineScope.launch {
+                                        bottomSheetScaffoldState.bottomSheetState.expand()
+                                    }
+                                }
                             }
                         }
                     }
-                } ?: run {
 
-                    LoadingDetailedServiceInfo()
                 }
+
+
+            } ?: run {
+
+                LoadingDetailedServiceInfo()
             }
-
-
         }
     }
 }
 
-@Composable
-fun DetailedServiceInfo(
-    userId: Long,
-    service: Service,
-    onNavigateUpSlider: (Int) -> Unit,
-    chatButtonClicked: @Composable () -> Unit,
-) {
-    // Set up the top bar with the toolbar and title
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp)
-    ) {
-
-        // Service Owner
-        item(key = "serviceOwner-${service.user.userId}") {
-            ServiceOwner(
-                "${service.user.firstName} ${service.user.lastName ?: ""}",
-                service.user.profilePicUrl,
-                "${service.country}/${service.state}",
-                service.user.isOnline
-            )
-        }
-
-        // Image Slider
-        item(key = "serviceImages-${service.serviceId}") {
-            ServiceImagesSliderDetailedServiceInfo(service.images, onNavigateUpSlider)
-        }
-
-        // Service Title and Description
-        item(key = "serviceDescription-${service.serviceId}") {
-            ServiceDescription(
-                service.title,
-                service.shortDescription,
-                service.longDescription,
-                formatCurrency(
-                    service.plans[0].planPrice.toDouble(),
-                    service.plans[0].planPriceUnit
-                )
-            )
-        }
-
-        // Plan and Tabs
-        item(key = "planTabs-${service.serviceId}") {
-            Spacer(modifier = Modifier.height(8.dp))
-            PlanTabs(service.plans)
-        }
-
-        // Send Message Button (if not the service owner)
-        if (userId != service.user.userId) {
-            item(key = "sendMessage-${service.serviceId}") {
-                Spacer(modifier = Modifier.height(8.dp))
-                SendMessageButton(chatButtonClicked)
-            }
-        }
-
-    }
-
-}
-
 
 @Composable
-fun LoadingDetailedServiceInfo() {
-    // Set up the top bar with the toolbar and title
+private fun LoadingDetailedServiceInfo() {
 
     LazyColumn(
         modifier = Modifier
@@ -561,10 +513,7 @@ fun LoadingDetailedServiceInfo() {
         contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp)
     ) {
 
-        // Service Owner
         item(key = "serviceOwner-${0}") {
-
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -588,7 +537,7 @@ fun LoadingDetailedServiceInfo() {
                     ShimmerBox {
                         Text(
                             color = Color.Transparent,
-                            text = "Service owner name", // Replace with your data
+                            text = "Service owner name",
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.bodyMedium
@@ -612,16 +561,13 @@ fun LoadingDetailedServiceInfo() {
             }
         }
 
-        // Image Slider
         item(key = "serviceImages-${0}") {
 
             ShimmerBox {
-                Box(modifier = Modifier.aspectRatio(16 / 9f)) {
-                }
+                Spacer(modifier = Modifier.aspectRatio(16 / 9f))
             }
         }
 
-        // Service Title and Description
         item(key = "serviceDescription-${0}") {
             Column(
                 modifier = Modifier.fillMaxSize()
@@ -631,7 +577,7 @@ fun LoadingDetailedServiceInfo() {
                     Text(
                         color = Color.Transparent,
                         modifier = Modifier.fillMaxWidth(),
-                        text = "Short description", // Replace with your data
+                        text = "Short description",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -643,7 +589,7 @@ fun LoadingDetailedServiceInfo() {
                     Text(
                         color = Color.Transparent,
                         modifier = Modifier.fillMaxWidth(0.6f),
-                        text = "Long description", // Replace with your data
+                        text = "Long description",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -658,7 +604,7 @@ fun LoadingDetailedServiceInfo() {
 
 
 @Composable
-fun ServiceOwner(
+private fun ServiceOwner(
     serviceOwner: String,
     urlImage: String?,
     serviceFrom: String,
@@ -677,8 +623,7 @@ fun ServiceOwner(
 
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -745,11 +690,7 @@ private fun ServiceDescription(
 ) {
 
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-
-        Spacer(modifier = Modifier.height(8.dp))
+    Column(modifier = Modifier.fillMaxSize()) {
 
         Text(
             text = serviceTitle, // Replace with your data
@@ -805,45 +746,9 @@ private fun ServiceImagesSliderDetailedServiceInfo(
     onNavigateUpSlider: (Int) -> Unit,
 ) {
 
-
-    val context = LocalContext.current
-
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Create a pager state to manage the pager's state
-    val pagerState = rememberPagerState(pageCount = { images.size })
-
-    val cellConfiguration = if (LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE) {
-        StaggeredGridCells.Adaptive(minSize = 175.dp)
-    } else StaggeredGridCells.Fixed(2)
-
-
     if (images.isNotEmpty()) {
-
-
-        /*       LazyHorizontalStaggeredGrid(
-                   rows = cellConfiguration,
-                   contentPadding = PaddingValues(16.dp),
-                   verticalArrangement = Arrangement.spacedBy(16.dp),
-                   horizontalItemSpacing = 16.dp,
-                   modifier = Modifier
-                       .fillMaxWidth()
-                       .width(100.dp)  // Maintain a 16:9 aspect ratio
-               ) {
-                   itemsIndexed(images) { index, image ->
-                       AsyncImage(
-                           model = image.imageUrl,  // Use the URL for the image
-                           contentDescription = null,
-                           contentScale = ContentScale.Fit,  // Adjust content scale based on your needs
-                           modifier = Modifier
-                               .clickable {
-                                   executeIfResumed(lifecycleOwner) {
-                                       onNavigateUpSlider(index)  // Pass the index of the image
-                                   }
-                               }
-                       )
-                   }
-               }*/
 
         LazyRow(
             modifier = Modifier
@@ -851,7 +756,7 @@ private fun ServiceImagesSliderDetailedServiceInfo(
                 .aspectRatio(16 / 9f)
                 .background(MaterialTheme.customColorScheme.serviceSurfaceContainer),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            contentPadding = PaddingValues(8.dp)
         ) {
             itemsIndexed(images) { index, image ->
                 AsyncImage(
@@ -860,7 +765,9 @@ private fun ServiceImagesSliderDetailedServiceInfo(
                     contentScale = ContentScale.Fit,  // Adjust content scale based on your needs
                     modifier = Modifier
                         .wrapContentWidth()
-                        .clickable {
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }) {
                             dropUnlessResumedV2(lifecycleOwner) {
                                 onNavigateUpSlider(index)  // Pass the index of the image
                             }
@@ -876,11 +783,9 @@ private fun ServiceImagesSliderDetailedServiceInfo(
 
 @Composable
 private fun PlanTabs(plans: List<Plan>) {
-    // Replace these with your state management logic
-    val selectedTab by remember { mutableIntStateOf(0) }
-    // Set up the pager state
-    val pagerState = rememberPagerState(initialPage = selectedTab, pageCount = { plans.size })
 
+    val selectedTab by remember { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState(initialPage = selectedTab, pageCount = { plans.size })
     val scrollToPageCoroutinePage = rememberCoroutineScope()
 
     ScrollableTabRow(
@@ -963,13 +868,12 @@ private fun PlanTabs(plans: List<Plan>) {
 private fun ServicePlanDetails(
     planName: String,
     planDescription: String,
-    features: List<PlanFeature>, // Assume features are passed as a list
+    features: List<PlanFeature>,
     deliveryTime: String,
     deliveryUnit: String,
     price: Double,
-    priceUnit: String,
-
-    ) {
+    priceUnit: String
+) {
 
     Column(
         modifier = Modifier
@@ -1037,7 +941,7 @@ private fun ServicePlanDetails(
 
         Text(
             text = formatCurrency(price, priceUnit),
-            color = Color(0xFF55D7A9), // Equivalent to #55d7a9
+            color = Color(0xFF55D7A9),
             fontSize = 24.sp,
             textAlign = TextAlign.End,
             modifier = Modifier
@@ -1061,20 +965,17 @@ private fun FeatureItem(
     ) {
         Text(
             maxLines = 2,
-            overflow = TextOverflow.Ellipsis, // Truncate at the end
+            overflow = TextOverflow.Ellipsis,
             text = featureName,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
-
-            modifier = Modifier
-                .padding(end = 8.dp) // Optional: adds space between name and value
+            modifier = Modifier.padding(end = 8.dp)
         )
 
         Text(
             text = featureValue,
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier
-                .wrapContentWidth() // Ensures width wraps around the content
+            modifier = Modifier.wrapContentWidth()
         )
     }
 }

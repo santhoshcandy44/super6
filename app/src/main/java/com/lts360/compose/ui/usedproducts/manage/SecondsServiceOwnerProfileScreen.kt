@@ -28,7 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -51,7 +50,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavHostController
 import com.lts360.R
@@ -60,13 +58,13 @@ import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
+import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.main.profile.LoadingServiceOwnerProfileScreen
 import com.lts360.compose.ui.main.profile.ProfileAboutSection
 import com.lts360.compose.ui.main.profile.ProfileInfoChatUser
 import com.lts360.compose.ui.main.profile.ProfilePicUrlHeader
-import com.lts360.compose.ui.main.profile.ProfileServicesSection
+import com.lts360.compose.ui.main.profile.ProfileSecondsSection
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
-import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -91,7 +89,6 @@ fun SecondsServiceOwnerProfileScreen(
 
     SecondsOwnerProfileScreenContent(
         selectedParentService,
-        navHostController,
         {
             if (job?.isActive == true) {
                 return@SecondsOwnerProfileScreenContent
@@ -125,19 +122,14 @@ fun SecondsServiceOwnerProfileScreen(
 }
 
 
-
 @Composable
 fun BookmarkedSecondsOwnerProfileScreen(
     navHostController: NavHostController,
-    onNavigateUpChat: (
-        ChatUser,
-        Int, Long, FeedUserProfileInfo
-    ) -> Unit,
+    onNavigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpDetailedService: () -> Unit,
     servicesViewModel: BookmarksViewModel,
     secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel
 ) {
-
 
 
     val userId = servicesViewModel.userId
@@ -151,7 +143,8 @@ fun BookmarkedSecondsOwnerProfileScreen(
 
     if (item !is UsedProductListing) return // Smart cast now works
 
-    SecondsOwnerProfileScreenContent(item, navHostController, {
+    SecondsOwnerProfileScreenContent(
+        item, {
 
         if (job?.isActive == true) {
             return@SecondsOwnerProfileScreenContent
@@ -163,7 +156,6 @@ fun BookmarkedSecondsOwnerProfileScreen(
             val selectedChatId = selectedChatUser.chatId
 
             onNavigateUpChat(
-                selectedChatUser,
                 selectedChatId,
                 item.user.userId,
                 item.user
@@ -172,7 +164,7 @@ fun BookmarkedSecondsOwnerProfileScreen(
 
     }, {
         onNavigateUpDetailedService()
-    } ,
+    },
         {
             navHostController.popBackStack()
         },
@@ -186,23 +178,13 @@ fun BookmarkedSecondsOwnerProfileScreen(
 @Composable
 fun SecondsOwnerProfileScreenContent(
     selectedParentService: UsedProductListing?,
-    navHostController: NavHostController,
     onNavigateUpChat: () -> Unit,
     onNavigateUpDetailedSeconds: (UsedProductListing) -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: SecondsOwnerProfileViewModel,
 ) {
 
-
     val userId = viewModel.userId
-    // Collect the UserProfile state from the ViewModel
-    /*
-        val isLoading by viewModel.isLoading.collectAsState()
-    */
-    /*
-
-        val services by viewModel.services.collectAsState()
-    */
 
     val signInMethod = viewModel.signInMethod
 
@@ -215,7 +197,6 @@ fun SecondsOwnerProfileScreenContent(
             skipHiddenState = false
         )
     )
-
 
     BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
@@ -234,7 +215,8 @@ fun SecondsOwnerProfileScreenContent(
 
     val selectedItem by viewModel.selectedItem.collectAsState()
 
-    val createdServices = remember(selectedParentService) { selectedParentService?.createdUsedProductListings }
+    val createdServices =
+        remember(selectedParentService) { selectedParentService?.createdUsedProductListings }
 
     LaunchedEffect(bottomSheetState) {
         if (bottomSheetState) {
@@ -243,9 +225,6 @@ fun SecondsOwnerProfileScreenContent(
             sheetState.hide()
         }
     }
-
-
-
 
     BottomSheetScaffold(
         sheetDragHandle = null,
@@ -280,62 +259,54 @@ fun SecondsOwnerProfileScreenContent(
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     ) { innerPadding ->
 
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    navigationIcon = {
-                        IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back Icon"
-                            )
-                        }
-                    },
-                    title = {
-                        Text(text = "Profile", style = MaterialTheme.typography.titleMedium)
+        Column (modifier = Modifier.padding(innerPadding)) {
+
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back Icon"
+                        )
                     }
-                )
-            }
-        ) { contentPadding ->
-            Box(modifier = Modifier.padding(contentPadding)) {
+                },
+                title = {
+                    Text(text = "Profile", style = MaterialTheme.typography.titleMedium)
+                }
+            )
 
+            selectedParentService?.let { nonNullSelectedParentService ->
 
-                selectedParentService?.let { nonNullSelectedParentService ->
+                SecondsOwnerProfile(
+                    createdServices ?: emptyList(),
+                    nonNullSelectedParentService.user,
+                    {
+                        if (nonNullSelectedParentService.user.userId != userId) {
+                            ProfileInfoChatUser(
+                                nonNullSelectedParentService.user.profilePicUrl,
+                                nonNullSelectedParentService.user.isOnline
+                            ) {
 
-                    SecondsOwnerProfile(
-                        createdServices ?: emptyList(),
-                        /*    isLoading,*/
-                        userId,
-                        nonNullSelectedParentService.user,
-                        {
-                            if (nonNullSelectedParentService.user.userId != userId) {
-                                ProfileInfoChatUser(
-                                    nonNullSelectedParentService.user.profilePicUrl,
-                                    nonNullSelectedParentService.user.isOnline
-                                ) {
-
-                                    if (signInMethod == "guest") {
-                                        coroutineScope.launch {
-                                            bottomSheetScaffoldState.bottomSheetState.expand()
-                                        }
-                                    } else {
-                                        onNavigateUpChat()
+                                if (signInMethod == "guest") {
+                                    coroutineScope.launch {
+                                        bottomSheetScaffoldState.bottomSheetState.expand()
                                     }
+                                } else {
+                                    onNavigateUpChat()
                                 }
                             }
-                        }, {
-                            onNavigateUpDetailedSeconds(it)
-                        }, {
-                            viewModel.setSelectedItem(it)
-                            bottomSheetState = true
+                        }
+                    }, {
+                        onNavigateUpDetailedSeconds(it)
+                    }, {
+                        viewModel.setSelectedItem(it)
+                        bottomSheetState = true
 
-                        })
+                    })
 
-                } ?: run {
-                    LoadingServiceOwnerProfileScreen()
-                }
+            } ?: run {
+                LoadingServiceOwnerProfileScreen()
             }
-
 
             if (bottomSheetState) {
                 ModalBottomSheet(
@@ -489,42 +460,43 @@ fun SecondsOwnerProfileScreenContent(
                                 }
 
                             }
-                            Row(modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedItem?.let {
-                                        try {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedItem?.let {
+                                            try {
 
-                                            val shareIntent = Intent().apply {
-                                                action = Intent.ACTION_SEND
-                                                putExtra(
-                                                    Intent.EXTRA_TEXT,
-                                                    it.shortCode
-                                                )  // Text you want to share
-                                                type = "text/plain"  // MIME type for text
+                                                val shareIntent = Intent().apply {
+                                                    action = Intent.ACTION_SEND
+                                                    putExtra(
+                                                        Intent.EXTRA_TEXT,
+                                                        it.shortCode
+                                                    )  // Text you want to share
+                                                    type = "text/plain"  // MIME type for text
+                                                }
+                                                // Start the share intent
+                                                context.startActivity(
+                                                    Intent.createChooser(
+                                                        shareIntent,
+                                                        "Share via"
+                                                    )
+                                                )
+                                            } catch (e: ActivityNotFoundException) {
+
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "No app to open",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    .show()
                                             }
-                                            // Start the share intent
-                                            context.startActivity(
-                                                Intent.createChooser(
-                                                    shareIntent,
-                                                    "Share via"
-                                                )
-                                            )
-                                        } catch (e: ActivityNotFoundException) {
 
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "No app to open",
-                                                    Toast.LENGTH_SHORT
-                                                )
-                                                .show()
                                         }
 
                                     }
-
-                                }
-                                .padding(16.dp),
+                                    .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
 
 
@@ -551,31 +523,23 @@ fun SecondsOwnerProfileScreenContent(
                 }
 
             }
-
         }
     }
 
 }
 
 
-
 @Composable
 private fun SecondsOwnerProfile(
     userServices: List<UsedProductListing>,
-    /*   isLoading: Boolean,*/
-    userId: Long,
     userProfile: FeedUserProfileInfo,
     onChatClick: @Composable BoxScope.() -> Unit,
     onNavigateUpDetailedService: (UsedProductListing) -> Unit,
     onOptionItemClick: (UsedProductListing) -> Unit
 ) {
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
 
-
+    Box(modifier = Modifier.fillMaxSize()){
         LazyColumn(
             contentPadding = PaddingValues(
                 top = 16.dp,
@@ -611,9 +575,9 @@ private fun SecondsOwnerProfile(
 
                 items(userServices) { service ->
                     Spacer(modifier = Modifier.height(8.dp))
-                    ProfileServicesSection(
-                        if(service.images.isNotEmpty()) service.images[0].imageUrl else
-                                     null,
+                    ProfileSecondsSection(
+                        if (service.images.isNotEmpty()) service.images[0].imageUrl else
+                            null,
                         service.name,
                         service.description,
                         onItemClick = { onNavigateUpDetailedService(service) },
@@ -622,21 +586,9 @@ private fun SecondsOwnerProfile(
                 }
             }
 
-            /*   if (isLoading) {
-                   item {
-                       Row(
-                           modifier = Modifier.fillMaxWidth(),
-                           horizontalArrangement = Arrangement.Center
-                       ) {
-                           CircularProgressIndicator() // Show loading state
-                       }
-                   }
-               } else {
-               }*/
         }
 
         onChatClick()
-
     }
 
 }

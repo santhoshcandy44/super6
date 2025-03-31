@@ -37,10 +37,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lts360.R
-import com.lts360.compose.ui.chat.ChatScreen
 import com.lts360.compose.ui.chat.camera.CameraVisualPickerActivityContracts
-import com.lts360.compose.ui.main.MoreScreen
+import com.lts360.compose.ui.main.profile.ServiceOwnerProfileScreen
+import com.lts360.compose.ui.services.DetailedServiceScreen
 import com.lts360.compose.ui.theme.AppTheme
+import com.lts360.compose.ui.usedproducts.DetailedUsedProductListingScreen
+import com.lts360.compose.ui.usedproducts.FeedUserDetailedSecondsInfoScreen
+import com.lts360.compose.ui.usedproducts.SecondsScreen
+import com.lts360.compose.ui.usedproducts.manage.SecondsServiceOwnerProfileScreen
 import com.lts360.compose.ui.utils.touchConsumer
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.SerialName
@@ -114,9 +118,6 @@ class TestActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
-
         setContent {
             AppTheme {
                 Surface {

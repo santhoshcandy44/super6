@@ -63,6 +63,7 @@ import coil3.size.Size
 import com.lts360.R
 import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.app.database.models.profile.UserProfile
+import com.lts360.compose.ui.NoRippleInteractionSource
 import com.lts360.compose.ui.profile.viewmodels.ProfileViewModel
 import com.lts360.compose.ui.theme.customColorScheme
 
@@ -70,15 +71,14 @@ import com.lts360.compose.ui.theme.customColorScheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onPopStack:()-> Unit,
-    viewModel: ProfileViewModel = hiltViewModel()) {
-    val userId = viewModel.userId
+    onPopStack: () -> Unit,
+    viewModel: ProfileViewModel = hiltViewModel()
+) {
 
     val profilePicBitmap by viewModel.profileImageBitmap.collectAsState()
 
     val userProfile by viewModel.userProfile.collectAsState()
 
-    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -104,10 +104,7 @@ fun ProfileScreen(
                 userProfile
             )
         }
-
-
     }
-
 }
 
 
@@ -277,7 +274,8 @@ fun ProfileHeader(
 
         // Profile Image
         profilePicBitmap?.let {
-            Image(it.asImageBitmap(),
+            Image(
+                it.asImageBitmap(),
                 contentDescription = null,
                 modifier = Modifier
                     .size(100.dp)
@@ -368,17 +366,15 @@ fun ProfileServicesSection(
         onClick = dropUnlessResumed {
             onItemClick()
         },
+        interactionSource = NoRippleInteractionSource()
     ) {
         Column {
-            // Service Image
-
-            val imageRequest = ImageRequest.Builder(context)
-                .size(Size.ORIGINAL)
-                .data(thumbnail) // Use placeholder drawable if imageUrl is null
-                .build()
 
             AsyncImage(
-                model = imageRequest,
+                model = ImageRequest.Builder(context)
+                    .size(Size.ORIGINAL)
+                    .data(thumbnail) // Use placeholder drawable if imageUrl is null
+                    .build(),
                 contentDescription = "Service Image",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
@@ -421,6 +417,81 @@ fun ProfileServicesSection(
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "More options" // Add content description for accessibility
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+
+        }
+    }
+
+}
+
+
+@Composable
+fun ProfileSecondsSection(
+    thumbnail: String?,
+    title: String,
+    shortDescription: String,
+    onItemClick: () -> Unit,
+    onOptionItemClick: () -> Unit,
+) {
+    val context = LocalContext.current
+
+    OutlinedCard(
+        onClick = dropUnlessResumed {
+            onItemClick()
+        },
+        interactionSource = NoRippleInteractionSource()
+    ) {
+        Column {
+
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .size(Size.ORIGINAL)
+                    .data(thumbnail) // Use placeholder drawable if imageUrl is null
+                    .build(),
+                contentDescription = "Seconds Image",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16 / 9f)
+                    .background(MaterialTheme.customColorScheme.serviceSurfaceContainer)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .fillMaxWidth()
+            ) {
+
+                Text(
+                    text = shortDescription,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f)
+                )
+
+                IconButton(
+                    onClick = onOptionItemClick,
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More options"
                     )
                 }
             }

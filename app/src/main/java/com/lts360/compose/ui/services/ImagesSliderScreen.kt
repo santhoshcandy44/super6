@@ -3,6 +3,7 @@ package com.lts360.compose.ui.services
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,7 +36,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.size.Size
@@ -45,16 +45,10 @@ import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import kotlinx.coroutines.launch
 
 
-
-
-
 @Composable
 fun ImagesSliderScreen(
-    key:Int,
-    navHostController: NavHostController,
     selectedImagePosition: Int, viewModel: ServicesViewModel,
-    onPopBackStack:()-> Unit
-
+    onPopBackStack: () -> Unit
 ) {
 
     val selectedService by viewModel.selectedItem.collectAsState()
@@ -65,11 +59,9 @@ fun ImagesSliderScreen(
 
 @Composable
 fun FeedUserImagesSliderScreen(
-    navHostController: NavHostController,
     selectedImagePosition: Int,
     viewModel: ServiceOwnerProfileViewModel,
-    onPopBackStack:()-> Unit
-
+    onPopBackStack: () -> Unit
 ) {
 
     val selectedService by viewModel.selectedItem.collectAsState()
@@ -80,29 +72,27 @@ fun FeedUserImagesSliderScreen(
 
 @Composable
 fun BookmarkedImagesSliderScreen(
-    navHostController: NavHostController,
     selectedImagePosition: Int,
     viewModel: BookmarksViewModel,
-    onPopBackStack:()-> Unit
+    onPopBackStack: () -> Unit
 
 ) {
 
     val selectedService by viewModel.selectedItem.collectAsState()
     val item = selectedService
-    if(item !is Service) return
+    if (item !is Service) return
     ImagesSliderScreenContent(item, selectedImagePosition, onPopBackStack)
 
 }
 
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImagesSliderScreenContent(selectedService: Service?, selectedImagePosition: Int, onPopBackStack:()-> Unit) {
-
-
+fun ImagesSliderScreenContent(
+    selectedService: Service?,
+    selectedImagePosition: Int,
+    onPopBackStack: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -139,112 +129,96 @@ fun ImagesSliderScreenContent(selectedService: Service?, selectedImagePosition: 
                 modifier = Modifier
                     .padding(paddingValues)
                     .background(Color.Black)
-                    .fillMaxSize()) {
+                    .fillMaxSize()
+            ) {
 
                 ImageSlider(selectedImagePosition, selectedService?.images?.map {
                     it.imageUrl
                 } ?: emptyList())
-
             }
-
         })
-
 }
 
 
 @Composable
-fun ImageSlider(current: Int, images: List<String>) {
+fun ColumnScope.ImageSlider(current: Int, images: List<String>) {
 
+    val context = LocalContext.current
 
     val coroutineScope = rememberCoroutineScope()
-
-    val context= LocalContext.current
 
     // Create a pager state with the initial page
     val pagerState = rememberPagerState(initialPage = current, pageCount = { images.size })
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    // HorizontalPager for displaying images
+    HorizontalPager(
+        state = pagerState,
+        pageSpacing = 8.dp,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxSize()
+            .weight(1f),
+    ) { page ->
 
-        Column(
+        AsyncImage(
+            ImageRequest.Builder(context)
+                .size(Size.ORIGINAL)
+                .data(images[page])
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
             modifier = Modifier
-                .fillMaxSize()
-                .weight(1f)
+                .fillMaxWidth()
+        )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp)) // Space between pager and other content
+
+    if (images.size > 1) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // HorizontalPager for displaying images
-            HorizontalPager(
-                state = pagerState,
-                pageSpacing = 24.dp,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxSize()
-            ) { page ->
-
-                // Load the image for the current page
-                val imageRequest = ImageRequest.Builder(context)
-                    .size(Size.ORIGINAL) // Load original size
-                    .data(images[page]) // Use the URL from the image list
-                    .build()
-
-                AsyncImage(
-                    imageRequest,
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
+            // Previous Button (visible when not on the first page)
+            if (pagerState.currentPage > 0) {
+                IconButton(
+                    onClick = {
+                        val currentPage = pagerState.currentPage
+                        val previousPage = currentPage - 1
+                        coroutineScope.launch { pagerState.animateScrollToPage(previousPage) }
+                    },
                     modifier = Modifier
-                        .fillMaxWidth())
+                        .weight(1f)
+                        .padding(end = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Previous",
+                        tint = Color.White
+                    )
+                }
             }
 
-        }
-
-
-        Spacer(modifier = Modifier.height(16.dp)) // Space between pager and other content
-
-
-        if (images.size > 1) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Previous Button (visible when not on the first page)
-                if (pagerState.currentPage > 0) {
-                    IconButton(
-                        onClick = {
-                            val currentPage = pagerState.currentPage
-                            val previousPage = currentPage - 1
-                            coroutineScope.launch { pagerState.animateScrollToPage(previousPage) }
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Previous",
-                            tint = Color.White
-                        )
-                    }
-                }
-
-                // Next Button (visible when not on the last page)
-                if (pagerState.currentPage < images.size - 1) {
-                    IconButton(
-                        onClick = {
-                            val currentPage = pagerState.currentPage
-                            val totalPages = images.size
-                            val nextPage = if (currentPage < totalPages - 1) currentPage + 1 else 0
-                            coroutineScope.launch { pagerState.animateScrollToPage(nextPage) }
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Next",
-                            tint = Color.White
-                        )
-                    }
+            // Next Button (visible when not on the last page)
+            if (pagerState.currentPage < images.size - 1) {
+                IconButton(
+                    onClick = {
+                        val currentPage = pagerState.currentPage
+                        val totalPages = images.size
+                        val nextPage = if (currentPage < totalPages - 1) currentPage + 1 else 0
+                        coroutineScope.launch { pagerState.animateScrollToPage(nextPage) }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Next",
+                        tint = Color.White
+                    )
                 }
             }
         }

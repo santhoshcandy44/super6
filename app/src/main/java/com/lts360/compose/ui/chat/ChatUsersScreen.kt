@@ -2,11 +2,17 @@ package com.lts360.compose.ui.chat
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -207,399 +213,406 @@ fun ChatUsersScreen(
                     LinearProgressIndicator(
                         modifier = Modifier
                             .fillMaxWidth(0.7f)
-                            .align(Alignment.Center) // Centers the CircularProgressIndicator inside the Box
+                            .align(Alignment.Center)
                     )
                 } else {
 
-                    Column {
+                    SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
+                        var isExpanded by remember { mutableStateOf(false) }
+                        var transitionItem by remember { mutableStateOf<UserState?>(null) }
 
+                        BackHandler(isExpanded) {
+                            isExpanded = false
+                        }
 
-                        SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
-                            var isExpanded by remember { mutableStateOf(false) }
-                            var transitionItem by remember { mutableStateOf<UserState?>(null) }
+                        AnimatedContent(targetState = isExpanded, label = "",
+                            transitionSpec = {
+                                // Disable layout animations by using ContentTransform with NoTransition
+                                ContentTransform(
+                                    targetContentEnter = fadeIn(),
+                                    initialContentExit = fadeOut() ,
+                                    sizeTransform = SizeTransform { _, _ ->
+                                        tween(durationMillis = 0)
+                                    }
+                                )
+                            }) { target ->
 
-                            BackHandler(isExpanded) {
-                                isExpanded = false
-                            }
+                            if (!target) {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    state = lazyListState
+                                ) {
+                                    if (userStates.isEmpty()) {
+                                        item {
+                                            Box(modifier = Modifier.fillParentMaxSize()) {
+                                                Column(
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    modifier = Modifier.align(Alignment.Center)
 
-                            AnimatedContent(targetState = isExpanded, label = "") { target ->
-
-                                if (!target) {
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxSize(),
-                                        state = lazyListState
-                                    ) {
-
-
-                                        if (userStates.isEmpty()) {
-                                            item {
-
-                                                Box(modifier = Modifier.fillParentMaxSize()) {
-                                                    Column(
-                                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                                        modifier = Modifier.align(Alignment.Center)
-
-                                                    ) {
-                                                        Image(
-                                                            painter = painterResource(R.drawable.no_chats),
-                                                            contentDescription = "Image from drawable",
-                                                            modifier = Modifier
-                                                                .sizeIn(
-                                                                    maxWidth = 200.dp,
-                                                                    maxHeight = 200.dp
-                                                                )
-                                                        )
-
-                                                        Spacer(Modifier.height(16.dp))
-                                                        Text(text = "No, recent chats")
-
-                                                    }
-                                                }
-
-                                            }
-                                        } else {
-
-
-                                            itemsIndexed(userStates,
-                                                key = { _, userState -> userState.chatUser.chatId }
-                                            ) { _, userState ->
-
-                                                val chatRecipientUser = userState.chatUser
-                                                val userName = userState.userName
-                                                val profileImageUrl96By96 =
-                                                    userState.profileImageUrl96By96
-
-                                                val lastMessage = userState.lastMessage
-                                                val unreadCount = userState.unreadCount
-
-
-                                                val isOnline = userState.onlineStatus
-                                                val typingStatus = userState.typingStatus
-
-                                                val imageRequest =
-                                                    ImageRequest.Builder(context)
-                                                        .data(profileImageUrl96By96)
-                                                        .placeholder(R.drawable.user_placeholder) // Your placeholder image
-                                                        .error(R.drawable.user_placeholder)
-                                                        .crossfade(true)
-                                                        .build()
-
-
-                                                Card(
-                                                    onClick = dropUnlessResumed {
-                                                        chatRecipientUser.apply {
-                                                            viewModel.updateSelectedChatId(userState)
-                                                            onNavigateUpChat(
-                                                                userState.chatUser,
-                                                                chatId,
-                                                                recipientId,
-                                                                userProfile
-                                                            )
-                                                        }
-                                                    },
-                                                    modifier = Modifier
-                                                        .fillMaxWidth(),
-                                                    elevation = CardDefaults.cardElevation(0.dp),
-                                                    shape = RectangleShape, // Remove rounded corners
                                                 ) {
-                                                    Row(
+                                                    Image(
+                                                        painter = painterResource(R.drawable.no_chats),
+                                                        contentDescription = "Image from drawable",
                                                         modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(
-                                                                horizontal = 8.dp,
-                                                                vertical = 16.dp
-                                                            ),
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        // Profile image with online status dot
-                                                        Box(modifier = Modifier.wrapContentSize()) {
-
-                                                            AsyncImage(
-                                                                imageRequest, // The larger image URL
-                                                                imageLoader = viewModel.chatUsersProfileImageLoader,
-                                                                contentDescription = "User Profile Image",
-                                                                modifier = Modifier
-                                                                    .size(50.dp)
-                                                                    .clip(CircleShape)
-                                                                    .clickable {
-                                                                        transitionItem = userState
-                                                                        isExpanded = !isExpanded
-                                                                    }
-                                                                    .sharedBounds(
-                                                                        rememberSharedContentState(
-                                                                            key = "image-${userState.chatUser.chatId}"
-                                                                        ),
-                                                                        animatedVisibilityScope = this@AnimatedContent,
-                                                                    ),
-                                                                contentScale = ContentScale.Crop,
+                                                            .sizeIn(
+                                                                maxWidth = 200.dp,
+                                                                maxHeight = 200.dp
                                                             )
+                                                    )
 
+                                                    Spacer(Modifier.height(16.dp))
+                                                    Text(text = "No, recent chats")
 
-                                                            if (isOnline) {
-                                                                Box(
-                                                                    modifier = Modifier
-                                                                        .size(10.dp)
-                                                                        .align(Alignment.BottomEnd)
-                                                                        .background(
-                                                                            Color(0xFF7CFC00),
-                                                                            CircleShape
-                                                                        )
-                                                                )
-                                                            }
-                                                        }
-
-                                                        Spacer(modifier = Modifier.width(8.dp))
-
-                                                        // Name and message layout
-                                                        Column(
-                                                            modifier = Modifier
-                                                                .fillMaxWidth()
-                                                                .padding(horizontal = 8.dp)
-                                                        ) {
-                                                            // Row for user name and time
-                                                            Row(
-                                                                modifier = Modifier
-                                                                    .fillMaxWidth()
-                                                                    .padding(horizontal = 8.dp),
-                                                                verticalAlignment = Alignment.CenterVertically
-                                                            ) {
-                                                                Text(
-                                                                    text = userName,
-                                                                    fontSize = 14.sp,
-                                                                    color = MaterialTheme.colorScheme.onSurface,
-                                                                    modifier = Modifier.weight(1f)
-                                                                )
-
-                                                                Text(
-                                                                    text = lastMessage?.timestamp?.let {
-                                                                        lastMessageTimestamp(
-                                                                            it
-                                                                        )
-                                                                    }
-                                                                        ?: "",
-                                                                    fontSize = 14.sp,
-                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                    modifier = Modifier.align(
-                                                                        Alignment.CenterVertically
-                                                                    )
-                                                                )
-                                                            }
-
-                                                            Spacer(modifier = Modifier.height(8.dp))
-
-                                                            // Row for last message and unread message count
-                                                            Row(
-                                                                modifier = Modifier
-                                                                    .fillMaxWidth()
-                                                                    .padding(horizontal = 8.dp),
-                                                                verticalAlignment = Alignment.CenterVertically
-                                                            ) {
-
-                                                                Row(
-                                                                    modifier = Modifier
-
-                                                                        .weight(1f),
-                                                                    verticalAlignment = Alignment.CenterVertically
-                                                                ) {
-
-                                                                    if (typingStatus) {
-                                                                        Text(
-                                                                            text = "typing...",
-                                                                            fontSize = 14.sp,
-                                                                            color = Color(0xFF9747ff),
-                                                                            maxLines = 1,
-                                                                            overflow = TextOverflow.Ellipsis,
-                                                                            modifier = Modifier.weight(
-                                                                                1f
-                                                                            )
-                                                                        )
-                                                                    } else {
-                                                                        lastMessage?.let { nonNullLastMessage ->
-
-
-                                                                            Text(
-                                                                                text = nonNullLastMessage.content,
-                                                                                fontSize = 14.sp,
-                                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                                maxLines = 1,
-                                                                                overflow = TextOverflow.Ellipsis
-                                                                            )
-
-
-
-                                                                            if (nonNullLastMessage.senderId != chatRecipientUser.recipientId) {
-
-                                                                                when (nonNullLastMessage.status) {
-                                                                                    ChatMessageStatus.SENDING,
-                                                                                    ChatMessageStatus.QUEUED,
-                                                                                    ChatMessageStatus.QUEUED_MEDIA,
-                                                                                    ChatMessageStatus.QUEUED_MEDIA_RETRY,
-                                                                                        -> {
-                                                                                        Icon(
-                                                                                            painterResource(R.drawable.ic_message_pending), // Using Material Icons
-                                                                                            contentDescription = "Sending",
-                                                                                            modifier = Modifier
-                                                                                                .size(
-                                                                                                    16.dp
-                                                                                                )
-                                                                                        )
-                                                                                    }
-
-                                                                                    ChatMessageStatus.SENT -> {
-                                                                                        Icon(
-                                                                                            imageVector = Icons.Filled.Check,
-                                                                                            contentDescription = "Message Sent",
-                                                                                            modifier = Modifier
-                                                                                                .size(
-                                                                                                    16.dp
-                                                                                                )
-                                                                                        )
-                                                                                    }
-
-
-                                                                                    ChatMessageStatus.DELIVERED -> {
-                                                                                        Box {
-                                                                                            Icon(
-                                                                                                imageVector = Icons.Filled.Check, // First check icon
-                                                                                                contentDescription = "Message Delivered",
-                                                                                                modifier = Modifier.size(
-                                                                                                    16.dp
-                                                                                                )
-                                                                                            )
-                                                                                            Icon(
-                                                                                                imageVector = Icons.Filled.Check, // Second check icon for double check
-                                                                                                contentDescription = "Message Delivered",
-                                                                                                modifier = Modifier
-                                                                                                    .size(
-                                                                                                        16.dp
-                                                                                                    )
-                                                                                                    .offset(
-                                                                                                        x = 8.dp
-                                                                                                    )
-                                                                                            )
-                                                                                        }
-
-
-                                                                                    }
-
-                                                                                    ChatMessageStatus.READ -> {}
-                                                                                    ChatMessageStatus.FAILED -> {}
-                                                                                    ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED -> {}
-                                                                                    ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN -> {}
-
-                                                                                }
-                                                                            }
-
-                                                                        } ?: run {
-                                                                            Text(
-                                                                                text = "",
-                                                                                fontSize = 14.sp,
-                                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                                maxLines = 1,
-                                                                                overflow = TextOverflow.Ellipsis
-                                                                            )
-                                                                        }
-
-                                                                    }
-
-                                                                }
-
-
-                                                                if (unreadCount > 0) {
-                                                                    Box(
-                                                                        modifier = Modifier
-                                                                            .background(
-                                                                                Color(0xFF9747ff),
-                                                                                CircleShape
-                                                                            )
-                                                                            .padding(
-                                                                                horizontal = 8.dp,
-                                                                                vertical = 4.dp
-                                                                            )
-                                                                    ) {
-                                                                        Text(
-                                                                            text =  viewModel.formatMessageCount(
-                                                                                unreadCount
-                                                                            ),
-                                                                            color = Color.White,
-                                                                            style = MaterialTheme.typography.bodySmall
-                                                                        )
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
                                                 }
-
-
                                             }
                                         }
+                                    } else {
+                                        itemsIndexed(
+                                            userStates,
+                                            key = { _, userState -> userState.chatUser.chatId }
+                                        ) { _, userState ->
+
+                                            val chatRecipientUser = userState.chatUser
+                                            val userName = userState.userName
+                                            val profileImageUrl96By96 =
+                                                userState.profileImageUrl96By96
+
+                                            val lastMessage = userState.lastMessage
+                                            val unreadCount = userState.unreadCount
+
+
+                                            val isOnline = userState.onlineStatus
+                                            val typingStatus = userState.typingStatus
+
+                                            val imageRequest =
+                                                ImageRequest.Builder(context)
+                                                    .data(profileImageUrl96By96)
+                                                    .placeholder(R.drawable.user_placeholder) // Your placeholder image
+                                                    .error(R.drawable.user_placeholder)
+                                                    .crossfade(true)
+                                                    .build()
+
+
+                                            Card(
+                                                onClick = dropUnlessResumed {
+                                                    chatRecipientUser.apply {
+                                                        viewModel.updateSelectedChatId(userState)
+                                                        onNavigateUpChat(
+                                                            userState.chatUser,
+                                                            chatId,
+                                                            recipientId,
+                                                            userProfile
+                                                        )
+                                                    }
+                                                },
+                                                modifier = Modifier
+                                                    .fillMaxWidth(),
+                                                elevation = CardDefaults.cardElevation(0.dp),
+                                                shape = RectangleShape, // Remove rounded corners
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(
+                                                            horizontal = 8.dp,
+                                                            vertical = 16.dp
+                                                        ),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    // Profile image with online status dot
+                                                    Box(modifier = Modifier.wrapContentSize()) {
+
+                                                        AsyncImage(
+                                                            imageRequest, // The larger image URL
+                                                            imageLoader = viewModel.chatUsersProfileImageLoader,
+                                                            contentDescription = "User Profile Image",
+                                                            modifier = Modifier
+                                                                .size(50.dp)
+                                                                .sharedBounds(
+                                                                    rememberSharedContentState(
+                                                                        key = "image-${userState.chatUser.chatId}"
+                                                                    ),
+                                                                    animatedVisibilityScope = this@AnimatedContent,
+                                                                )
+                                                                .clip(CircleShape)
+                                                                .clickable {
+                                                                    transitionItem = userState
+                                                                    isExpanded = !isExpanded
+                                                                },
+                                                            contentScale = ContentScale.Crop,
+                                                        )
+
+
+                                                        if (isOnline) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(10.dp)
+                                                                    .align(Alignment.BottomEnd)
+                                                                    .background(
+                                                                        Color(0xFF7CFC00),
+                                                                        CircleShape
+                                                                    )
+                                                            )
+                                                        }
+                                                    }
+
+                                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                                    // Name and message layout
+                                                    Column(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(horizontal = 8.dp)
+                                                    ) {
+                                                        // Row for user name and time
+                                                        Row(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .padding(horizontal = 8.dp),
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                text = userName,
+                                                                fontSize = 14.sp,
+                                                                color = MaterialTheme.colorScheme.onSurface,
+                                                                modifier = Modifier.weight(1f)
+                                                            )
+
+                                                            Text(
+                                                                text = lastMessage?.timestamp?.let {
+                                                                    lastMessageTimestamp(
+                                                                        it
+                                                                    )
+                                                                }
+                                                                    ?: "",
+                                                                fontSize = 14.sp,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                modifier = Modifier.align(
+                                                                    Alignment.CenterVertically
+                                                                )
+                                                            )
+                                                        }
+
+                                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                                        // Row for last message and unread message count
+                                                        Row(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .padding(horizontal = 8.dp),
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+
+                                                            Row(
+                                                                modifier = Modifier
+
+                                                                    .weight(1f),
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+
+                                                                if (typingStatus) {
+                                                                    Text(
+                                                                        text = "typing...",
+                                                                        fontSize = 14.sp,
+                                                                        color = Color(0xFF9747ff),
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis,
+                                                                        modifier = Modifier.weight(
+                                                                            1f
+                                                                        )
+                                                                    )
+                                                                } else {
+                                                                    lastMessage?.let { nonNullLastMessage ->
+
+
+                                                                        Text(
+                                                                            text = nonNullLastMessage.content,
+                                                                            fontSize = 14.sp,
+                                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                            maxLines = 1,
+                                                                            overflow = TextOverflow.Ellipsis
+                                                                        )
+
+
+
+                                                                        if (nonNullLastMessage.senderId != chatRecipientUser.recipientId) {
+
+                                                                            when (nonNullLastMessage.status) {
+                                                                                ChatMessageStatus.SENDING,
+                                                                                ChatMessageStatus.QUEUED,
+                                                                                ChatMessageStatus.QUEUED_MEDIA,
+                                                                                ChatMessageStatus.QUEUED_MEDIA_RETRY,
+                                                                                    -> {
+                                                                                    Icon(
+                                                                                        painterResource(
+                                                                                            R.drawable.ic_message_pending
+                                                                                        ), // Using Material Icons
+                                                                                        contentDescription = "Sending",
+                                                                                        modifier = Modifier
+                                                                                            .size(
+                                                                                                16.dp
+                                                                                            )
+                                                                                    )
+                                                                                }
+
+                                                                                ChatMessageStatus.SENT -> {
+                                                                                    Icon(
+                                                                                        imageVector = Icons.Filled.Check,
+                                                                                        contentDescription = "Message Sent",
+                                                                                        modifier = Modifier
+                                                                                            .size(
+                                                                                                16.dp
+                                                                                            )
+                                                                                    )
+                                                                                }
+
+
+                                                                                ChatMessageStatus.DELIVERED -> {
+                                                                                    Box {
+                                                                                        Icon(
+                                                                                            imageVector = Icons.Filled.Check, // First check icon
+                                                                                            contentDescription = "Message Delivered",
+                                                                                            modifier = Modifier.size(
+                                                                                                16.dp
+                                                                                            )
+                                                                                        )
+                                                                                        Icon(
+                                                                                            imageVector = Icons.Filled.Check, // Second check icon for double check
+                                                                                            contentDescription = "Message Delivered",
+                                                                                            modifier = Modifier
+                                                                                                .size(
+                                                                                                    16.dp
+                                                                                                )
+                                                                                                .offset(
+                                                                                                    x = 8.dp
+                                                                                                )
+                                                                                        )
+                                                                                    }
+
+
+                                                                                }
+
+                                                                                ChatMessageStatus.READ -> {}
+                                                                                ChatMessageStatus.FAILED -> {}
+                                                                                ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED -> {}
+                                                                                ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN -> {}
+
+                                                                            }
+                                                                        }
+
+                                                                    } ?: run {
+                                                                        Text(
+                                                                            text = "",
+                                                                            fontSize = 14.sp,
+                                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                            maxLines = 1,
+                                                                            overflow = TextOverflow.Ellipsis
+                                                                        )
+                                                                    }
+
+                                                                }
+
+                                                            }
+
+
+                                                            if (unreadCount > 0) {
+                                                                Box(
+                                                                    modifier = Modifier
+                                                                        .background(
+                                                                            Color(0xFF9747ff),
+                                                                            CircleShape
+                                                                        )
+                                                                        .padding(
+                                                                            horizontal = 8.dp,
+                                                                            vertical = 4.dp
+                                                                        )
+                                                                ) {
+                                                                    Text(
+                                                                        text = viewModel.formatMessageCount(
+                                                                            unreadCount
+                                                                        ),
+                                                                        color = Color.White,
+                                                                        style = MaterialTheme.typography.bodySmall
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+
+                                        }
                                     }
-
                                 }
-                                else {
-                                    Box(modifier = Modifier.fillMaxSize()) {
 
-                                        transitionItem?.let { nonNullTransitionItem ->
-                                            val profilePicUrl =
-                                                nonNullTransitionItem.profileImageUrl
+                            } else {
+                                Box(modifier = Modifier.fillMaxSize()) {
 
-                                            val profilePicUrl96By96 =
-                                                nonNullTransitionItem.profileImageUrl96By96
+                                    transitionItem?.let { nonNullTransitionItem ->
+                                        val profilePicUrl =
+                                            nonNullTransitionItem.profileImageUrl
+
+                                        val profilePicUrl96By96 =
+                                            nonNullTransitionItem.profileImageUrl96By96
 
 
-                                            val profilePicUrl96By96ImageRequest = ImageRequest.Builder(context)
+                                        val profilePicUrl96By96ImageRequest =
+                                            ImageRequest.Builder(context)
                                                 .data(profilePicUrl96By96)
                                                 .placeholder(R.drawable.user_placeholder) // Your placeholder image
                                                 .error(R.drawable.user_placeholder)
                                                 .build()
 
-                                            val profilePicUrlImageRequest =   ImageRequest.Builder(context)
+                                        val profilePicUrlImageRequest =
+                                            ImageRequest.Builder(context)
                                                 .data(profilePicUrl)
                                                 .placeholder(R.drawable.user_placeholder) // Your placeholder image
                                                 .error(R.drawable.user_placeholder)
                                                 .build()
 
-                                            SubcomposeAsyncImage(
-                                                profilePicUrlImageRequest, // The larger image URL
-                                                contentDescription = "User Profile Image",
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .sharedBounds(
-                                                        rememberSharedContentState(
-                                                            key = "image-${nonNullTransitionItem.chatUser.chatId}"
-                                                        ),
-                                                        animatedVisibilityScope = this@AnimatedContent,
-                                                    )
-                                                    .clickable {
-                                                        isExpanded = !isExpanded
-                                                    }
-                                                    .align(Alignment.Center),
-                                                contentScale = ContentScale.Fit,
-                                                loading = {
-                                                    AsyncImage(
-                                                        profilePicUrl96By96ImageRequest,
-                                                        contentDescription = "Placeholder Image",
-                                                        imageLoader = viewModel.chatUsersProfileImageLoader,
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .align(Alignment.Center),
-                                                        contentScale = ContentScale.Fit,
-                                                    )
-                                                },
-                                                error = {
-                                                    AsyncImage(
-                                                        profilePicUrl96By96ImageRequest,
-                                                        contentDescription = "Placeholder Image",
-                                                        imageLoader = viewModel.chatUsersProfileImageLoader,
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .align(Alignment.Center),
-                                                        contentScale = ContentScale.Fit,
-                                                    )
+                                        SubcomposeAsyncImage(
+                                            profilePicUrlImageRequest, // The larger image URL
+                                            contentDescription = "User Profile Image",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .sharedBounds(
+                                                    rememberSharedContentState(
+                                                        key = "image-${nonNullTransitionItem.chatUser.chatId}"
+                                                    ),
+                                                    animatedVisibilityScope = this@AnimatedContent,
+                                                )
+                                                .clickable(
+                                                    indication = null,
+                                                    interactionSource = remember { MutableInteractionSource() }
+                                                ) {
+                                                    isExpanded = !isExpanded
                                                 }
-                                            )
-                                        }
+                                                .align(Alignment.Center),
+                                            contentScale = ContentScale.Fit,
+                                            loading = {
+                                                AsyncImage(
+                                                    profilePicUrl96By96ImageRequest,
+                                                    contentDescription = "Placeholder Image",
+                                                    imageLoader = viewModel.chatUsersProfileImageLoader,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .align(Alignment.Center),
+                                                    contentScale = ContentScale.Fit,
+                                                )
+                                            },
+                                            error = {
+                                                AsyncImage(
+                                                    profilePicUrl96By96ImageRequest,
+                                                    contentDescription = "Placeholder Image",
+                                                    imageLoader = viewModel.chatUsersProfileImageLoader,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .align(Alignment.Center),
+                                                    contentScale = ContentScale.Fit,
+                                                )
+                                            }
+                                        )
                                     }
                                 }
                             }
