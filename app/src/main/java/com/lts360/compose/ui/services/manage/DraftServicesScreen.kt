@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 
 
@@ -46,9 +46,6 @@ fun DraftServicesScreen(
         modifier = Modifier.fillMaxSize()
     ) {
 
-
-
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -65,7 +62,7 @@ fun DraftServicesScreen(
             }
 
             if (isLoading) {
-                CircularProgressIndicator(
+                CircularProgressIndicatorLegacy(
                     modifier = Modifier.align(Alignment.Center),
                     strokeWidth = 4.dp
                 )

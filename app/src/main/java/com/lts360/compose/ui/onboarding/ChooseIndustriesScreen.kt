@@ -93,7 +93,6 @@ fun GuestChooseIndustrySheet(
     val onRetry = {
 
         if (connectivityManager.isConnectedInternet) {
-
             viewModel.onGetGuestIndustries(
                 userId,
                 onSuccess = {
@@ -102,7 +101,6 @@ fun GuestChooseIndustrySheet(
                 Toast.makeText(context, it, Toast.LENGTH_SHORT)
                     .show()
             }
-
         } else {
             Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT)
                 .show()
@@ -276,7 +274,7 @@ fun GuestChooseIndustryScreen(
     onMainActivityNavigateUp: () -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: GuestChooseIndustriesViewModel = hiltViewModel()
-    ) {
+) {
 
     val userId = viewModel.userId
 
@@ -297,14 +295,10 @@ fun GuestChooseIndustryScreen(
 
 
     val onRetry = {
-
         if (connectivityManager.isConnectedInternet) {
-
             viewModel.onGetGuestIndustries(
-                userId,
-                onSuccess = {
-
-                }) {
+                userId
+            ) {
                 Toast.makeText(context, it, Toast.LENGTH_SHORT)
                     .show()
             }
@@ -322,8 +316,7 @@ fun GuestChooseIndustryScreen(
                 viewModel.onGetGuestIndustries(
                     userId,
                     isLoading = false,
-                    isRefreshing = true,
-                    onSuccess = {}
+                    isRefreshing = true
                 ) { errorMessage ->
                     Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                 }
@@ -349,25 +342,25 @@ fun GuestChooseIndustryScreen(
     Box {
         Scaffold(
             topBar =
-            {
-                TopAppBar(
-                    navigationIcon = {
-                        IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back Icon"
+                {
+                    TopAppBar(
+                        navigationIcon = {
+                            IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back Icon"
+                                )
+                            }
+                        },
+                        title = {
+                            Text(
+                                text = "Choose Industries",
+                                style = MaterialTheme.typography.titleMedium
                             )
                         }
-                    },
-                    title = {
-                        Text(
-                            text = "Choose Industries",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                )
+                    )
 
-            }) { paddingValues ->
+                }) { paddingValues ->
 
             Box(
                 modifier = Modifier
@@ -437,7 +430,7 @@ fun GuestChooseIndustryScreen(
 @Composable
 fun ChooseIndustryScreen(
     onMainActivityNavigateUp: () -> Unit,
-    onPopBackStack:() -> Unit,
+    onPopBackStack: () -> Unit,
     viewModel: ChooseIndustriesViewModel = hiltViewModel(),
 
     ) {
@@ -496,27 +489,27 @@ fun ChooseIndustryScreen(
     Box {
         Scaffold(
             topBar =
-            {
-                if (type != null && (type == "on_board" || type == "update_industries")) {
-                    TopAppBar(
-                        navigationIcon = {
-                            IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back Icon"
+                {
+                    if (type != null && (type == "on_board" || type == "update_industries")) {
+                        TopAppBar(
+                            navigationIcon = {
+                                IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Back Icon"
+                                    )
+                                }
+                            },
+                            title = {
+                                Text(
+                                    text = if (type == "on_board") "Choose Industries" else "Manage Industries",
+                                    style = MaterialTheme.typography.titleMedium
                                 )
                             }
-                        },
-                        title = {
-                            Text(
-                                text = if (type == "on_board") "Choose Industries" else "Manage Industries",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                        }
-                    )
+                        )
 
-                }
-            }) { paddingValues ->
+                    }
+                }) { paddingValues ->
 
             Box(
                 modifier = Modifier
@@ -601,157 +594,153 @@ private fun ChooseIndustryContent(
     anyItemSelected: Boolean,
 ) {
 
-    val scrollState = rememberScrollState()
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         onRefresh = { onRefresh() },
     ) {
 
-        Box(
-            modifier = Modifier
-                .verticalScroll(scrollState)
-        ) {
-            if (isLoading) {
+        if (isLoading) {
 
 
-                Column(
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+            ) {
+
+                ShimmerBox {
+                    Text(
+                        text = "Pick Your Interests",
+                        color = Color.Transparent,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                ShimmerBox {
+                    Text(
+                        text = "Select your industries to personalize your experience.",
+                        color = Color.Transparent,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                FlowRow(
                     modifier = Modifier
-                        .padding(16.dp)
+                        .fillMaxWidth()
+
                 ) {
-
-                    ShimmerBox {
-                        Text(
-                            text = "Pick Your Interests",
-                            color = Color.Transparent,
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                    repeat(3) {
+                        ShimmerInterestItem()
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ShimmerBox {
+            }
+
+
+        } else {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+
+                Text(
+                    text = "Pick Your Interests",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Select your industries to personalize your experience.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+
+                if (error is ResultError.NoInternet) {
+
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+
                         Text(
-                            text = "Select your industries to personalize your experience.",
-                            color = Color.Transparent,
+                            "Internet connection failed",
+                            color = Color.Red,
                             style = MaterialTheme.typography.bodyMedium
                         )
+
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Retry",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.clickable {
+                                onRetry()
+                            }
+                        )
                     }
 
+                } else if (error != null && industryItems.isEmpty()) {
+                    Text(
+                        "Something went wrong",
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
 
-                    Spacer(modifier = Modifier.height(8.dp))
 
                     FlowRow(
                         modifier = Modifier
                             .fillMaxWidth()
 
                     ) {
-                        repeat(3) {
-                            ShimmerInterestItem()
+                        industryItems.map { industry ->
+
+                            // Using a unique key, such as the industry ID
+                            key(industry.industryId) {
+                                InterestItem(industry) { selectedItem ->
+                                    onIndustrySelectionChanged(selectedItem)
+                                }
+                            }
                         }
+
                     }
 
-                }
+                    Spacer(modifier = Modifier.height(16.dp))
 
+                    Button(
 
-            } else {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                ) {
+                        colors = ButtonDefaults.buttonColors(
+                            disabledContainerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        onClick = {
+                            onUpdateIndustriesClicked()
+                        },
+                        enabled = anyItemSelected && !isUpdating,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
 
-                    Text(
-                        text = "Pick Your Interests",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                        if (isUpdating && anyItemSelected) {
 
-                    Text(
-                        text = "Select your industries to personalize your experience.",
-                        style = MaterialTheme.typography.bodyMedium)
+                            CircularProgressIndicator(
+                                color = Color.White, // Change this to any color you prefer
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(ButtonDefaults.IconSize),
+                            )
 
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-
-                    if (error is ResultError.NoInternet) {
-
-
-
-                        Row(horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()) {
-
+                        } else {
                             Text(
-                                "Internet connection failed",
-                                color = Color.Red,
+                                "Continue",
+                                color = if (anyItemSelected) Color.White else Color.LightGray,
                                 style = MaterialTheme.typography.bodyMedium
                             )
-
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                "Retry",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.clickable {
-                                    onRetry()
-                                }
-                            )
-                        }
-
-                    }
-                    else if (error != null && industryItems.isEmpty()) {
-                        Text("Something went wrong",
-                            color = Color.Red,
-                            style = MaterialTheme.typography.bodyMedium)
-                    } else {
-
-
-                        FlowRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-
-                        ) {
-                            industryItems.map { industry ->
-
-                                // Using a unique key, such as the industry ID
-                                key(industry.industryId) {
-                                    InterestItem(industry) { selectedItem ->
-                                        onIndustrySelectionChanged(selectedItem)
-                                    }
-                                }
-                            }
-
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-
-                            colors = ButtonDefaults.buttonColors(
-                                disabledContainerColor = MaterialTheme.colorScheme.primary
-                            ),
-                            onClick = {
-                                onUpdateIndustriesClicked()
-                            },
-                            enabled = anyItemSelected && !isUpdating,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        ) {
-
-                            if (isUpdating && anyItemSelected) {
-
-                                CircularProgressIndicator(
-                                    color = Color.White, // Change this to any color you prefer
-                                    strokeWidth = 2.dp,
-                                    modifier = Modifier.size(ButtonDefaults.IconSize),
-                                )
-
-                            } else {
-                                Text(
-                                    "Continue",
-                                    color = if (anyItemSelected) Color.White else Color.LightGray,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-
                         }
 
                     }
@@ -759,8 +748,8 @@ private fun ChooseIndustryContent(
                 }
 
             }
-        }
 
+        }
     }
 
 }

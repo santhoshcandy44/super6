@@ -44,7 +44,7 @@ open class EmailOTPVerificationViewModel(protected val authRepository: AuthRepos
     private var otpErrorMessage: String = ""
 
 
-    private val mutex = Mutex() // Create a Mutex for synchronization
+    private val mutex = Mutex()
 
 
     init {
@@ -141,15 +141,15 @@ open class EmailOTPVerificationViewModel(protected val authRepository: AuthRepos
 
 
     private fun updateResendButtonEnabled(value: Boolean) {
-        _resendEnabled.value = value // Disable resend button
+        _resendEnabled.value = value
     }
 
     private fun timerVisibility(value: Boolean) {
-        _timerVisible.value = value // Show timer layout
+        _timerVisible.value = value
     }
 
     private fun onStartTimer() {
-        startTimer() // Start countdown timer
+        startTimer()
 
     }
 

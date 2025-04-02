@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.api.Utils.ResultError
 import com.lts360.api.models.service.EditableService
+import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
 
 
@@ -37,12 +37,8 @@ fun PublishedServicesScreen(
     isServiceCreated:Boolean?,
     onRemoveServiceCreatedState:()->Unit,
     onNavigateUp: (EditableService) -> Unit,
-    viewModel: PublishedServicesViewModel,
-
-    ) {
-
-
-
+    viewModel: PublishedServicesViewModel
+) {
 
     val userId = viewModel.userId
     val publishedServices by viewModel.services.collectAsState()
@@ -58,7 +54,6 @@ fun PublishedServicesScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-
 
         if (!isLoading) {
 
@@ -137,9 +132,8 @@ fun PublishedServicesScreen(
             }
         }
 
-        // Progress Bar
         if (isLoading) {
-            CircularProgressIndicator(
+            CircularProgressIndicatorLegacy(
                 modifier = Modifier.align(Alignment.Center),
                 strokeWidth = 4.dp
             )
@@ -149,8 +143,6 @@ fun PublishedServicesScreen(
 
 @Composable
 fun NoInternetText(modifier: Modifier = Modifier) {
-
-    // Implement this Composable according to your "no_internet" layout
     Box(modifier = modifier) {
         Text(
             text = "No internet connection",
@@ -166,11 +158,10 @@ fun ServiceItem(
     title: String,
     shortDescription: String,
     status: String,
-    onClick: (String, Long) -> Unit, // onClick callback
+    onClick: (String, Long) -> Unit,
     type: String,
     item: EditableService,
 ) {
-    // Outer container with vertical margin and rounded background
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()

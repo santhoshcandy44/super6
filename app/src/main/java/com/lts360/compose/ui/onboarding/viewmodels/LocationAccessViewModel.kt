@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.google.gson.reflect.TypeToken
 import com.lts360.api.Utils.Result
 import com.lts360.api.Utils.mapExceptionToError
 import com.lts360.api.auth.managers.TokenManager
+import com.lts360.app.database.daos.prefs.BoardDao
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.app.database.models.profile.UserLocation
@@ -15,9 +17,12 @@ import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.compose.ui.auth.repos.AuthRepository
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.models.LocationRepository
+import com.lts360.compose.ui.main.prefs.viewmodels.BoardPref
+import com.lts360.compose.ui.main.prefs.viewmodels.BoardsPreferencesRepository
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.onboarding.GuestIdUtil.generateGuestId
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,8 +33,10 @@ import javax.inject.Inject
 @HiltViewModel
 class LocationAccessViewModel @Inject constructor(
     val authRepository: AuthRepository,
-    val locationRepository: LocationRepository,
+    private val locationRepository: LocationRepository,
+    val boardsPreferencesRepository: BoardsPreferencesRepository,
     val userProfileDao: UserProfileDao,
+    val boardDao:BoardDao,
     tokenManager: TokenManager,
 ) : ViewModel() {
 
@@ -168,30 +175,66 @@ class LocationAccessViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                userProfileDao.insert(
-                    UserProfile(
-                        generateGuestId, "Guest", "",
-                        null, null, "",
-                        "guest",
-                        System.currentTimeMillis().toString(),
-                        System.currentTimeMillis().toString()
-                    )
-                )
+            try {
+                when (val result = boardsPreferencesRepository.guestGetBoards(userId)) { // Call the network function
+                    is Result.Success -> {
 
-                locationRepository.onGuestSaveLocationCoordinates(
-                    generateGuestId,
-                    currentLocation.latitude,
-                    currentLocation.longitude,
-                    currentLocation.locationType,
-                    currentLocation.geo
-                )
+                        withContext(Dispatchers.IO){
+                            boardDao.clearAndInsertSelectedBoards((Gson().fromJson(
+                                result.data.data,
+                                object : TypeToken<List<BoardPref>>() {}.type
+                            ) as List<BoardPref>)
+                                .map { boardItem ->
+                                    boardItem
+                                }
+                            )
+
+
+                            userProfileDao.insert(
+                                UserProfile(
+                                    generateGuestId, "Guest", "",
+                                    null, null, "",
+                                    "guest",
+                                    System.currentTimeMillis().toString(),
+                                    System.currentTimeMillis().toString()
+                                )
+                            )
+
+                            locationRepository.onGuestSaveLocationCoordinates(
+                                generateGuestId,
+                                currentLocation.latitude,
+                                currentLocation.longitude,
+                                currentLocation.locationType,
+                                currentLocation.geo
+                            )
+
+                            authRepository.saveUserId(generateGuestId)
+                            authRepository.saveGuestSignInInfo()
+                        }
+
+                        onSuccess()
+                    }
+
+                    is Result.Error -> {
+                        if (result.error is CancellationException) {
+                            return@launch
+                        }
+                        val error = mapExceptionToError(result.error)
+                        onError( error.errorMessage)
+                    }
+
+                }
+
+            } catch (t: Throwable) {
+                onError("Something went wrong")
+                t.printStackTrace()
+            } finally {
+
+                if (_isLoading.value) {
+                    _isLoading.value = false
+                }
+
             }
-
-            authRepository.saveUserId(generateGuestId)
-            authRepository.saveGuestSignInInfo()
-            onSuccess()
-            _isLoading.value = false
         }
 
     }

@@ -75,9 +75,7 @@ class HomeViewModel @Inject constructor(
 
     var error = ""
 
-
     private val submittedQuery = savedStateHandle.get<String?>("submittedQuery")
-
 
     private val _searchQuery = MutableStateFlow(
         if (submittedQuery != null) TextFieldValue(
@@ -86,8 +84,6 @@ class HomeViewModel @Inject constructor(
         ) else TextFieldValue()
     )
     val searchQuery = _searchQuery.asStateFlow()
-
-
 
 
     private val _isSearching = MutableStateFlow(false)

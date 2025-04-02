@@ -27,11 +27,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-
-
-/*        buildConfigField("String" ,"BASE_URL","\"http://192.168.15.85:3000\"")
-        buildConfigField("String" ,"SOCKET_BASE_URL","\"http://192.168.15.85:3080\"")*/
-
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -57,14 +52,11 @@ android {
         }
     }
 
-
-
-
     buildTypes {
 
         debug {
-   /*         buildConfigField("String", "BASE_URL", "\"http://3.108.54.251:3000\"")
-            buildConfigField("String", "SOCKET_BASE_URL", "\"http://3.108.54.251:3080\"")*/
+          /*  buildConfigField("String", "BASE_URL", "\"http://192.168.156.85:3000\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"http://192.168.156.85:3080\"")*/
             buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
             buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")
             buildConfigField("String", "REFERER", "\"referer.lts360.com\"")

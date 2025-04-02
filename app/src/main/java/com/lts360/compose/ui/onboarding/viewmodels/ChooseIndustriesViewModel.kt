@@ -85,8 +85,7 @@ class ChooseIndustriesViewModel @Inject constructor(
         _isRefreshing.value = isRefreshing
     }
 
-    // Function to update the error message
-    fun updateError(exception:Throwable?) {
+    private fun updateError(exception:Throwable?) {
         _error.value = exception?.let {
             mapExceptionToError(it)
         }
@@ -281,22 +280,6 @@ class ChooseIndustriesViewModel @Inject constructor(
             _industryItems[index] = updatedIndustry.copy(isSelected = !updatedIndustry.isSelected)
         }
     }
-
-
-//    fun onIndustrySelectionChanged(updatedIndustry: Industry) {
-//        viewModelScope.launch {
-//            // Find the index of the industry by its unique ID
-//            val updatedList = _industryItems2.value.map {
-//                if (it.industryId == updatedIndustry.industryId) {
-//                    it.copy(isSelected = !updatedIndustry.isSelected)
-//                } else {
-//                    it
-//                }
-//            }
-//            _industryItems2.value = updatedList // Update the StateFlow
-//        }
-//    }
-
 }
 
 
@@ -334,9 +317,7 @@ class GuestChooseIndustriesViewModel @Inject constructor(
     private var errorMessage: String = ""
 
     init {
-        onGetGuestIndustries(
-            userId,
-            onSuccess = {}) {}
+        onGetGuestIndustries(userId)
     }
 
 
@@ -351,8 +332,7 @@ class GuestChooseIndustriesViewModel @Inject constructor(
         _isRefreshing.value = isRefreshing
     }
 
-    // Function to update the error message
-    fun updateError(exception: Throwable?) {
+    private fun updateError(exception: Throwable?) {
         _error.value = exception?.let {
             mapExceptionToError(it)
         }
@@ -363,8 +343,8 @@ class GuestChooseIndustriesViewModel @Inject constructor(
         userId: Long,
         isLoading: Boolean = true,
         isRefreshing: Boolean = false,
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit,
+        onSuccess: () -> Unit={},
+        onError: (String) -> Unit={},
     ) {
         viewModelScope.launch {
 
@@ -384,20 +364,19 @@ class GuestChooseIndustriesViewModel @Inject constructor(
                         updateError(null)
                         val allIndustries = guestIndustryDao.getAllIndustries()
 
-                        val mappedIndustries= (Gson().fromJson(result.data.data,
+                        _industryItems.value= (Gson().fromJson(result.data.data,
                             object : TypeToken<List<Industry>>() {}.type) as List<Industry>)
                             .map { industryItem ->
-                            // Find the corresponding industry from the database
-                            val industryFromDb = allIndustries.find { industryItem.industryId == it.industryId }
+                                // Find the corresponding industry from the database
+                                val industryFromDb = allIndustries.find { industryItem.industryId == it.industryId }
 
-                            if (industryFromDb == null) {
-                                industryItem // No change, keep as is
-                            } else {
-                                industryItem.copy(isSelected = true) // Mark as selected
+                                if (industryFromDb == null) {
+                                    industryItem // No change, keep as is
+                                } else {
+                                    industryItem.copy(isSelected = true) // Mark as selected
+                                }
                             }
-                        }
 
-                        _industryItems.value=mappedIndustries
                         onSuccess()
                     }
 
@@ -528,9 +507,6 @@ class GuestChooseIndustriesViewModel @Inject constructor(
     }
 
 
-
-
-
     fun onIndustrySelectionChanged(updatedIndustry: Industry) {
         // Use `update` to modify the state directly
         _industryItems.update { currentList ->
@@ -545,22 +521,6 @@ class GuestChooseIndustriesViewModel @Inject constructor(
         }
     }
 
-
-
-
-//    fun onIndustrySelectionChanged(updatedIndustry: Industry) {
-//        viewModelScope.launch {
-//            // Find the index of the industry by its unique ID
-//            val updatedList = _industryItems2.value.map {
-//                if (it.industryId == updatedIndustry.industryId) {
-//                    it.copy(isSelected = !updatedIndustry.isSelected)
-//                } else {
-//                    it
-//                }
-//            }
-//            _industryItems2.value = updatedList // Update the StateFlow
-//        }
-//    }
 
 }
 

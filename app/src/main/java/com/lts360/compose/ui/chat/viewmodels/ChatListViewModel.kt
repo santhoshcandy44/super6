@@ -2,6 +2,7 @@ package com.lts360.compose.ui.chat.viewmodels
 
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +13,7 @@ import com.lts360.app.database.daos.chat.MessageDao
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.app.database.models.chat.Message
 import com.lts360.app.database.models.chat.MessageWithReply
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.chat.ChatUserEventsManager
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -86,7 +88,6 @@ class ChatListViewModel @Inject constructor(
         val data = args[0] as JSONObject
         val senderId = data.getLong("user_id")
         val status = data.getBoolean("online")
-
         viewModelScope.launch {
             _userStates.value.find { it.chatUser.recipientId == senderId }?.let { userState ->
                 updateOnlineStatus(userState.chatUser.recipientId, status)

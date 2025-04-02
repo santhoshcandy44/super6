@@ -5,13 +5,16 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 
-@Entity(tableName = "board")
+@Entity(tableName = "boards")
 data class Board(
     @ColumnInfo("board_id")
-    @PrimaryKey(autoGenerate = true)
-    val boardId: Long,
+    @PrimaryKey
+    val boardId: Int,
     @ColumnInfo("board_name")
     val boardName: String,
-    @ColumnInfo("is_pinned")
-    val isPinned:Boolean)
+    @ColumnInfo("board_label")
+    val boardLabel: String,
+    @ColumnInfo("display_order")
+    val displayOrder: Int
+)
 

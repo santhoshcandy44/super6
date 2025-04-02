@@ -242,8 +242,6 @@ class ChatViewModel @Inject constructor(
         val sender = data.getLong("user_id")
         val status = data.getBoolean("online")
         val lastVisible = data.getString("last_active")
-
-
         viewModelScope.launch {
             if (sender == recipientId) {
                 _onlineStatus.value = if (status) "online" else lastSeenTimestamp(lastVisible)
@@ -2200,7 +2198,7 @@ class ChatViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
 
-        socket?.off("online-status-${recipientId}", onlineStatusHandler)
+        socket?.off("onlineStatus-${recipientId}", onlineStatusHandler)
         socket?.off("is_typing", typingHandler)
     }
 

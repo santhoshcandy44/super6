@@ -25,6 +25,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.More
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -62,16 +64,18 @@ fun MoreScreen(
     onProfileNavigateUp: () -> Unit,
     onAccountAndProfileSettingsNavigateUp: (String) -> Unit,
     onManageIndustriesAndInterestsNavigateUp: () -> Unit,
+    onSetupBoardsSettingsNavigateUp: () -> Unit,
     onManageServiceNavigateUp: () -> Unit,
     onManageSecondsNavigateUp: () -> Unit,
     onNavigateUpBookmarks: () -> Unit,
     onNavigateUpThemeModeSettings: () -> Unit,
-    viewModel: MoreViewModel,
+    onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {},
     onNavigateUpWelcomeScreenSheet: () -> Unit,
     onNavigateUpLogInSheet: () -> Unit,
-    onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {},
     isSheetExpanded: Boolean,
     collapseSheet: () -> Unit,
+    viewModel: MoreViewModel,
+
 ) {
 
 
@@ -235,7 +239,6 @@ fun MoreScreen(
 
                                     if (signInMethod == "guest") {
 
-
                                     } else {
                                         dropUnlessResumedV2(lifecycleOwner) {
                                             onProfileNavigateUp()
@@ -325,7 +328,7 @@ fun MoreScreen(
                                 .clip(RoundedCornerShape(8.dp))
                         ) {
                             // Settings Item
-                            AccountManagementItem(
+                            MoreSectionItem(
                                 color = Color(
                                     0xFF007cf9
                                 ),
@@ -335,7 +338,7 @@ fun MoreScreen(
                                 onNavigateUpWelcomeScreenSheet()
                             }
 
-                            AccountManagementItem(
+                            MoreSectionItem(
                                 color = Color(
                                     0xFF964B00
                                 ),
@@ -345,7 +348,7 @@ fun MoreScreen(
                                 onNavigateUpLogInSheet()
                             }
 
-                            AccountManagementItem(
+                            MoreSectionItem(
                                 color = Color.Red,
                                 iconRes = R.drawable.ic_light_interest,
                                 text = "Manage Industries and Interests"
@@ -368,7 +371,7 @@ fun MoreScreen(
                                 .clip(RoundedCornerShape(8.dp))
                         ) {
                             // Settings Item
-                            AccountManagementItem(
+                            MoreSectionItem(
                                 color = Color(
                                     0xFF007cf9
                                 ),
@@ -383,7 +386,7 @@ fun MoreScreen(
                                 }
                             }
 
-                            AccountManagementItem(
+                            MoreSectionItem(
                                 color = Color(
                                     0xFF964B00
                                 ),
@@ -394,14 +397,7 @@ fun MoreScreen(
                                 onNavigateUpBookmarks()
 
                             }
-                            AccountManagementItem(
-                                color = Color.Red,
-                                iconRes = R.drawable.ic_light_interest,
-                                text = "Manage Service Industries"
-                            ) {
 
-                                onManageIndustriesAndInterestsNavigateUp()
-                            }
                         }
 
                         userProfile?.let {
@@ -421,7 +417,7 @@ fun MoreScreen(
                                         .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
                                         .clip(RoundedCornerShape(8.dp))
                                 ) {
-                                    AccountManagementItem(
+                                    MoreSectionItem(
                                         color = Color(
                                             0xFF49d85b
                                         ),
@@ -439,7 +435,7 @@ fun MoreScreen(
                                         .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
                                         .clip(RoundedCornerShape(8.dp))
                                 ) {
-                                    AccountManagementItem(
+                                    MoreSectionItem(
                                         color = Color(
                                             0xFFfe9603
                                         ),
@@ -455,6 +451,32 @@ fun MoreScreen(
                         }
                     }
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text("Prefs", style = MaterialTheme.typography.titleMedium)
+
+                    Column(
+                        modifier = Modifier
+                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(8.dp))
+                    ) {
+                        MoreSectionItem(
+                            color = MaterialTheme.colorScheme.primary,
+                            iconRes = R.drawable.ic_setup_boards,
+                            text = "Boards Settings"
+                        ) {
+                            onSetupBoardsSettingsNavigateUp()
+                        }
+
+                        MoreSectionItem(
+                            color = Color.Red,
+                            iconRes = R.drawable.ic_light_interest,
+                            text = "Manage Service Industries"
+                        ) {
+
+                            onManageIndustriesAndInterestsNavigateUp()
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -468,7 +490,7 @@ fun MoreScreen(
                             .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
                             .clip(RoundedCornerShape(8.dp))
                     ) {
-                        ActionItem(
+                        MoreSectionItem(
                             color = Color.Black,
                             iconRes = R.drawable.ic_light_theme_mode, text = "Theme Mode") {
                             onNavigateUpThemeModeSettings()
@@ -486,7 +508,7 @@ fun MoreScreen(
 
 
 
-                        ActionItem(
+                        MoreSectionItem(
                             color = Color(0xFF3f7787) ,
                             iconRes = R.drawable.ic_light_invite_friends, text = "Invite Friends") {
 
@@ -514,7 +536,7 @@ fun MoreScreen(
                             }
                         }
 
-                        ActionItem(
+                        MoreSectionItem(
                             color = Color(0xFFff591f),
                             iconRes = R.drawable.ic_light_help, text = "Help and Support") {
                             val emailIntent =
@@ -545,7 +567,7 @@ fun MoreScreen(
                             }
                         }
 
-                        ActionItem(
+                        MoreSectionItem(
                             color = Color(
                                 0xFFc14581
                             ),
@@ -573,49 +595,7 @@ fun MoreScreen(
 
 
 @Composable
-fun AccountManagementItem(iconRes: Int, text: String,
-                          color: Color=Color.Unspecified,
-                          onClick: () -> Unit) {
-
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable {
-                dropUnlessResumedV2(lifecycleOwner) {
-                    onClick()
-                }
-
-            }
-
-    .padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-
-        Box(
-            modifier = Modifier
-                .background(color, CircleShape)
-                .size(32.dp),
-            contentAlignment = Alignment.Center // Centers the Image inside the Box
-        ) {
-            Image(
-                painter = painterResource(id = iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(24.dp) // Remove padding, size only
-            )
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium)
-    }
-
-}
-
-
-
-
-@Composable
-fun ActionItem(iconRes: Int,
+fun MoreSectionItem(iconRes: Int,
                color: Color=Color.Unspecified,
                text: String, onClick: () -> Unit) {
 

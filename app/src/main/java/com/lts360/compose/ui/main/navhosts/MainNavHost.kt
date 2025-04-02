@@ -39,6 +39,7 @@ import com.lts360.compose.ui.profile.EditProfileLastNameScreen
 import com.lts360.compose.ui.profile.EditProfileSettingsScreen
 import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
 import com.lts360.compose.ui.usedproducts.manage.UsedProductListingActivity
+import com.lts360.compose.ui.viewmodels.HomeActivityViewModel
 import com.lts360.compose.ui.viewmodels.MoreViewModel
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
 
@@ -50,6 +51,8 @@ fun MainNavHost() {
     val context = LocalContext.current
 
     val navController = rememberNavController()
+
+    val homeActivityViewModel:HomeActivityViewModel = hiltViewModel()
 
     val homeViewModel: HomeViewModel = hiltViewModel()
     val chatListViewModel: ChatListViewModel = hiltViewModel()
@@ -70,6 +73,7 @@ fun MainNavHost() {
                 chatListViewModel,
                 notificationViewModel,
                 moreViewModel,
+                homeActivityViewModel,
                 onProfileNavigateUp = {
                     navController.navigate(AccountAndProfileSettingsRoutes.Profile)
                 }, onAccountAndProfileSettingsNavigateUp = { accountType ->

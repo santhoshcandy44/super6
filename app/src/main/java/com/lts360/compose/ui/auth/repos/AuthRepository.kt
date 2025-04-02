@@ -23,6 +23,7 @@ import com.lts360.api.common.CommonClient
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.UserProfileInfo
+import com.lts360.app.database.daos.prefs.BoardDao
 import com.lts360.app.database.daos.profile.UserLocationDao
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.UserLocation
@@ -45,6 +46,7 @@ class AuthRepository @Inject constructor(
     private val tokenManager: TokenManager,
     val userProfileDao: UserProfileDao,
     val userLocationDao: UserLocationDao,
+    val boardDao: BoardDao
 ) {
 
     private val filesDir = context.filesDir

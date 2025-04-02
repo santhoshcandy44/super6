@@ -9,6 +9,7 @@ import com.lts360.app.database.daos.chat.MessageDao
 import com.lts360.app.database.daos.chat.MessageMediaMetaDataDao
 import com.lts360.app.database.daos.chat.MessageProcessingDataDao
 import com.lts360.app.database.daos.notification.NotificationDao
+import com.lts360.app.database.daos.prefs.BoardDao
 import com.lts360.app.database.daos.profile.RecentLocationDao
 import com.lts360.app.database.daos.profile.UserLocationDao
 import com.lts360.app.database.daos.profile.UserProfileDao
@@ -62,6 +63,10 @@ object DatabaseModule {
 
     }
 
+    @Provides
+    fun provideBoardDao(database: AppDatabase): BoardDao {
+        return database.boardDao()
+    }
 
 
     @Provides

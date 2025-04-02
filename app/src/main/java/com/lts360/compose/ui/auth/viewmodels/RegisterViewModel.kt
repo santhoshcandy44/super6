@@ -254,6 +254,7 @@ class RegisterViewModel @Inject constructor(
                         authRepository.saveGoogleSignInInfo(data.accessToken,data.refreshToken)
                         authRepository.saveUserId(data.userId)
                         withContext(Dispatchers.IO) {
+                            authRepository.boardDao.clearAndInsertSelectedBoards(data.boards)
                             authRepository.updateProfileIfNeeded(data.userDetails)
                         }
                         onSuccess()

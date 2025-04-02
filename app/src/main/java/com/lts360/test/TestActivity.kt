@@ -4,21 +4,15 @@ package com.lts360.test
 import android.content.res.Configuration
 import android.graphics.Paint
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,17 +21,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lts360.R
-import com.lts360.compose.ui.chat.ChatImagesSliderActivity
-import com.lts360.compose.ui.chat.ChatPlayerActivity
-import com.lts360.compose.ui.chat.camera.CameraVisualPickerActivityContracts
+import com.lts360.compose.ui.auth.repos.AuthRepository
+import com.lts360.compose.ui.auth.viewmodels.EmailOTPVerificationViewModel
+import com.lts360.compose.ui.auth.viewmodels.RegisterViewModel
+import com.lts360.compose.ui.main.prefs.BoardsPreferencesScreen
 import com.lts360.compose.ui.theme.AppTheme
-import com.lts360.compose.ui.utils.touchConsumer
+import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -87,88 +80,8 @@ class TestActivity : ComponentActivity() {
         setContent {
             AppTheme {
                 Surface {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
+                    SafeDrawingBox {
 
-                        val cameraLauncher = rememberLauncherForActivityResult(
-                            CameraVisualPickerActivityContracts.TakeCameraMedia()
-                        ) {
-
-                            it?.let {
-                                Toast.makeText(
-                                    this@TestActivity,
-                                    "Image captured",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }?: run {
-                                Toast.makeText(
-                                    this@TestActivity,
-                                    "Failed to capture",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-
-                        }
-
-
-
-                        Button({
-                            cameraLauncher.launch(Unit)
-
-                        }) {
-                            Text("Open camera")
-                        }
-
-                        /*       val hasAudioRecordPermissionGranted = {
-                                   ContextCompat
-                                       .checkSelfPermission(
-                                           context,
-                                           android.Manifest.permission.RECORD_AUDIO
-                                       ) == PackageManager.PERMISSION_GRANTED
-                               }
-
-                               var showPermissionDialog by rememberSaveable {
-                                   mutableStateOf(
-                                       false
-                                   )
-                               }
-
-                               var startRecord by rememberSaveable {
-                                   mutableStateOf(
-                                       false
-                                   )
-                               }
-
-                               Button(
-                                   onClick = {
-
-                                       if (hasAudioRecordPermissionGranted()) {
-                                           startRecord = true
-                                       } else {
-                                           showPermissionDialog = true
-                                       }
-
-                                   }, shape = RoundedCornerShape(8.dp),
-                                   modifier = Modifier.align(Alignment.Center)
-                               ) {
-                                   Text("Record Audio")
-                               }
-
-                               if (startRecord) {
-                                   ChatRecordAudio()
-                               }
-
-                               if (showPermissionDialog) {
-                                   RecordAudioWithPermission(
-                                       {
-                                           showPermissionDialog = false
-                                       }
-                                   ) {
-                                       showPermissionDialog = false
-                                   }
-                               }*/
                     }
                 }
             }
@@ -177,38 +90,6 @@ class TestActivity : ComponentActivity() {
     }
 
 
-    @Preview
-    @Composable
-    fun ParentConsumesClick() {
-
-        val context = LocalContext.current
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .touchConsumer(
-                    pass = PointerEventPass.Initial,
-                    onDown = {
-
-                    },
-                )
-                .background(Color.Gray),
-            contentAlignment = Alignment.Center
-        ) {
-
-            Text("ks;ad;as", modifier = Modifier.pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    Toast.makeText(context, "Tap clicked", Toast.LENGTH_SHORT).show()
-
-                })
-            })
-
-            /*    Button(onClick = {
-                    Toast.makeText(context, "Child clicked", Toast.LENGTH_SHORT).show()
-                }) {
-                    Text("Click Me")
-                }*/
-        }
-    }
 
     @Composable
     fun BoxScope.CanvasTest() {
@@ -316,7 +197,6 @@ class TestActivity : ComponentActivity() {
 
         AppTheme {
             Surface {
-
 
             }
         }

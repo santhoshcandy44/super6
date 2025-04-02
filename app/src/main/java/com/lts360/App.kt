@@ -44,6 +44,7 @@ import kotlinx.coroutines.withContext
 import okio.Path.Companion.toOkioPath
 import java.io.File
 import javax.inject.Inject
+import androidx.core.content.edit
 
 @HiltAndroidApp
 class App : Application(), Configuration.Provider, SingletonImageLoader.Factory {
@@ -59,18 +60,14 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
             .setDefaultProcessName(BuildConfig.APPLICATION_ID)
             .build()
 
-    // TokenManager or AuthManager to handle token logic
     @Inject
     lateinit var tokenManager: TokenManager
 
     @Inject
     lateinit var appDatabase: AppDatabase
 
-
     @Inject
     lateinit var socketManager: SocketManager
-
-
 
     @Inject
     lateinit var networkConnectivityManager: NetworkConnectivityManager
@@ -281,7 +278,7 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
                 job = null // Clear the job reference
                 UserSharedPreferencesManager.clear()
                 getSharedPreferences("FCM_MESSAGE_PARTS", MODE_PRIVATE)
-                    .edit().clear().apply()
+                    .edit{ clear() }
 
 
                 AppClient.clear()
@@ -323,7 +320,7 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
             job = null // Clear the job reference
             UserSharedPreferencesManager.clear()
             getSharedPreferences("FCM_MESSAGE_PARTS", MODE_PRIVATE)
-                .edit().clear().apply()
+                .edit{ clear() }
             tokenManager.logout(method)
 
             AppClient.clear()

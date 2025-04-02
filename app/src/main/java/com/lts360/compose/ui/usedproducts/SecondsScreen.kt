@@ -82,7 +82,7 @@ import kotlinx.coroutines.launch
 fun SecondsScreen(
     onNavigateUpSecondsDetailedScreen: (UsedProductListing) -> Unit,
     showChooseIndustriesSheet: () -> Unit,
-    viewModel: SecondsViewmodel,
+    viewModel: SecondsViewmodel
 ) {
 
 

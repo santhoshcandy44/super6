@@ -10,7 +10,9 @@ import com.lts360.api.auth.managers.TokenManager
 import com.lts360.api.models.service.GuestIndustryDao
 import com.lts360.app.database.daos.chat.MessageDao
 import com.lts360.app.database.daos.notification.NotificationDao
+import com.lts360.app.database.daos.prefs.BoardDao
 import com.lts360.app.database.daos.profile.UserProfileDao
+import com.lts360.app.database.models.app.Board
 import com.lts360.app.workers.helpers.E2EEPublicTokenToServerWorkerHelper
 import com.lts360.app.workers.helpers.SendFcmTokenWorkerHelper
 import com.lts360.components.utils.LogUtils.TAG
@@ -18,9 +20,11 @@ import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,6 +36,7 @@ class HomeActivityViewModel @Inject constructor(
     val application: Application,
     val userProfileDao: UserProfileDao,
     val messageDao: MessageDao,
+    val boardDao:BoardDao,
     notificationDao: NotificationDao,
     connectivityManager: NetworkConnectivityManager,
     tokenManager: TokenManager,
@@ -59,11 +64,20 @@ class HomeActivityViewModel @Inject constructor(
     private val _bottomNavVisibility = MutableStateFlow(true)
     val bottomNavVisibility = _bottomNavVisibility.asStateFlow()
 
+    private val _boards = MutableStateFlow<List<Board>>(emptyList())
+    val boards = _boards.asStateFlow()
+
 
 
     init {
 
         UserSharedPreferencesManager.initialize(context)
+        viewModelScope.launch(Dispatchers.IO){
+            boardDao.getAllBoardsFlow().collectLatest {
+                _boards.value = it
+            }
+        }
+
 
         if (signInMethod == "guest") {
             viewModelScope.launch {

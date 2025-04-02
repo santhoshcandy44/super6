@@ -131,9 +131,7 @@
             android:name=".compose.ui.chat.IsolatedChatActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
-
             />
-
 
         <activity
             android:name=".compose.ui.chat.ChatPlayerActivity"
@@ -204,6 +202,10 @@
             android:name=".compose.ui.chat.camera.ChatCameraActivity"
             android:exported="false" />
 
+        <activity android:name=".compose.ui.main.prefs.BoardsSetupActivity"
+            android:exported="false"
+            />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -213,6 +215,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
 
 
         <activity

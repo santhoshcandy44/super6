@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.lts360.app.database.models.app.Board
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
@@ -69,6 +70,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     navController: NavController,
+    boardItems:List<Board>,
     onNavigateUpServiceDetailedScreen: () -> Unit,
     onNavigateUpUsedProductListingDetailedScreen: () -> Unit,
     onNavigateUpServiceOwnerProfile: (Long) -> Unit,
@@ -83,14 +85,14 @@ fun HomeScreen(
 ) {
 
 
-    val boards = listOf("Services", "Second Hands")
-    val initialPageIndex =
-        if (nestedType.isNullOrEmpty()) 0 else boards.indexOf(nestedType).coerceAtLeast(0)
+    val boardLabels by remember { mutableStateOf(boardItems.map { it.boardLabel }) }
+
+    val initialPageIndex = if (nestedType.isNullOrEmpty()) 0 else boardLabels.indexOf(nestedType).coerceAtLeast(0)
 
 
     val pagerState = rememberPagerState(
         initialPageIndex,
-        pageCount = { boards.size })
+        pageCount = { boardItems.size })
 
 
     val userId = viewModel.userId
@@ -153,7 +155,6 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .nestedScroll(remember {
-
                         object : NestedScrollConnection {
                             override fun onPreScroll(
                                 available: Offset,
@@ -230,20 +231,18 @@ fun HomeScreen(
                                         searchJob?.cancel()
                                         viewModel.clearJob()
 
-                                        if (boards[pagerState.currentPage] == "Services") {
+                                        if (boardLabels[pagerState.currentPage] == "services") {
                                             viewModel.onGetServiceSearchQuerySuggestions(
                                                 userId,
                                                 query.text
                                             )
-                                        } else if (boards[pagerState.currentPage] == "Second Hands") {
+                                        } else if (boardLabels[pagerState.currentPage] == "second_hands") {
                                             viewModel.onGetUsedProductListingSearchQuerySuggestions(
                                                 userId,
                                                 query.text
                                             )
 
                                         }
-
-
                                     }
 
                                 } else {
@@ -266,7 +265,7 @@ fun HomeScreen(
                                 if (searchQuery.text.isNotEmpty()) {
 
 
-                                    if (boards[pagerState.currentPage] == "Services") {
+                                    if (boardLabels[pagerState.currentPage] == "services") {
                                         viewModel.navigateToOverlay(
                                             navController, BottomBar.NestedServices(
                                                 servicesViewModel.getKey() + 1,
@@ -274,7 +273,7 @@ fun HomeScreen(
                                                 true
                                             )
                                         )
-                                    } else if (boards[pagerState.currentPage] == "Second Hands") {
+                                    } else if (boardLabels[pagerState.currentPage] == "second_hands") {
 
                                         viewModel.navigateToOverlay(
                                             navController, BottomBar.NestedSeconds(
@@ -319,7 +318,6 @@ fun HomeScreen(
                         shadowElevation = 0.dp
                     ) {
 
-
                         SearchBar(
                             query = searchQuery,
                             onQueryChange = { query ->
@@ -340,12 +338,12 @@ fun HomeScreen(
                                         searchJob?.cancel()
                                         viewModel.clearJob()
 
-                                        if (boards[pagerState.currentPage] == "Services") {
+                                        if (boardLabels[pagerState.currentPage] == "services") {
                                             viewModel.onGetServiceSearchQuerySuggestions(
                                                 userId,
                                                 query.text
                                             )
-                                        } else if (boards[pagerState.currentPage] == "Second Hands") {
+                                        } else if (boardLabels[pagerState.currentPage] == "second_hands") {
 
                                             viewModel.onGetUsedProductListingSearchQuerySuggestions(
                                                 userId,
@@ -374,7 +372,7 @@ fun HomeScreen(
 
                                     scope.launch {
 
-                                        if (boards[pagerState.currentPage] == "Services") {
+                                        if (boardLabels[pagerState.currentPage] == "services") {
                                             viewModel.navigateToOverlay(
                                                 navController, BottomBar.NestedServices(
                                                     servicesViewModel.getKey() + 1,
@@ -383,7 +381,7 @@ fun HomeScreen(
 
                                                 )
                                             )
-                                        } else if (boards[pagerState.currentPage] == "Second Hands") {
+                                        } else if (boardLabels[pagerState.currentPage] == "second_hands") {
                                             viewModel.navigateToOverlay(
                                                 navController, BottomBar.NestedSeconds(
                                                     secondsViewModel.getKey() + 1,
@@ -416,7 +414,7 @@ fun HomeScreen(
                     if (!onlySearchBar) {
 
                         Boards(
-                            boards,
+                            boardItems,
                             pagerState,
                             servicesContent = {
                                 ServicesScreen(
@@ -521,7 +519,7 @@ fun HomeScreen(
                                                         viewModel.setSearchQuery(it)
                                                         if (it.isNotEmpty()) {
 
-                                                            if (boards[pagerState.currentPage] == "Services") {
+                                                            if (boardLabels[pagerState.currentPage] == "services") {
                                                                 viewModel.navigateToOverlay(
                                                                     navController,
                                                                     BottomBar.NestedServices(
@@ -531,7 +529,7 @@ fun HomeScreen(
 
                                                                     )
                                                                 )
-                                                            } else if (boards[pagerState.currentPage] == "Second Hands") {
+                                                            } else if (boardLabels[pagerState.currentPage] == "second_hands") {
                                                                 viewModel.navigateToOverlay(
                                                                     navController,
                                                                     BottomBar.NestedSeconds(
@@ -612,11 +610,11 @@ fun HomeScreen(
 
 
                     fun reloadItems() {
-                        if (boards[pagerState.currentPage] == "Services") {
+                        if (boardLabels[pagerState.currentPage] == "services") {
                             servicesViewModel.updateLastLoadedItemPosition(-1)
                             servicesViewModel.refresh(userId, searchQuery.text)
                         }
-                        if (boards[pagerState.currentPage] == "Second Hands") {
+                        if (boardLabels[pagerState.currentPage] == "second_hands") {
                             secondsViewModel.updateLastLoadedItemPosition(-1)
                             secondsViewModel.refresh(userId, searchQuery.text)
                         }

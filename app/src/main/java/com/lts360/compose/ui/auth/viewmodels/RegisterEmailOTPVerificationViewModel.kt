@@ -1,6 +1,7 @@
 package com.lts360.compose.ui.auth.viewmodels
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
@@ -13,14 +14,17 @@ import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.Utils.Result
 import com.lts360.api.Utils.mapExceptionToError
 import com.lts360.api.auth.services.AuthService
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.auth.AccountType
 import com.lts360.compose.ui.auth.navhost.AuthScreen
 import com.lts360.compose.ui.auth.repos.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -77,29 +81,30 @@ class RegisterEmailOTPVerificationViewModel @Inject constructor(
                     email = email,
                     password = password,
                     accountType = accountType
-                )) { // Call the network function
+                )) {
                     is Result.Success -> {
 
                         val data = Gson().fromJson(result.data.data, LogInResponse::class.java)
                         (context.applicationContext as App).setIsInvalidSession(false)
-
-                        authRepository.updateProfileIfNeeded(data.userDetails)
+                        withContext(Dispatchers.IO) {
+                            Log.e(TAG,"${data.boards}")
+                            authRepository.boardDao.clearAndInsertSelectedBoards(data.boards)
+                            authRepository.updateProfileIfNeeded(data.userDetails)
+                        }
                         authRepository.saveUserId(data.userId)
                         authRepository.saveEmailSignInInfo(data.accessToken, data.refreshToken)
                         onSuccess()
-                        // Handle success
-                        // Proceed to next step or navigate to OTP screen
                     }
 
                     is Result.Error -> {
                         verificationEmailErrorMessage =
                             mapExceptionToError(result.error).errorMessage
                         onError(verificationEmailErrorMessage)
-                        // Handle the error and update the UI accordingly
                     }
 
                 }
             } catch (t: Throwable) {
+                t.printStackTrace()
                 verificationEmailErrorMessage = "Something Went Wrong"
                 onError(verificationEmailErrorMessage)
 

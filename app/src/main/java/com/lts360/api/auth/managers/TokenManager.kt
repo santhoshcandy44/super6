@@ -9,6 +9,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.lts360.components.utils.LogUtils.TAG
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import androidx.core.content.edit
 
 
 class TokenManager @Inject constructor(@ApplicationContext  context: Context) {
@@ -70,28 +71,28 @@ class TokenManager @Inject constructor(@ApplicationContext  context: Context) {
 
     // Save access token
     fun saveAccessToken(token: String?) {
-        encryptedSharedPreferences.edit().putString(ACCESS_TOKEN_KEY, token).apply()
+        encryptedSharedPreferences.edit { putString(ACCESS_TOKEN_KEY, token) }
     }
 
     // Save refresh token
     fun saveRefreshToken(token: String?) {
-        encryptedSharedPreferences.edit().putString(REFRESH_TOKEN_KEY, token).apply()
+        encryptedSharedPreferences.edit { putString(REFRESH_TOKEN_KEY, token) }
     }
 
 
     // Save refresh token
     fun saveSignInMethod(method: String) {
-        encryptedSharedPreferences.edit().putString(SIGN_IN_METHOD, method).apply()
+        encryptedSharedPreferences.edit { putString(SIGN_IN_METHOD, method) }
     }
 
 
     // Clear tokens
     private fun cleaSignInTokens() {
-        encryptedSharedPreferences.edit()
-            .remove(ACCESS_TOKEN_KEY)
-            .remove(REFRESH_TOKEN_KEY)
-            .remove(SIGN_IN_METHOD)
-            .apply()
+        encryptedSharedPreferences.edit {
+            remove(ACCESS_TOKEN_KEY)
+                .remove(REFRESH_TOKEN_KEY)
+                .remove(SIGN_IN_METHOD)
+        }
     }
 
 

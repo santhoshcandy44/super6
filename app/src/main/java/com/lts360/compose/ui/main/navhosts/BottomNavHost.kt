@@ -13,6 +13,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.toRoute
+import com.lts360.app.database.models.app.Board
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.navhost.noTransitionComposable
@@ -25,6 +26,7 @@ import com.lts360.compose.ui.main.NotificationScreen
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
 import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
+import com.lts360.compose.ui.main.prefs.BoardsSetupActivity
 import com.lts360.compose.ui.main.profile.ServiceOwnerProfileScreen
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
@@ -52,6 +54,7 @@ fun BottomNavHost(
     chatListViewModel: ChatListViewModel,
     notificationViewModel: NotificationViewModel,
     moreViewModel: MoreViewModel,
+    boards: List<Board>,
     navController: NavHostController,
     modifier: Modifier = Modifier,
     onProfileNavigateUp: () -> Unit,
@@ -94,6 +97,7 @@ fun BottomNavHost(
 
             HomeScreen(
                 navController,
+                boards,
                 {
                     navController.navigate(BottomNavRoutes.DetailedService(args.key))
                 },
@@ -131,6 +135,7 @@ fun BottomNavHost(
             val secondsViewmodel: SecondsViewmodel = hiltViewModel(key = "seconds_${args.key}")
             HomeScreen(
                 navController,
+                boards,
                 {
                     navController.navigate(BottomNavRoutes.DetailedService(args.key))
                 },
@@ -150,9 +155,8 @@ fun BottomNavHost(
                 secondsViewmodel,
                 onDockedFabAddNewSecondsChanged,
                 args.onlySearchBar,
-                "Services",
-
-                )
+                "services"
+            )
 
         }
 
@@ -329,6 +333,7 @@ fun BottomNavHost(
 
             HomeScreen(
                 navController,
+                boards,
                 {
                     navController.navigate(BottomNavRoutes.DetailedService(args.key))
                 },
@@ -348,7 +353,7 @@ fun BottomNavHost(
                 secondsViewmodel,
                 onDockedFabAddNewSecondsChanged,
                 args.onlySearchBar,
-                "Second Hands"
+                "second_hands"
             )
 
         }
@@ -554,26 +559,32 @@ fun BottomNavHost(
         noTransitionComposable<BottomBar.More> {
 
             MoreScreen(
-                navController, onProfileNavigateUp = {
-                onProfileNavigateUp()
-            }, onAccountAndProfileSettingsNavigateUp = { accountType ->
-                onAccountAndProfileSettingsNavigateUp(accountType)
-            }, onManageIndustriesAndInterestsNavigateUp = {
-                onManageIndustriesAndInterestsNavigateUp()
-            }, onManageServiceNavigateUp = {
-                onManageServiceNavigateUp()
-            }, onManageSecondsNavigateUp = {
-                context.startActivity(
-                    Intent(
-                        context,
-                        UsedProductListingActivity::class.java
-                    ).apply {
-                        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    })
-            },
-                onNavigateUpBookmarks = {
-                    onNavigateUpBookmarkedServices()
+                navController,
+                onProfileNavigateUp = onProfileNavigateUp,
+                onAccountAndProfileSettingsNavigateUp = { accountType ->
+                    onAccountAndProfileSettingsNavigateUp(accountType)
                 },
+                onSetupBoardsSettingsNavigateUp = {
+                    context.startActivity(
+                        Intent(
+                            context,
+                            BoardsSetupActivity::class.java
+                        ).apply {
+                            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        })
+                },
+                onManageIndustriesAndInterestsNavigateUp = onManageIndustriesAndInterestsNavigateUp,
+                onManageServiceNavigateUp = onManageServiceNavigateUp,
+                onManageSecondsNavigateUp = {
+                    context.startActivity(
+                        Intent(
+                            context,
+                            UsedProductListingActivity::class.java
+                        ).apply {
+                            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        })
+                },
+                onNavigateUpBookmarks = onNavigateUpBookmarkedServices,
                 onNavigateUpThemeModeSettings = {
                     context.startActivity(
                         Intent(
@@ -583,19 +594,16 @@ fun BottomNavHost(
                             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                         })
                 },
-                moreViewModel,
-                onNavigateUpWelcomeScreenSheet,
-                onNavigateUpLogInSheet,
                 onNavigateUpGuestManageIndustriesAndInterests = {
                     onNavigateUpGuestManageIndustriesAndInterests()
-                }, isSheetExpanded,
-                collapseSheet
+                },
+                onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet,
+                onNavigateUpLogInSheet = onNavigateUpLogInSheet,
+                isSheetExpanded = isSheetExpanded,
+                collapseSheet = collapseSheet,
+                viewModel = moreViewModel
             )
-
-
         }
 
     }
-
-
 }

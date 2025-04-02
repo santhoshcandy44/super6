@@ -71,8 +71,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -103,7 +101,7 @@ fun MainScreen(
     chatListViewModel: ChatListViewModel,
     notificationViewModel: NotificationViewModel,
     moreViewModel: MoreViewModel,
-    viewModel: HomeActivityViewModel = hiltViewModel(),
+    viewModel: HomeActivityViewModel,
     onProfileNavigateUp: () -> Unit,
     onAccountAndProfileSettingsNavigateUp: (String) -> Unit,
     onManageIndustriesAndInterestsNavigateUp: (Long, String?) -> Unit,
@@ -115,6 +113,8 @@ fun MainScreen(
 
 
     val userId = UserSharedPreferencesManager.userId
+
+    val boards by viewModel.boards.collectAsState()
 
     val messageCount by viewModel.messageCount.collectAsState(0)
     val notificationCount by viewModel.notificationCount.collectAsState(0)
@@ -427,6 +427,7 @@ fun MainScreen(
                     chatListViewModel,
                     notificationViewModel,
                     moreViewModel,
+                    boards,
                     navController,
                     modifier = Modifier.padding(contentPadding),
                     onProfileNavigateUp = {

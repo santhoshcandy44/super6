@@ -435,8 +435,6 @@ fun PlanItem(
                     .weight(1f)
             )
 
-
-
             IconButton(
                 modifier = Modifier
                     .border(
@@ -450,8 +448,6 @@ fun PlanItem(
                 Text(text = "-")
             }
         }
-
-
 
         if (planName.length > 20) {
             Text(
@@ -524,7 +520,7 @@ fun PlanItem(
                 updatePlan()
 
             },
-            units = listOf("D", "W", "M"),
+            units = listOf("HR", "D", "W", "M"),
             onValidate = onValidate
         )
 
@@ -559,8 +555,6 @@ fun PlanItem(
         if (onValidate && planFeatures.isEmpty()) {
             ErrorText("AtLeast 1 feature must be added")
         }
-
-
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
