@@ -3,6 +3,7 @@ package com.lts360.compose.ui.main
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -25,8 +26,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.More
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -45,13 +44,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.BuildConfig
 import com.lts360.R
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.components.utils.openUrlInCustomTab
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.AccountType
+import com.lts360.compose.ui.chat.ChatScreen
+import com.lts360.compose.ui.chat.ChatUsersScreen
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.shimmerLoadingAnimation
 import com.lts360.compose.ui.theme.customColorScheme
@@ -69,38 +73,25 @@ fun MoreScreen(
     onManageSecondsNavigateUp: () -> Unit,
     onNavigateUpBookmarks: () -> Unit,
     onNavigateUpThemeModeSettings: () -> Unit,
-    onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {},
     onNavigateUpWelcomeScreenSheet: () -> Unit,
     onNavigateUpLogInSheet: () -> Unit,
     isSheetExpanded: Boolean,
     collapseSheet: () -> Unit,
     viewModel: MoreViewModel,
-
+    onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {}
 ) {
 
-
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-
-
-    val currentRoute = navBackStackEntry?.destination?.route
-
-// Clean the current route by removing path and query parameters
-    val cleanedRoute = currentRoute
-        ?.replace(Regex("/\\{[^}]+\\}"), "") // Remove path parameters
-        ?.replace(Regex("\\?.*"), "")?.trim() // Optionally trim whitespace
-
-
 
     BackHandler {
         if (isSheetExpanded) {
             collapseSheet()
         } else {
-            if (cleanedRoute in listOf(
-                    BottomBar.Chats::class.qualifiedName.orEmpty(),
-                    BottomBar.Notifications::class.qualifiedName.orEmpty(),
-                    BottomBar.More::class.qualifiedName.orEmpty()
-                )
-            ) {
+
+            val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
+            val hierarchy = navBackStackEntry?.destination?.hierarchy
+
+            if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
 
                 // Navigate back to A and preserve its state
                 navController.navigate(BottomBar.Home()) {
@@ -140,15 +131,16 @@ fun MoreScreen(
     val profilePicBitmap by viewModel.profileImageBitmap.collectAsState()
 
 
-    val signInMethod = viewModel.signInMethod
+    val isGuest = viewModel.isGuest
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
 
 
-    Scaffold( modifier = Modifier
-        .fillMaxSize() // This makes the Box take up the entire available space
-    ){ contentPadding ->
+    Scaffold(
+        modifier = Modifier
+            .fillMaxSize() // This makes the Box take up the entire available space
+    ) { contentPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize() // This makes the Box take up the entire available space
@@ -236,16 +228,14 @@ fun MoreScreen(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null
                                 ) {
-
-                                    if (signInMethod == "guest") {
-
-                                    } else {
+                                    if (!isGuest) {
                                         dropUnlessResumedV2(lifecycleOwner) {
                                             onProfileNavigateUp()
                                         }
                                     }
                                 }) {
-                            // Profile Image
+
+
                             profilePicBitmap?.let {
 
 
@@ -286,8 +276,6 @@ fun MoreScreen(
 
                             Spacer(modifier = Modifier.width(16.dp))
 
-
-
                             Column(
                                 verticalArrangement = Arrangement.Center,
                                 modifier = Modifier
@@ -299,19 +287,16 @@ fun MoreScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
 
-                                if (signInMethod == "guest") {
+                                if (isGuest) {
                                     Text(
                                         userProfile?.userId.toString(),
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                 } else {
-
                                     Text(
                                         userProfile?.email.orEmpty(),
                                         style = MaterialTheme.typography.bodyMedium
                                     )
-
-
                                 }
 
                             }
@@ -320,11 +305,13 @@ fun MoreScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    if (signInMethod == "guest") {
+                    if (isGuest) {
                         Column(
                             modifier = Modifier
-                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor,
-                                    RoundedCornerShape(8.dp))
+                                .background(
+                                    MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                    RoundedCornerShape(8.dp)
+                                )
                                 .clip(RoundedCornerShape(8.dp))
                         ) {
                             // Settings Item
@@ -340,7 +327,7 @@ fun MoreScreen(
 
                             MoreSectionItem(
                                 color = Color(
-                                    0xFF964B00
+                                    0xFF49d85b
                                 ),
                                 iconRes = R.drawable.ic_light_sign_now,
                                 text = "Log In"
@@ -348,15 +335,38 @@ fun MoreScreen(
                                 onNavigateUpLogInSheet()
                             }
 
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text("Prefs", style = MaterialTheme.typography.titleMedium)
+
+                        Column(
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clip(RoundedCornerShape(8.dp))
+                        ) {
+                            MoreSectionItem(
+                                color = MaterialTheme.colorScheme.primary,
+                                iconRes = R.drawable.ic_setup_boards,
+                                text = "Boards Settings"
+                            ) {
+                                onSetupBoardsSettingsNavigateUp()
+                            }
+
                             MoreSectionItem(
                                 color = Color.Red,
                                 iconRes = R.drawable.ic_light_interest,
-                                text = "Manage Industries and Interests"
+                                text = "Manage Service Industries"
                             ) {
 
                                 onNavigateUpGuestManageIndustriesAndInterests()
                             }
                         }
+
                     } else {
                         // Account Management Section
                         Text(
@@ -367,7 +377,10 @@ fun MoreScreen(
 
                         Column(
                             modifier = Modifier
-                                .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                                .background(
+                                    MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                    RoundedCornerShape(8.dp)
+                                )
                                 .clip(RoundedCornerShape(8.dp))
                         ) {
                             // Settings Item
@@ -414,7 +427,10 @@ fun MoreScreen(
                                 Column(
 
                                     modifier = Modifier
-                                        .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                                        .background(
+                                            MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                            RoundedCornerShape(8.dp)
+                                        )
                                         .clip(RoundedCornerShape(8.dp))
                                 ) {
                                     MoreSectionItem(
@@ -432,14 +448,17 @@ fun MoreScreen(
 
                                 Column(
                                     modifier = Modifier
-                                        .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                                        .background(
+                                            MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                            RoundedCornerShape(8.dp)
+                                        )
                                         .clip(RoundedCornerShape(8.dp))
                                 ) {
                                     MoreSectionItem(
                                         color = Color(
                                             0xFFfe9603
                                         ),
-                                        iconRes =R.drawable.ic_light_manage_seconds,
+                                        iconRes = R.drawable.ic_light_manage_seconds,
                                         text = "Manage Seconds"
                                     ) {
                                         onManageSecondsNavigateUp()
@@ -449,34 +468,39 @@ fun MoreScreen(
                             }
 
                         }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text("Prefs", style = MaterialTheme.typography.titleMedium)
+
+                        Column(
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clip(RoundedCornerShape(8.dp))
+                        ) {
+                            MoreSectionItem(
+                                color = MaterialTheme.colorScheme.primary,
+                                iconRes = R.drawable.ic_setup_boards,
+                                text = "Boards Settings"
+                            ) {
+                                onSetupBoardsSettingsNavigateUp()
+                            }
+
+                            MoreSectionItem(
+                                color = Color.Red,
+                                iconRes = R.drawable.ic_light_interest,
+                                text = "Manage Service Industries"
+                            ) {
+
+                                onManageIndustriesAndInterestsNavigateUp()
+                            }
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Text("Prefs", style = MaterialTheme.typography.titleMedium)
-
-                    Column(
-                        modifier = Modifier
-                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
-                            .clip(RoundedCornerShape(8.dp))
-                    ) {
-                        MoreSectionItem(
-                            color = MaterialTheme.colorScheme.primary,
-                            iconRes = R.drawable.ic_setup_boards,
-                            text = "Boards Settings"
-                        ) {
-                            onSetupBoardsSettingsNavigateUp()
-                        }
-
-                        MoreSectionItem(
-                            color = Color.Red,
-                            iconRes = R.drawable.ic_light_interest,
-                            text = "Manage Service Industries"
-                        ) {
-
-                            onManageIndustriesAndInterestsNavigateUp()
-                        }
-                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -487,12 +511,16 @@ fun MoreScreen(
 
                     Column(
                         modifier = Modifier
-                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                            .background(
+                                MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                RoundedCornerShape(8.dp)
+                            )
                             .clip(RoundedCornerShape(8.dp))
                     ) {
                         MoreSectionItem(
                             color = Color.Black,
-                            iconRes = R.drawable.ic_light_theme_mode, text = "Theme Mode") {
+                            iconRes = R.drawable.ic_light_theme_mode, text = "Theme Mode"
+                        ) {
                             onNavigateUpThemeModeSettings()
                         }
                     }
@@ -502,15 +530,18 @@ fun MoreScreen(
 
                     Column(
                         modifier = Modifier
-                            .background(MaterialTheme.customColorScheme.moreActionsContainerColor,  RoundedCornerShape(8.dp))
+                            .background(
+                                MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                RoundedCornerShape(8.dp)
+                            )
                             .clip(RoundedCornerShape(8.dp))
                     ) {
 
 
-
                         MoreSectionItem(
-                            color = Color(0xFF3f7787) ,
-                            iconRes = R.drawable.ic_light_invite_friends, text = "Invite Friends") {
+                            color = Color(0xFF3f7787),
+                            iconRes = R.drawable.ic_light_invite_friends, text = "Invite Friends"
+                        ) {
 
                             try {
                                 val shareMessage = """
@@ -538,7 +569,8 @@ fun MoreScreen(
 
                         MoreSectionItem(
                             color = Color(0xFFff591f),
-                            iconRes = R.drawable.ic_light_help, text = "Help and Support") {
+                            iconRes = R.drawable.ic_light_help, text = "Help and Support"
+                        ) {
                             val emailIntent =
                                 Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
                                     putExtra(
@@ -595,9 +627,11 @@ fun MoreScreen(
 
 
 @Composable
-fun MoreSectionItem(iconRes: Int,
-               color: Color=Color.Unspecified,
-               text: String, onClick: () -> Unit) {
+fun MoreSectionItem(
+    iconRes: Int,
+    color: Color = Color.Unspecified,
+    text: String, onClick: () -> Unit
+) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
 

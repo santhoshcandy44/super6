@@ -22,7 +22,7 @@ class BoardsSetupActivity:ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        val signInMethod = tokenManager.getSignInMethod()
+        val isGuest = tokenManager.isGuest()
 
 
         setContent {
@@ -30,7 +30,7 @@ class BoardsSetupActivity:ComponentActivity() {
                 Surface {
                     SafeDrawingBox {
 
-                        if(signInMethod=="guest"){
+                        if(isGuest){
                             GuestBoardsPreferencesScreen{
                                 this@BoardsSetupActivity.finish()
                             }

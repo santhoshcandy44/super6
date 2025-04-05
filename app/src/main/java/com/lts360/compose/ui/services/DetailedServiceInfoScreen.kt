@@ -101,7 +101,7 @@ import kotlinx.coroutines.launch
 fun DetailedServiceScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
-    navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
+    navigateUpChat: (ChatUser, Int, Long) -> Unit,
     viewModel: ServicesViewModel
 ) {
 
@@ -136,8 +136,7 @@ fun DetailedServiceScreen(
                                 navigateUpChat(
                                     selectedChatUser,
                                     selectedChatId,
-                                    it.user.userId,
-                                    it.user
+                                    it.user.userId
                                 )
                             }
                         }
@@ -162,7 +161,7 @@ fun DetailedServiceScreen(
 fun FeedUserDetailedServiceInfoScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
-    navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
+    navigateUpChat: (ChatUser, Int, Long) -> Unit,
     servicesViewModel: ServicesViewModel,
     viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navHostController.getBackStackEntry<BottomNavRoutes.ServiceOwnerProfile>() })
 ) {
@@ -200,9 +199,7 @@ fun FeedUserDetailedServiceInfoScreen(
                                 navigateUpChat(
                                     selectedChatUser,
                                     selectedChatId,
-                                    it.user.userId,
-                                    it.user
-                                )
+                                    it.user.userId)
                             }
                         }
 

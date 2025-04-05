@@ -31,20 +31,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChooseIndustriesViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
     networkConnectivityManager: NetworkConnectivityManager
 ) : ViewModel() {
 
 
-    private val args = savedStateHandle.toRoute<OnBoardingScreen.ChooseIndustries>()
-
 
     val connectivityManager = networkConnectivityManager
 
-
-    val userId: Long = args.userId
-
-    val type: String? = args.type
+    val userId: Long = UserSharedPreferencesManager.userId
 
 
     private val _industryItems = mutableStateListOf<Industry>()

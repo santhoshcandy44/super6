@@ -182,296 +182,280 @@ fun SecondsScreen(
         )
     }
 
-
     val pullToRefreshState = rememberPullToRefreshState()
-
-
 
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
 
-        Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize() // This makes the Box take up the entire available space
+                .pullToRefresh(
+                    isRefreshingItems, pullToRefreshState,
+                    enabled = !(initialLoadState && items.isEmpty())
+                ) {
+                    onRefresh()
+                }
+        ) {
 
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize() // This makes the Box take up the entire available space
-                    .pullToRefresh(
-                        isRefreshingItems, pullToRefreshState,
-                        enabled = !(initialLoadState && items.isEmpty())
-                    ) {
-                        onRefresh()
+            if (initialLoadState && items.isEmpty()) {
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp), // Adjust the space between items
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    if (onlySearchBar) {
+                        item {
+                            Box(modifier = Modifier.fillParentMaxSize()) {
+                                CircularProgressIndicatorLegacy(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .align(Alignment.Center),
+                                    color = MaterialTheme.colorScheme.primary
+
+                                )
+                            }
+                        }
+                    } else {
+
+                        item {
+                            Box(modifier = Modifier.fillParentMaxSize()) {
+                                CircularProgressIndicatorLegacy(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .align(Alignment.Center),
+                                    color = MaterialTheme.colorScheme.primary
+
+                                )
+                            }
+                        }
                     }
-            ) {
+                }
 
+            } else {
+                // Handle no internet case
+                if (hasNetworkError) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()) // Enables nested scrolling
+                    ) {
+                        NoInternetScreen(modifier = Modifier.align(Alignment.Center)) {
+                            onRetry()
+                        }
+                    }
+                }
 
-                if (initialLoadState && items.isEmpty()) {
-                    LazyColumn(
+                // Handle empty state after loading
+                else if (!isLoadingItems && !hasAppendError && items.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()) // Enables nested scrolling
+
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.align(Alignment.Center)
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.all_caught_up),
+                                contentDescription = "Image from drawable",
+                                modifier = Modifier.sizeIn(
+                                    maxWidth = 200.dp,
+                                    maxHeight = 200.dp
+                                )
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Text(text = "Oops, nothing to catch")
+                        }
+                    }
+                }
+                // Handle loaded items
+                else {
+                    LazyVerticalGrid(
+                        GridCells.Adaptive(120.dp),
+                        state = lazyGridState,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(horizontal = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp), // Adjust the space between items
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
                     ) {
-                        if (onlySearchBar) {
-                            item {
-                                Box(modifier = Modifier.fillParentMaxSize()) {
+
+                        items(items,
+                            key = { "grid_items_${it.productId}" }) { usedProductListing ->
+
+                            UsedProductListingCard(
+                                isGuest,
+                                usedProductListing,
+                                {
+                                    onNavigateUpSecondsDetailedScreen(usedProductListing)
+                                },
+                                {
+                                    if (usedProductListing.isBookmarked) {
+
+                                        viewModel.directUpdateServiceIsBookMarked(
+                                            usedProductListing.productId,
+                                            false
+                                        )
+
+                                        viewModel.onRemoveBookmark(
+                                            viewModel.userId,
+                                            usedProductListing, onSuccess = {
+
+                                                viewModel.directUpdateServiceIsBookMarked(
+                                                    usedProductListing.productId,
+                                                    false
+                                                )
+
+                                                Toast.makeText(
+                                                    context,
+                                                    "Bookmark removed",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+
+                                            }, onError = {
+
+                                                viewModel.directUpdateServiceIsBookMarked(
+                                                    usedProductListing.productId,
+                                                    true
+                                                )
+
+                                                Toast.makeText(
+                                                    context,
+                                                    "Something wrong",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+
+
+                                            })
+
+
+                                    } else {
+
+                                        viewModel.directUpdateServiceIsBookMarked(
+                                            usedProductListing.productId,
+                                            true
+                                        )
+
+                                        viewModel.onBookmark(
+                                            viewModel.userId,
+                                            usedProductListing,
+                                            onSuccess = {
+
+
+                                                viewModel.directUpdateServiceIsBookMarked(
+                                                    usedProductListing.productId,
+                                                    true
+                                                )
+
+
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "Bookmarked",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    .show()
+
+                                            },
+                                            onError = {
+
+                                                viewModel.directUpdateServiceIsBookMarked(
+                                                    usedProductListing.productId,
+                                                    false
+                                                )
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "Something wrong",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    .show()
+
+                                            })
+                                    }
+                                }
+                            )
+
+                        }
+
+                        // Loading indicator for appending more items
+                        if (isLoadingItems) {
+                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+
                                     CircularProgressIndicatorLegacy(
-                                        modifier = Modifier
-                                            .padding(16.dp)
-                                            .align(Alignment.Center),
+                                        modifier = Modifier.padding(
+                                            16.dp
+                                        ),
                                         color = MaterialTheme.colorScheme.primary
 
                                     )
                                 }
                             }
-                        } else {
+                        }
 
-                            item {
-                                Box(modifier = Modifier.fillParentMaxSize()) {
-                                    CircularProgressIndicatorLegacy(
+                        // Handle errors for appending items
+                        if (hasAppendError) {
+                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+
+                                    Text("Unable to load more.")
+
+                                    Text(
+                                        "Retry",
+                                        color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier
-                                            .padding(16.dp)
-                                            .align(Alignment.Center),
-                                        color = MaterialTheme.colorScheme.primary
+                                            .clickable {
+                                                viewModel.retry(
+                                                    userId,
+                                                    searchQuery
+                                                )
+                                            }
 
                                     )
                                 }
                             }
                         }
-                    }
 
-                } else {
-                    // Handle no internet case
-                    if (hasNetworkError) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(rememberScrollState()) // Enables nested scrolling
-                        ) {
-                            NoInternetScreen(modifier = Modifier.align(Alignment.Center)) {
-                                onRetry()
-                            }
-                        }
-                    }
-
-                    // Handle empty state after loading
-                    else if (!isLoadingItems && !hasAppendError && items.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(rememberScrollState()) // Enables nested scrolling
-
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.align(Alignment.Center)
-                            ) {
-                                Image(
-                                    painter = painterResource(R.drawable.all_caught_up),
-                                    contentDescription = "Image from drawable",
-                                    modifier = Modifier.sizeIn(
-                                        maxWidth = 200.dp,
-                                        maxHeight = 200.dp
+                        if (!hasMoreItems) {
+                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "You have reached the end",
+                                        modifier = Modifier.padding(8.dp)
                                     )
-                                )
-                                Spacer(Modifier.height(16.dp))
-                                Text(text = "Oops, nothing to catch")
-                            }
-                        }
-                    }
-                    // Handle loaded items
-                    else {
-                        LazyVerticalGrid(
-                            GridCells.Adaptive(120.dp),
-                            state = lazyGridState,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                            modifier = Modifier
-                                .fillMaxSize()
-                        ) {
-
-                            items(
-                                items,
-                                key = { "grid_items_${it.productId}" }) { usedProductListing ->
-
-
-                                UsedProductListingCard(
-                                    isGuest,
-                                    usedProductListing,
-                                    {
-                                        onNavigateUpSecondsDetailedScreen(usedProductListing)
-                                    },
-                                    {
-                                        if (usedProductListing.isBookmarked) {
-
-                                            viewModel.directUpdateServiceIsBookMarked(
-                                                usedProductListing.productId,
-                                                false
-                                            )
-
-
-                                            viewModel.onRemoveBookmark(
-                                                viewModel.userId,
-                                                usedProductListing, onSuccess = {
-
-                                                    viewModel.directUpdateServiceIsBookMarked(
-                                                        usedProductListing.productId,
-                                                        false
-                                                    )
-
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            "Bookmark removed",
-                                                            Toast.LENGTH_SHORT
-                                                        )
-                                                        .show()
-
-                                                }, onError = {
-
-
-                                                    viewModel.directUpdateServiceIsBookMarked(
-                                                        usedProductListing.productId,
-                                                        true
-                                                    )
-
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            "Something wrong",
-                                                            Toast.LENGTH_SHORT
-                                                        )
-                                                        .show()
-
-
-                                                })
-
-
-                                        } else {
-
-                                            viewModel.directUpdateServiceIsBookMarked(
-                                                usedProductListing.productId,
-                                                true
-                                            )
-
-                                            viewModel.onBookmark(
-                                                viewModel.userId,
-                                                usedProductListing,
-                                                onSuccess = {
-
-
-                                                    viewModel.directUpdateServiceIsBookMarked(
-                                                        usedProductListing.productId,
-                                                        true
-                                                    )
-
-
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            "Bookmarked",
-                                                            Toast.LENGTH_SHORT
-                                                        )
-                                                        .show()
-
-                                                },
-                                                onError = {
-
-                                                    viewModel.directUpdateServiceIsBookMarked(
-                                                        usedProductListing.productId,
-                                                        false
-                                                    )
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            "Something wrong",
-                                                            Toast.LENGTH_SHORT
-                                                        )
-                                                        .show()
-
-                                                })
-                                        }
-                                    }
-                                )
-
-                            }
-
-                            // Loading indicator for appending more items
-                            if (isLoadingItems) {
-                                item(span = { GridItemSpan(maxLineSpan) }) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-
-
-                                        CircularProgressIndicatorLegacy(
-                                            modifier = Modifier.padding(
-                                                16.dp
-                                            ),
-                                            color = MaterialTheme.colorScheme.primary
-
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Handle errors for appending items
-                            if (hasAppendError) {
-                                item(span = { GridItemSpan(maxLineSpan) }) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-
-                                        Text("Unable to load more.")
-
-                                        Text(
-                                            "Retry",
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier
-                                                .clickable {
-                                                    viewModel.retry(
-                                                        userId,
-                                                        searchQuery
-                                                    )
-                                                }
-
-                                        )
-                                    }
-                                }
-                            }
-
-                            if (!hasMoreItems) {
-                                item(span = { GridItemSpan(maxLineSpan) }) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            "You have reached the end",
-                                            modifier = Modifier.padding(8.dp)
-                                        )
-                                    }
                                 }
                             }
                         }
-
                     }
 
                 }
 
-                Indicator(
-                    modifier = Modifier.align(Alignment.TopCenter),
-                    isRefreshing = isRefreshingItems,
-                    state = pullToRefreshState
-                )
             }
+
+            Indicator(
+                modifier = Modifier.align(Alignment.TopCenter),
+                isRefreshing = isRefreshingItems,
+                state = pullToRefreshState
+            )
         }
 
         if (serviceInfoBottomSheetState.currentValue == SheetValue.Expanded) {
@@ -488,14 +472,10 @@ fun SecondsScreen(
                 dragHandle = null // Remove the drag handle
 
             ) {
-
-
                 // Sheet content
                 selectedItem?.let { nonNullSelectedItem ->
 
-                    viewModel.setSelectedItem(
-                        nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked)
-                    )
+                    viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked))
 
                     Column(modifier = Modifier.fillMaxWidth()) {
 

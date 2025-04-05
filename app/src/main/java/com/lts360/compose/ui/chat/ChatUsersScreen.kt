@@ -61,6 +61,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.dropUnlessResumed
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil3.compose.AsyncImage
@@ -85,35 +87,24 @@ import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 @Composable
 fun ChatUsersScreen(
     navController: NavHostController,
-    onNavigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
+    onNavigateUpChat: (ChatUser, Int, Long) -> Unit,
     isSheetExpanded: Boolean,
     collapseSheet: () -> Unit,
     viewModel: ChatListViewModel
 ) {
 
-
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-
-
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    val cleanedRoute = currentRoute
-        ?.replace(Regex("/\\{[^}]+\\}"), "") // Remove path parameters
-        ?.replace(Regex("\\?.*"), "")?.trim() // Optionally trim whitespace
-
-
 
     BackHandler {
 
         if (isSheetExpanded) {
             collapseSheet()
         } else {
-            if (cleanedRoute in listOf(
-                    BottomBar.Chats::class.qualifiedName.orEmpty(),
-                    BottomBar.Notifications::class.qualifiedName.orEmpty(),
-                    BottomBar.More::class.qualifiedName.orEmpty()
-                )
-            ) {
+            val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
+            val hierarchy = navBackStackEntry?.destination?.hierarchy
+
+            if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
+
 
                 // Navigate back to A and preserve its state
                 navController.navigate(BottomBar.Home()) {
@@ -300,9 +291,7 @@ fun ChatUsersScreen(
                                                         onNavigateUpChat(
                                                             userState.chatUser,
                                                             chatId,
-                                                            recipientId,
-                                                            userProfile
-                                                        )
+                                                            recipientId)
                                                     }
                                                 },
                                                 modifier = Modifier

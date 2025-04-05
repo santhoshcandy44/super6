@@ -87,62 +87,64 @@ fun EditServiceLocationScreen(
         scaffoldState = bottomSheetScaffoldState,
         sheetShape = RectangleShape,
         sheetContent = {
-            EditLocationBottomSheetScreen(
-                bottomSheetScaffoldState.bottomSheetState.currentValue,
-                { currentLocation ->
-                    location?.let {
-                        viewModel.updateLocation(
-                            it.copy(
-                                latitude = currentLocation.latitude,
-                                longitude = currentLocation.longitude,
-                                geo = currentLocation.geo,
-                                locationType = currentLocation.locationType
+
+            if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+                EditLocationBottomSheetScreen(
+                    bottomSheetScaffoldState.bottomSheetState.currentValue,
+                    { currentLocation ->
+                        location?.let {
+                            viewModel.updateLocation(
+                                it.copy(
+                                    latitude = currentLocation.latitude,
+                                    longitude = currentLocation.longitude,
+                                    geo = currentLocation.geo,
+                                    locationType = currentLocation.locationType
+                                )
                             )
-                        )
-                    }
+                        }
 
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.hide()
-                    }
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
+                        }
 
-                }, { recentLocation ->
-                    location?.let {
-                        viewModel.updateLocation(
-                            it.copy(
-                                latitude = recentLocation.latitude,
-                                longitude = recentLocation.longitude,
-                                geo = recentLocation.geo,
-                                locationType = recentLocation.locationType
+                    }, { recentLocation ->
+                        location?.let {
+                            viewModel.updateLocation(
+                                it.copy(
+                                    latitude = recentLocation.latitude,
+                                    longitude = recentLocation.longitude,
+                                    geo = recentLocation.geo,
+                                    locationType = recentLocation.locationType
+                                )
                             )
-                        )
-                    }
+                        }
 
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.hide()
-                    }
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
+                        }
 
-                }, { district, callback ->
-                    location?.let {
-                        viewModel.updateLocation(
-                            it.copy(
-                                latitude = district.coordinates.latitude,
-                                longitude = district.coordinates.longitude,
-                                geo = district.district,
-                                locationType = "approximate"
+                    }, { district, callback ->
+                        location?.let {
+                            viewModel.updateLocation(
+                                it.copy(
+                                    latitude = district.coordinates.latitude,
+                                    longitude = district.coordinates.longitude,
+                                    geo = district.district,
+                                    locationType = "approximate"
+                                )
                             )
-                        )
-                    }
-                    callback()
-                },
-                {
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.hide()
-                    }
-                },
-                locationStatesEnabled = false,
-                publishedServicesViewModel = viewModel
-            )
-
+                        }
+                        callback()
+                    },
+                    {
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
+                        }
+                    },
+                    locationStatesEnabled = false,
+                    publishedServicesViewModel = viewModel
+                )
+            }
         },
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
         sheetSwipeEnabled = false // Allow gestures to hide/show bottom sheet

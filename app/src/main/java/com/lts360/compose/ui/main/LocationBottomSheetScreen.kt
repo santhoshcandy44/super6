@@ -182,7 +182,7 @@ fun OnBoardUserLocationBottomSheetScreen(
 ) {
 
 
-    LocationBottomSheetContent(
+    OnBoardLocationBottomSheetContent(
         bottomSheetValue,
         onCurrentLocationSelected,
         onRecentLocationSelected,
@@ -297,7 +297,7 @@ fun PublishedUsedProductListingBottomSheetContent(
                 ) {
                     noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
 
-                        PublishedUsedProductListingLocationBottomSheet(
+                        EditPublishedUsedProductListingLocationBottomSheet(
                             bottomSheetValue,
                             onCloseClick = {
                                 onPopUpLocationBottomSheet()
@@ -472,7 +472,7 @@ fun CreateServiceLocationBottomSheetContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LocationBottomSheetContent(
+fun OnBoardLocationBottomSheetContent(
     bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
@@ -482,7 +482,7 @@ fun LocationBottomSheetContent(
     isLoading: Boolean = false) {
     val bottomSheetNavController = rememberNavController()
 
-    Box {
+    Box{
         Scaffold { contentPadding ->
             Column(
                 modifier = Modifier
@@ -501,7 +501,7 @@ fun LocationBottomSheetContent(
                 ) {
                     noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
 
-                        LocationBottomSheet(
+                        OnBoardLocationBottomSheet(
                             bottomSheetValue,
                             onCloseClick = {
                                 onPopUpLocationBottomSheet()
@@ -567,7 +567,7 @@ fun EditLocationBottomSheetContent(
                 ) {
                     noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
 
-                        EditLocationBottomSheet(
+                        EditPublishedServiceLocationBottomSheet(
                             bottomSheetValue,
                             onCloseClick = {
                                 onPopUpLocationBottomSheet()

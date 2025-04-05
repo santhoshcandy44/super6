@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.messaging.FirebaseMessaging
 import com.lts360.api.auth.managers.TokenManager
-import com.lts360.api.models.service.GuestIndustryDao
 import com.lts360.app.database.daos.chat.MessageDao
 import com.lts360.app.database.daos.notification.NotificationDao
 import com.lts360.app.database.daos.prefs.BoardDao
@@ -39,8 +38,7 @@ class HomeActivityViewModel @Inject constructor(
     val boardDao:BoardDao,
     notificationDao: NotificationDao,
     connectivityManager: NetworkConnectivityManager,
-    tokenManager: TokenManager,
-    guestIndustryDao: GuestIndustryDao,
+    tokenManager: TokenManager
 ) : ViewModel() {
 
 
@@ -57,9 +55,6 @@ class HomeActivityViewModel @Inject constructor(
     val notificationCount: Flow<Int> = notificationDao.countAllUnreadNotifications()
 
 
-    private val _selectedIndustriesCount = MutableStateFlow<Int>(-1)
-    val selectedIndustriesCount = _selectedIndustriesCount.asStateFlow()
-
 
     private val _bottomNavVisibility = MutableStateFlow(true)
     val bottomNavVisibility = _bottomNavVisibility.asStateFlow()
@@ -70,22 +65,12 @@ class HomeActivityViewModel @Inject constructor(
 
 
     init {
-
         UserSharedPreferencesManager.initialize(context)
         viewModelScope.launch(Dispatchers.IO){
             boardDao.getAllBoardsFlow().collectLatest {
                 _boards.value = it
             }
         }
-
-
-        if (signInMethod == "guest") {
-            viewModelScope.launch {
-                // Update the StateFlow
-                _selectedIndustriesCount.value = guestIndustryDao.countSelectedIndustries()
-            }
-        }
-
 
     }
 
@@ -123,14 +108,7 @@ class HomeActivityViewModel @Inject constructor(
         }
     }
 
-    fun isIndustriesSheetDismissed(): Boolean {
-        return UserSharedPreferencesManager.isIndustriesSheetDismissed()
-    }
 
-
-    fun setIndustriesSheetDismissed() {
-        UserSharedPreferencesManager.setIndustriesSheetDismissed()
-    }
 
     fun isNotificationPermissionDismissed(): Boolean {
         return UserSharedPreferencesManager.isNotificationPermissionDismissed()

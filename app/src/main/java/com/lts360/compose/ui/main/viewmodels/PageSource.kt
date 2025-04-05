@@ -3,13 +3,14 @@ package com.lts360.compose.ui.main.viewmodels
 import androidx.lifecycle.SavedStateHandle
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
-import com.lts360.api.app.AppClient
-import com.lts360.api.models.service.Service
 import com.lts360.api.Utils.ResultError
 import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.app.AppClient
 import com.lts360.api.app.ManageServicesApiService
+import com.lts360.api.common.errors.ErrorResponse
+import com.lts360.api.models.service.Service
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,122 +18,103 @@ import kotlin.coroutines.cancellation.CancellationException
 
 class PageSource(
     val savedStateHandle: SavedStateHandle,
-    private val pageSize: Int = 1, // Default page size
+    private val pageSize: Int = 1
 ) {
-    // MutableStateFlow for various states
     private val _initialLoadState = MutableStateFlow(true)
-    val initialLoadState: StateFlow<Boolean> = _initialLoadState
+    val initialLoadState = _initialLoadState.asStateFlow()
 
     private val _items = MutableStateFlow<List<Service>>(emptyList())
-    val items: StateFlow<List<Service>> = _items
+    val items = _items.asStateFlow()
 
     private val _isLoadingItems = MutableStateFlow(false)
-    val isLoadingItems: StateFlow<Boolean> = _isLoadingItems
+    val isLoadingItems = _isLoadingItems.asStateFlow()
 
     private val _isRefreshingItems = MutableStateFlow(false)
-    val isRefreshingItems: StateFlow<Boolean> = _isRefreshingItems
+    val isRefreshingItems = _isRefreshingItems.asStateFlow()
 
     private val _hasNetworkError = MutableStateFlow(false)
-    val hasNetworkError: StateFlow<Boolean> = _hasNetworkError
+    val hasNetworkError = _hasNetworkError.asStateFlow()
 
     private val _hasAppendError = MutableStateFlow(false)
-    val hasAppendError: StateFlow<Boolean> = _hasAppendError
+    val hasAppendError = _hasAppendError.asStateFlow()
 
     private val _hasMoreItems = MutableStateFlow(true)
-    val hasMoreItems: StateFlow<Boolean> = _hasMoreItems
+    val hasMoreItems = _hasMoreItems.asStateFlow()
 
     private val _industriesCount = MutableStateFlow(-1)
-    val industriesCount: StateFlow<Int> get() = _industriesCount
+    val industriesCount = _industriesCount.asStateFlow()
 
-    private var page =  1
+    private var page = 1
     private var lastTimeStamp: String? = null
     private var lastTotalRelevance: String? = null
 
     private val mutex = Mutex()
 
 
-
-    // Public getter and setter for 'page'
     var currentPage: Int
-        get() = page // Access the private variable 'page'
+        get() = page
         set(value) {
-            if (value > 0) { // Validate: Page must be greater than 0
+            if (value > 0) {
                 page = value
             } else {
                 throw IllegalArgumentException("Page must be greater than 0")
             }
         }
 
-    // Public getter and setter for 'lastTimeStamp'
-    var currentLastTimeStamp: String?
-        get() = lastTimeStamp // Access the private variable 'lastTimeStamp'
+    private var currentLastTimeStamp: String?
+        get() = lastTimeStamp
         set(value) {
-            lastTimeStamp = value // Update value
+            lastTimeStamp = value
         }
 
-    // Public getter and setter for 'lastTotalRelevance'
-    var currentLastTotalRelevance: String?
-        get() = lastTotalRelevance // Access the private variable 'lastTotalRelevance'
+    private var currentLastTotalRelevance: String?
+        get() = lastTotalRelevance
         set(value) {
-            lastTotalRelevance = value // Update value
+            lastTotalRelevance = value
         }
 
-    // Public getter and setter for 'industriesCount'
-    var currentIndustriesCount: Int
-        get() = _industriesCount.value ?: 0 // Access the value safely, default to 0 if null
+    private var currentIndustriesCount: Int
+        get() = _industriesCount.value
         set(value) {
             _industriesCount.value = value
         }
 
-    // Public getter and setter for 'hasMoreItems'
-    var currentHasMoreItems: Boolean
-        get() = _hasMoreItems.value ?: false // Default to false if value is null
+    private var currentHasMoreItems: Boolean
+        get() = _hasMoreItems.value
         set(value) {
-            _hasMoreItems.value = value // Simply set the boolean value
+            _hasMoreItems.value = value
         }
 
 
-
-    // Public getter and setter for 'hasMoreItems'
-    var currentInitialLoadState: Boolean
-        get() = _initialLoadState.value ?: false // Default to false if value is null
+    private var currentInitialLoadState: Boolean
+        get() = _initialLoadState.value
         set(value) {
-            _initialLoadState.value = value // Simply set the boolean value
+            _initialLoadState.value = value
         }
 
-    // Public getter and setter for 'hasMoreItems'
-    var currentNetworkError: Boolean
-        get() = _hasNetworkError.value ?: false // Default to false if value is null
+    private var currentNetworkError: Boolean
+        get() = _hasNetworkError.value
         set(value) {
-            _hasNetworkError.value = value // Simply set the boolean value
+            _hasNetworkError.value = value
         }
 
 
-
-    // Public getter and setter for 'hasMoreItems'
-    var currentAppendError: Boolean
-        get() = _hasAppendError.value ?: false // Default to false if value is null
+    private var currentAppendError: Boolean
+        get() = _hasAppendError.value
         set(value) {
-            _hasAppendError.value = value // Simply set the boolean value
+            _hasAppendError.value = value
         }
 
 
-
-
-    fun setRefreshingItems(value: Boolean){
-        _isRefreshingItems.value=value
+    fun setRefreshingItems(value: Boolean) {
+        _isRefreshingItems.value = value
     }
 
 
-
-    fun setNetWorkError(value: Boolean){
-        currentNetworkError=value
+    fun setNetWorkError(value: Boolean) {
+        currentNetworkError = value
     }
 
-
-    fun setItems(items:List<Service>){
-        _items.value=items
-    }
 
     fun updateServiceBookMarkedInfo(serviceId: Long, isBookMarked: Boolean) {
         // Update the service item's isBookmarked property
@@ -163,16 +145,16 @@ class PageSource(
     // Refresh the data
     suspend fun guestRefresh(
         userId: Long, query: String?,
-        industries:List<Int>,
+        industries: List<Int>,
         latitude: Double? = null,
         longitude: Double? = null,
-        ) {
+    ) {
         if (isLoadingItems.value) {
             setRefreshingItems(false)
             return
         }
         _isRefreshingItems.value = true
-        guestNextPage(userId, query, industries,latitude, longitude, isRefreshing = true)
+        guestNextPage(userId, query, industries, latitude, longitude, isRefreshing = true)
 
     }
 
@@ -196,7 +178,7 @@ class PageSource(
         if (isRefreshingItems.value) {
             return
         }
-        currentAppendError= false
+        currentAppendError = false
         guestNextPage(userId, query, industries, latitude, longitude)
     }
 
@@ -215,66 +197,85 @@ class PageSource(
             }
 
             try {
-                val response = AppClient.instance.create(ManageServicesApiService::class.java)
+                AppClient.instance.create(ManageServicesApiService::class.java)
                     .getServices(userId, page, query, lastTimeStamp, lastTotalRelevance)
+                    .also { response ->
 
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null && body.isSuccessful) {
-                        val services = Gson().fromJson(
-                            body.data,
-                            object : TypeToken<List<Service>>() {}.type
-                        ) as List<Service>
+                        if (response.isSuccessful) {
+                            val body = response.body()
+                            if (body != null && body.isSuccessful) {
+                                val services = Gson().fromJson(
+                                    body.data,
+                                    object : TypeToken<List<Service>>() {}.type
+                                ) as List<Service>
 
-                        if (services.isNotEmpty()) {
-                            if (lastTimeStamp == null) {
-                                currentLastTimeStamp = services[0].initialCheckAt
-                            }
+                                if (services.isNotEmpty()) {
+                                    if (lastTimeStamp == null) {
+                                        currentLastTimeStamp = services[0].initialCheckAt
+                                    }
 
-                            currentLastTotalRelevance = services.last().totalRelevance
+                                    currentLastTotalRelevance = services.last().totalRelevance
 
-                            if(page==1 && !isRefreshing){
-                                currentIndustriesCount=services[0].industriesCount
-                            }
+                                    _items.value = if (isRefreshing) {
+                                        services // Replace items on refresh
+                                    } else {
+                                        _items.value + services // Append items
+                                    }
 
-                            _items.value = if (isRefreshing) {
-                                services // Replace items on refresh
+                                    currentPage++
+                                    currentHasMoreItems = services.size == pageSize
+                                    currentIndustriesCount = -1
+                                    currentAppendError = false
+
+                                } else {
+
+                                    if (page == 1) {
+                                        _items.value = emptyList()
+                                    }
+                                    currentHasMoreItems = false
+                                    currentIndustriesCount = -1
+                                    currentAppendError = false
+                                }
                             } else {
-                                _items.value + services // Append items
+                                if (isRefreshing) {
+                                    _items.value = emptyList()
+                                    currentHasMoreItems = true
+                                }
+                                currentIndustriesCount = -1
+                                currentAppendError = true
                             }
-
-                            currentPage++ // Increment page after successful fetch
-                            currentHasMoreItems = services.size == pageSize // Check for more items
-                            currentAppendError = false
-
                         } else {
 
-                            if (page == 1) {
-                                _items.value = emptyList()
-                            }
-                            currentHasMoreItems = false // No more items
-                        }
-                    } else {
-                        if (isRefreshing) {
-                            _items.value = emptyList()
-                            currentHasMoreItems = true // No more items
-                        }
-                        currentAppendError= true // Handle unsuccessful response
-                    }
-                } else {
-                    if (isRefreshing) {
-                        _items.value = emptyList()
-                        currentHasMoreItems= true // No more items
-                    }
-                    currentAppendError = true // Handle API error
-                }
 
-                currentNetworkError=false
-            }
-            catch (c:CancellationException){
+                            if (isRefreshing) {
+                                _items.value = emptyList()
+                                currentHasMoreItems = true
+                            }
+
+                            val errorBody = response.errorBody()?.string()
+                            val errorCode = errorBody?.let {
+                                Gson().fromJson(it, ErrorResponse::class.java).data.error.code
+                            }
+
+                            when (errorCode) {
+                                "EMPTY_SERVICE_INDUSTRIES" -> {
+                                    currentIndustriesCount = 0
+                                    currentAppendError = false
+                                }
+
+                                else -> {
+                                    currentIndustriesCount = -1
+                                    currentAppendError = true
+                                }
+                            }
+                        }
+                    }
+
+
+                currentNetworkError = false
+            } catch (c: CancellationException) {
                 throw c
-            }
-            catch (e: Exception) {
+            } catch (e: Exception) {
                 e.printStackTrace()
                 handleError(e, isRefreshing)
             } finally {
@@ -286,7 +287,7 @@ class PageSource(
 
     suspend fun guestNextPage(
         userId: Long, query: String?,
-        industries:List<Int>,
+        industries: List<Int>,
         latitude: Double? = null,
         longitude: Double? = null,
         isRefreshing: Boolean = false,
@@ -304,58 +305,86 @@ class PageSource(
             }
 
             try {
-                val response = AppClient.instance.create(ManageServicesApiService::class.java)
+                AppClient.instance.create(ManageServicesApiService::class.java)
                     .guestGetServices(
                         userId, page, query, industries, lastTimeStamp, lastTotalRelevance,
-                        latitude, longitude)
+                        latitude, longitude
+                    ).also { response ->
 
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null && body.isSuccessful) {
-                        val services = Gson().fromJson(
-                            body.data,
-                            object : TypeToken<List<Service>>() {}.type
-                        ) as List<Service>
+                        if (response.isSuccessful) {
+                            val body = response.body()
+                            if (body != null && body.isSuccessful) {
+                                val services = Gson().fromJson(
+                                    body.data,
+                                    object : TypeToken<List<Service>>() {}.type
+                                ) as List<Service>
 
-                        if (services.isNotEmpty()) {
-                            if (lastTimeStamp == null) {
-                                currentLastTimeStamp = services[0].initialCheckAt
-                            }
-                            currentLastTotalRelevance = services.last().totalRelevance
+                                if (services.isNotEmpty()) {
+                                    if (lastTimeStamp == null) {
+                                        currentLastTimeStamp = services[0].initialCheckAt
+                                    }
+                                    currentLastTotalRelevance = services.last().totalRelevance
 
 
-                            _items.value = if (isRefreshing) {
-                                services // Replace items on refresh
+                                    _items.value = if (isRefreshing) {
+                                        services // Replace items on refresh
+                                    } else {
+                                        _items.value + services // Append items
+                                    }
+
+                                    currentPage++ // Increment page after successful fetch
+                                    currentHasMoreItems =
+                                        services.size == pageSize // Check for more items
+                                    currentIndustriesCount = -1
+                                    currentAppendError = false
+
+                                } else {
+                                    if (page == 1) {
+                                        _items.value = emptyList()
+                                    }
+                                    currentIndustriesCount = -1
+                                    currentHasMoreItems = false
+                                    currentAppendError = false
+                                }
                             } else {
-                                _items.value + services // Append items
+
+                                if (isRefreshing) {
+                                    _items.value = emptyList()
+                                    currentHasMoreItems = true
+                                }
+                                currentIndustriesCount = -1
+                                currentAppendError = true
                             }
-
-                            currentPage++ // Increment page after successful fetch
-                            currentHasMoreItems = services.size == pageSize // Check for more items
-                            currentAppendError = false
-
                         } else {
-                            if (page == 1) {
-                                _items.value = emptyList()
-                            }
-                            currentHasMoreItems = false // No more items
-                        }
-                    } else {
-                        if (isRefreshing) {
-                            _items.value = emptyList()
-                            currentHasMoreItems = true // No more items
-                        }
-                        currentAppendError = true // Handle unsuccessful response
-                    }
-                } else {
-                    if (isRefreshing) {
-                        _items.value = emptyList()
-                        currentHasMoreItems = true // No more items
-                    }
-                    currentAppendError = true // Handle API error
-                }
 
-                currentNetworkError = false
+                            if (isRefreshing) {
+                                _items.value = emptyList()
+                                currentHasMoreItems = true
+                            }
+
+                            val errorBody = response.errorBody()?.string()
+                            val errorCode = errorBody?.let {
+                                Gson().fromJson(it, ErrorResponse::class.java).data.error.code
+                            }
+
+                            when (errorCode) {
+                                "EMPTY_SERVICE_INDUSTRIES" -> {
+                                    currentIndustriesCount = 0
+                                    currentAppendError = false
+                                }
+
+                                else -> {
+                                    currentIndustriesCount = -1
+                                    currentAppendError = true
+                                }
+                            }
+                        }
+
+                        currentNetworkError = false
+
+                    }
+
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 handleError(e, isRefreshing)
@@ -384,14 +413,14 @@ class PageSource(
             if (error is ResultError.NoInternet) {
                 currentNetworkError = true
             } else {
-                if(currentNetworkError){
+                if (currentNetworkError) {
                     setNetWorkError(false)
                 }
                 currentAppendError = true
             }
         } else {
 
-            if (error is ResultError.NoInternet && page==1) {
+            if (error is ResultError.NoInternet && page == 1) {
                 currentNetworkError = true
             } else {
                 currentAppendError = true

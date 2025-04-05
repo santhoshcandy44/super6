@@ -5,6 +5,7 @@ import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.app.database.models.profile.UserProfileDetails
 import com.lts360.compose.ui.auth.AccountType
+import com.lts360.compose.ui.onboarding.navhost.OnBoardingScreen
 import com.lts360.compose.ui.viewmodels.StateMap
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -22,7 +23,11 @@ sealed class MainRoutes  {
         val recipientId: Long)
 
     @Serializable
-    data class SMSChatScreen(val address:String)
+    data object ChooseIndustries : MainRoutes()
+
+    @Serializable
+    data object GuestChooseIndustries  : MainRoutes()
+
 }
 
 

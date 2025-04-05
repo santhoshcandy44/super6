@@ -25,17 +25,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lts360.R
-import com.lts360.api.auth.managers.socket.SocketManager
-import com.lts360.compose.ui.auth.repos.AuthRepository
-import com.lts360.compose.ui.auth.viewmodels.EmailOTPVerificationViewModel
-import com.lts360.compose.ui.auth.viewmodels.RegisterViewModel
-import com.lts360.compose.ui.main.prefs.BoardsPreferencesScreen
-import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
+import com.lts360.compose.ui.main.MoreScreen
+import com.lts360.compose.ui.main.viewmodels.PageSource
 import com.lts360.compose.ui.onboarding.ChooseIndustryScreen
-import com.lts360.compose.ui.services.ServicesScreen
+import com.lts360.compose.ui.onboarding.GuestChooseIndustryScreen
+import com.lts360.compose.ui.onboarding.navhost.OnBoardingNavHost
+import com.lts360.compose.ui.onboarding.navhost.OnBoardingScreen
 import com.lts360.compose.ui.theme.AppTheme
-import com.lts360.compose.ui.usedproducts.SecondsScreen
-import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.SerialName
@@ -81,8 +77,8 @@ class TestActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             AppTheme {
                 Surface {
@@ -107,7 +103,6 @@ class TestActivity : ComponentActivity() {
                 .align(Alignment.Center)
                 .size(300.dp)
         ) {
-
             Canvas(modifier = Modifier.fillMaxSize()) {
 
                 drawArc(

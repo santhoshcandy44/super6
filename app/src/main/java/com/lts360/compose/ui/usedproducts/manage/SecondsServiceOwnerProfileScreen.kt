@@ -73,7 +73,7 @@ import kotlinx.coroutines.launch
 fun SecondsServiceOwnerProfileScreen(
     navHostController: NavHostController,
     key: Int,
-    onNavigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
+    onNavigateUpChat: (ChatUser, Int, Long) -> Unit,
     onNavigateUpDetailedSeconds: (Int, UsedProductListing) -> Unit,
     servicesViewModel: SecondsViewmodel,
     secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel
@@ -103,9 +103,7 @@ fun SecondsServiceOwnerProfileScreen(
                     onNavigateUpChat(
                         selectedChatUser,
                         selectedChatId,
-                        nonNullSelectedService.user.userId,
-                        nonNullSelectedService.user
-                    )
+                        nonNullSelectedService.user.userId)
                 }
             }
 

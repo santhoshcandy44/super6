@@ -45,7 +45,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -70,7 +69,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -83,9 +81,6 @@ import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
 import com.lts360.compose.ui.main.navhosts.BottomNavHost
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
-import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import com.lts360.compose.ui.onboarding.ChooseIndustrySheet
-import com.lts360.compose.ui.onboarding.GuestChooseIndustrySheet
 import com.lts360.compose.ui.services.manage.ManageServicesActivity
 import com.lts360.compose.ui.viewmodels.HomeActivityViewModel
 import com.lts360.compose.ui.viewmodels.MoreViewModel
@@ -104,15 +99,13 @@ fun MainScreen(
     viewModel: HomeActivityViewModel,
     onProfileNavigateUp: () -> Unit,
     onAccountAndProfileSettingsNavigateUp: (String) -> Unit,
-    onManageIndustriesAndInterestsNavigateUp: (Long, String?) -> Unit,
     onNavigateUpBookmarkedServices: () -> Unit,
+    onManageIndustriesAndInterestsNavigateUp: () -> Unit,
     onNavigateUpGuestManageIndustriesAndInterests: () -> Unit,
-    onNavigateUpChatWindow: (ChatUser, Int, Long, String) -> Unit,
+    onNavigateUpChatWindow: (ChatUser, Int, Long) -> Unit,
     onNavigateUpUsedProductListing: () -> Unit
 ) {
 
-
-    val userId = UserSharedPreferencesManager.userId
 
     val boards by viewModel.boards.collectAsState()
 
@@ -143,7 +136,6 @@ fun MainScreen(
         )
     )
 
-    val selectedIndustriesCount by viewModel.selectedIndustriesCount.collectAsState()
 
 
     BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
@@ -212,18 +204,8 @@ fun MainScreen(
     }
 
 
-    if (signInMethod == "guest") {
-        LaunchedEffect(selectedIndustriesCount) {
-            if (selectedIndustriesCount == 0 && !viewModel.isIndustriesSheetDismissed() && !isSheetIsClosedAlready) {
-                // Set the sheet content to "industries"
-                sheetContent = "guest_industries"
-            }
-        }
-    }
-
     LaunchedEffect(sheetContent) {
-        // Check if the content is either "industries" or "welcome"
-        if (sheetContent == "guest_industries" || sheetContent == "valid_user_industries" || sheetContent == "welcome") {
+        if (sheetContent == "welcome") {
             // Expand the sheet
             bottomSheetScaffoldState.bottomSheetState.expand()
         }
@@ -305,60 +287,25 @@ fun MainScreen(
             sheetContent = {
 
                 if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
-                    if (sheetContent == "guest_industries" && selectedIndustriesCount == 0) {
-
-                        Surface {
-                            GuestChooseIndustrySheet(onDismissed = {
-                                viewModel.setIndustriesSheetDismissed()
-                                coroutineScope.launch {
-                                    bottomSheetScaffoldState.bottomSheetState.hide()
-                                }
-                            }) {
-                                viewModel.setIndustriesSheetDismissed()
-                                coroutineScope.launch {
-                                    bottomSheetScaffoldState.bottomSheetState.hide()
-                                }
-                            }
-                        }
-
-                    }
-
-                    if (sheetContent == "valid_user_industries") {
-                        Surface {
-                            ChooseIndustrySheet(onDismissed = {
-                                viewModel.setIndustriesSheetDismissed()
-                                coroutineScope.launch {
-                                    bottomSheetScaffoldState.bottomSheetState.hide()
-                                }
-                            }) {
-                                coroutineScope.launch {
-                                    bottomSheetScaffoldState.bottomSheetState.hide()
-                                }
-                                onManageIndustriesAndInterestsNavigateUp(
-                                    userId,
-                                    "update_industries"
-                                )
-                            }
-                        }
-
-                    }
 
                     if (sheetContent == "welcome") {
                         ForceWelcomeScreen(
                             onLogInNavigate = {
-                                context.startActivity(Intent(context, AuthActivity::class.java)
-                                    .apply {
-                                        flags =
-                                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                                        putExtra("force_type", "force_login")
-                                    })
+                                context.startActivity(
+                                    Intent(context, AuthActivity::class.java)
+                                        .apply {
+                                            flags =
+                                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                            putExtra("force_type", "force_login")
+                                        })
                             }, onSelectAccountNavigate = {
-                                context.startActivity(Intent(context, AuthActivity::class.java)
-                                    .apply {
-                                        flags =
-                                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                                        putExtra("force_type", "force_register")
-                                    }
+                                context.startActivity(
+                                    Intent(context, AuthActivity::class.java)
+                                        .apply {
+                                            flags =
+                                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                            putExtra("force_type", "force_register")
+                                        }
                                 )
 
                             }) {
@@ -433,36 +380,30 @@ fun MainScreen(
                     onProfileNavigateUp = {
                         onProfileNavigateUp()
                     },
-                    onAccountAndProfileSettingsNavigateUp = { accountType ->
-                        onAccountAndProfileSettingsNavigateUp(accountType)
-                    },
-                    onManageIndustriesAndInterestsNavigateUp = {
-                        onManageIndustriesAndInterestsNavigateUp(userId, "update_industries")
-                    },
+                    onAccountAndProfileSettingsNavigateUp = onAccountAndProfileSettingsNavigateUp,
+                    onManageIndustriesAndInterestsNavigateUp = onManageIndustriesAndInterestsNavigateUp,
                     onManageServiceNavigateUp = {
-                        context.startActivity(Intent(context, ManageServicesActivity::class.java)
-                            .apply {
-                                flags =
-                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                            }
+                        context.startActivity(
+                            Intent(context, ManageServicesActivity::class.java)
+                                .apply {
+                                    flags =
+                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                }
                         )
                     },
-
-                    onNavigateUpBookmarkedServices = {
-                        onNavigateUpBookmarkedServices()
-                    },
+                    onNavigateUpBookmarkedServices = onNavigateUpBookmarkedServices,
                     {
                         sheetContent = "welcome"
                     },
 
                     {
-                        context.startActivity(Intent(context, AuthActivity::class.java)
-                            .apply {
-                                flags =
-                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                                putExtra("force_type", "force_login")
-                            })
-
+                        context.startActivity(
+                            Intent(context, AuthActivity::class.java)
+                                .apply {
+                                    flags =
+                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                    putExtra("force_type", "force_login")
+                                })
                     },
                     (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded),
                     {
@@ -470,18 +411,11 @@ fun MainScreen(
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
                     },
-                    {
-                        onNavigateUpGuestManageIndustriesAndInterests()
-                    },
                     onNavigateUpChatWindow,
                     {
-
-                        if (!isSheetIsClosedAlready) {
-                            sheetContent = "valid_user_industries"
-                        }
-                    }, {
                         dockedFloatingActionButtonVisibility = it
-                    })
+                    }, onNavigateUpGuestManageIndustriesAndInterests
+                )
 
 
             }

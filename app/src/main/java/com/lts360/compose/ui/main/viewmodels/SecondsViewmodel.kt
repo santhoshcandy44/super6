@@ -76,38 +76,21 @@ class SecondsViewmodel @Inject constructor(
             viewModelScope.launch {
 
                 launch {
-
-
                     val userLocation = guestUserLocationDao.getLocation(userId)
-
-                    if (userLocation != null) {
-                        pageSource.guestNextPage(
-                            userId,
-                            submittedQuery,
-                            userLocation.latitude,
-                            userLocation.longitude
-                        )
-                    } else {
-                        pageSource.guestNextPage(
-                            userId,
-                            submittedQuery
-                        )
-                    }
-
-
+                    pageSource.guestNextPage(
+                        userId,
+                        submittedQuery,
+                        userLocation?.latitude,
+                        userLocation?.longitude
+                    )
                 }.join()
-
 
             }
         } else {
-
-
             loadingItemsJob = viewModelScope.launch {
-
                 launch {
                     pageSource.nextPage(userId, submittedQuery)
                 }.join()
-
             }
         }
     }
@@ -140,13 +123,11 @@ class SecondsViewmodel @Inject constructor(
     }
 
 
-
     fun nextPage(userId: Long, query: String?) {
+        viewModelScope.launch {
+            if (isGuest) {
 
-        if (isGuest) {
-            viewModelScope.launch {
                 val userLocation = guestUserLocationDao.getLocation(userId)
-
                 if (userLocation != null) {
                     pageSource.guestNextPage(
                         userId, query, userLocation.latitude,
@@ -155,30 +136,27 @@ class SecondsViewmodel @Inject constructor(
                 } else {
                     pageSource.guestNextPage(userId, query)
                 }
-            }
-        } else {
-            loadingItemsJob = viewModelScope.launch {
-                pageSource.nextPage(userId, query)
+
+            } else {
+                loadingItemsJob?.cancel()
+                loadingItemsJob = launch {
+                    pageSource.nextPage(userId, query)
+                }
             }
         }
-
     }
 
 
     fun refresh(userId: Long, query: String?) {
         viewModelScope.launch {
             if (isGuest) {
-                val userLocation = guestUserLocationDao.getLocation(userId)
-                if (userLocation != null) {
-                    pageSource.guestRefresh(
-                        userId,
-                        query,
-                        userLocation.latitude,
-                        userLocation.longitude
-                    )
-                } else {
-                    pageSource.guestRefresh(userId, query)
-                }
+                val location = guestUserLocationDao.getLocation(userId)
+                pageSource.guestRefresh(
+                    userId,
+                    query,
+                    location?.latitude,
+                    location?.longitude
+                )
             } else {
                 loadingItemsJob?.cancel()
                 loadingItemsJob = launch {
@@ -192,19 +170,13 @@ class SecondsViewmodel @Inject constructor(
     fun retry(userId: Long, query: String?) {
         viewModelScope.launch {
             if (isGuest) {
-                val userLocation = guestUserLocationDao.getLocation(userId)
-                if (userLocation != null) {
-                    pageSource.guestRetry(
-                        userId,
-                        query,
-                        userLocation.latitude,
-                        userLocation.longitude
-                    )
-                } else {
-                    pageSource.guestRetry(userId, query)
-                }
-
-
+                val location = guestUserLocationDao.getLocation(userId)
+                pageSource.guestRetry(
+                    userId,
+                    query,
+                    location?.latitude,
+                    location?.longitude
+                )
             } else {
                 pageSource.retry(userId, query)
             }
@@ -222,9 +194,6 @@ class SecondsViewmodel @Inject constructor(
     }
 
 
-
-
-
     fun onRemoveBookmark(
         userId: Long,
         service: UsedProductListing,
@@ -235,15 +204,12 @@ class SecondsViewmodel @Inject constructor(
             try {
                 when (val result = removeBookmark(userId, service)) {
                     is Result.Success -> {
-                        // Deserialize the search terms and set suggestions
                         onSuccess()
                     }
 
                     is Result.Error -> {
-                        // Handle error
                         error = mapExceptionToError(result.error).errorMessage
                         onError(error)
-                        // Optionally log the error message
                     }
                 }
             } catch (t: Exception) {
@@ -262,32 +228,32 @@ class SecondsViewmodel @Inject constructor(
 
 
         return try {
-             AppClient.instance.create(ManageUsedProductListingService::class.java)
+            AppClient.instance.create(ManageUsedProductListingService::class.java)
                 .removeBookmarkUsedProductListing(
                     userId,
                     item.productId
                 ).let {
-                     if (it.isSuccessful) {
-                         val body = it.body()
-                         if (body != null && body.isSuccessful) {
-                             Result.Success(body)
+                    if (it.isSuccessful) {
+                        val body = it.body()
+                        if (body != null && body.isSuccessful) {
+                            Result.Success(body)
 
-                         } else {
-                             val errorMessage = "Failed, try again later..."
-                             Result.Error(Exception(errorMessage))
-                         }
+                        } else {
+                            val errorMessage = "Failed, try again later..."
+                            Result.Error(Exception(errorMessage))
+                        }
 
 
-                     } else {
+                    } else {
 
-                         val errorBody = it.errorBody()?.string()
-                         val errorMessage = try {
-                             Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                         } catch (e: Exception) {
-                             "An unknown error occurred"
-                         }
-                         Result.Error(Exception(errorMessage))
-                     }
+                        val errorBody = it.errorBody()?.string()
+                        val errorMessage = try {
+                            Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                        } catch (e: Exception) {
+                            "An unknown error occurred"
+                        }
+                        Result.Error(Exception(errorMessage))
+                    }
                 }
 
 
@@ -328,38 +294,37 @@ class SecondsViewmodel @Inject constructor(
         item: UsedProductListing,
     ): Result<ResponseReply> {
         return try {
-           AppClient.instance.create(ManageUsedProductListingService::class.java)
+            AppClient.instance.create(ManageUsedProductListingService::class.java)
                 .bookmarkUsedProductListing(
                     userId,
-                    item.productId)
-               .let {
-                   if (it.isSuccessful) {
-                       val body = it.body()
-                       if (body != null && body.isSuccessful) {
-                           Result.Success(body)
+                    item.productId
+                )
+                .let {
+                    if (it.isSuccessful) {
+                        val body = it.body()
+                        if (body != null && body.isSuccessful) {
+                            Result.Success(body)
 
-                       } else {
-                           val errorMessage = "Failed, try again later..."
-                           Result.Error(Exception(errorMessage))
-                       }
-                   } else {
-                       val errorBody = it.errorBody()?.string()
-                       val errorMessage = try {
-                           Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                       } catch (e: Exception) {
-                           "An unknown error occurred"
-                       }
-                       Result.Error(Exception(errorMessage))
-                   }
-               }
+                        } else {
+                            val errorMessage = "Failed, try again later..."
+                            Result.Error(Exception(errorMessage))
+                        }
+                    } else {
+                        val errorBody = it.errorBody()?.string()
+                        val errorMessage = try {
+                            Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                        } catch (e: Exception) {
+                            "An unknown error occurred"
+                        }
+                        Result.Error(Exception(errorMessage))
+                    }
+                }
 
         } catch (t: Throwable) {
             Result.Error(t)
         }
 
     }
-
-
 
 
 }

@@ -1,20 +1,14 @@
 package com.lts360.compose.ui.onboarding.navhost
 
-import android.app.Activity
-import android.app.ActivityOptions
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.lts360.R
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.main.MainActivity
-import com.lts360.compose.ui.onboarding.ChooseIndustryScreen
 import com.lts360.compose.ui.onboarding.EditProfileAboutScreen
-import com.lts360.compose.ui.onboarding.GuestChooseIndustryScreen
 import com.lts360.compose.ui.onboarding.LocationAccessScreen
-
 
 
 @Composable
@@ -26,77 +20,30 @@ fun OnBoardingNavHost(
 
     val context = LocalContext.current
 
-    // Define the AnimatedNavHost
     NavHost(
         navController = navController,
         startDestination = defaultStartDestination
     ) {
-        // Entry Screen
+
         slideComposable<OnBoardingScreen.CompleteAbout> {
-
-            EditProfileAboutScreen({ userId, type ->
-                navController.navigate(OnBoardingScreen.LocationAccess)
-            }, {}, {}, {navController.popBackStack()})
-        }
-
-        // Choose Account Type Screen
-        slideComposable<OnBoardingScreen.ChooseIndustries> {
-
-            ChooseIndustryScreen({
-                navController.popBackStack()
-            }) {
-                context.startActivity(
-                    Intent(context, MainActivity::class.java).apply {
-                        flags =
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                    },
-                    ActivityOptions.makeCustomAnimation(
-                        context,
-                        R.anim.slide_in_right,
-                        R.anim.slide_out_left
-                    ).toBundle()
-                )
-                (context as Activity).finishAffinity()
-            }
+            EditProfileAboutScreen(
+                {
+                    navController.navigate(OnBoardingScreen.LocationAccess)
+                }, {
+                    navController.navigate(OnBoardingScreen.LocationAccess)
+                },
+                { navController.popBackStack() })
         }
 
 
-        // Choose Account Type Screen
-        slideComposable<OnBoardingScreen.GuestChooseIndustries> {
-
-            GuestChooseIndustryScreen( {
-                context.startActivity(
-                    Intent(context, MainActivity::class.java).apply {
-                        flags =
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                    },
-                    ActivityOptions.makeCustomAnimation(
-                        context,
-                        R.anim.slide_in_right,
-                        R.anim.slide_out_left
-                    ).toBundle()
-                )
-                (context as Activity).finishAffinity()
-
-            }, {navController.popBackStack()})
-        }
-
-
-        // Register Screen
         slideComposable<OnBoardingScreen.LocationAccess> {
-            LocationAccessScreen(defaultType,
-                { userId, type ->
-                    if (defaultType == "guest") {
-                        navController.navigate(OnBoardingScreen.GuestChooseIndustries)
-                    } else {
-                        navController.navigate(
-                            OnBoardingScreen.ChooseIndustries(
-                                userId,
-                                "on_board"
-                            )
-                        )
+            LocationAccessScreen(defaultType) {
+                context.startActivity(
+                    Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                     }
-                })
+                )
+            }
         }
     }
 }

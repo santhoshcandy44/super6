@@ -61,16 +61,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.placeholder
@@ -82,8 +79,9 @@ import com.lts360.compose.ui.NoRippleInteractionSource
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.main.common.NoInternetScreen
-import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
+import com.lts360.compose.ui.onboarding.ChooseIndustryInfo
+import com.lts360.compose.ui.onboarding.GuestChooseIndustryInfo
 import com.lts360.compose.ui.services.navhosts.ServiceReviewsNavHost
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.theme.icons
@@ -96,7 +94,6 @@ import kotlinx.coroutines.launch
 fun ServicesScreen(
     onNavigateUpServiceDetailedScreen: (Service) -> Unit,
     onNavigateUpServiceOwnerProfile: (Service, Long) -> Unit,
-    showChooseIndustriesSheet: () -> Unit,
     viewModel: ServicesViewModel
 ) {
 
@@ -107,6 +104,9 @@ fun ServicesScreen(
     val onlySearchBar = viewModel.onlySearchBar
 
     val context = LocalContext.current
+
+    val isGuest = viewModel.isGuest
+
 
     val selectedItem by viewModel.selectedItem.collectAsState()
 
@@ -128,16 +128,6 @@ fun ServicesScreen(
 
     val industriesCount by viewModel.pageSource.industriesCount.collectAsState()
 
-    val isValidSignInMethodFeaturesEnabled = viewModel.isValidSignInMethodFeaturesEnabled
-
-
-    if (isValidSignInMethodFeaturesEnabled) {
-        LaunchedEffect(industriesCount) {
-            if (industriesCount == 0) {
-                showChooseIndustriesSheet()
-            }
-        }
-    }
 
     val lazyListState = rememberLazyListState()
 
@@ -160,7 +150,7 @@ fun ServicesScreen(
                     && lastVisibleItemIndex == items.size - 10
                     && lastVisibleItemIndex >= lastLoadedItemPosition
                 ) {
-                    viewModel.updateLastLoadedItemPosition(if(lastLoadedItemPosition==-1) 0 else lastVisibleItemIndex)
+                    viewModel.updateLastLoadedItemPosition(if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex)
                     // Call nextPage if last item is visible and not currently loading
                     viewModel.nextPage(
                         userId,
@@ -233,7 +223,6 @@ fun ServicesScreen(
 
         Column(modifier = Modifier.fillMaxSize()) {
 
-
             Box(
                 modifier = Modifier
                     .fillMaxSize() // This makes the Box take up the entire available space
@@ -283,12 +272,28 @@ fun ServicesScreen(
 
                         ) {
 
+
                             // Handle no internet case
                             if (hasNetworkError) {
                                 item {
                                     Box(modifier = Modifier.fillParentMaxSize()) {
                                         NoInternetScreen(modifier = Modifier.align(Alignment.Center)) {
                                             onRetry()
+                                        }
+                                    }
+                                }
+                            } else if (industriesCount == 0) {
+
+                                item {
+                                    Box(modifier = Modifier.fillParentMaxSize()) {
+                                        if (isGuest) {
+                                            GuestChooseIndustryInfo {
+                                                onRefresh()
+                                            }
+                                        } else {
+                                            ChooseIndustryInfo {
+                                                onRefresh()
+                                            }
                                         }
                                     }
                                 }
@@ -321,7 +326,7 @@ fun ServicesScreen(
                             else {
 
 
-                                items(items, key = {"lazy_items_${it.serviceId}"}) { item ->
+                                items(items, key = { "lazy_items_${it.serviceId}" }) { item ->
 
                                     ServiceCard(
                                         onItemClick = {
@@ -723,7 +728,7 @@ fun ServiceCard(
         shape = RoundedCornerShape(8.dp), // Remove rounded corners
         elevation = CardDefaults.cardElevation(2.dp),
         interactionSource = NoRippleInteractionSource()
-        ) {
+    ) {
         Column(modifier = Modifier.fillMaxWidth()) {
 
             location?.let {
@@ -824,8 +829,8 @@ fun ServiceCard(
                 .data(serviceThumbnailUrl) // Use placeholder drawable if imageUrl is null
                 .build()
 
-/*            val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-            val aspectRatio = imageWidth.toFloat() / imageHeight.toFloat()*/
+            /*            val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+                        val aspectRatio = imageWidth.toFloat() / imageHeight.toFloat()*/
 
             AsyncImage(
                 model = imageRequest,
@@ -865,11 +870,12 @@ fun ServiceCard(
 
                     if (enableBookmarkedServiceIcon) {
 
-                        Icon(if (bookMarkStatus) painterResource(
-                            R.drawable.ic_bookmarked
-                        ) else painterResource(
-                            R.drawable.ic_dark_bookmark
-                        ),
+                        Icon(
+                            if (bookMarkStatus) painterResource(
+                                R.drawable.ic_bookmarked
+                            ) else painterResource(
+                                R.drawable.ic_dark_bookmark
+                            ),
                             tint = Color.Unspecified,
 
                             contentDescription = null,
@@ -939,10 +945,7 @@ fun ServiceCard(
 
 
 @Composable
-fun ShimmerServiceCard(
-    isBookmarked: Boolean = true,
-    enableBookmarkedServiceIcon: Boolean = false,
-) {
+fun ShimmerServiceCard(){
 
     Card(
         modifier = Modifier
@@ -960,13 +963,14 @@ fun ShimmerServiceCard(
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 // Profile Bar
-                Row(modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple()
-                    ) {}
-                    .padding(vertical = 8.dp),
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple()
+                        ) {}
+                        .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End
                 ) {
@@ -1040,22 +1044,24 @@ fun ShimmerServiceCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
 
-                /*    if (enableBookmarkedServiceIcon) {
-                             Icon(
-                                 if (bookMarkStatus) painterResource(
-                                     R.drawable.ic_bookmarked
-                                 ) else painterResource(
-                                     R.drawable.ic_bookmark
-                                 ),
-                                 tint = Color.Unspecified,
-                                 contentDescription = null,
-                                 modifier = Modifier
-                                     .size(32.dp)
-                             )
-                    }*/
+                    /*    if (enableBookmarkedServiceIcon) {
+                                 Icon(
+                                     if (bookMarkStatus) painterResource(
+                                         R.drawable.ic_bookmarked
+                                     ) else painterResource(
+                                         R.drawable.ic_bookmark
+                                     ),
+                                     tint = Color.Unspecified,
+                                     contentDescription = null,
+                                     modifier = Modifier
+                                         .size(32.dp)
+                                 )
+                        }*/
 
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
                         ShimmerBox {
                             Text(
                                 text = "Starting from",

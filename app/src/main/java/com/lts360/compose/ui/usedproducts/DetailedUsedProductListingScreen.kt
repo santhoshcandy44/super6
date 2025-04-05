@@ -90,7 +90,7 @@ import kotlinx.coroutines.launch
 fun DetailedUsedProductListingScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
-    navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
+    navigateUpChat: (ChatUser, Int, Long) -> Unit,
     onUsedProductListingOwnerProfileClicked: (Long) -> Unit,
     viewModel: SecondsViewmodel
 ) {
@@ -131,9 +131,7 @@ fun DetailedUsedProductListingScreen(
                                 navigateUpChat(
                                     selectedChatUser,
                                     selectedChatId,
-                                    it.user.userId,
-                                    it.user
-                                )
+                                    it.user.userId)
                             }
                         }
 
@@ -156,7 +154,7 @@ fun DetailedUsedProductListingScreen(
 fun FeedUserDetailedSecondsInfoScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
-    navigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
+    navigateUpChat: (ChatUser, Int, Long) -> Unit,
     viewModel: SecondsOwnerProfileViewModel = hiltViewModel(remember {
         navHostController.getBackStackEntry<BottomNavRoutes.SecondsOwnerProfile>()
     })
@@ -197,9 +195,7 @@ fun FeedUserDetailedSecondsInfoScreen(
                                 navigateUpChat(
                                     selectedChatUser,
                                     selectedChatId,
-                                    it.user.userId,
-                                    it.user
-                                )
+                                    it.user.userId)
                             }
                         }
 

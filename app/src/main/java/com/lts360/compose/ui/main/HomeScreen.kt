@@ -74,7 +74,6 @@ fun HomeScreen(
     onNavigateUpServiceDetailedScreen: () -> Unit,
     onNavigateUpUsedProductListingDetailedScreen: () -> Unit,
     onNavigateUpServiceOwnerProfile: (Long) -> Unit,
-    showChooseIndustriesSheet: () -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: HomeViewModel,
     servicesViewModel: ServicesViewModel,
@@ -141,10 +140,8 @@ fun HomeScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-
     val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val bottomSheetNavController = rememberNavController()
-
 
     val context = LocalContext.current
 
@@ -428,9 +425,6 @@ fun HomeScreen(
                                         servicesViewModel.setSelectedItem(service)
                                         onNavigateUpServiceOwnerProfile(ownerId)
                                     },
-                                    {
-                                        showChooseIndustriesSheet()
-                                    },
                                     servicesViewModel
                                 )
                             }, secondsContent = {
@@ -454,7 +448,7 @@ fun HomeScreen(
 
                     } else {
 
-                        if (nestedType == "Services") {
+                        if (nestedType == "services") {
                             ServicesScreen(
                                 {
                                     viewModel.setSelectedServiceItem(it)
@@ -466,14 +460,11 @@ fun HomeScreen(
                                     servicesViewModel.setSelectedItem(service)
                                     onNavigateUpServiceOwnerProfile(ownerId)
                                 },
-                                {
-                                    showChooseIndustriesSheet()
-                                },
                                 servicesViewModel
                             )
                         }
 
-                        if (nestedType == "Second Hands") {
+                        if (nestedType == "second_hands") {
                             SecondsScreen(
                                 {
                                     viewModel.setSelectedUsedProductListingItem(it)
@@ -494,7 +485,6 @@ fun HomeScreen(
                                 .fillMaxSize() // This makes the Box take up the entire available space
                                 .background(MaterialTheme.colorScheme.surface)
                         ) {
-
 
                             if (isLazyLoading) {
                                 CircularProgressIndicatorLegacy(

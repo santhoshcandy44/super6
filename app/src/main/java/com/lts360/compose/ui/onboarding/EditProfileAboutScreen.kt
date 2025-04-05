@@ -26,7 +26,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -55,13 +54,12 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun EditProfileAboutScreen(
-    onSkipNowNavigateUp: (Long, String) -> Unit,
-    onChooseIndustriesNavigateUp: () -> Unit,
-    onNavigatePop: () -> Unit,
-    onPopBackStack : () -> Unit,
+    onPopBackStack: () -> Unit,
+    onUpdateSuccess: () -> Unit={},
+    onSkipNowNavigateUp: () -> Unit={},
     viewModel: EditProfileAboutViewModel = hiltViewModel()
 
-    ) {
+) {
     val userId = viewModel.userId
     val type = viewModel.type
 
@@ -97,12 +95,7 @@ fun EditProfileAboutScreen(
                         it,
                         Toast.LENGTH_SHORT
                     ).show()
-
-                    if (type == "complete_about") {
-                        onNavigatePop()
-                    } else {
-                        onChooseIndustriesNavigateUp()
-                    }
+                    onUpdateSuccess()
 
                 }) {
                     Toast.makeText(context, it, Toast.LENGTH_SHORT)
@@ -113,10 +106,10 @@ fun EditProfileAboutScreen(
 
         },
         {
-            onSkipNowNavigateUp(userId, "on_board")
+            onSkipNowNavigateUp()
         },
         onPopBackStack
-        )
+    )
 
 }
 
@@ -131,169 +124,168 @@ private fun EditProfileAboutContent(
     isLoading: Boolean,
     onAboutChangeClicked: () -> Unit,
     onSkipNowNavigateUp: () -> Unit,
-    onPopBackStack : () -> Unit
+    onPopBackStack: () -> Unit
 ) {
 
 
-    Surface {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
 
-        ) {
+    ) {
 
-            Scaffold(
+        Scaffold(
 
-                topBar = {
+            topBar = {
 
-                    if (type == "complete_about") {
-                        TopAppBar(
-                            navigationIcon = {
-                                IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back Icon"
-                                    )
-                                }
-                            },
-                            title = {
-                                Text(
-                                    text = "Edit About",
-                                    style = MaterialTheme.typography.titleMedium
+                if (type == "complete_about") {
+                    TopAppBar(
+                        navigationIcon = {
+                            IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back Icon"
                                 )
-
                             }
-                        )
-                    }
+                        },
+                        title = {
+                            Text(
+                                text = "Edit About",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+
+                        }
+                    )
+                }
+            }
+
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+
+
+                if (type != "complete_about") {
+                    Text(
+                        text = "Complete About",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
                 }
 
-            ) { innerPadding ->
-                Column(
+
+                OutlinedTextField(
+                    isError = aboutError != null || about.length > 160,
+                    value = about,
+                    onValueChange = { onAboutChanged(it) },
+                    label = { Text("About") },
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
+                        .fillMaxWidth(),
+                    visualTransformation = if (about.isEmpty())
+                        PlaceholderTransformation(" ")
+                    else VisualTransformation.None,
+                    minLines = 8,
+                    textStyle = TextStyle(fontSize = 14.sp)
+                )
 
-
-                    if (type != "complete_about") {
-                        Text(
-                            text = "Complete About",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                    }
-
-
-                    OutlinedTextField(
-                        isError = aboutError != null || about.length > 160,
-                        value = about,
-                        onValueChange = { onAboutChanged(it) },
-                        label = { Text("About") },
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        visualTransformation = if (about.isEmpty())
-                            PlaceholderTransformation(" ")
-                        else VisualTransformation.None,
-                        minLines = 8,
-                        textStyle = TextStyle(fontSize = 14.sp)
+                if (aboutError != null || about.length > 160) {
+                    Text(
+                        text = "Limit: ${about.length}/${160}",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(
+                            horizontal = 16.dp,
+                            vertical = 4.dp
+                        ) // Adjust padding as needed
                     )
+                }
 
-                    if (aboutError != null || about.length > 160) {
+                // Display error message if there's an error
+                aboutError?.let {
+
+                    Text(
+                        text = it,
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(
+                            horizontal = 16.dp,
+                            vertical = 4.dp
+                        ) // Adjust padding as needed
+                    )
+                }
+
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    enabled = !isLoading,
+
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorResource(id = R.color.colorPrimary),
+                        disabledContainerColor = colorResource(id = R.color.colorPrimary)
+
+                    ),
+                    onClick = {
+                        onAboutChangeClicked()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White, // Change this to any color you prefer
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(ButtonDefaults.IconSize),
+                        )
+
+                    } else {
                         Text(
-                            text = "Limit: ${about.length}/${160}",
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(
-                                horizontal = 16.dp,
-                                vertical = 4.dp
-                            ) // Adjust padding as needed
+                            text = "Update About",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp) // Horizontal padding for the text
                         )
                     }
 
-                    // Display error message if there's an error
-                    aboutError?.let {
 
-                        Text(
-                            text = it,
-                            color = Color.Red,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(
-                                horizontal = 16.dp,
-                                vertical = 4.dp
-                            ) // Adjust padding as needed
-                        )
-                    }
+                }
 
-
+                if (type != "complete_about") {
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        enabled = !isLoading,
 
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colorResource(id = R.color.colorPrimary),
-                            disabledContainerColor = colorResource(id = R.color.colorPrimary)
-
-                        ),
-                        onClick = {
-                            onAboutChangeClicked()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(), // Fills the available space, but no vertical centering
+                        verticalAlignment = Alignment.CenterVertically,// Centers all children horizontally
+                        horizontalArrangement = Arrangement.Center,
                     ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                color = Color.White, // Change this to any color you prefer
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(ButtonDefaults.IconSize),
-                            )
-
-                        } else {
-                            Text(
-                                text = "Update About",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp) // Horizontal padding for the text
-                            )
-                        }
-
-
+                        Text(
+                            text = "Skip now",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .clickable {
+                                    onSkipNowNavigateUp()
+                                })
                     }
 
-                    if (type != "complete_about") {
-                        Spacer(modifier = Modifier.height(16.dp))
-
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(), // Fills the available space, but no vertical centering
-                            verticalAlignment = Alignment.CenterVertically,// Centers all children horizontally
-                            horizontalArrangement = Arrangement.Center,
-                        ) {
-                            Text(text = "Skip now",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .clickable {
-                                        onSkipNowNavigateUp()
-                                    })
-                        }
-
-
-                    }
 
                 }
 
-
             }
 
-            if (isLoading) {
-                LoadingDialog()
-            }
 
         }
+
+        if (isLoading) {
+            LoadingDialog()
+        }
+
     }
 
 }

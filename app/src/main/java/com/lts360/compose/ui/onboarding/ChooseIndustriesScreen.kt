@@ -8,7 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -21,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -35,11 +33,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -50,13 +49,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
-import com.lts360.api.models.service.Industry
 import com.lts360.api.Utils.ResultError
+import com.lts360.api.models.service.Industry
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
@@ -66,10 +64,9 @@ import com.lts360.compose.ui.theme.customColorScheme
 
 
 @Composable
-fun GuestChooseIndustrySheet(
+fun GuestChooseIndustryInfo(
     viewModel: GuestChooseIndustriesViewModel = hiltViewModel(),
-    onDismissed: () -> Unit,
-    onIndustriesUpdated: () -> Unit,
+    onIndustriesUpdated: () -> Unit
 ) {
 
     val userId = viewModel.userId
@@ -136,134 +133,170 @@ fun GuestChooseIndustrySheet(
         connectivityManager.checkForSeconds(Handler(Looper.getMainLooper()), statusCallback, 4000)
     }
 
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
 
+        ChooseIndustryContent(
+            industryItems = industryItems,
+            onIndustrySelectionChanged = { viewModel.onIndustrySelectionChanged(it) },
+            onRetry = { onRetry() },
+            onRefresh = { onRefresh() },
+            onUpdateIndustriesClicked = {
 
+                if (viewModel.validateIndustries()) {
+                    viewModel.onUpdateIndustries(
+                        industryItems,
+                        onSuccess = {
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(16.dp)
-        ) {
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Choose Industries", style = MaterialTheme.typography.headlineSmall)
-
-                Spacer(modifier = Modifier.height(8.dp))
-                ChooseIndustryContent(
-                    industryItems = industryItems,
-                    onIndustrySelectionChanged = { viewModel.onIndustrySelectionChanged(it) },
-                    onRetry = { onRetry() },
-                    onRefresh = { onRefresh() },
-                    onUpdateIndustriesClicked = {
-
-                        if (viewModel.validateIndustries()) {
-                            viewModel.onUpdateIndustries(
-                                industryItems,
-                                onSuccess = {
-
-                                    onIndustriesUpdated()
-
-                                    Toast.makeText(
-                                        context,
-                                        it,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-
-                                },
-                                onError = { errorMessage ->
-
-                                    Toast.makeText(
-                                        context,
-                                        errorMessage,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            )
-                        } else {
+                            onIndustriesUpdated()
 
                             Toast.makeText(
                                 context,
-                                "At least 1 industry selected",
+                                it,
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                        },
+                        onError = { errorMessage ->
+
+                            Toast.makeText(
+                                context,
+                                errorMessage,
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
-                    },
-                    isLoading = isLoading,
-                    error = error,
-                    isRefreshing = isRefreshing,
-                    isUpdating = isUpdating,
-                    anyItemSelected = anyItemSelected
-                )
+                    )
+                } else {
 
-
-                OutlinedButton(
-                    {
-                        onDismissed()
-                    },
-                    shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Don't show again")
+                    Toast.makeText(
+                        context,
+                        "At least 1 industry selected",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-            }
-
-        }
-
-
+            },
+            isLoading = isLoading,
+            error = error,
+            isRefreshing = isRefreshing,
+            isUpdating = isUpdating,
+            anyItemSelected = anyItemSelected,
+            isPullToRefreshEnabled = false
+        )
     }
-
 
 }
 
 
 @Composable
-fun ChooseIndustrySheet(
-    onDismissed: () -> Unit,
-    onNavigateUpChooseIndustries: () -> Unit,
+fun ChooseIndustryInfo(
+    viewModel: ChooseIndustriesViewModel = hiltViewModel(),
+    onIndustriesUpdated: () -> Unit
 ) {
 
+    val userId = viewModel.userId
+
+    val context = LocalContext.current
+
+    val industryItems = viewModel.itemList
+
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isUpdating by viewModel.isUpdating.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    val connectivityManager = viewModel.connectivityManager
+
+
+    val statusCallback: (NetworkConnectivityManager.STATUS) -> Unit = {
+        when (it) {
+            NetworkConnectivityManager.STATUS.STATUS_CONNECTED -> {
+                viewModel.onGetIndustries(
+                    userId,
+                    isLoading = false,
+                    isRefreshing = true,
+                    onSuccess = {}
+                ) { errorMessage ->
+                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_INITIALLY -> {
+            }
+
+            NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_ON_COMPLETED_JOB -> {
+                viewModel.setRefreshing(false)
+                Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
+    }
+
+    val onRefresh = {
+        viewModel.setRefreshing(true)
+        connectivityManager.checkForSeconds(Handler(Looper.getMainLooper()), statusCallback, 4000)
+    }
+
+
+    val anyItemSelected = industryItems.any { it.isSelected }
 
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(16.dp)
+            .fillMaxSize()
     ) {
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Choose Industries", style = MaterialTheme.typography.headlineSmall)
+        ChooseIndustryContent(
+            industryItems = industryItems,
+            onIndustrySelectionChanged = { viewModel.onIndustrySelectionChanged(it) },
+            onRetry = { onRefresh() },
+            onRefresh = { onRefresh() },
+            onUpdateIndustriesClicked = {
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("It looks like you haven’t selected any industries yet. Choose a few to get a personalized experience!")
-            Spacer(modifier = Modifier.height(8.dp))
+                if (viewModel.validateIndustries()) {
+                    viewModel.onUpdateIndustries(
+                        userId,
+                        industryItems,
+                        onSuccess = {
 
-            Button(
-                {
-                    onNavigateUpChooseIndustries()
-                },
-                shape = RectangleShape,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Choose industries")
-            }
-            Spacer(modifier = Modifier.height(8.dp))
+                            onIndustriesUpdated()
 
-            OutlinedButton(
-                {
-                    onDismissed()
-                },
-                shape = RectangleShape,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Don't show again")
-            }
-        }
+                            Toast.makeText(
+                                context,
+                                it,
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                        },
+                        onError = { errorMessage ->
+
+                            Toast.makeText(
+                                context,
+                                errorMessage,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    )
+                } else {
+
+                    Toast.makeText(
+                        context,
+                        "At least 1 industry selected",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            },
+            isLoading = isLoading,
+            error = error,
+            isRefreshing = isRefreshing,
+            isUpdating = isUpdating,
+            anyItemSelected = anyItemSelected,
+            isPullToRefreshEnabled = false
+        )
 
     }
-
 
 }
 
@@ -271,10 +304,10 @@ fun ChooseIndustrySheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuestChooseIndustryScreen(
-    onMainActivityNavigateUp: () -> Unit,
+    viewModel: GuestChooseIndustriesViewModel = hiltViewModel(),
     onPopBackStack: () -> Unit,
-    viewModel: GuestChooseIndustriesViewModel = hiltViewModel()
-) {
+
+    ) {
 
     val userId = viewModel.userId
 
@@ -380,8 +413,6 @@ fun GuestChooseIndustryScreen(
                                 industryItems,
                                 onSuccess = {
 
-                                    onMainActivityNavigateUp()
-
                                     Toast.makeText(
                                         context,
                                         it,
@@ -429,13 +460,10 @@ fun GuestChooseIndustryScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChooseIndustryScreen(
-    onPopBackStack: () -> Unit,
     viewModel: ChooseIndustriesViewModel = hiltViewModel(),
-    onMainActivityNavigateUp: () -> Unit={},
+    onPopBackStack: () -> Unit
+) {
 
-    ) {
-
-    val type = viewModel.type
 
     val userId = viewModel.userId
 
@@ -489,25 +517,22 @@ fun ChooseIndustryScreen(
         Scaffold(
             topBar =
                 {
-                    if (type != null && (type == "on_board" || type == "update_industries")) {
-                        TopAppBar(
-                            navigationIcon = {
-                                IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back Icon"
-                                    )
-                                }
-                            },
-                            title = {
-                                Text(
-                                    text = if (type == "on_board") "Choose Service Industries" else "Manage Service Industries",
-                                    style = MaterialTheme.typography.titleMedium
+                    TopAppBar(
+                        navigationIcon = {
+                            IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back Icon"
                                 )
                             }
-                        )
-
-                    }
+                        },
+                        title = {
+                            Text(
+                                text = "Manage Service Industries",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    )
                 }) { paddingValues ->
 
             Box(
@@ -528,11 +553,6 @@ fun ChooseIndustryScreen(
                                 userId,
                                 industryItems,
                                 onSuccess = {
-
-
-                                    if (type != null && (type == "on_board")) {
-                                        onMainActivityNavigateUp()
-                                    }
 
                                     Toast.makeText(
                                         context,
@@ -591,16 +611,22 @@ private fun ChooseIndustryContent(
     isRefreshing: Boolean,
     isUpdating: Boolean,
     anyItemSelected: Boolean,
+    isPullToRefreshEnabled: Boolean = true
 ) {
 
 
-    PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        onRefresh = { onRefresh() },
+    val state = rememberPullToRefreshState()
+
+    Box(
+        modifier = Modifier.pullToRefresh(
+            state = state,
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            enabled = isPullToRefreshEnabled
+        ),
     ) {
 
         if (isLoading) {
-
 
             Column(
                 modifier = Modifier
@@ -639,7 +665,6 @@ private fun ChooseIndustryContent(
 
             }
 
-
         } else {
             Column(
                 modifier = Modifier
@@ -664,10 +689,7 @@ private fun ChooseIndustryContent(
 
                 if (error is ResultError.NoInternet) {
 
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
 
                         Text(
                             "Internet connection failed",
@@ -749,6 +771,12 @@ private fun ChooseIndustryContent(
             }
 
         }
+
+        Indicator(
+            modifier = Modifier.align(Alignment.TopCenter),
+            isRefreshing = isRefreshing,
+            state = state
+        )
     }
 
 }

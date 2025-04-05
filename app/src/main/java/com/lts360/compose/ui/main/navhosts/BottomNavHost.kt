@@ -25,7 +25,6 @@ import com.lts360.compose.ui.main.MoreScreen
 import com.lts360.compose.ui.main.NotificationScreen
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
-import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.main.prefs.BoardsSetupActivity
 import com.lts360.compose.ui.main.profile.ServiceOwnerProfileScreen
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
@@ -66,12 +65,12 @@ fun BottomNavHost(
     onNavigateUpLogInSheet: () -> Unit,
     isSheetExpanded: Boolean,
     collapseSheet: () -> Unit,
+    onNavigateUpChatScreen: (ChatUser, Int, Long) -> Unit,
+    onDockedFabAddNewSecondsChanged: (Boolean) -> Unit,
     onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {},
-    onNavigateUpChatScreen: (ChatUser, Int, Long, String) -> Unit,
-    showChooseIndustriesSheet: () -> Unit,
-    onDockedFabAddNewSecondsChanged: (Boolean) -> Unit
 
-) {
+
+    ) {
 
 
     val context = LocalContext.current
@@ -110,7 +109,6 @@ fun BottomNavHost(
                         NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
                 },
-                { showChooseIndustriesSheet() },
                 { dropUnlessResumedV2(backstackEntry) { navController.popBackStack() } },
                 homeViewModel,
                 servicesViewModel,
@@ -148,7 +146,6 @@ fun BottomNavHost(
                         NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
                 },
-                { showChooseIndustriesSheet() },
                 { dropUnlessResumedV2(backstackEntry) { navController.popBackStack() } },
                 homeViewModel,
                 servicesViewModel,
@@ -180,12 +177,11 @@ fun BottomNavHost(
                     navController,
                     onNavigateUpSlider = {
                         navController.navigate(BottomNavRoutes.DetailedServiceImagesSlider(key, it))
-                    }, navigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
+                    }, navigateUpChat = { chatUser, chatId, recipientId ->
                         onNavigateUpChatScreen(
                             chatUser,
                             chatId,
-                            recipientId,
-                            UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
+                            recipientId
                         )
                     },
                     viewModel
@@ -244,12 +240,11 @@ fun BottomNavHost(
                 ServiceOwnerProfileScreen(
                     navController,
                     key,
-                    onNavigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
+                    onNavigateUpChat = { chatUser, chatId, recipientId ->
                         onNavigateUpChatScreen(
                             chatUser,
                             chatId,
-                            recipientId,
-                            UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
+                            recipientId
                         )
 
                     },
@@ -289,13 +284,12 @@ fun BottomNavHost(
                             )
                         )
                     },
-                    { chatUser, chatId, recipientId, feedUserProfile ->
+                    { chatUser, chatId, recipientId ->
 
                         onNavigateUpChatScreen(
                             chatUser,
                             chatId,
-                            recipientId,
-                            UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
+                            recipientId
                         )
 
                     }, servicesViewModel
@@ -346,7 +340,6 @@ fun BottomNavHost(
                         NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
                 },
-                { showChooseIndustriesSheet() },
                 { dropUnlessResumedV2(backstackEntry) { navController.popBackStack() } },
                 homeViewModel,
                 servicesViewModel,
@@ -381,12 +374,11 @@ fun BottomNavHost(
                     navController,
                     onNavigateUpSlider = {
                         navController.navigate(BottomNavRoutes.DetailedSecondsImagesSlider(key, it))
-                    }, navigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
+                    }, navigateUpChat = { chatUser, chatId, recipientId ->
                         onNavigateUpChatScreen(
                             chatUser,
                             chatId,
-                            recipientId,
-                            UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
+                            recipientId
                         )
                     },
 
@@ -450,12 +442,11 @@ fun BottomNavHost(
                 SecondsServiceOwnerProfileScreen(
                     navController,
                     key,
-                    onNavigateUpChat = { chatUser, chatId, recipientId, feedUserProfile ->
+                    onNavigateUpChat = { chatUser, chatId, recipientId ->
                         onNavigateUpChatScreen(
                             chatUser,
                             chatId,
-                            recipientId,
-                            UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
+                            recipientId
                         )
 
                     },
@@ -500,13 +491,12 @@ fun BottomNavHost(
                             )
                         )
                     },
-                    { chatUser, chatId, recipientId, feedUserProfile ->
+                    { chatUser, chatId, recipientId ->
 
                         onNavigateUpChatScreen(
                             chatUser,
                             chatId,
-                            recipientId,
-                            UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
+                            recipientId
                         )
 
                     }
@@ -532,12 +522,11 @@ fun BottomNavHost(
 
         noTransitionComposable<BottomBar.Chats> {
             ChatUsersScreen(
-                navController, { chatUser, chatId, recipientId, feedUserProfile ->
+                navController, { chatUser, chatId, recipientId ->
                     onNavigateUpChatScreen(
                         chatUser,
                         chatId,
-                        recipientId,
-                        UserProfileSerializer.serializeFeedUserProfileInfo(feedUserProfile)
+                        recipientId
                     )
                 }, isSheetExpanded,
                 collapseSheet,
@@ -594,9 +583,7 @@ fun BottomNavHost(
                             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                         })
                 },
-                onNavigateUpGuestManageIndustriesAndInterests = {
-                    onNavigateUpGuestManageIndustriesAndInterests()
-                },
+                onNavigateUpGuestManageIndustriesAndInterests = onNavigateUpGuestManageIndustriesAndInterests,
                 onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet,
                 onNavigateUpLogInSheet = onNavigateUpLogInSheet,
                 isSheetExpanded = isSheetExpanded,

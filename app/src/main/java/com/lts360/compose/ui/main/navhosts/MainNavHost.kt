@@ -1,12 +1,14 @@
 package com.lts360.compose.ui.main.navhosts
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.account.AccountAndProfileSettingsScreen
 import com.lts360.compose.ui.auth.ForgotPasswordEmailOtpVerificationProtected
@@ -30,7 +32,6 @@ import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.onboarding.ChooseIndustryScreen
 import com.lts360.compose.ui.onboarding.EditProfileAboutScreen
 import com.lts360.compose.ui.onboarding.GuestChooseIndustryScreen
-import com.lts360.compose.ui.onboarding.navhost.OnBoardingScreen
 import com.lts360.compose.ui.profile.ChangePasswordScreen
 import com.lts360.compose.ui.profile.EditEmailEmailOtpVerificationScreen
 import com.lts360.compose.ui.profile.EditProfileEmailScreen
@@ -52,7 +53,7 @@ fun MainNavHost() {
 
     val navController = rememberNavController()
 
-    val homeActivityViewModel:HomeActivityViewModel = hiltViewModel()
+    val homeActivityViewModel: HomeActivityViewModel = hiltViewModel()
 
     val homeViewModel: HomeViewModel = hiltViewModel()
     val chatListViewModel: ChatListViewModel = hiltViewModel()
@@ -77,9 +78,11 @@ fun MainNavHost() {
                 onProfileNavigateUp = {
                     navController.navigate(AccountAndProfileSettingsRoutes.Profile)
                 }, onAccountAndProfileSettingsNavigateUp = { accountType ->
-                    navController.navigate(AccountAndProfileSettingsRoutes.AccountAndProfileSettings(accountType))
-                }, onManageIndustriesAndInterestsNavigateUp = { userId, type ->
-                    navController.navigate(OnBoardingScreen.ChooseIndustries(userId, type))
+                    navController.navigate(
+                        AccountAndProfileSettingsRoutes.AccountAndProfileSettings(
+                            accountType
+                        )
+                    )
                 },
                 onNavigateUpBookmarkedServices = {
 
@@ -88,9 +91,13 @@ fun MainNavHost() {
                     })
 
                 },
+                onManageIndustriesAndInterestsNavigateUp = {
+                    navController.navigate(MainRoutes.ChooseIndustries)
+                },
+
                 onNavigateUpGuestManageIndustriesAndInterests = {
-                    navController.navigate(OnBoardingScreen.GuestChooseIndustries)
-                }, onNavigateUpChatWindow = { chatUser, chatId, recipientId, feedUserProfile ->
+                    navController.navigate(MainRoutes.GuestChooseIndustries)
+                }, onNavigateUpChatWindow = { chatUser, chatId, recipientId ->
 
                     chatListViewModel.updateSelectedChatUser(chatUser)
 
@@ -102,9 +109,13 @@ fun MainNavHost() {
                     )
                 }, onNavigateUpUsedProductListing = {
 
-                    context.startActivity(Intent(context, UsedProductListingActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    })
+                    context.startActivity(
+                        Intent(
+                            context,
+                            UsedProductListingActivity::class.java
+                        ).apply {
+                            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        })
 
                 })
         }
@@ -122,18 +133,18 @@ fun MainNavHost() {
 
                 { uri, imageWidth, imageHeight ->
                     openImageSliderActivity(context, uri, imageWidth, imageHeight)
-                } ,
-                { navController.popBackStack()}
+                },
+                { navController.popBackStack() }
             )
         }
 
-        slideComposable<OnBoardingScreen.GuestChooseIndustries> {
-            GuestChooseIndustryScreen({},{ navController.popBackStack() })
+        slideComposable<MainRoutes.GuestChooseIndustries> {
+            GuestChooseIndustryScreen { navController.popBackStack() }
         }
 
 
-        slideComposable<OnBoardingScreen.ChooseIndustries> {
-            ChooseIndustryScreen({ navController.popBackStack() })
+        slideComposable<MainRoutes.ChooseIndustries> {
+            ChooseIndustryScreen { navController.popBackStack() }
         }
 
         slideComposable<AccountAndProfileSettingsRoutes.Profile> {
@@ -180,12 +191,9 @@ fun MainNavHost() {
         }
 
         slideComposable<AccountAndProfileSettingsRoutes.EditProfileAbout> {
-            EditProfileAboutScreen(
-                { _, _ -> },
-                {},
-                {
-                    navController.popBackStack(AccountAndProfileSettingsRoutes.PersonalSettings, false)
-                }, { navController.popBackStack() })
+            EditProfileAboutScreen({ navController.popBackStack() }, {
+                navController.popBackStack()
+            })
         }
 
         slideComposable<AccountAndProfileSettingsRoutes.EditProfileEmail> {
@@ -204,24 +212,29 @@ fun MainNavHost() {
             ChangePasswordScreen(onForgotPasswordNavigateUp = {
                 navController.navigate(AuthScreen.ForgotPassword)
             }, {
-                navController.popBackStack<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>(false)
+                navController.popBackStack<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>(
+                    false
+                )
             }, { navController.popBackStack() })
         }
 
         slideComposable<AuthScreen.ForgotPassword> {
             ForgotPasswordScreenProtected({ email ->
-                dropUnlessResumedV2(it){
+                dropUnlessResumedV2(it) {
                     navController.navigate(
                         AuthScreen.ForgotPasswordEmailOtpVerification(email), NavOptions.Builder()
-                        .setLaunchSingleTop(true)
-                        .build())
+                            .setLaunchSingleTop(true)
+                            .build()
+                    )
                 }
             }, { navController.popBackStack() })
         }
 
         slideComposable<AuthScreen.ForgotPasswordEmailOtpVerification> {
             ForgotPasswordEmailOtpVerificationProtected({ email, accessToken ->
-                navController.popBackStack<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>(inclusive = false)
+                navController.popBackStack<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>(
+                    inclusive = false
+                )
                 navController.navigate(AuthScreen.ResetPassword(accessToken, email))
             }, { navController.popBackStack() })
         }
@@ -233,7 +246,7 @@ fun MainNavHost() {
         }
 
         slideComposable<AccountAndProfileSettingsRoutes.SwitchAccountType> {
-            SwitchAccountTypeScreen(navController,{navController.popBackStack()}, {
+            SwitchAccountTypeScreen(navController, { navController.popBackStack() }, {
                 navController.popBackStack()
             })
         }

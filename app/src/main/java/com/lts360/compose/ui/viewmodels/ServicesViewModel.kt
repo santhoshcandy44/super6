@@ -179,8 +179,6 @@ class ServicesViewModel @Inject constructor(
     val pageSource: PageSource get() = _pageSource
 
     val isGuest = tokenManager.isGuest()
-    val isValidSignInMethodFeaturesEnabled = tokenManager.isValidSignInMethodFeaturesEnabled()
-
 
     private var loadingItemsJob: Job? = null
 
@@ -223,21 +221,13 @@ class ServicesViewModel @Inject constructor(
                         guestIndustryDao.getSelectedIndustries().map { it.industryId }
                     }
 
-                    if (userLocation != null) {
-                        pageSource.guestNextPage(
-                            userId,
-                            submittedQuery,
-                            selectedIndustries,
-                            userLocation.latitude,
-                            userLocation.longitude
-                        )
-                    } else {
-                        pageSource.guestNextPage(
-                            userId,
-                            submittedQuery,
-                            selectedIndustries
-                        )
-                    }
+                    pageSource.guestNextPage(
+                        userId,
+                        submittedQuery,
+                        selectedIndustries,
+                        userLocation?.latitude,
+                        userLocation?.longitude
+                    )
 
                 }.join()
             }

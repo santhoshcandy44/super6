@@ -23,21 +23,19 @@ import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.lts360.R
 import com.lts360.compose.ui.main.OnBoardGuestUserLocationAccessBottomSheetScreen
 import com.lts360.compose.ui.main.OnBoardUserLocationBottomSheetScreen
 import com.lts360.compose.ui.main.models.CurrentLocation
-import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.onboarding.viewmodels.LocationAccessViewModel
 import com.lts360.compose.ui.theme.icons
 import kotlinx.coroutines.launch
@@ -47,12 +45,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun LocationAccessScreen(
     type: String,
-    onNavigateChooseIndustries: (Long, String) -> Unit,
     viewModel: LocationAccessViewModel = hiltViewModel(),
+    onLocationUpdated:()->Unit={}
 ) {
-
-
-    val userId = remember { UserSharedPreferencesManager.userId }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -79,113 +74,110 @@ fun LocationAccessScreen(
     BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
-            if (type == "guest") {
-                OnBoardGuestUserLocationAccessBottomSheetScreen(
-                    bottomSheetScaffoldState.bottomSheetState.currentValue,
-                    { currentLocation ->
-                        viewModel.setGuestCurrentLocationAndCreateAccount(
-                            context,
-                            currentLocation, {
-                                Toast.makeText(
-                                    context,
-                                    "Location updated successfully",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                onNavigateChooseIndustries(userId, "guest")
-                            }) {
-                            Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    },
-                    {
 
-
-                    },
-                    { district, callback ->
-                        viewModel.setGuestCurrentLocationAndCreateAccount(
-                            context,
-                            CurrentLocation(
-                                district.coordinates.latitude,
-                                district.coordinates.longitude,
-                                district.district,
-                                "approximate"
-                            ), {
-                                Toast.makeText(
-                                    context,
-                                    "Location updated successfully",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                callback()
-                                onNavigateChooseIndustries(userId, "guest")
-
-                            }) {
-                            Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    },
-
-                    {
-                        coroutineScope.launch {
-                            bottomSheetScaffoldState.bottomSheetState.hide()
-                        }
-                    })
-            } else {
-
-
-                OnBoardUserLocationBottomSheetScreen(
-                    bottomSheetScaffoldState.bottomSheetState.currentValue,
-                    { currentLocation ->
-                        viewModel.setCurrentLocation(currentLocation, {
-                            Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                .show()
-                            onNavigateChooseIndustries(userId, "valid_user")
-
-                        }) {
-                            Toast
-                                .makeText(context, it, Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    },
-                    { recentLocation ->
-                        viewModel.setRecentLocation(recentLocation, {
-                            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                            onNavigateChooseIndustries(userId, "valid_user")
-                        }) {
-                            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                        }
-
-                    },
-                    { district, callback ->
-                        viewModel.setCurrentLocation(
-                            CurrentLocation(
-                                district.coordinates.latitude,
-                                district.coordinates.longitude,
-                                district.district,
-                                "approximate"
-                            ), {
-                                callback()
+            if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+                if (type == "guest") {
+                    OnBoardGuestUserLocationAccessBottomSheetScreen(
+                        bottomSheetScaffoldState.bottomSheetState.currentValue,
+                        { currentLocation ->
+                            viewModel.setGuestCurrentLocationAndCreateAccount(
+                                context,
+                                currentLocation, {
+                                    onLocationUpdated()
+                                    Toast.makeText(
+                                        context,
+                                        "Location updated successfully",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }) {
                                 Toast.makeText(context, it, Toast.LENGTH_SHORT)
                                     .show()
-                                onNavigateChooseIndustries(userId, "valid_user")
+                            }
+                        },
+                        { district, callback ->
+                            viewModel.setGuestCurrentLocationAndCreateAccount(
+                                context,
+                                CurrentLocation(
+                                    district.coordinates.latitude,
+                                    district.coordinates.longitude,
+                                    district.district,
+                                    "approximate"
+                                ), {
+                                    onLocationUpdated()
+                                    Toast.makeText(
+                                        context,
+                                        "Location updated successfully",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    callback()
 
+                                }) {
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        },
+                        {
+                            coroutineScope.launch {
+                                bottomSheetScaffoldState.bottomSheetState.hide()
+                            }
+                        })
+                } else {
+
+                    OnBoardUserLocationBottomSheetScreen(
+                        bottomSheetScaffoldState.bottomSheetState.currentValue,
+                        { currentLocation ->
+                            viewModel.setCurrentLocation(currentLocation, {
+                                onLocationUpdated()
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                    .show()
 
                             }) {
-                            Toast
-                                .makeText(context, it, Toast.LENGTH_SHORT)
-                                .show()
+                                Toast
+                                    .makeText(context, it, Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        },
+                        { recentLocation ->
+                            viewModel.setRecentLocation(recentLocation, {
+                                onLocationUpdated()
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                            }) {
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        { district, callback ->
+                            viewModel.setCurrentLocation(
+                                CurrentLocation(
+                                    district.coordinates.latitude,
+                                    district.coordinates.longitude,
+                                    district.district,
+                                    "approximate"
+                                ), {
+                                    onLocationUpdated()
+                                    callback()
+                                    Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                        .show()
+                                }) {
+                                Toast
+                                    .makeText(context, it, Toast.LENGTH_SHORT)
+                                    .show()
 
-                        }
-                    },
-                    {
-                        coroutineScope.launch {
-                            bottomSheetScaffoldState.bottomSheetState.hide()
-                        }
-                    },
-                    isLoading = isLoading
-                )
+                            }
+                        },
+                        {
+                            coroutineScope.launch {
+                                bottomSheetScaffoldState.bottomSheetState.hide()
+                            }
+                        },
+                        isLoading = isLoading
+                    )
+                }
             }
 
+
+
         },
+        sheetShape = RectangleShape,
         sheetDragHandle = null,
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
         sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet

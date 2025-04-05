@@ -75,7 +75,7 @@ import kotlinx.coroutines.launch
 fun ServiceOwnerProfileScreen(
     navHostController: NavHostController,
     key: Int,
-    onNavigateUpChat: (ChatUser, Int, Long, FeedUserProfileInfo) -> Unit,
+    onNavigateUpChat: (ChatUser, Int, Long) -> Unit,
     onNavigateUpDetailedService: (Int) -> Unit,
     servicesViewModel: ServicesViewModel,
     viewModel: ServiceOwnerProfileViewModel
@@ -105,9 +105,7 @@ fun ServiceOwnerProfileScreen(
                     onNavigateUpChat(
                         selectedChatUser,
                         selectedChatId,
-                        nonNullSelectedService.user.userId,
-                        nonNullSelectedService.user
-                    )
+                        nonNullSelectedService.user.userId)
                 }
             }
 

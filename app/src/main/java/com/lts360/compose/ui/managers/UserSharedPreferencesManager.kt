@@ -10,7 +10,6 @@ object UserSharedPreferencesManager {
     private const val KEY_USER_ID = "user_id"
     private const val KEY_IS_FIRST_LAUNCH = "isFirstLaunch"
     private const val KEY_IS_NOTIFICATION_PERMISSION_DISMISSED = "npd"
-    private const val KEY_IS_INDUSTRIES_SHEET_DISMISSED = "is"
 
     private const val KEY_FCM_TOKEN = "is_fcm_token_updated" // Added for FCM token
 
@@ -91,17 +90,6 @@ object UserSharedPreferencesManager {
 
     }
 
-
-    fun setIndustriesSheetDismissed() {
-        sharedPreferences.edit()
-            .putBoolean(KEY_IS_INDUSTRIES_SHEET_DISMISSED, true)
-            .apply()
-    }
-
-    fun isIndustriesSheetDismissed():Boolean {
-        return sharedPreferences.getBoolean(KEY_IS_INDUSTRIES_SHEET_DISMISSED, false)
-
-    }
 
     fun clear() {
         sharedPreferences.edit().clear().apply()

@@ -39,7 +39,7 @@ class MoreViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(true)
     val isLoading = _isLoading.asStateFlow()
 
-    val signInMethod = tokenManager.getSignInMethod()
+    val isGuest = tokenManager.isGuest()
 
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile = _userProfile.asStateFlow()

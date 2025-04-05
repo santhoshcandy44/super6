@@ -50,6 +50,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.R
@@ -72,24 +74,16 @@ fun NotificationScreen(navController: NavHostController,
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
 
-    val currentRoute = navBackStackEntry?.destination?.route
-
-// Clean the current route by removing path and query parameters
-    val cleanedRoute = currentRoute
-        ?.replace(Regex("/\\{[^}]+\\}"), "") // Remove path parameters
-        ?.replace(Regex("\\?.*"), "")?.trim() // Optionally trim whitespace
-
-
 
     BackHandler {
 
         if (isSheetExpanded) {
             collapseSheet()
         } else {
-            if (cleanedRoute in listOf(
-                    BottomBar.Chats::class.qualifiedName.orEmpty(),
-                    BottomBar.Notifications::class.qualifiedName.orEmpty(),
-                    BottomBar.More::class.qualifiedName.orEmpty())) {
+            val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
+            val hierarchy = navBackStackEntry?.destination?.hierarchy
+
+            if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
 
                 // Navigate back to A and preserve its state
                 navController.navigate(BottomBar.Home()) {

@@ -24,9 +24,9 @@ import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 fun OnBoardGuestUserLocationAccessBottomSheetScreen(
     bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
-    onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District, () -> Unit) -> Unit,
     onPopUpLocationBottomSheet: () -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit={},
     locationStatesEnabled: Boolean = true,
     isLoading: Boolean = false,
 ) {
@@ -48,7 +48,7 @@ fun OnBoardGuestUserLocationAccessBottomSheetScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
-                        LocationBottomSheet(
+                        OnBoardLocationBottomSheet(
                             bottomSheetValue,
                             onCloseClick = {
                                 onPopUpLocationBottomSheet()

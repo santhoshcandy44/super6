@@ -9,7 +9,7 @@ import com.lts360.api.app.AppClient
 import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.models.service.UsedProductListing
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -20,25 +20,25 @@ class SecondsPageSource(
 ) {
 
     private val _initialLoadState = MutableStateFlow(true)
-    val initialLoadState: StateFlow<Boolean> = _initialLoadState
+    val initialLoadState = _initialLoadState.asStateFlow()
 
     private val _items = MutableStateFlow<List<UsedProductListing>>(emptyList())
-    val items: StateFlow<List<UsedProductListing>> = _items
+    val items = _items.asStateFlow()
 
     private val _isLoadingItems = MutableStateFlow(false)
-    val isLoadingItems: StateFlow<Boolean> = _isLoadingItems
+    val isLoadingItems = _isLoadingItems.asStateFlow()
 
     private val _isRefreshingItems = MutableStateFlow(false)
-    val isRefreshingItems: StateFlow<Boolean> = _isRefreshingItems
+    val isRefreshingItems = _isRefreshingItems.asStateFlow()
 
     private val _hasNetworkError = MutableStateFlow(false)
-    val hasNetworkError: StateFlow<Boolean> = _hasNetworkError
+    val hasNetworkError = _hasNetworkError.asStateFlow()
 
     private val _hasAppendError = MutableStateFlow(false)
-    val hasAppendError: StateFlow<Boolean> = _hasAppendError
+    val hasAppendError = _hasAppendError.asStateFlow()
 
     private val _hasMoreItems = MutableStateFlow(true)
-    val hasMoreItems: StateFlow<Boolean> = _hasMoreItems
+    val hasMoreItems = _hasMoreItems.asStateFlow()
 
 
     private var page =  1

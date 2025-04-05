@@ -19,16 +19,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.TextFieldLineLimits
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material3.ButtonDefaults
@@ -47,41 +43,29 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavController
 import com.lts360.R
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.components.findActivity
-import com.lts360.compose.ui.chat.StateSyncingModifier
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
-import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.compose.ui.viewmodels.LocationViewModel
-
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 @Serializable
 data class StateLocation(
@@ -110,78 +94,24 @@ data class StateModel(
 )
 
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PublishedUsedProductListingLocationBottomSheet(
+fun OnBoardLocationBottomSheet(
     bottomSheetValue: SheetValue? = null,
     onCloseClick: () -> Unit,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onStateClick: (String) -> Unit = {},
-    publishedUsedProductsListingViewModel: PublishedUsedProductsListingViewModel
 ) {
-
-    val selectedLocationGeo by publishedUsedProductsListingViewModel.selectedLocation.collectAsState()
 
     LocationBottomSheetContent(
         bottomSheetValue,
         onCloseClick,
-        selectedLocationGeo?.geo,
+        null,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onStateClick)
 }
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CreateUsedProductListingLocationBottomSheet(
-    bottomSheetValue: SheetValue? = null,
-    onCloseClick: () -> Unit,
-    onCurrentLocationSelected: (CurrentLocation) -> Unit,
-    onRecentLocationSelected: (RecentLocation) -> Unit,
-    onStateClick: (String) -> Unit = {},
-    usedProductsListingWorkflowViewModel: UsedProductsListingWorkflowViewModel,
-) {
-
-    val selectedLocationGeo by usedProductsListingWorkflowViewModel.selectedLocation.collectAsState()
-
-    LocationBottomSheetContent(
-        bottomSheetValue,
-        onCloseClick,
-        selectedLocationGeo?.geo,
-        onCurrentLocationSelected,
-        onRecentLocationSelected,
-        onStateClick)
-}
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CreateServiceLocationBottomSheet(
-    bottomSheetValue: SheetValue? = null,
-    onCloseClick: () -> Unit,
-    onCurrentLocationSelected: (CurrentLocation) -> Unit,
-    onRecentLocationSelected: (RecentLocation) -> Unit,
-    onStateClick: (String) -> Unit = {},
-    createServiceViewModel: ServicesWorkflowViewModel,
-) {
-
-    val selectedLocationGeo by createServiceViewModel.selectedLocation.collectAsState()
-
-    LocationBottomSheetContent(
-        bottomSheetValue,
-        onCloseClick,
-        selectedLocationGeo?.geo,
-        onCurrentLocationSelected,
-        onRecentLocationSelected,
-        onStateClick)
-}
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -232,22 +162,23 @@ fun GuestUserLocationBottomSheet(
 
 
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LocationBottomSheet(
+fun CreateServiceLocationBottomSheet(
     bottomSheetValue: SheetValue? = null,
     onCloseClick: () -> Unit,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onStateClick: (String) -> Unit = {},
+    createServiceViewModel: ServicesWorkflowViewModel,
 ) {
 
+    val selectedLocationGeo by createServiceViewModel.selectedLocation.collectAsState()
 
     LocationBottomSheetContent(
         bottomSheetValue,
         onCloseClick,
-        null,
+        selectedLocationGeo?.geo,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onStateClick)
@@ -256,7 +187,53 @@ fun LocationBottomSheet(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditLocationBottomSheet(
+fun CreateUsedProductListingLocationBottomSheet(
+    bottomSheetValue: SheetValue? = null,
+    onCloseClick: () -> Unit,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onStateClick: (String) -> Unit = {},
+    usedProductsListingWorkflowViewModel: UsedProductsListingWorkflowViewModel,
+) {
+
+    val selectedLocationGeo by usedProductsListingWorkflowViewModel.selectedLocation.collectAsState()
+
+    LocationBottomSheetContent(
+        bottomSheetValue,
+        onCloseClick,
+        selectedLocationGeo?.geo,
+        onCurrentLocationSelected,
+        onRecentLocationSelected,
+        onStateClick)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditPublishedUsedProductListingLocationBottomSheet(
+    bottomSheetValue: SheetValue? = null,
+    onCloseClick: () -> Unit,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onStateClick: (String) -> Unit = {},
+    publishedUsedProductsListingViewModel: PublishedUsedProductsListingViewModel
+) {
+
+    val selectedLocationGeo by publishedUsedProductsListingViewModel.selectedLocation.collectAsState()
+
+    LocationBottomSheetContent(
+        bottomSheetValue,
+        onCloseClick,
+        selectedLocationGeo?.geo,
+        onCurrentLocationSelected,
+        onRecentLocationSelected,
+        onStateClick)
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditPublishedServiceLocationBottomSheet(
     bottomSheetValue: SheetValue? = null,
     onCloseClick: () -> Unit,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
@@ -279,7 +256,7 @@ fun EditLocationBottomSheet(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LocationBottomSheetContent(
+private fun LocationBottomSheetContent(
     bottomSheetValue: SheetValue? = null,
     onCloseClick: () -> Unit,
     selectedLocationGeo:String?,
@@ -506,7 +483,7 @@ fun LocationBottomSheetContent(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = it.geo ?: "N/A", // bind current location text here
+                                        text = it.geo,
                                         modifier = Modifier.align(Alignment.CenterVertically)
                                     )
                                 }
@@ -677,7 +654,7 @@ fun LocationBottomSheetContent(
 
 
 @Composable
-fun RecentlyUsedLocationItem(
+private fun RecentlyUsedLocationItem(
     recentLocation: RecentLocation,
     onLocationSelected: (RecentLocation) -> Unit,
 ) {

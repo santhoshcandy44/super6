@@ -24,12 +24,10 @@ import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
 import com.lts360.app.database.daos.profile.RecentLocationDao
-import com.lts360.app.database.daos.profile.UserLocationDao
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.components.findActivity
 import com.lts360.components.utils.LogUtils.TAG
-import com.lts360.compose.ui.auth.repos.AuthRepository
 import com.lts360.compose.ui.main.District
 import com.lts360.compose.ui.main.StateModel
 import com.lts360.compose.ui.main.models.CurrentLocation
@@ -63,10 +61,8 @@ class LocationViewModel @Inject constructor(
     @ApplicationContext
     context: Context,
     val userProfileDao: UserProfileDao,
-    private val userLocationDao: UserLocationDao,
     private val recentLocationDao: RecentLocationDao,
     val repository: LocationRepository,
-    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
 
@@ -87,8 +83,7 @@ class LocationViewModel @Inject constructor(
     val recentLocations: StateFlow<List<RecentLocation>> = _recentLocations
 
 
-    private val _isLocationCapturedAny = MutableStateFlow(false)
-    val isLocationCapturedAny: StateFlow<Boolean> = _isLocationCapturedAny
+    private var isAnyLocationCaptured = false
 
 
     private val _isLoading = MutableStateFlow(false)
@@ -176,14 +171,14 @@ class LocationViewModel @Inject constructor(
     }
 
     private fun loadLocations(context: Context) {
-        _locations.value = readJsonFromAssets(context, "in_locations.json")
+        _locations.value = readJsonFromAssets(context)
     }
 
 
     // Function to read JSON from assets and parse it into StateMap
-    private fun readJsonFromAssets(context: Context, filename: String): StateMap? {
+    private fun readJsonFromAssets(context: Context): StateMap? {
         return try {
-            val json = loadJsonFromAssets(context, filename)
+            val json = loadJsonFromAssets(context)
             if (json != null) {
                 parseJson(json)
             } else {
@@ -196,10 +191,10 @@ class LocationViewModel @Inject constructor(
     }
 
     // Helper function to load the raw JSON from the assets folder
-    private fun loadJsonFromAssets(context: Context, filename: String): String? {
+    private fun loadJsonFromAssets(context: Context): String? {
         return try {
             val assetManager = context.assets
-            val inputStream: InputStream = assetManager.open(filename)
+            val inputStream: InputStream = assetManager.open("in_locations.json")
             val reader = BufferedReader(InputStreamReader(inputStream))
             val stringBuilder = StringBuilder()
             var line: String?
@@ -242,7 +237,7 @@ class LocationViewModel @Inject constructor(
 
 
     private fun setLocationCaptured(isCaptured: Boolean) {
-        _isLocationCapturedAny.value = isCaptured
+        isAnyLocationCaptured = isCaptured
     }
 
     fun requestLocationUpdates() {
@@ -265,7 +260,7 @@ class LocationViewModel @Inject constructor(
             context,
             fusedLocationClient,
             callbackPreciseLocationUpdate = { coordinates ->
-                if (coordinates != null && !_isLocationCapturedAny.value) {
+                if (coordinates != null && !isAnyLocationCaptured) {
                     setLoading(false)
                     setLocationCaptured(true)
                     Log.d(TAG, "Precise: $coordinates")
@@ -305,7 +300,7 @@ class LocationViewModel @Inject constructor(
                 }
             },
             callbackApproximateLocationUpdate = { coordinates ->
-                if (coordinates != null && !_isLocationCapturedAny.value) {
+                if (coordinates != null && !isAnyLocationCaptured) {
                     setLocationCaptured(true)
                     Log.d(TAG, "Approximate: $coordinates")
                     handleLocationUpdate(
@@ -348,14 +343,14 @@ class LocationViewModel @Inject constructor(
 
     fun chooseCurrentLocation(
         context: Context,
-        IntentSenderResultLaucher: ActivityResultLauncher<IntentSenderRequest>,
+        intentSenderResultLauncher: ActivityResultLauncher<IntentSenderRequest>,
         launchLocationPermission: () -> Unit,
     ) {
         setLoading(true)
         setLocationCaptured(false)
         locationManager?.let {
             if (it.checkLocationPermissions()) {
-                enableLoc(context, IntentSenderResultLaucher)
+                enableLoc(context, intentSenderResultLauncher)
             } else {
                 launchLocationPermission()
             }
@@ -363,7 +358,6 @@ class LocationViewModel @Inject constructor(
     }
 
 
-    val LOCATION_SETTINGS_REQUEST = 245
 
 
     fun enableLoc(
@@ -399,7 +393,7 @@ class LocationViewModel @Inject constructor(
                     val exception = task.exception
                     if (exception is ResolvableApiException) {
                         // The exception is of type ResolvableApiException, so you need to resolve it
-                        val resolvable = exception as ResolvableApiException
+                        val resolvable = exception
                         // Start resolution for result
 
                         intentSenderResultLauncher.launch(
@@ -464,7 +458,7 @@ class LocationViewModel @Inject constructor(
         callback: (Boolean) -> Unit,
     ) {
         viewModelScope.launch {
-            _isLocationCapturedAny.value = true
+            isAnyLocationCaptured = true
 
             val addressName = withContext(Dispatchers.IO) {
                 getAddressName(context, lat, lon) {

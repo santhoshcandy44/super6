@@ -58,9 +58,6 @@ data class Service(
     @SerializedName("plans")
     var plans: List<Plan>,
 
-    @SerializedName("industries_count")
-    var industriesCount: Int,
-
     @SerializedName("location")
     var location: Location?,
 
