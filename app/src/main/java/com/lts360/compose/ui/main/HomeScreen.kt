@@ -440,7 +440,6 @@ fun HomeScreen(
                                         secondsViewModel.setSelectedItem(it)
                                         onNavigateUpUsedProductListingDetailedScreen()
                                     },
-                                    {},
                                     secondsViewModel
                                 )
 
@@ -481,7 +480,6 @@ fun HomeScreen(
                                     secondsViewModel.setSelectedItem(it)
                                     onNavigateUpUsedProductListingDetailedScreen()
                                 },
-                                {},
                                 secondsViewModel
                             )
                         }

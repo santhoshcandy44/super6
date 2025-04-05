@@ -43,6 +43,8 @@ fun OnBoardingNavHost(
         slideComposable<OnBoardingScreen.ChooseIndustries> {
 
             ChooseIndustryScreen({
+                navController.popBackStack()
+            }) {
                 context.startActivity(
                     Intent(context, MainActivity::class.java).apply {
                         flags =
@@ -55,10 +57,7 @@ fun OnBoardingNavHost(
                     ).toBundle()
                 )
                 (context as Activity).finishAffinity()
-
-            }, {
-                navController.popBackStack()
-            })
+            }
         }
 
 

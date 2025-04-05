@@ -81,7 +81,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun SecondsScreen(
     onNavigateUpSecondsDetailedScreen: (UsedProductListing) -> Unit,
-    showChooseIndustriesSheet: () -> Unit,
     viewModel: SecondsViewmodel
 ) {
 
@@ -93,10 +92,9 @@ fun SecondsScreen(
 
     val context = LocalContext.current
 
+    val isGuest = viewModel.isGuest
+
     val selectedItem by viewModel.selectedItem.collectAsState()
-
-
-    val serviceInfoBottomSheetState = rememberModalBottomSheetState()
 
     val initialLoadState by viewModel.pageSource.initialLoadState.collectAsState()
     val isLoadingItems by viewModel.pageSource.isLoadingItems.collectAsState()
@@ -108,30 +106,13 @@ fun SecondsScreen(
     val hasAppendError by viewModel.pageSource.hasAppendError.collectAsState()
     val hasMoreItems by viewModel.pageSource.hasMoreItems.collectAsState()
 
-    val industriesCount by viewModel.pageSource.industriesCount.collectAsState()
-
-    val isValidSignInMethodFeaturesEnabled = viewModel.isValidSignInMethodFeaturesEnabled
-
-    val signInMethod = viewModel.signInMethod
-
-    if (isValidSignInMethodFeaturesEnabled) {
-        LaunchedEffect(industriesCount) {
-            if (industriesCount == 0) {
-                showChooseIndustriesSheet()
-            }
-        }
-
-    }
-
-
-    val lazyGridState = rememberLazyGridState()
-
-
-    val lastLoadedItemPosition by viewModel.lastLoadedItemPosition.collectAsState()
-
-    val scope = rememberCoroutineScope()
     val connectivityManager = viewModel.connectivityManager
 
+    val lazyGridState = rememberLazyGridState()
+    val lastLoadedItemPosition by viewModel.lastLoadedItemPosition.collectAsState()
+
+    val serviceInfoBottomSheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
 
 
     LaunchedEffect(lazyGridState) {
@@ -149,7 +130,7 @@ fun SecondsScreen(
                     && hasMoreItems
                     && !hasAppendError
                     && lastVisibleItemIndex != null
-                    && lastVisibleItemIndex == items.size - 1
+                    && lastVisibleItemIndex >= items.size - 10
                     && lastVisibleItemIndex >= lastLoadedItemPosition
                 ) {
 
@@ -162,7 +143,6 @@ fun SecondsScreen(
                 }
             }
     }
-
 
     val statusCallback: (NetworkConnectivityManager.STATUS) -> Unit = {
         when (it) {
@@ -318,7 +298,7 @@ fun SecondsScreen(
 
 
                                 UsedProductListingCard(
-                                    signInMethod,
+                                    isGuest,
                                     usedProductListing,
                                     {
                                         onNavigateUpSecondsDetailedScreen(usedProductListing)
@@ -623,7 +603,7 @@ fun SecondsScreen(
 
 @Composable
 private fun UsedProductListingCard(
-    signInMethod: String,
+    isGuest: Boolean,
     usedProductListing: UsedProductListing,
     onItemClicked: () -> Unit,
     onFavouriteClicked: () -> Unit
@@ -655,14 +635,13 @@ private fun UsedProductListingCard(
                 }
 
 
-                if (signInMethod != "guest") {
+                if (!isGuest) {
 
-                    // 🔹 Favorite Icon Background Box
                     Box(
                         modifier = Modifier
-                            .align(Alignment.TopEnd) // 🔹 Positions it at the top-right
-                            .padding(8.dp) // 🔹 Adds spacing from edges
-                            .size(32.dp) // 🔹 Fixed size
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .size(32.dp)
                             .background(
                                 Color.LightGray.copy(alpha = 0.4f),
                                 CircleShape
@@ -675,7 +654,7 @@ private fun UsedProductListingCard(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        // 🔹 Favorite Icon
+
                         Image(
                             imageVector = Icons.Default.FavoriteBorder,
                             contentDescription = null,

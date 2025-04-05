@@ -37,11 +37,13 @@ class TokenManager @Inject constructor(@ApplicationContext  context: Context) {
     )
 
 
+
+
     fun getSignInMethod():String{
         return encryptedSharedPreferences.getString(SIGN_IN_METHOD, "") ?: ""
     }
 
-
+    fun isGuest() = getSignInMethod() == "guest"
 
     fun isVerifiedUser():Boolean{
         val signInMethod = getSignInMethod()

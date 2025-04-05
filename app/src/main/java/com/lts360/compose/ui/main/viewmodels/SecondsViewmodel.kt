@@ -12,7 +12,6 @@ import com.lts360.api.auth.managers.TokenManager
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.FeedUserProfileInfo
-import com.lts360.api.models.service.GuestIndustryDao
 import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.daos.profile.UserLocationDao
@@ -35,7 +34,6 @@ import javax.inject.Inject
 class SecondsViewmodel @Inject constructor(
     val savedStateHandle: SavedStateHandle,
     val userProfileDao: UserProfileDao,
-    private val guestIndustryDao: GuestIndustryDao,
     private val guestUserLocationDao: UserLocationDao,
     val chatUserDao: ChatUserDao,
     val tokenManager: TokenManager,
@@ -45,7 +43,7 @@ class SecondsViewmodel @Inject constructor(
 
     val submittedQuery = savedStateHandle.get<String?>("submittedQuery")
     val onlySearchBar = savedStateHandle.get<Boolean>("onlySearchBar") ?: false
-    private val key =  savedStateHandle.get<Int>("key") ?: 0
+    private val key = savedStateHandle.get<Int>("key") ?: 0
 
     val userId = UserSharedPreferencesManager.userId
 
@@ -63,12 +61,10 @@ class SecondsViewmodel @Inject constructor(
     private var error: String = ""
 
 
+    private var _pageSource = SecondsPageSource(pageSize = 30)
+    val pageSource: SecondsPageSource get() = _pageSource
 
-    private var _pageSource = SecondsPageSource(savedStateHandle) // Initialize PageSource
-    val pageSource: SecondsPageSource get() = _pageSource // Expose pageSource as read-only
-
-    val signInMethod = tokenManager.getSignInMethod()
-    val isValidSignInMethodFeaturesEnabled = tokenManager.isValidSignInMethodFeaturesEnabled()
+    val isGuest = tokenManager.isGuest()
 
 
     private var loadingItemsJob: Job? = null
@@ -76,7 +72,7 @@ class SecondsViewmodel @Inject constructor(
 
     init {
 
-        if (signInMethod == "guest") {
+        if (isGuest) {
             viewModelScope.launch {
 
                 launch {
@@ -94,7 +90,8 @@ class SecondsViewmodel @Inject constructor(
                     } else {
                         pageSource.guestNextPage(
                             userId,
-                            submittedQuery)
+                            submittedQuery
+                        )
                     }
 
 
@@ -105,21 +102,37 @@ class SecondsViewmodel @Inject constructor(
         } else {
 
 
-               loadingItemsJob = viewModelScope.launch {
+            loadingItemsJob = viewModelScope.launch {
 
-                   launch {
-                       pageSource.nextPage(userId, submittedQuery)
-                   }.join()
+                launch {
+                    pageSource.nextPage(userId, submittedQuery)
+                }.join()
 
-               }
+            }
         }
     }
 
 
     fun getKey() = key
 
+    suspend fun getChatUser(userId: Long, userProfile: FeedUserProfileInfo): ChatUser {
+        return withContext(Dispatchers.IO) {
 
-    // Method to update the position
+            chatUserDao.getChatUserByRecipientId(userProfile.userId) ?: run {
+                ChatUser(
+                    userId = userId,
+                    recipientId = userProfile.userId,
+                    timestamp = System.currentTimeMillis(),
+                    userProfile = userProfile.copy(isOnline = false)
+                ).let {
+                    it.copy(chatId = chatUserDao.insertChatUser(it).toInt())
+                }
+            }
+
+        }
+    }
+
+
     fun updateLastLoadedItemPosition(newPosition: Int) {
         viewModelScope.launch {
             _lastLoadedItemPosition.value = newPosition
@@ -127,10 +140,10 @@ class SecondsViewmodel @Inject constructor(
     }
 
 
-    // Load next page
+
     fun nextPage(userId: Long, query: String?) {
 
-        if (signInMethod == "guest") {
+        if (isGuest) {
             viewModelScope.launch {
                 val userLocation = guestUserLocationDao.getLocation(userId)
 
@@ -152,17 +165,10 @@ class SecondsViewmodel @Inject constructor(
     }
 
 
-    // Refresh data
     fun refresh(userId: Long, query: String?) {
-        if (signInMethod == "guest") {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            if (isGuest) {
                 val userLocation = guestUserLocationDao.getLocation(userId)
-                val selectedIndustries = if (onlySearchBar) {
-                    emptyList()
-                } else {
-                    guestIndustryDao.getSelectedIndustries().map { it.industryId }
-                }
-
                 if (userLocation != null) {
                     pageSource.guestRefresh(
                         userId,
@@ -170,74 +176,53 @@ class SecondsViewmodel @Inject constructor(
                         userLocation.latitude,
                         userLocation.longitude
                     )
-
                 } else {
                     pageSource.guestRefresh(userId, query)
                 }
-            }
-        } else {
-
-            loadingItemsJob?.let {
-                it.cancel()
-                it.invokeOnCompletion {
-                    loadingItemsJob = viewModelScope.launch {
-                        pageSource.refresh(userId, query)
-                    }
-                }
-            } ?: run {
-                loadingItemsJob = viewModelScope.launch {
+            } else {
+                loadingItemsJob?.cancel()
+                loadingItemsJob = launch {
                     pageSource.refresh(userId, query)
                 }
             }
-
         }
     }
 
-    // Retry loading more data
+
     fun retry(userId: Long, query: String?) {
-        if (signInMethod == "guest") {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            if (isGuest) {
                 val userLocation = guestUserLocationDao.getLocation(userId)
-
-                val selectedIndustries = if (onlySearchBar) {
-                    emptyList()
-                } else {
-                    guestIndustryDao.getSelectedIndustries().map { it.industryId }
-                }
-
                 if (userLocation != null) {
                     pageSource.guestRetry(
                         userId,
                         query,
-                        selectedIndustries,
                         userLocation.latitude,
                         userLocation.longitude
                     )
                 } else {
-                    pageSource.guestRetry(userId, query, selectedIndustries)
+                    pageSource.guestRetry(userId, query)
                 }
 
-            }
-        } else {
-            viewModelScope.launch {
+
+            } else {
                 pageSource.retry(userId, query)
             }
         }
     }
 
 
-
     fun setSelectedItem(item: UsedProductListing?) {
         _selectedItem.value = item
-        /*item?.let {
-            savedStateHandle["selected_item"] = item.serviceId
-        }*/
     }
 
 
     fun directUpdateServiceIsBookMarked(serviceId: Long, isBookMarked: Boolean) {
         _pageSource.updateServiceBookMarkedInfo(serviceId, isBookMarked)
     }
+
+
+
 
 
     fun onRemoveBookmark(
@@ -277,32 +262,34 @@ class SecondsViewmodel @Inject constructor(
 
 
         return try {
-            val response = AppClient.instance.create(ManageUsedProductListingService::class.java)
+             AppClient.instance.create(ManageUsedProductListingService::class.java)
                 .removeBookmarkUsedProductListing(
                     userId,
                     item.productId
-                )
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null && body.isSuccessful) {
-                    Result.Success(body)
+                ).let {
+                     if (it.isSuccessful) {
+                         val body = it.body()
+                         if (body != null && body.isSuccessful) {
+                             Result.Success(body)
 
-                } else {
-                    val errorMessage = "Failed, try again later..."
-                    Result.Error(Exception(errorMessage))
+                         } else {
+                             val errorMessage = "Failed, try again later..."
+                             Result.Error(Exception(errorMessage))
+                         }
+
+
+                     } else {
+
+                         val errorBody = it.errorBody()?.string()
+                         val errorMessage = try {
+                             Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                         } catch (e: Exception) {
+                             "An unknown error occurred"
+                         }
+                         Result.Error(Exception(errorMessage))
+                     }
                 }
 
-
-            } else {
-
-                val errorBody = response.errorBody()?.string()
-                val errorMessage = try {
-                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
-                    "An unknown error occurred"
-                }
-                Result.Error(Exception(errorMessage))
-            }
 
         } catch (t: Exception) {
             Result.Error(t)
@@ -320,21 +307,17 @@ class SecondsViewmodel @Inject constructor(
             try {
                 when (val result = bookmark(userId, service)) {
                     is Result.Success -> {
-                        // Deserialize the search terms and set suggestions
                         onSuccess()
                     }
 
                     is Result.Error -> {
-                        // Handle error
                         error = mapExceptionToError(result.error).errorMessage
                         onError(error)
-                        // Optionally log the error message
                     }
                 }
             } catch (t: Exception) {
                 error = "Something Went Wrong"
                 onError(error)
-
             }
         }
     }
@@ -345,32 +328,31 @@ class SecondsViewmodel @Inject constructor(
         item: UsedProductListing,
     ): Result<ResponseReply> {
         return try {
-            val response = AppClient.instance.create(ManageUsedProductListingService::class.java)
+           AppClient.instance.create(ManageUsedProductListingService::class.java)
                 .bookmarkUsedProductListing(
                     userId,
-                    item.productId
-                )
+                    item.productId)
+               .let {
+                   if (it.isSuccessful) {
+                       val body = it.body()
+                       if (body != null && body.isSuccessful) {
+                           Result.Success(body)
 
-            if (response.isSuccessful) {
+                       } else {
+                           val errorMessage = "Failed, try again later..."
+                           Result.Error(Exception(errorMessage))
+                       }
+                   } else {
+                       val errorBody = it.errorBody()?.string()
+                       val errorMessage = try {
+                           Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                       } catch (e: Exception) {
+                           "An unknown error occurred"
+                       }
+                       Result.Error(Exception(errorMessage))
+                   }
+               }
 
-                val body = response.body()
-                if (body != null && body.isSuccessful) {
-                    Result.Success(body)
-
-                } else {
-                    val errorMessage = "Failed, try again later..."
-                    Result.Error(Exception(errorMessage))
-                }
-
-            } else {
-                val errorBody = response.errorBody()?.string()
-                val errorMessage = try {
-                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
-                    "An unknown error occurred"
-                }
-                Result.Error(Exception(errorMessage))
-            }
         } catch (t: Throwable) {
             Result.Error(t)
         }
@@ -378,23 +360,6 @@ class SecondsViewmodel @Inject constructor(
     }
 
 
-
-    suspend fun getChatUser(userId: Long, userProfile: FeedUserProfileInfo): ChatUser {
-        return withContext(Dispatchers.IO) {
-
-            // If chat user exists, update selected values
-            chatUserDao.getChatUserByRecipientId(userProfile.userId) ?: run {
-                val newChatUser = ChatUser(
-                    userId = userId,
-                    recipientId = userProfile.userId,
-                    timestamp = System.currentTimeMillis(),
-                    userProfile = userProfile.copy(isOnline = false)
-                )
-                newChatUser.copy(chatId = chatUserDao.insertChatUser(newChatUser).toInt())
-            }
-
-        }
-    }
 
 
 }

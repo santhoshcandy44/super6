@@ -1,11 +1,8 @@
 package com.lts360.compose.ui.viewmodels
 
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.lts360.api.Utils.Result
@@ -33,13 +30,11 @@ import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
 
 /*
 class ServicesPagingSource(
@@ -148,8 +143,6 @@ class ServicesViewModel @Inject constructor(
 
     val connectivityManager = networkConnectivityManager
 
-
-
     private val _selectedItem = MutableStateFlow<Service?>(null)
     val selectedItem = _selectedItem.asStateFlow()
 
@@ -182,10 +175,10 @@ class ServicesViewModel @Inject constructor(
         }*/
 
 
-    private var _pageSource = PageSource(savedStateHandle) // Initialize PageSource
-    val pageSource: PageSource get() = _pageSource // Expose pageSource as read-only
+    private var _pageSource = PageSource(savedStateHandle, pageSize = 30)
+    val pageSource: PageSource get() = _pageSource
 
-    val signInMethod = tokenManager.getSignInMethod()
+    val isGuest = tokenManager.isGuest()
     val isValidSignInMethodFeaturesEnabled = tokenManager.isValidSignInMethodFeaturesEnabled()
 
 
@@ -194,15 +187,35 @@ class ServicesViewModel @Inject constructor(
     private val _nestedServiceOwnerProfileSelectedItem = MutableStateFlow<Service?>(null)
     val nestedServiceOwnerProfileSelectedItem = _nestedServiceOwnerProfileSelectedItem.asStateFlow()
 
+    private val _isReviewsLoading = MutableStateFlow(false)
+    val isReviewsLoading = _isReviewsLoading.asStateFlow()
+
+
+    private val _isReviewsReplyLoading = MutableStateFlow(false)
+    val isReviewsReplyLoading = _isReviewsReplyLoading.asStateFlow()
+
+
+    private val _selectedCommentId = MutableStateFlow(-1)
+    val selectedCommentId = _selectedCommentId.asStateFlow()
+
+    private val _selectedReviews = MutableStateFlow<List<ServiceReview>>(emptyList())
+    val selectedReviews = _selectedReviews.asStateFlow()
+
+
+    private val _selectedReviewReplies = MutableStateFlow<List<ServiceReviewReply>>(emptyList())
+    val selectedReviewReplies = _selectedReviewReplies.asStateFlow()
+
+    private val _isReviewPosting = MutableStateFlow(false)
+    val isReviewPosting = _isReviewPosting.asStateFlow()
+
+    private val _isReplyPosting = MutableStateFlow(false)
+    val isReplyPosting = _isReplyPosting.asStateFlow()
 
     init {
 
-        if (signInMethod == "guest") {
+        if (isGuest) {
             viewModelScope.launch {
-
                 launch {
-
-
                     val userLocation = guestUserLocationDao.getLocation(userId)
                     val selectedIndustries = if (onlySearchBar) {
                         emptyList()
@@ -226,20 +239,14 @@ class ServicesViewModel @Inject constructor(
                         )
                     }
 
-
                 }.join()
-
-
             }
         } else {
 
-
             loadingItemsJob = viewModelScope.launch {
-
                 launch {
                     pageSource.nextPage(userId, submittedQuery)
                 }.join()
-
             }
         }
     }
@@ -247,7 +254,6 @@ class ServicesViewModel @Inject constructor(
 
     fun getKey() = key
 
-    // Method to update the position
     fun updateLastLoadedItemPosition(newPosition: Int) {
         viewModelScope.launch {
             _lastLoadedItemPosition.value = newPosition
@@ -258,118 +264,6 @@ class ServicesViewModel @Inject constructor(
         _nestedServiceOwnerProfileSelectedItem.value = service
     }
 
-    // Load next page
-    fun nextPage(userId: Long, query: String?) {
-
-        if (signInMethod == "guest") {
-            viewModelScope.launch {
-                val userLocation = guestUserLocationDao.getLocation(userId)
-                val selectedIndustries = if (onlySearchBar) {
-                    emptyList()
-                } else {
-                    guestIndustryDao.getSelectedIndustries().map { it.industryId }
-                }
-                if (userLocation != null) {
-                    pageSource.guestNextPage(
-                        userId, query, selectedIndustries, userLocation.latitude,
-                        userLocation.longitude
-                    )
-                } else {
-                    pageSource.guestNextPage(userId, query, selectedIndustries)
-                }
-            }
-        } else {
-            loadingItemsJob = viewModelScope.launch {
-                pageSource.nextPage(userId, query)
-            }
-        }
-
-    }
-
-
-    // Refresh data
-    fun refresh(userId: Long, query: String?) {
-        if (signInMethod == "guest") {
-            viewModelScope.launch {
-                val userLocation = guestUserLocationDao.getLocation(userId)
-                val selectedIndustries = if (onlySearchBar) {
-                    emptyList()
-                } else {
-                    guestIndustryDao.getSelectedIndustries().map { it.industryId }
-                }
-
-                if (userLocation != null) {
-                    pageSource.guestRefresh(
-                        userId,
-                        query,
-                        selectedIndustries,
-                        userLocation.latitude,
-                        userLocation.longitude
-                    )
-
-                } else {
-                    pageSource.guestRefresh(userId, query, selectedIndustries)
-                }
-            }
-        } else {
-
-            loadingItemsJob?.let {
-                it.cancel()
-                it.invokeOnCompletion {
-                    loadingItemsJob = viewModelScope.launch {
-                        pageSource.refresh(userId, query)
-                    }
-                }
-            } ?: run {
-                loadingItemsJob = viewModelScope.launch {
-                    pageSource.refresh(userId, query)
-                }
-            }
-
-        }
-    }
-
-    // Retry loading more data
-    fun retry(userId: Long, query: String?) {
-        if (signInMethod == "guest") {
-            viewModelScope.launch {
-                val userLocation = guestUserLocationDao.getLocation(userId)
-
-                val selectedIndustries = if (onlySearchBar) {
-                    emptyList()
-                } else {
-                    guestIndustryDao.getSelectedIndustries().map { it.industryId }
-                }
-
-                if (userLocation != null) {
-                    pageSource.guestRetry(
-                        userId,
-                        query,
-                        selectedIndustries,
-                        userLocation.latitude,
-                        userLocation.longitude
-                    )
-                } else {
-                    pageSource.guestRetry(userId, query, selectedIndustries)
-                }
-
-            }
-        } else {
-            viewModelScope.launch {
-                pageSource.retry(userId, query)
-            }
-        }
-    }
-
-
-
-
-
-
-
-
-
-
 
     fun setSelectedItem(item: Service?) {
         _selectedItem.value = item
@@ -378,30 +272,99 @@ class ServicesViewModel @Inject constructor(
         }*/
     }
 
+    fun directUpdateServiceIsBookMarked(serviceId: Long, isBookMarked: Boolean) {
+        _pageSource.updateServiceBookMarkedInfo(serviceId, isBookMarked)
+    }
 
-    private val _isReviewsLoading = MutableStateFlow<Boolean>(false)
-    val isReviewsLoading = _isReviewsLoading.asStateFlow()
+    suspend fun getChatUser(userId: Long, userProfile: FeedUserProfileInfo): ChatUser {
+        return withContext(Dispatchers.IO) {
+
+            // If chat user exists, update selected values
+            chatUserDao.getChatUserByRecipientId(userProfile.userId) ?: run {
+                val newChatUser = ChatUser(
+                    userId = userId,
+                    recipientId = userProfile.userId,
+                    timestamp = System.currentTimeMillis(),
+                    userProfile = userProfile.copy(isOnline = false)
+                )
+                newChatUser.copy(chatId = chatUserDao.insertChatUser(newChatUser).toInt())
+            }
+
+        }
+    }
+
+    fun nextPage(userId: Long, query: String?) {
+        viewModelScope.launch {
+            if (isGuest) {
+                val userLocation = guestUserLocationDao.getLocation(userId)
+                val selectedIndustries = if (onlySearchBar) emptyList()
+                else guestIndustryDao.getSelectedIndustries().map { it.industryId }
+
+                pageSource.guestNextPage(
+                    userId,
+                    query,
+                    selectedIndustries,
+                    userLocation?.latitude,
+                    userLocation?.longitude
+                )
+            } else {
+                loadingItemsJob?.cancel()
+                loadingItemsJob = launch {
+                    pageSource.nextPage(userId, query)
+                }
+            }
+        }
+    }
 
 
-    private val _isReviewsReplyLoading = MutableStateFlow<Boolean>(false)
-    val isReviewsReplyLoading = _isReviewsReplyLoading.asStateFlow()
+    fun refresh(userId: Long, query: String?) {
+        viewModelScope.launch {
+            if (isGuest) {
+                val userLocation = guestUserLocationDao.getLocation(userId)
+                val selectedIndustries = if (onlySearchBar) emptyList()
+                else guestIndustryDao.getSelectedIndustries().map { it.industryId }
+
+                pageSource.guestRefresh(
+                    userId,
+                    query,
+                    selectedIndustries,
+                    userLocation?.latitude,
+                    userLocation?.longitude
+                )
+            } else {
+                loadingItemsJob?.cancel()
+                loadingItemsJob = launch {
+                    pageSource.refresh(userId, query)
+                }
+            }
+        }
+    }
 
 
-    private val _selectedCommentId = MutableStateFlow<Int>(-1)
-    val selectedCommentId = _selectedCommentId.asStateFlow()
+    fun retry(userId: Long, query: String?) {
+        viewModelScope.launch {
+            if (isGuest) {
+                val userLocation = guestUserLocationDao.getLocation(userId)
+                val selectedIndustries = if (onlySearchBar) emptyList()
+                else guestIndustryDao.getSelectedIndustries().map { it.industryId }
 
-    private val _selectedReviews = MutableStateFlow<List<ServiceReview>>(emptyList())
-    val selectedReviews = _selectedReviews.asStateFlow()
+                pageSource.guestRetry(
+                    userId,
+                    query,
+                    selectedIndustries,
+                    userLocation?.latitude,
+                    userLocation?.longitude
+                )
+            } else {
+                pageSource.retry(userId, query)
+            }
+        }
+    }
 
 
-    private val _selectedReviewReplies = MutableStateFlow<List<ServiceReviewReply>>(emptyList())
-    val selectedReviewReplies = _selectedReviewReplies.asStateFlow()
 
 
-    fun loadReViewsSelectedItem(
-        service: Service,
-
-        ) {
+    fun loadReViewsSelectedItem(service: Service) {
 
         viewModelScope.launch {
             _selectedItem.value = service
@@ -409,7 +372,7 @@ class ServicesViewModel @Inject constructor(
             _isReviewsLoading.value = true
 
             try {
-                when (val result = loadSelectedServiceReviews(userId, service)) {
+                when (val result = loadSelectedServiceReviews(service)) {
                     is Result.Success -> {
 
                         // Deserialize the search terms and set suggestions
@@ -439,7 +402,6 @@ class ServicesViewModel @Inject constructor(
 
 
     private suspend fun loadSelectedServiceReviews(
-        userId: Long,
         item: Service,
     ): Result<ResponseReply> {
 
@@ -477,9 +439,7 @@ class ServicesViewModel @Inject constructor(
     }
 
 
-    fun loadReViewRepliesSelectedItem(
-        serviceReview: ServiceReview,
-    ) {
+    fun loadReViewRepliesSelectedItem(serviceReview: ServiceReview) {
 
         viewModelScope.launch {
 
@@ -488,7 +448,7 @@ class ServicesViewModel @Inject constructor(
             _selectedCommentId.value = serviceReview.id
 
             try {
-                when (val result = loadSelectedServiceReviewReplies(userId, serviceReview)) {
+                when (val result = loadSelectedServiceReviewRepliesApiCall( serviceReview)) {
                     is Result.Success -> {
 
                         // Deserialize the search terms and set suggestions
@@ -518,8 +478,7 @@ class ServicesViewModel @Inject constructor(
     }
 
 
-    private suspend fun loadSelectedServiceReviewReplies(
-        userId: Long,
+    private suspend fun loadSelectedServiceReviewRepliesApiCall(
         serviceReview: ServiceReview,
     ): Result<ResponseReply> {
 
@@ -557,11 +516,6 @@ class ServicesViewModel @Inject constructor(
     }
 
 
-    // StateFlow for tracking the review posting status
-    private val _isReviewPosting = MutableStateFlow(false)
-    val isReviewPosting = _isReviewPosting.asStateFlow()
-
-
     fun insertReview(serviceId: Long, userId: Long, reviewText: String) {
         viewModelScope.launch {
             _isReviewPosting.value = true
@@ -572,7 +526,7 @@ class ServicesViewModel @Inject constructor(
                     is Result.Success -> {
 
 
-                        val insertedReview = Gson().fromJson<ServiceReview>(
+                        val insertedReview = Gson().fromJson(
                             result.data.data,
                             ServiceReview::class.java
                         )
@@ -632,12 +586,6 @@ class ServicesViewModel @Inject constructor(
         }
     }
 
-
-    // StateFlow for tracking the reply posting status
-    private val _isReplyPosting = MutableStateFlow(false)
-    val isReplyPosting = _isReplyPosting.asStateFlow()
-
-
     fun insertReply(commentId: Int, userId: Long, replyText: String, replyToUserId: Long?) {
         viewModelScope.launch {
             _isReplyPosting.value = true
@@ -649,7 +597,7 @@ class ServicesViewModel @Inject constructor(
                     is Result.Success -> {
 
 
-                        val insertedReply = Gson().fromJson<ServiceReviewReply>(
+                        val insertedReply = Gson().fromJson(
                             result.data.data,
                             ServiceReviewReply::class.java
                         )
@@ -708,10 +656,6 @@ class ServicesViewModel @Inject constructor(
     }
 
 
-    fun directUpdateServiceIsBookMarked(serviceId: Long, isBookMarked: Boolean) {
-        _pageSource.updateServiceBookMarkedInfo(serviceId, isBookMarked)
-    }
-
 
     fun onRemoveBookmark(
         userId: Long,
@@ -750,32 +694,33 @@ class ServicesViewModel @Inject constructor(
 
 
         return try {
-            val response = AppClient.instance.create(ManageServicesApiService::class.java)
+           AppClient.instance.create(ManageServicesApiService::class.java)
                 .removeBookmarkService(
                     userId,
                     item.serviceId
-                )
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null && body.isSuccessful) {
-                    Result.Success(body)
+                ).let {
+                   if (it.isSuccessful) {
+                       val body = it.body()
+                       if (body != null && body.isSuccessful) {
+                           Result.Success(body)
 
-                } else {
-                    val errorMessage = "Failed, try again later..."
-                    Result.Error(Exception(errorMessage))
-                }
+                       } else {
+                           val errorMessage = "Failed, try again later..."
+                           Result.Error(Exception(errorMessage))
+                       }
 
+                   } else {
 
-            } else {
+                       val errorBody = it.errorBody()?.string()
+                       val errorMessage = try {
+                           Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                       } catch (e: Exception) {
+                           "An unknown error occurred"
+                       }
+                       Result.Error(Exception(errorMessage))
+                   }
+               }
 
-                val errorBody = response.errorBody()?.string()
-                val errorMessage = try {
-                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
-                    "An unknown error occurred"
-                }
-                Result.Error(Exception(errorMessage))
-            }
 
         } catch (t: Exception) {
             Result.Error(t)
@@ -818,38 +763,39 @@ class ServicesViewModel @Inject constructor(
         item: Service,
     ): Result<ResponseReply> {
         return try {
-            val response = AppClient.instance.create(ManageServicesApiService::class.java)
+            AppClient.instance.create(ManageServicesApiService::class.java)
                 .bookmarkService(
                     userId,
                     item.serviceId
-                )
+                ).let {
+                    if (it.isSuccessful) {
 
-            if (response.isSuccessful) {
+                        val body = it.body()
+                        if (body != null && body.isSuccessful) {
+                            Result.Success(body)
 
-                val body = response.body()
-                if (body != null && body.isSuccessful) {
-                    Result.Success(body)
+                        } else {
+                            val errorMessage = "Failed, try again later..."
+                            Result.Error(Exception(errorMessage))
+                        }
 
-                } else {
-                    val errorMessage = "Failed, try again later..."
-                    Result.Error(Exception(errorMessage))
+                    } else {
+                        val errorBody = it.errorBody()?.string()
+                        val errorMessage = try {
+                            Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                        } catch (e: Exception) {
+                            "An unknown error occurred"
+                        }
+                        Result.Error(Exception(errorMessage))
+                    }
                 }
 
-            } else {
-                val errorBody = response.errorBody()?.string()
-                val errorMessage = try {
-                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
-                    "An unknown error occurred"
-                }
-                Result.Error(Exception(errorMessage))
-            }
+
         } catch (t: Throwable) {
             Result.Error(t)
         }
 
     }
-
 
 
 
@@ -863,24 +809,6 @@ class ServicesViewModel @Inject constructor(
             }
         } else {
             "Distance not available"
-        }
-    }
-
-
-    suspend fun getChatUser(userId: Long, userProfile: FeedUserProfileInfo): ChatUser {
-        return withContext(Dispatchers.IO) {
-
-            // If chat user exists, update selected values
-            chatUserDao.getChatUserByRecipientId(userProfile.userId) ?: run {
-                val newChatUser = ChatUser(
-                    userId = userId,
-                    recipientId = userProfile.userId,
-                    timestamp = System.currentTimeMillis(),
-                    userProfile = userProfile.copy(isOnline = false)
-                )
-                newChatUser.copy(chatId = chatUserDao.insertChatUser(newChatUser).toInt())
-            }
-
         }
     }
 

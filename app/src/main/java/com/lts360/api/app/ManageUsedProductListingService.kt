@@ -38,39 +38,25 @@ interface ManageUsedProductListingService{
         @Query("last_total_relevance") lastTotalRelevance: String?
     ): Response<ResponseReply>
 
-    @GET("api/app/serve/services/user-bookmark-services/{user_id}")
-    suspend fun getBookmarkedServices(
-        @Path("user_id") userId: Long,
-    ): Response<ResponseReply>
-
     @GET("api/app/serve/used-product-listings/get-published-used-product-listings/{user_id}")
     suspend fun getUsedProductListingsByUserId(
         @Path("user_id") userId: Long,
     ): Response<ResponseReply>
 
-    @GET("api/app/serve/services/get-published-services-feed-user/{user_id}")
-    suspend fun getServicesByFeedUserId(
-        @Path("user_id") userId: Long,
-    ): Response<ResponseReply>
-
-    @GET("api/app/serve/services/get-published-services-feed-guest/{user_id}")
-    suspend fun getServicesByFeedGuestUserId(
-        @Path("user_id") userId: Long,
-    ): Response<ResponseReply>
 
     @Multipart
     @POST("api/app/serve/used-product-listings/create-or-update-used-product-listing")
     suspend fun createOrUpdateUsedProductListing(
-        @Part("product_id") productId: RequestBody,  // Changed from "title" to "name"
-        @Part("name") name: RequestBody,  // Changed from "title" to "name"
-        @Part("description") description: RequestBody,  // Changed from "short_description" to "description"
-        @Part("price") price: RequestBody,  // Changed from "short_description" to "description"
-        @Part("price_unit") priceUnit: RequestBody,  // Changed from "short_description" to "description"
+        @Part("product_id") productId: RequestBody,
+        @Part("name") name: RequestBody,
+        @Part("description") description: RequestBody,
+        @Part("price") price: RequestBody,
+        @Part("price_unit") priceUnit: RequestBody,
         @Part("country") country: RequestBody,
         @Part("state") state: RequestBody,
         @Part images: List<MultipartBody.Part>,
         @Part("keepImageIds[]") keepImageIds: RequestBody,
-        @Part("location") location: RequestBody? = null  // Optional location
+        @Part("location") location: RequestBody? = null
     ): Response<ResponseReply>
 
 

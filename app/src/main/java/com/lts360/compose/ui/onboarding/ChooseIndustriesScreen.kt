@@ -429,9 +429,9 @@ fun GuestChooseIndustryScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChooseIndustryScreen(
-    onMainActivityNavigateUp: () -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: ChooseIndustriesViewModel = hiltViewModel(),
+    onMainActivityNavigateUp: () -> Unit={},
 
     ) {
 
@@ -481,7 +481,6 @@ fun ChooseIndustryScreen(
     }
 
 
-    // Function to check if all fields are filled
     val anyItemSelected = industryItems.any { it.isSelected }
 
 
@@ -502,7 +501,7 @@ fun ChooseIndustryScreen(
                             },
                             title = {
                                 Text(
-                                    text = if (type == "on_board") "Choose Industries" else "Manage Industries",
+                                    text = if (type == "on_board") "Choose Service Industries" else "Manage Service Industries",
                                     style = MaterialTheme.typography.titleMedium
                                 )
                             }

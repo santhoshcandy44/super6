@@ -106,7 +106,7 @@ fun DetailedServiceScreen(
 ) {
 
     val userId = viewModel.userId
-    val signInMethod = viewModel.signInMethod
+    val isGuest = viewModel.isGuest
     val selectedItem by viewModel.selectedItem.collectAsState()
 
 
@@ -130,7 +130,7 @@ fun DetailedServiceScreen(
                             val selectedChatUser = viewModel.getChatUser(userId, it.user)
                             val selectedChatId = selectedChatUser.chatId
 
-                            if (signInMethod == "guest") {
+                            if (isGuest) {
                                 it()
                             } else {
                                 navigateUpChat(

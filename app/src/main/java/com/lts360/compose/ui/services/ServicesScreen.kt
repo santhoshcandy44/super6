@@ -111,12 +111,8 @@ fun ServicesScreen(
     val selectedItem by viewModel.selectedItem.collectAsState()
 
 
-    // Get CoroutineScope
     val scope = rememberCoroutineScope()
-
-
     val serviceInfoBottomSheetState = rememberModalBottomSheetState()
-
     val commentsModalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
 
@@ -143,12 +139,10 @@ fun ServicesScreen(
         }
     }
 
-
     val lazyListState = rememberLazyListState()
 
 
     val lastLoadedItemPosition by viewModel.lastLoadedItemPosition.collectAsState()
-
 
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.layoutInfo }
@@ -163,7 +157,7 @@ fun ServicesScreen(
                     && hasMoreItems
                     && !hasAppendError
                     && lastVisibleItemIndex != null
-                    && lastVisibleItemIndex == items.size - 1
+                    && lastVisibleItemIndex == items.size - 10
                     && lastVisibleItemIndex >= lastLoadedItemPosition
                 ) {
                     viewModel.updateLastLoadedItemPosition(if(lastLoadedItemPosition==-1) 0 else lastVisibleItemIndex)

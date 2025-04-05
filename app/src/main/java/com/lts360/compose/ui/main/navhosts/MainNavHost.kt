@@ -133,7 +133,7 @@ fun MainNavHost() {
 
 
         slideComposable<OnBoardingScreen.ChooseIndustries> {
-            ChooseIndustryScreen({}, { navController.popBackStack() })
+            ChooseIndustryScreen({ navController.popBackStack() })
         }
 
         slideComposable<AccountAndProfileSettingsRoutes.Profile> {

@@ -1,14 +1,11 @@
 package com.lts360.compose.ui.main.viewmodels
 
 
-import androidx.lifecycle.SavedStateHandle
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
-import com.lts360.api.app.AppClient
-import com.lts360.api.models.service.Service
 import com.lts360.api.Utils.ResultError
 import com.lts360.api.Utils.mapExceptionToError
-import com.lts360.api.app.ManageServicesApiService
+import com.lts360.api.app.AppClient
 import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.models.service.UsedProductListing
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,10 +16,9 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.cancellation.CancellationException
 
 class SecondsPageSource(
-    val savedStateHandle: SavedStateHandle,
-    private val pageSize: Int = 1, // Default page size
+    private val pageSize: Int = 1,
 ) {
-    // MutableStateFlow for various states
+
     private val _initialLoadState = MutableStateFlow(true)
     val initialLoadState: StateFlow<Boolean> = _initialLoadState
 
@@ -44,8 +40,6 @@ class SecondsPageSource(
     private val _hasMoreItems = MutableStateFlow(true)
     val hasMoreItems: StateFlow<Boolean> = _hasMoreItems
 
-    private val _industriesCount = MutableStateFlow(-1)
-    val industriesCount: StateFlow<Int> get() = _industriesCount
 
     private var page =  1
     private var lastTimeStamp: String? = null
@@ -53,96 +47,71 @@ class SecondsPageSource(
 
     private val mutex = Mutex()
 
-
-
-    // Public getter and setter for 'page'
     var currentPage: Int
-        get() = page // Access the private variable 'page'
+        get() = page
         set(value) {
-            if (value > 0) { // Validate: Page must be greater than 0
+            if (value > 0) {
                 page = value
             } else {
                 throw IllegalArgumentException("Page must be greater than 0")
             }
         }
 
-    // Public getter and setter for 'lastTimeStamp'
-    var currentLastTimeStamp: String?
-        get() = lastTimeStamp // Access the private variable 'lastTimeStamp'
+    private var currentLastTimeStamp: String?
+        get() = lastTimeStamp
         set(value) {
-            lastTimeStamp = value // Update value
+            lastTimeStamp = value
         }
 
-    // Public getter and setter for 'lastTotalRelevance'
-    var currentLastTotalRelevance: String?
-        get() = lastTotalRelevance // Access the private variable 'lastTotalRelevance'
+    private var currentLastTotalRelevance: String?
+        get() = lastTotalRelevance
         set(value) {
-            lastTotalRelevance = value // Update value
-        }
-
-    // Public getter and setter for 'industriesCount'
-    var currentIndustriesCount: Int
-        get() = _industriesCount.value ?: 0 // Access the value safely, default to 0 if null
-        set(value) {
-            _industriesCount.value = value
-        }
-
-    // Public getter and setter for 'hasMoreItems'
-    var currentHasMoreItems: Boolean
-        get() = _hasMoreItems.value ?: false // Default to false if value is null
-        set(value) {
-            _hasMoreItems.value = value // Simply set the boolean value
+            lastTotalRelevance = value
         }
 
 
 
-    // Public getter and setter for 'hasMoreItems'
-    var currentInitialLoadState: Boolean
-        get() = _initialLoadState.value ?: false // Default to false if value is null
+    private var currentHasMoreItems: Boolean
+        get() = _hasMoreItems.value
         set(value) {
-            _initialLoadState.value = value // Simply set the boolean value
-        }
-
-    // Public getter and setter for 'hasMoreItems'
-    var currentNetworkError: Boolean
-        get() = _hasNetworkError.value ?: false // Default to false if value is null
-        set(value) {
-            _hasNetworkError.value = value // Simply set the boolean value
+            _hasMoreItems.value = value
         }
 
 
-
-    // Public getter and setter for 'hasMoreItems'
-    var currentAppendError: Boolean
-        get() = _hasAppendError.value ?: false // Default to false if value is null
+    private var currentInitialLoadState: Boolean
+        get() = _initialLoadState.value
         set(value) {
-            _hasAppendError.value = value // Simply set the boolean value
+            _initialLoadState.value = value
+        }
+
+    private var currentNetworkError: Boolean
+        get() = _hasNetworkError.value
+        set(value) {
+            _hasNetworkError.value = value
         }
 
 
 
+    private var currentAppendError: Boolean
+        get() = _hasAppendError.value
+        set(value) {
+            _hasAppendError.value = value
+        }
 
     fun setRefreshingItems(value: Boolean){
         _isRefreshingItems.value=value
     }
-
-
 
     fun setNetWorkError(value: Boolean){
         currentNetworkError=value
     }
 
 
-    fun setItems(items:List<UsedProductListing>){
-        _items.value=items
-    }
-
     fun updateServiceBookMarkedInfo(serviceId: Long, isBookMarked: Boolean) {
-        // Update the service item's isBookmarked property
         _items.update { currentItems ->
             currentItems.map { service ->
                 if (service.productId == serviceId) {
-                    service.copy(isBookmarked = isBookMarked) // Assuming Service is a data class
+                    service.copy(isBookmarked = isBookMarked)
                 } else {
                     service
                 }
@@ -151,7 +120,6 @@ class SecondsPageSource(
 
     }
 
-    // Refresh the data
     suspend fun refresh(userId: Long, query: String?) {
         if (isLoadingItems.value) {
             setRefreshingItems(false)
@@ -163,7 +131,6 @@ class SecondsPageSource(
     }
 
 
-    // Refresh the data
     suspend fun guestRefresh(
         userId: Long, query: String?,
         latitude: Double? = null,
@@ -178,7 +145,6 @@ class SecondsPageSource(
 
     }
 
-    // Retry loading more data
     suspend fun retry(userId: Long, query: String?) {
         if (isRefreshingItems.value) {
             return
@@ -187,10 +153,8 @@ class SecondsPageSource(
         nextPage(userId, query)
     }
 
-    // Retry loading more data
     suspend fun guestRetry(
         userId: Long, query: String?,
-        industries: List<Int>,
         latitude: Double? = null,
         longitude: Double? = null,
 
@@ -202,7 +166,6 @@ class SecondsPageSource(
         guestNextPage(userId, query, latitude, longitude)
     }
 
-    // Load the next page of data
     suspend fun nextPage(userId: Long, query: String?, isRefreshing: Boolean = false) {
 
         if (!isRefreshing) {
@@ -237,13 +200,13 @@ class SecondsPageSource(
 
 
                             _items.value = if (isRefreshing) {
-                                services // Replace items on refresh
+                                services
                             } else {
-                                _items.value + services // Append items
+                                _items.value + services
                             }
 
-                            currentPage++ // Increment page after successful fetch
-                            currentHasMoreItems = services.size == pageSize // Check for more items
+                            currentPage++
+                            currentHasMoreItems = services.size == pageSize
                             currentAppendError = false
 
                         } else {
@@ -251,21 +214,21 @@ class SecondsPageSource(
                             if (page == 1) {
                                 _items.value = emptyList()
                             }
-                            currentHasMoreItems = false // No more items
+                            currentHasMoreItems = false
                         }
                     } else {
                         if (isRefreshing) {
                             _items.value = emptyList()
-                            currentHasMoreItems = true // No more items
+                            currentHasMoreItems = true
                         }
-                        currentAppendError= true // Handle unsuccessful response
+                        currentAppendError= true
                     }
                 } else {
                     if (isRefreshing) {
                         _items.value = emptyList()
-                        currentHasMoreItems= true // No more items
+                        currentHasMoreItems= true
                     }
-                    currentAppendError = true // Handle API error
+                    currentAppendError = true
                 }
 
                 currentNetworkError=false
@@ -323,34 +286,34 @@ class SecondsPageSource(
 
 
                             _items.value = if (isRefreshing) {
-                                services // Replace items on refresh
+                                services
                             } else {
-                                _items.value + services // Append items
+                                _items.value + services
                             }
 
-                            currentPage++ // Increment page after successful fetch
-                            currentHasMoreItems = services.size == pageSize // Check for more items
+                            currentPage++
+                            currentHasMoreItems = services.size == pageSize
                             currentAppendError = false
 
                         } else {
                             if (page == 1) {
                                 _items.value = emptyList()
                             }
-                            currentHasMoreItems = false // No more items
+                            currentHasMoreItems = false
                         }
                     } else {
                         if (isRefreshing) {
                             _items.value = emptyList()
-                            currentHasMoreItems = true // No more items
+                            currentHasMoreItems = true
                         }
-                        currentAppendError = true // Handle unsuccessful response
+                        currentAppendError = true
                     }
                 } else {
                     if (isRefreshing) {
                         _items.value = emptyList()
-                        currentHasMoreItems = true // No more items
+                        currentHasMoreItems = true
                     }
-                    currentAppendError = true // Handle API error
+                    currentAppendError = true
                 }
 
                 currentNetworkError = false
@@ -364,7 +327,6 @@ class SecondsPageSource(
     }
 
 
-    // Reset the state for a new fetch
     private fun resetState() {
         page = 1
         currentLastTimeStamp = null
