@@ -106,9 +106,6 @@ fun MainScreen(
 ) {
 
 
-
-
-
     val boards by viewModel.boards.collectAsState()
 
     val messageCount by viewModel.messageCount.collectAsState(0)
@@ -141,7 +138,6 @@ fun MainScreen(
         )
     }
 
-
     val requestNotificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -152,7 +148,6 @@ fun MainScreen(
             Toast.makeText(context, "Notification permission denied", Toast.LENGTH_SHORT).show()
         }
     }
-
 
     // Custom Alert Dialog
     if (showDialog) {
@@ -176,17 +171,13 @@ fun MainScreen(
         )
     }
 
-
-
     BackHandler(sheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
             sheetState.hide()
         }
     }
 
-
     var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
-
 
     val navController = rememberCustomBottomNavController(
         lastEntry,
@@ -195,7 +186,6 @@ fun MainScreen(
         homeViewModel.isSelectedUsedProductListingItemNull(),
         homeViewModel.isSelectedServiceOwnerUsedProductListingItemNull()
     )
-
 
     val allowedScreens: List<BottomBar> = listOf(
         BottomBar.Home(),
@@ -206,20 +196,16 @@ fun MainScreen(
         BottomBar.More
     )
 
-
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
 
     LaunchedEffect(currentBackStackEntry) {
         lastEntry = navController.currentBackStackEntry?.destination?.route
     }
 
-
     val bottomNavVisibility by viewModel.bottomNavVisibility.collectAsState()
 
 
-    var isHomeScreen by rememberSaveable {
-        mutableStateOf(false)
-    }
+    var isHomeScreen by rememberSaveable { mutableStateOf(false) }
 
 
     var currentScreen by remember { mutableStateOf<BottomBar?>(null) }
@@ -252,7 +238,6 @@ fun MainScreen(
             .fillMaxSize()
             .imePadding()
     ) {
-
 
         Scaffold(
             floatingActionButton = {
@@ -298,7 +283,6 @@ fun MainScreen(
 
 
             }) { contentPadding ->
-
 
             BottomNavHost(
                 homeViewModel,
