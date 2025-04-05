@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -59,7 +60,7 @@ import com.lts360.compose.ui.viewmodels.MoreViewModel
 
 
 @Composable
-fun MoreScreen(
+fun   MoreScreen(
     navController: NavHostController,
     onProfileNavigateUp: () -> Unit,
     onAccountAndProfileSettingsNavigateUp: (String) -> Unit,
@@ -124,15 +125,10 @@ fun MoreScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
 
 
-
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize() // This makes the Box take up the entire available space
-    ) { contentPadding ->
+    Surface(modifier = Modifier.fillMaxSize()){
         Box(
             modifier = Modifier
                 .fillMaxSize() // This makes the Box take up the entire available space
-                .padding(contentPadding)
         ) {
 
 

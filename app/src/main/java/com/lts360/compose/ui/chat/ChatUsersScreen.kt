@@ -39,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -172,24 +173,20 @@ fun ChatUsersScreen(
 
     val context = LocalContext.current
 
-    Scaffold(
-        topBar = {
+    Surface(modifier = Modifier.fillMaxSize()){
+        Column(modifier = Modifier.fillMaxSize()) {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Chats",
+                        "Chats",
                         style = MaterialTheme.typography.titleMedium
                     )
-                },
-            )
-        },
-        content = { paddingValues ->
+                })
 
 
             Box(
                 modifier = Modifier
                     .fillMaxSize() // This makes the Box take up the entire available space
-                    .padding(paddingValues) // Use the padding values provided by Scaffold
             ) {
 
 
@@ -602,7 +599,9 @@ fun ChatUsersScreen(
                     }
                 }
             }
-        })
+        }
+    }
+
 }
 
 

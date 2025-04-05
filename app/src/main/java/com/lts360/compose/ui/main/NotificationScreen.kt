@@ -31,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -122,31 +123,22 @@ fun NotificationScreen(navController: NavHostController,
 
 
 
-    Scaffold(
+    Surface(modifier = Modifier.fillMaxSize()){
 
-        topBar = {
+        Column(modifier = Modifier.fillMaxSize()){
             TopAppBar(
-
                 title = {
                     Text(
                         "Notifications",
                         style = MaterialTheme.typography.titleMedium
                     )
-                },)
-        },
-
-
-        content = { paddingValues ->
-
+                })
 
             Box(
                 modifier = Modifier
                     .fillMaxSize() // This makes the Box take up the entire available space
-                    .padding(paddingValues) // Use the padding values provided by Scaffold
 
             ) {
-
-
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier
@@ -192,7 +184,7 @@ fun NotificationScreen(navController: NavHostController,
                             modifier = Modifier
                                 .fillMaxSize(),
 
-                        ) {
+                            ) {
 
                             if (notifications.any { it.status == "un_read" }) {
                                 item {
@@ -232,96 +224,95 @@ fun NotificationScreen(navController: NavHostController,
 
             }
 
+        }
+    }
 
-            if (bottomSheetValue) {
+    if (bottomSheetValue) {
 
-                ModalBottomSheet(
-                    modifier = Modifier
-                        .safeDrawingPadding()
-                        .padding(16.dp),
-                    onDismissRequest = {
-                        bottomSheetValue=false
-                    },
-                    sheetState = sheetState,
-                    dragHandle = null,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    selectedItem?.let { nonNullSelectedItem ->
+        ModalBottomSheet(
+            modifier = Modifier
+                .safeDrawingPadding()
+                .padding(16.dp),
+            onDismissRequest = {
+                bottomSheetValue=false
+            },
+            sheetState = sheetState,
+            dragHandle = null,
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            selectedItem?.let { nonNullSelectedItem ->
 
-                        Column(modifier = Modifier.fillMaxWidth()) {
-
-
-
-                            if(nonNullSelectedItem.status=="un_read"){
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            viewModel.markAsRead(nonNullSelectedItem)
-                                            bottomSheetValue=false
-
-                                        }
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-
-                                ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
 
 
-                                    Icon(
-                                        painter = painterResource(
-                                            MaterialTheme.icons.notificationMarkAsRead
-                                        ),
-                                        contentDescription = "Mark as Read",
-                                        modifier = Modifier.size(24.dp),
-                                        tint = Color.Unspecified
-                                    )
 
-                                    Text(text = "Mark as Read",
-                                        style = MaterialTheme.typography.bodyMedium)
+                    if(nonNullSelectedItem.status=="un_read"){
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.markAsRead(nonNullSelectedItem)
+                                    bottomSheetValue=false
+
                                 }
-                            }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
 
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-
-                                        viewModel.deleteNotification(nonNullSelectedItem)
-                                        bottomSheetValue=false
-                                    }
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
+                        ) {
 
 
-                                // Bookmark Icon
-                                Icon(
-                                    painter = painterResource(
-                                        MaterialTheme.icons.deleteNotification
-                                    ),
-                                    contentDescription = "Bookmark",
-                                    modifier = Modifier.size(24.dp),
-                                    tint = Color.Unspecified
-                                )
+                            Icon(
+                                painter = painterResource(
+                                    MaterialTheme.icons.notificationMarkAsRead
+                                ),
+                                contentDescription = "Mark as Read",
+                                modifier = Modifier.size(24.dp),
+                                tint = Color.Unspecified
+                            )
 
-                                // Text
-                                Text(text = "Delete",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
+                            Text(text = "Mark as Read",
+                                style = MaterialTheme.typography.bodyMedium)
                         }
-
                     }
 
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
 
+                                viewModel.deleteNotification(nonNullSelectedItem)
+                                bottomSheetValue=false
+                            }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+
+
+                        // Bookmark Icon
+                        Icon(
+                            painter = painterResource(
+                                MaterialTheme.icons.deleteNotification
+                            ),
+                            contentDescription = "Bookmark",
+                            modifier = Modifier.size(24.dp),
+                            tint = Color.Unspecified
+                        )
+
+                        // Text
+                        Text(text = "Delete",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
 
             }
 
 
-        })
+        }
+
+    }
 
 
 }

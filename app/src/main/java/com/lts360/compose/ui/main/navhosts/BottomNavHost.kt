@@ -14,6 +14,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.lts360.app.database.models.app.Board
 import com.lts360.app.database.models.chat.ChatUser
@@ -120,7 +121,6 @@ fun BottomNavHost(
 
         }
 
-
         noTransitionComposable<BottomBar.NestedServices> { backstackEntry ->
 
             val args = backstackEntry.toRoute<BottomBar.NestedServices>()
@@ -189,6 +189,7 @@ fun BottomNavHost(
                 )
             }
         }
+
         slideComposable<BottomNavRoutes.DetailedServiceImagesSlider> {
 
 

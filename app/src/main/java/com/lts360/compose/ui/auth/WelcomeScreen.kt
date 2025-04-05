@@ -183,96 +183,91 @@ fun ForceWelcomeScreen(
             .fillMaxSize()
             .padding(it)) {
 
-            Box(modifier = Modifier
-                .fillMaxSize()) {
+            IconButton(
+                onClick = {
+                    onCloseForceWelcomeScreen()
+                },
+                modifier = Modifier.padding(16.dp) // Optional padding for spacing
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close, // Use the Close icon
+                    contentDescription = "Close"
+                )
+            }
 
-                IconButton(
-                    onClick = {
-                        onCloseForceWelcomeScreen()
-                    },
-                    modifier = Modifier.padding(16.dp) // Optional padding for spacing
+
+            Column(
+                modifier = Modifier
+                    .wrapContentSize()
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 16.dp)
+            ) {
+
+                // Welcome Texts
+                Column(
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Close, // Use the Close icon
-                        contentDescription = "Close"
+                    Text(
+                        text = "Join Now",
+                        fontSize = 32.sp,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Lts360",
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Make your journey better than before with Lts360 platform.",
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                 }
 
-
-                Column(
+                // Bottom Buttons
+                Row(
                     modifier = Modifier
-                        .wrapContentSize()
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 24.dp)
-                        .padding(bottom = 16.dp)
+                        .padding(top = 40.dp),
+                    horizontalArrangement = Arrangement.Center
                 ) {
+                    OutlinedButton(
+                        onClick =  {
+                            onLogInNavigate() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White
+                        )
 
-                    // Welcome Texts
-                    Column(
-                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text(
-                            text = "Join Now",
-                            fontSize = 32.sp,
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Lts360",
-                            fontSize = 40.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Make your journey better than before with Lts360 platform.",
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
+                        Text(text = "Log In", color = Color.Black,
+                            style = MaterialTheme.typography.bodyMedium)
                     }
 
-                    // Bottom Buttons
-                    Row(
-                        modifier = Modifier
-                            .padding(top = 40.dp),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        OutlinedButton(
-                            onClick =  {
-                                onLogInNavigate() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.White
-                            )
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                        ) {
-                            Text(text = "Log In", color = Color.Black,
-                                style = MaterialTheme.typography.bodyMedium)
-                        }
+                    Text(
+                        text = "Or",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    )
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                        Text(
-                            text = "Or",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.align(Alignment.CenterVertically)
+                    Button(
+                        onClick = {
+                            onSelectAccountNavigate()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorResource(id = R.color.colorPrimary)
                         )
 
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Button(
-                            onClick = {
-                                onSelectAccountNavigate()
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colorResource(id = R.color.colorPrimary)
-                            )
-
-                        ) {
-                            Text(
-                                text = "Sign Up", color = Color.White,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                    ) {
+                        Text(
+                            text = "Sign Up", color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
-
                 }
 
             }

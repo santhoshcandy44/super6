@@ -348,7 +348,7 @@ fun ManagePublishedUsedProductListingScreen(
                             }
                         }
 
-                    }, { district, callback ->
+                    }, { district->
 
 
                         editableService?.let { nonNullableEditableService ->
@@ -365,7 +365,6 @@ fun ManagePublishedUsedProductListingScreen(
 
                         }
 
-                        callback()
 
                     },
                     {

@@ -54,7 +54,7 @@ class HomeViewModel @Inject constructor(
     tokenManager: TokenManager) : ViewModel() {
 
     val userId = UserSharedPreferencesManager.userId
-    val signInMethod = tokenManager.getSignInMethod()
+    val isGuest = tokenManager.isGuest()
 
     val type = if (tokenManager.isVerifiedUser()) "verified_user" else "guest"
 
@@ -334,6 +334,7 @@ class HomeViewModel @Inject constructor(
     fun setGuestCurrentLocation(
         userId: Long,
         currentLocation: CurrentLocation,
+        onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
             locationRepository.onGuestSaveLocationCoordinates(
@@ -343,12 +344,14 @@ class HomeViewModel @Inject constructor(
                 currentLocation.locationType,
                 currentLocation.geo
             )
+            onSuccess()
         }
     }
 
     fun setGuestRecentLocation(
         userId: Long,
         currentLocation: RecentLocation,
+        onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
             locationRepository.onGuestSaveLocationCoordinates(
@@ -358,6 +361,7 @@ class HomeViewModel @Inject constructor(
                 currentLocation.locationType,
                 currentLocation.geo
             )
+            onSuccess()
         }
     }
 
@@ -367,7 +371,7 @@ class HomeViewModel @Inject constructor(
     fun onGetServiceSearchQuerySuggestions(userId: Long, query: String) {
 
 
-        if (signInMethod == "guest") {
+        if (isGuest) {
 
             _searchJob.value = viewModelScope.launch {
                 try {
@@ -437,7 +441,7 @@ class HomeViewModel @Inject constructor(
     fun onGetUsedProductListingSearchQuerySuggestions(userId: Long, query: String) {
 
 
-        if (signInMethod == "guest") {
+        if (isGuest) {
 
             _searchJob.value = viewModelScope.launch {
                 try {

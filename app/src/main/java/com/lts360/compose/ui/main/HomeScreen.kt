@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -70,7 +69,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     navController: NavController,
-    boardItems:List<Board>,
+    boardItems: List<Board>,
     onNavigateUpServiceDetailedScreen: () -> Unit,
     onNavigateUpUsedProductListingDetailedScreen: () -> Unit,
     onNavigateUpServiceOwnerProfile: (Long) -> Unit,
@@ -78,24 +77,19 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     servicesViewModel: ServicesViewModel,
     secondsViewModel: SecondsViewmodel,
-    onDockedFabAddNewSecondsChanged: (Boolean) -> Unit,
+    onDockedFabAddNewSecondsVisibility: (Boolean) -> Unit,
     onlySearchBar: Boolean = false,
     nestedType: String? = null
 ) {
-
 
     val boardLabels by remember { mutableStateOf(boardItems.map { it.boardLabel }) }
 
     val initialPageIndex = if (nestedType.isNullOrEmpty()) 0 else boardLabels.indexOf(nestedType).coerceAtLeast(0)
 
-
-    val pagerState = rememberPagerState(
-        initialPageIndex,
-        pageCount = { boardItems.size })
-
+    val pagerState = rememberPagerState(initialPageIndex, pageCount = { boardItems.size })
 
     val userId = viewModel.userId
-    val signInMethod = viewModel.signInMethod
+    val isGuest = viewModel.isGuest
     val selectedLocationGeo by viewModel.selectedLocationGeo.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val topBarBarHeight = remember { mutableFloatStateOf(0f) }
@@ -111,7 +105,6 @@ fun HomeScreen(
     val isLazyLoading by viewModel.isLazyLoading.collectAsState()
 
     val focusManager = LocalFocusManager.current
-
 
     val scope = rememberCoroutineScope()
 
@@ -137,130 +130,234 @@ fun HomeScreen(
         }
     }
 
-
     val coroutineScope = rememberCoroutineScope()
 
     val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val bottomSheetNavController = rememberNavController()
 
     val context = LocalContext.current
 
-    Surface {
-        Box(modifier = Modifier.fillMaxSize()) {
+    Surface (modifier = Modifier.fillMaxSize()) {
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(remember {
-                        object : NestedScrollConnection {
-                            override fun onPreScroll(
-                                available: Offset,
-                                source: NestedScrollSource
-                            ): Offset {
-                                val delta = available.y
-                                val newOffset = topBarOffsetHeightPx.floatValue + delta
-                                topBarOffsetHeightPx.floatValue =
-                                    newOffset.coerceIn(-topBarBarHeight.floatValue, 0f)
-                                showTopBar.value = newOffset >= 0f
-                                return Offset.Zero
-                            }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(remember {
+                    object : NestedScrollConnection {
+                        override fun onPreScroll(
+                            available: Offset,
+                            source: NestedScrollSource
+                        ): Offset {
+                            val delta = available.y
+                            val newOffset = topBarOffsetHeightPx.floatValue + delta
+                            topBarOffsetHeightPx.floatValue =
+                                newOffset.coerceIn(-topBarBarHeight.floatValue, 0f)
+                            showTopBar.value = newOffset >= 0f
+                            return Offset.Zero
                         }
-                    })
+                    }
+                })
+        ) {
+
+
+            AnimatedVisibility(
+                visible = showTopBar.value,
+                enter = fadeIn(),  // Optional fade-in for showing
+                exit = fadeOut()   // Optional fade-out for hiding
             ) {
 
-
-                AnimatedVisibility(
-                    visible = showTopBar.value,
-                    enter = fadeIn(),  // Optional fade-in for showing
-                    exit = fadeOut()   // Optional fade-out for hiding
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { coordinates ->
+                            topBarBarHeight.floatValue = coordinates.size.height.toFloat()
+                        }, verticalArrangement = Arrangement.Center
                 ) {
-
-                    Column(
+                    Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .onGloballyPositioned { coordinates ->
-                                topBarBarHeight.floatValue = coordinates.size.height.toFloat()
-                            }, verticalArrangement = Arrangement.Center
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 16.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .padding(top = 16.dp, bottom = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                "Lts360", fontSize = 22.sp, fontWeight = FontWeight.Medium,
-                            )
-                            LocationWrapper(location = selectedLocationGeo) {
-                                coroutineScope.launch {
-                                    modalBottomSheetState.expand()
-                                }
+                        Text(
+                            "Lts360", fontSize = 22.sp, fontWeight = FontWeight.Medium,
+                        )
+                        LocationWrapper(location = selectedLocationGeo) {
+                            coroutineScope.launch {
+                                modalBottomSheetState.expand()
                             }
                         }
                     }
+                }
 
+
+            }
+
+
+            Spacer(Modifier.height(8.dp))
+
+            if (onlySearchBar) {
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    shadowElevation = 0.dp
+                ) {
+
+                    SearchBar(
+                        query = searchQuery,
+                        onQueryChange = { query ->
+
+                            if (query.text.trim().isNotEmpty()) {
+
+                                if (viewModel.searchQuery.value.text != query.text) {
+
+                                    viewModel.setSearching(true)
+                                    viewModel.setSearchQuery(query.text)
+                                    // Cancel any ongoing search job
+                                    searchJob?.cancel()
+                                    viewModel.clearJob()
+
+                                    if (boardLabels[pagerState.currentPage] == "services") {
+                                        viewModel.onGetServiceSearchQuerySuggestions(
+                                            userId,
+                                            query.text
+                                        )
+                                    } else if (boardLabels[pagerState.currentPage] == "second_hands") {
+                                        viewModel.onGetUsedProductListingSearchQuerySuggestions(
+                                            userId,
+                                            query.text
+                                        )
+
+                                    }
+                                }
+
+                            } else {
+
+                                if (viewModel.searchQuery.value.text != query.text
+                                    && viewModel.isSearching.value
+                                ) {
+                                    searchJob?.cancel()
+                                    viewModel.clearJob()
+                                    viewModel.setSearching(false)
+                                    viewModel.setSearchQuery("")
+                                    viewModel.setSuggestions(emptyList())
+                                }
+
+                            }
+
+                        },
+                        onSearch = {
+
+                            if (searchQuery.text.isNotEmpty()) {
+
+
+                                if (boardLabels[pagerState.currentPage] == "services") {
+                                    viewModel.navigateToOverlay(
+                                        navController, BottomBar.NestedServices(
+                                            servicesViewModel.getKey() + 1,
+                                            searchQuery.text,
+                                            true
+                                        )
+                                    )
+                                } else if (boardLabels[pagerState.currentPage] == "second_hands") {
+
+                                    viewModel.navigateToOverlay(
+                                        navController, BottomBar.NestedSeconds(
+                                            secondsViewModel.getKey() + 1,
+                                            searchQuery.text,
+                                            true
+                                        )
+                                    )
+
+                                }
+
+                            }
+
+                        },
+                        onBackButtonClicked = {
+
+                            if (!isSearching) {
+                                onPopBackStack()
+                            } else {
+                                searchJob?.cancel()
+                                viewModel.setSuggestions(emptyList())
+                                viewModel.setSearching(false)
+                            }
+                        },
+                        onClearClicked = {
+                            searchJob?.cancel()
+                            viewModel.setSuggestions(emptyList())
+                            viewModel.setSearchQuery("")
+                            viewModel.setSearching(false)
+                        },
+                    )
 
                 }
 
 
-                Spacer(Modifier.height(8.dp))
+            } else {
 
-                if (onlySearchBar) {
 
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        shadowElevation = 0.dp
-                    ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    shadowElevation = 0.dp
+                ) {
 
-                        SearchBar(
-                            query = searchQuery,
-                            onQueryChange = { query ->
+                    SearchBar(
+                        query = searchQuery,
+                        onQueryChange = { query ->
 
-                                if (query.text.trim().isNotEmpty()) {
+                            if (!isSearching) {
+                                viewModel.setSearching(true)
+                            }
 
-                                    if (viewModel.searchQuery.value.text != query.text) {
+                            if (query.text.trim().isNotEmpty()) {
 
-                                        viewModel.setSearching(true)
-                                        viewModel.setSearchQuery(query.text)
-                                        // Cancel any ongoing search job
-                                        searchJob?.cancel()
-                                        viewModel.clearJob()
+                                if (viewModel.searchQuery.value.text != query.text
+                                    && viewModel.isSearching.value
+                                ) {
 
-                                        if (boardLabels[pagerState.currentPage] == "services") {
-                                            viewModel.onGetServiceSearchQuerySuggestions(
-                                                userId,
-                                                query.text
-                                            )
-                                        } else if (boardLabels[pagerState.currentPage] == "second_hands") {
-                                            viewModel.onGetUsedProductListingSearchQuerySuggestions(
-                                                userId,
-                                                query.text
-                                            )
 
-                                        }
-                                    }
+                                    viewModel.setSearchQuery(query.text)
+                                    // Cancel any ongoing search job
+                                    searchJob?.cancel()
+                                    viewModel.clearJob()
 
-                                } else {
+                                    if (boardLabels[pagerState.currentPage] == "services") {
+                                        viewModel.onGetServiceSearchQuerySuggestions(
+                                            userId,
+                                            query.text
+                                        )
+                                    } else if (boardLabels[pagerState.currentPage] == "second_hands") {
 
-                                    if (viewModel.searchQuery.value.text != query.text
-                                        && viewModel.isSearching.value
-                                    ) {
-                                        searchJob?.cancel()
-                                        viewModel.clearJob()
-                                        viewModel.setSearching(false)
-                                        viewModel.setSearchQuery("")
-                                        viewModel.setSuggestions(emptyList())
+                                        viewModel.onGetUsedProductListingSearchQuerySuggestions(
+                                            userId,
+                                            query.text
+                                        )
                                     }
 
                                 }
 
-                            },
-                            onSearch = {
 
-                                if (searchQuery.text.isNotEmpty()) {
+                            } else {
 
+                                if (viewModel.searchQuery.value.text != query.text
+                                    && viewModel.isSearching.value
+                                ) {
+                                    searchJob?.cancel()
+                                    viewModel.clearJob()
+                                    viewModel.setSearchQuery("")
+                                    viewModel.setSuggestions(emptyList())
+                                }
+
+                            }
+                        },
+                        onSearch = {
+                            if (searchQuery.text.isNotEmpty()) {
+
+                                scope.launch {
 
                                     if (boardLabels[pagerState.currentPage] == "services") {
                                         viewModel.navigateToOverlay(
@@ -268,187 +365,45 @@ fun HomeScreen(
                                                 servicesViewModel.getKey() + 1,
                                                 searchQuery.text,
                                                 true
+
                                             )
                                         )
                                     } else if (boardLabels[pagerState.currentPage] == "second_hands") {
-
                                         viewModel.navigateToOverlay(
                                             navController, BottomBar.NestedSeconds(
                                                 secondsViewModel.getKey() + 1,
                                                 searchQuery.text,
                                                 true
+
                                             )
                                         )
 
                                     }
-
                                 }
+                            }
 
-                            },
-                            onBackButtonClicked = {
-
-                                if (!isSearching) {
-                                    onPopBackStack()
-                                } else {
-                                    searchJob?.cancel()
-                                    viewModel.setSuggestions(emptyList())
-                                    viewModel.setSearching(false)
-                                }
-                            },
-                            onClearClicked = {
-                                searchJob?.cancel()
-                                viewModel.setSuggestions(emptyList())
-                                viewModel.setSearchQuery("")
-                                viewModel.setSearching(false)
-                            },
-                        )
-
-                    }
-
-
-                } else {
-
-
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        shadowElevation = 0.dp
-                    ) {
-
-                        SearchBar(
-                            query = searchQuery,
-                            onQueryChange = { query ->
-
-                                if (!isSearching) {
-                                    viewModel.setSearching(true)
-                                }
-
-                                if (query.text.trim().isNotEmpty()) {
-
-                                    if (viewModel.searchQuery.value.text != query.text
-                                        && viewModel.isSearching.value
-                                    ) {
-
-
-                                        viewModel.setSearchQuery(query.text)
-                                        // Cancel any ongoing search job
-                                        searchJob?.cancel()
-                                        viewModel.clearJob()
-
-                                        if (boardLabels[pagerState.currentPage] == "services") {
-                                            viewModel.onGetServiceSearchQuerySuggestions(
-                                                userId,
-                                                query.text
-                                            )
-                                        } else if (boardLabels[pagerState.currentPage] == "second_hands") {
-
-                                            viewModel.onGetUsedProductListingSearchQuerySuggestions(
-                                                userId,
-                                                query.text
-                                            )
-                                        }
-
-                                    }
-
-
-                                } else {
-
-                                    if (viewModel.searchQuery.value.text != query.text
-                                        && viewModel.isSearching.value
-                                    ) {
-                                        searchJob?.cancel()
-                                        viewModel.clearJob()
-                                        viewModel.setSearchQuery("")
-                                        viewModel.setSuggestions(emptyList())
-                                    }
-
-                                }
-                            },
-                            onSearch = {
-                                if (searchQuery.text.isNotEmpty()) {
-
-                                    scope.launch {
-
-                                        if (boardLabels[pagerState.currentPage] == "services") {
-                                            viewModel.navigateToOverlay(
-                                                navController, BottomBar.NestedServices(
-                                                    servicesViewModel.getKey() + 1,
-                                                    searchQuery.text,
-                                                    true
-
-                                                )
-                                            )
-                                        } else if (boardLabels[pagerState.currentPage] == "second_hands") {
-                                            viewModel.navigateToOverlay(
-                                                navController, BottomBar.NestedSeconds(
-                                                    secondsViewModel.getKey() + 1,
-                                                    searchQuery.text,
-                                                    true
-
-                                                )
-                                            )
-
-                                        }
-                                    }
-                                }
-
-                            },
-                            onBackButtonClicked = { },
-                            onClearClicked = {
-                                searchJob?.cancel()
-                                viewModel.setSuggestions(emptyList())
-                                viewModel.setSearchQuery("")
-                                viewModel.setSearching(false)
-                            },
-                            isBackButtonEnabled = false
-                        )
-
-                    }
+                        },
+                        onBackButtonClicked = { },
+                        onClearClicked = {
+                            searchJob?.cancel()
+                            viewModel.setSuggestions(emptyList())
+                            viewModel.setSearchQuery("")
+                            viewModel.setSearching(false)
+                        },
+                        isBackButtonEnabled = false
+                    )
 
                 }
 
-                Box(modifier = Modifier.fillMaxSize()) {
-                    if (!onlySearchBar) {
+            }
 
-                        Boards(
-                            boardItems,
-                            pagerState,
-                            servicesContent = {
-                                ServicesScreen(
-                                    {
-                                        viewModel.setSelectedServiceItem(it)
-                                        servicesViewModel.setSelectedItem(it)
-                                        onNavigateUpServiceDetailedScreen()
-                                    },
-                                    { service, ownerId ->
-                                        viewModel.setSelectedServiceOwnerServiceItem(service)
-                                        servicesViewModel.setSelectedItem(service)
-                                        onNavigateUpServiceOwnerProfile(ownerId)
-                                    },
-                                    servicesViewModel
-                                )
-                            }, secondsContent = {
-                                SecondsScreen(
-                                    {
-                                        viewModel.setSelectedUsedProductListingItem(it)
-                                        secondsViewModel.setSelectedItem(it)
-                                        onNavigateUpUsedProductListingDetailedScreen()
-                                    },
-                                    secondsViewModel
-                                )
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (!onlySearchBar) {
 
-                            }, {
-                                if (it == 1) {
-                                    onDockedFabAddNewSecondsChanged(true)
-                                } else {
-                                    onDockedFabAddNewSecondsChanged(false)
-                                }
-                            })
-
-
-                    } else {
-
-                        if (nestedType == "services") {
+                    Boards(
+                        boardItems,
+                        pagerState,
+                        servicesContent = {
                             ServicesScreen(
                                 {
                                     viewModel.setSelectedServiceItem(it)
@@ -462,9 +417,7 @@ fun HomeScreen(
                                 },
                                 servicesViewModel
                             )
-                        }
-
-                        if (nestedType == "second_hands") {
+                        }, secondsContent = {
                             SecondsScreen(
                                 {
                                     viewModel.setSelectedUsedProductListingItem(it)
@@ -473,97 +426,132 @@ fun HomeScreen(
                                 },
                                 secondsViewModel
                             )
-                        }
 
+                        }, {
+                            if (it == "seconds") {
+                                onDockedFabAddNewSecondsVisibility(true)
+                            } else {
+                                onDockedFabAddNewSecondsVisibility(false)
+                            }
+                        })
+
+
+                } else {
+
+                    if (nestedType == "services") {
+                        ServicesScreen(
+                            {
+                                viewModel.setSelectedServiceItem(it)
+                                servicesViewModel.setSelectedItem(it)
+                                onNavigateUpServiceDetailedScreen()
+                            },
+                            { service, ownerId ->
+                                viewModel.setSelectedServiceOwnerServiceItem(service)
+                                servicesViewModel.setSelectedItem(service)
+                                onNavigateUpServiceOwnerProfile(ownerId)
+                            },
+                            servicesViewModel
+                        )
                     }
 
-                    if (isSearching) {
+                    if (nestedType == "second_hands") {
+                        SecondsScreen(
+                            {
+                                viewModel.setSelectedUsedProductListingItem(it)
+                                secondsViewModel.setSelectedItem(it)
+                                onNavigateUpUsedProductListingDetailedScreen()
+                            },
+                            secondsViewModel
+                        )
+                    }
+
+                }
+
+                if (isSearching) {
 
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize() // This makes the Box take up the entire available space
-                                .background(MaterialTheme.colorScheme.surface)
-                        ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize() // This makes the Box take up the entire available space
+                            .background(MaterialTheme.colorScheme.surface)
+                    ) {
 
-                            if (isLazyLoading) {
-                                CircularProgressIndicatorLegacy(
-                                    modifier = Modifier
-                                        .align(Alignment.Center),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            } else {
+                        if (isLazyLoading) {
+                            CircularProgressIndicatorLegacy(
+                                modifier = Modifier
+                                    .align(Alignment.Center),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
 
-                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(modifier = Modifier.fillMaxSize()) {
 
-                                    items(suggestions) {
-                                        // Content inside the card with padding
-                                        Column {
+                                items(suggestions) {
+                                    // Content inside the card with padding
+                                    Column {
 
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .clickable {
-                                                        viewModel.setSearchQuery(it)
-                                                        if (it.isNotEmpty()) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    viewModel.setSearchQuery(it)
+                                                    if (it.isNotEmpty()) {
 
-                                                            if (boardLabels[pagerState.currentPage] == "services") {
-                                                                viewModel.navigateToOverlay(
-                                                                    navController,
-                                                                    BottomBar.NestedServices(
-                                                                        servicesViewModel.getKey() + 1,
-                                                                        it,
-                                                                        true
+                                                        if (boardLabels[pagerState.currentPage] == "services") {
+                                                            viewModel.navigateToOverlay(
+                                                                navController,
+                                                                BottomBar.NestedServices(
+                                                                    servicesViewModel.getKey() + 1,
+                                                                    it,
+                                                                    true
 
-                                                                    )
                                                                 )
-                                                            } else if (boardLabels[pagerState.currentPage] == "second_hands") {
-                                                                viewModel.navigateToOverlay(
-                                                                    navController,
-                                                                    BottomBar.NestedSeconds(
-                                                                        servicesViewModel.getKey() + 1,
-                                                                        it,
-                                                                        true
+                                                            )
+                                                        } else if (boardLabels[pagerState.currentPage] == "second_hands") {
+                                                            viewModel.navigateToOverlay(
+                                                                navController,
+                                                                BottomBar.NestedSeconds(
+                                                                    servicesViewModel.getKey() + 1,
+                                                                    it,
+                                                                    true
 
-                                                                    )
                                                                 )
+                                                            )
 
-                                                            }
+                                                        }
 
-                                                            scope.launch {
-                                                                delay(100)
-                                                                focusManager.clearFocus()
-                                                            }
+                                                        scope.launch {
+                                                            delay(100)
+                                                            focusManager.clearFocus()
                                                         }
                                                     }
-                                                    .padding(
-                                                        16.dp,
-                                                        vertical = 8.dp
-                                                    ), // Padding inside the card,
+                                                }
+                                                .padding(
+                                                    16.dp,
+                                                    vertical = 8.dp
+                                                ), // Padding inside the card,
 
-                                                verticalAlignment = Alignment.CenterVertically // Align items vertically
+                                            verticalAlignment = Alignment.CenterVertically // Align items vertically
 
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Search,
-                                                    contentDescription = null
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(
-                                                    text = it,
-                                                    style = MaterialTheme.typography.bodyMedium
-                                                )
-                                            }
-
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Search,
+                                                contentDescription = null
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = it,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
                                         }
 
                                     }
 
                                 }
+
                             }
-
-
                         }
+
 
                     }
 
@@ -571,21 +559,30 @@ fun HomeScreen(
 
             }
 
-            if (modalBottomSheetState.currentValue == SheetValue.Expanded) {
-                ModalBottomSheet(
-                    {
-                        coroutineScope.launch {
-                            modalBottomSheetState.hide()
-                        }
-                    },
-                    dragHandle = null,
-                    sheetGesturesEnabled = false,
-                    shape = RectangleShape,
-                    sheetState = modalBottomSheetState,
-                    modifier = Modifier.safeDrawingPadding(),
-                    properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false)
+        }
 
-                ) {
+        if (modalBottomSheetState.currentValue == SheetValue.Expanded) {
+
+            val bottomSheetNavController = rememberNavController()
+
+
+            ModalBottomSheet(
+                {
+                    coroutineScope.launch {
+                        modalBottomSheetState.hide()
+                    }
+                },
+                sheetGesturesEnabled = false,
+                dragHandle = null,
+                shape = RectangleShape,
+                sheetState = modalBottomSheetState,
+                properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false,
+                    isAppearanceLightStatusBars = false,
+                    isAppearanceLightNavigationBars = false
+                ),
+            ) {
+
+                Box(modifier = Modifier.fillMaxSize()){
 
                     BackHandler(modalBottomSheetState.currentValue == SheetValue.Expanded) {
 
@@ -611,33 +608,35 @@ fun HomeScreen(
                         }
                     }
 
-                    if (signInMethod == "guest") {
+                    if (isGuest) {
 
                         GuestUserLocationAccessBottomSheetScreen(
                             modalBottomSheetState.currentValue,
                             { currentLocation ->
-                                viewModel.setGuestCurrentLocation(userId, currentLocation)
-                                reloadItems()
-                                Toast.makeText(
-                                    context,
-                                    "Location updated successfully",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
+                                viewModel.setGuestCurrentLocation(userId, currentLocation) {
+                                    reloadItems()
+                                    Toast.makeText(
+                                        context,
+                                        "Location updated successfully",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             },
                             { recentLocation ->
                                 viewModel.setGuestRecentLocation(
                                     userId, recentLocation
-                                )
-                                reloadItems()
-                                Toast.makeText(
-                                    context,
-                                    "Location updated successfully",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                ) {
+                                    reloadItems()
+                                    Toast.makeText(
+                                        context,
+                                        "Location updated successfully",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+
                             },
-                            { district, callback ->
-                                callback()
+                            { district ->
+
                                 viewModel.setGuestCurrentLocation(
                                     userId, CurrentLocation(
                                         district.coordinates.latitude,
@@ -645,13 +644,15 @@ fun HomeScreen(
                                         district.district,
                                         "approximate"
                                     )
-                                )
-                                reloadItems()
-                                Toast.makeText(
-                                    context,
-                                    "Location updated successfully",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                ) {
+                                    reloadItems()
+                                    Toast.makeText(
+                                        context,
+                                        "Location updated successfully",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+
                             },
                             {
                                 coroutineScope.launch {
@@ -664,7 +665,6 @@ fun HomeScreen(
 
 
                     } else {
-
 
                         UserLocationBottomSheetScreen(
                             bottomSheetNavController,
@@ -685,7 +685,7 @@ fun HomeScreen(
                                     Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                                 }
                             },
-                            { district, callback ->
+                            { district ->
                                 viewModel.setCurrentLocation(
                                     CurrentLocation(
                                         district.coordinates.latitude,
@@ -693,7 +693,6 @@ fun HomeScreen(
                                         district.district,
                                         "approximate"
                                     ), {
-                                        callback()
                                         Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                                         reloadItems()
                                     }) {
@@ -715,8 +714,8 @@ fun HomeScreen(
             }
 
         }
-    }
 
+    }
 
 }
 

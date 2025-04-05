@@ -290,7 +290,7 @@ fun CreateServiceScreen(
                         bottomSheetScaffoldState.bottomSheetState.hide()
                     }
 
-                }, { district, callback ->
+                }, { district ->
 
                     viewModel.updateLocation(
                         DraftLocation(
@@ -300,7 +300,6 @@ fun CreateServiceScreen(
                             geo = district.district
                         )
                     )
-                    callback()
 
                 },
                 {

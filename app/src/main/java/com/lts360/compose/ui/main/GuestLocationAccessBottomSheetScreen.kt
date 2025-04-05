@@ -24,7 +24,7 @@ import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 fun OnBoardGuestUserLocationAccessBottomSheetScreen(
     bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
-    onDistrictSelected: (District, () -> Unit) -> Unit,
+    onDistrictSelected: (District) -> Unit,
     onPopUpLocationBottomSheet: () -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit={},
     locationStatesEnabled: Boolean = true,
@@ -89,7 +89,7 @@ fun GuestUserLocationAccessBottomSheetScreen(
     bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
-    onDistrictSelected: (District, () -> Unit) -> Unit,
+    onDistrictSelected: (District) -> Unit,
     onPopUpLocationBottomSheet: () -> Unit,
     homeViewModel: HomeViewModel,
     locationStatesEnabled: Boolean = true,

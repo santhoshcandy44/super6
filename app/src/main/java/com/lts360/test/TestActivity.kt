@@ -25,13 +25,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lts360.R
+import com.lts360.compose.ui.chat.ChatUsersScreen
 import com.lts360.compose.ui.main.HomeScreen
+import com.lts360.compose.ui.main.MainActivity
 import com.lts360.compose.ui.main.MoreScreen
+import com.lts360.compose.ui.main.NotificationScreen
 import com.lts360.compose.ui.main.viewmodels.PageSource
 import com.lts360.compose.ui.onboarding.ChooseIndustryScreen
 import com.lts360.compose.ui.onboarding.GuestChooseIndustryScreen
 import com.lts360.compose.ui.onboarding.navhost.OnBoardingNavHost
 import com.lts360.compose.ui.onboarding.navhost.OnBoardingScreen
+import com.lts360.compose.ui.services.ServicesScreen
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
@@ -80,6 +84,7 @@ class TestActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             AppTheme {
                 Surface {

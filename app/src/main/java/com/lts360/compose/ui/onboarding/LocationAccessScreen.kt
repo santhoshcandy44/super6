@@ -94,7 +94,7 @@ fun LocationAccessScreen(
                                     .show()
                             }
                         },
-                        { district, callback ->
+                        { district ->
                             viewModel.setGuestCurrentLocationAndCreateAccount(
                                 context,
                                 CurrentLocation(
@@ -109,7 +109,6 @@ fun LocationAccessScreen(
                                         "Location updated successfully",
                                         Toast.LENGTH_SHORT
                                     ).show()
-                                    callback()
 
                                 }) {
                                 Toast.makeText(context, it, Toast.LENGTH_SHORT)
@@ -145,7 +144,7 @@ fun LocationAccessScreen(
                                 Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                             }
                         },
-                        { district, callback ->
+                        { district ->
                             viewModel.setCurrentLocation(
                                 CurrentLocation(
                                     district.coordinates.latitude,
@@ -154,7 +153,6 @@ fun LocationAccessScreen(
                                     "approximate"
                                 ), {
                                     onLocationUpdated()
-                                    callback()
                                     Toast.makeText(context, it, Toast.LENGTH_SHORT)
                                         .show()
                                 }) {
@@ -173,9 +171,6 @@ fun LocationAccessScreen(
                     )
                 }
             }
-
-
-
         },
         sheetShape = RectangleShape,
         sheetDragHandle = null,

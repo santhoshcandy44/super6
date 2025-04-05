@@ -321,7 +321,7 @@ fun CreateUsedProductListingScreen(
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
 
-                    }, { district, callback ->
+                    }, { district->
 
                         viewModel.updateLocation(
                             EditableLocation(
@@ -332,7 +332,6 @@ fun CreateUsedProductListingScreen(
                                 geo = district.district
                             )
                         )
-                        callback()
 
                     },
                     {

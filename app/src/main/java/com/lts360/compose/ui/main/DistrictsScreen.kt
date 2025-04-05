@@ -33,7 +33,7 @@ import com.lts360.compose.utils.NavigatorCard
 fun DistrictsScreen(
     navHostController: NavHostController,
     isLoading: Boolean = false,
-    onDistrictClicked: (District, () -> Unit) -> Unit,
+    onDistrictClicked: (District) -> Unit,
     onPopDown: () -> Unit,
 ) {
 
@@ -83,10 +83,7 @@ fun DistrictsScreen(
                     NavigatorCard(
                         isLoading = isLoading,
                         onCardClicked = {
-                            onDistrictClicked(districtItem, {
-                                locationViewModel.removeSelectedDistrictSavedState()
-                                onPopDown()
-                            })
+                            onDistrictClicked(districtItem)
 
                         }) {
                         Row(

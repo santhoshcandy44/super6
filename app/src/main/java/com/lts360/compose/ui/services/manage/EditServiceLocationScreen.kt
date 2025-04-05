@@ -123,7 +123,7 @@ fun EditServiceLocationScreen(
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
 
-                    }, { district, callback ->
+                    }, { district->
                         location?.let {
                             viewModel.updateLocation(
                                 it.copy(
@@ -134,7 +134,6 @@ fun EditServiceLocationScreen(
                                 )
                             )
                         }
-                        callback()
                     },
                     {
                         coroutineScope.launch {

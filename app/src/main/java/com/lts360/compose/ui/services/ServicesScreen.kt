@@ -169,7 +169,6 @@ fun ServicesScreen(
             NetworkConnectivityManager.STATUS.STATUS_CONNECTED -> {
                 viewModel.updateLastLoadedItemPosition(-1)
                 viewModel.refresh(userId, searchQuery)
-
             }
 
             NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_INITIALLY -> {
