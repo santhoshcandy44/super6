@@ -33,7 +33,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,12 +41,12 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -107,6 +106,9 @@ fun MainScreen(
 ) {
 
 
+
+
+
     val boards by viewModel.boards.collectAsState()
 
     val messageCount by viewModel.messageCount.collectAsState(0)
@@ -129,36 +131,7 @@ fun MainScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            SheetValue.Hidden,
-            skipHiddenState = false
-        )
-    )
-
-
-
-    BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
-        coroutineScope.launch {
-            bottomSheetScaffoldState.bottomSheetState.hide()
-        }
-    }
-
-
-    var sheetContent by rememberSaveable { mutableStateOf("") } // Local state for 'welcome'
-
-    var isSheetIsClosedAlready by rememberSaveable { mutableStateOf(false) }
-
-    // Monitor the bottom sheet state to reset 'welcome' when the sheet is collapsed
-    LaunchedEffect(bottomSheetScaffoldState.bottomSheetState.currentValue) {
-        if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
-            if (sheetContent.isNotEmpty()) {
-                isSheetIsClosedAlready = true
-            }
-            sheetContent = ""
-        }
-    }
-
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var showDialog by remember {
         mutableStateOf(
@@ -204,12 +177,13 @@ fun MainScreen(
     }
 
 
-    LaunchedEffect(sheetContent) {
-        if (sheetContent == "welcome") {
-            // Expand the sheet
-            bottomSheetScaffoldState.bottomSheetState.expand()
+
+    BackHandler(sheetState.currentValue == SheetValue.Expanded) {
+        coroutineScope.launch {
+            sheetState.hide()
         }
     }
+
 
     var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -220,7 +194,6 @@ fun MainScreen(
         homeViewModel.isSelectedServiceOwnerServiceItemNull(),
         homeViewModel.isSelectedUsedProductListingItemNull(),
         homeViewModel.isSelectedServiceOwnerUsedProductListingItemNull()
-
     )
 
 
@@ -236,13 +209,11 @@ fun MainScreen(
 
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
 
-
     LaunchedEffect(currentBackStackEntry) {
         lastEntry = navController.currentBackStackEntry?.destination?.route
     }
 
 
-    // Step 5: Collect the bottom navigation visibility state from the ViewModel
     val bottomNavVisibility by viewModel.bottomNavVisibility.collectAsState()
 
 
@@ -271,7 +242,6 @@ fun MainScreen(
             nonNullDestination.hasRoute(BottomBar.Home::class)
         } == true
 
-
     }
 
     var dockedFloatingActionButtonVisibility by rememberSaveable { mutableStateOf(false) } // Initially hidden
@@ -283,120 +253,140 @@ fun MainScreen(
             .imePadding()
     ) {
 
-        BottomSheetScaffold(
-            sheetContent = {
 
-                if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+        Scaffold(
+            floatingActionButton = {
 
-                    if (sheetContent == "welcome") {
-                        ForceWelcomeScreen(
-                            onLogInNavigate = {
-                                context.startActivity(
-                                    Intent(context, AuthActivity::class.java)
-                                        .apply {
-                                            flags =
-                                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                                            putExtra("force_type", "force_login")
-                                        })
-                            }, onSelectAccountNavigate = {
-                                context.startActivity(
-                                    Intent(context, AuthActivity::class.java)
-                                        .apply {
-                                            flags =
-                                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                                            putExtra("force_type", "force_register")
-                                        }
-                                )
+                if (isHomeScreen && dockedFloatingActionButtonVisibility) {
+                    FloatingActionButton(
+                        onNavigateUpUsedProductListing,
+                        shape = CircleShape,
+                        modifier = Modifier
+                            .offset(y = 50.dp)
+                            .shadow(0.dp),
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            2.dp,
+                            2.dp,
+                            2.dp,
+                            2.dp
+                        )
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                    }
+                }
+            },
 
-                            }) {
-                            coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.hide()
-                            }
+            floatingActionButtonPosition = FabPosition.Center,
+
+            bottomBar = {
+
+                if (bottomNavVisibility) {
+                    BottomBar(
+                        navController,
+                        signInMethod,
+//                    scrollBehavior,
+                        messageCount,
+                        notificationCount,
+                        currentScreen
+
+                    ) {
+                        coroutineScope.launch {
+                            sheetState.expand()
                         }
                     }
                 }
 
-            },
-            scaffoldState = bottomSheetScaffoldState,
-            sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-            sheetDragHandle = null,
-            sheetSwipeEnabled = true, // Allow gestures to hide/show bottom sheet
-        ) { innerPadding ->
+
+            }) { contentPadding ->
 
 
-            Scaffold(
-                floatingActionButton = {
-
-                    if (isHomeScreen && dockedFloatingActionButtonVisibility) {
-                        FloatingActionButton(
-                            onNavigateUpUsedProductListing,
-                            shape = CircleShape,
-                            modifier = Modifier
-                                .offset(y = 50.dp)
-                                .shadow(0.dp),
-                            elevation = FloatingActionButtonDefaults.elevation(
-                                2.dp,
-                                2.dp,
-                                2.dp,
-                                2.dp
-                            )
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                        }
+            BottomNavHost(
+                homeViewModel,
+                chatListViewModel,
+                notificationViewModel,
+                moreViewModel,
+                boards,
+                navController,
+                modifier = Modifier.padding(contentPadding),
+                onProfileNavigateUp = {
+                    onProfileNavigateUp()
+                },
+                onAccountAndProfileSettingsNavigateUp = onAccountAndProfileSettingsNavigateUp,
+                onManageIndustriesAndInterestsNavigateUp = onManageIndustriesAndInterestsNavigateUp,
+                onManageServiceNavigateUp = {
+                    context.startActivity(
+                        Intent(context, ManageServicesActivity::class.java)
+                            .apply {
+                                flags =
+                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                            }
+                    )
+                },
+                onNavigateUpBookmarkedServices = onNavigateUpBookmarkedServices,
+                {
+                    coroutineScope.launch {
+                        sheetState.expand()
                     }
                 },
 
-                floatingActionButtonPosition = FabPosition.Center,
+                {
+                    context.startActivity(
+                        Intent(context, AuthActivity::class.java)
+                            .apply {
+                                flags =
+                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                putExtra("force_type", "force_login")
+                            })
+                },
+                onNavigateUpChatWindow,
+                {
+                    dockedFloatingActionButtonVisibility = it
+                }, onNavigateUpGuestManageIndustriesAndInterests
+            )
 
-                bottomBar = {
+
+        }
+
+        // Check if isConnected has a value
+        isConnected?.let { connectionState ->
 
 
-                    if (bottomNavVisibility) {
-                        BottomBar(
-                            navController,
-                            signInMethod,
-//                    scrollBehavior,
-                            messageCount,
-                            notificationCount,
-                            currentScreen
-
-                        ) {
-                            sheetContent = "welcome"
-                        }
+            when {
+                connectionState && !wasConnected -> {
+                    ShowFloatingViewConnectionAvailable {
+                        wasConnected = true
+                        isDismissed = false
                     }
 
+                    // If currently connected and previously was not connected
 
-                }) { contentPadding ->
+                }
 
+                !connectionState && !isDismissed -> {
+                    // If currently disconnected
+                    ShowFloatingViewInternetDisconnected(
+                        onDismiss = { /* Handle dismiss logic here */
+                            isDismissed = true
+                        }
+                    )
+                    wasConnected = false
 
-                BottomNavHost(
-                    homeViewModel,
-                    chatListViewModel,
-                    notificationViewModel,
-                    moreViewModel,
-                    boards,
-                    navController,
-                    modifier = Modifier.padding(contentPadding),
-                    onProfileNavigateUp = {
-                        onProfileNavigateUp()
-                    },
-                    onAccountAndProfileSettingsNavigateUp = onAccountAndProfileSettingsNavigateUp,
-                    onManageIndustriesAndInterestsNavigateUp = onManageIndustriesAndInterestsNavigateUp,
-                    onManageServiceNavigateUp = {
-                        context.startActivity(
-                            Intent(context, ManageServicesActivity::class.java)
-                                .apply {
-                                    flags =
-                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                                }
-                        )
-                    },
-                    onNavigateUpBookmarkedServices = onNavigateUpBookmarkedServices,
-                    {
-                        sheetContent = "welcome"
-                    },
+                }
+                // If already connected, do nothing
+            }
+        }
 
-                    {
+        if (sheetState.currentValue == SheetValue.Expanded) {
+            ModalBottomSheet(
+                {
+                    coroutineScope.launch {
+                        sheetState.hide()
+                    }
+                }, dragHandle = null,
+                sheetState = sheetState
+            ) {
+                ForceWelcomeScreen(
+                    onLogInNavigate = {
                         context.startActivity(
                             Intent(context, AuthActivity::class.java)
                                 .apply {
@@ -404,51 +394,22 @@ fun MainScreen(
                                         Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                                     putExtra("force_type", "force_login")
                                 })
-                    },
-                    (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded),
-                    {
-                        coroutineScope.launch {
-                            bottomSheetScaffoldState.bottomSheetState.hide()
-                        }
-                    },
-                    onNavigateUpChatWindow,
-                    {
-                        dockedFloatingActionButtonVisibility = it
-                    }, onNavigateUpGuestManageIndustriesAndInterests
-                )
-
-
-            }
-
-            // Check if isConnected has a value
-            isConnected?.let { connectionState ->
-
-
-                when {
-                    connectionState && !wasConnected -> {
-                        ShowFloatingViewConnectionAvailable {
-                            wasConnected = true
-                            isDismissed = false
-                        }
-
-                        // If currently connected and previously was not connected
-
-                    }
-
-                    !connectionState && !isDismissed -> {
-                        // If currently disconnected
-                        ShowFloatingViewInternetDisconnected(
-                            onDismiss = { /* Handle dismiss logic here */
-                                isDismissed = true
-                            }
+                    }, onSelectAccountNavigate = {
+                        context.startActivity(
+                            Intent(context, AuthActivity::class.java)
+                                .apply {
+                                    flags =
+                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                    putExtra("force_type", "force_register")
+                                }
                         )
-                        wasConnected = false
 
+                    }) {
+                    coroutineScope.launch {
+                        sheetState.hide()
                     }
-                    // If already connected, do nothing
                 }
             }
-
         }
 
     }

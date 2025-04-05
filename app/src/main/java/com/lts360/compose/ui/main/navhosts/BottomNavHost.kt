@@ -1,6 +1,8 @@
 package com.lts360.compose.ui.main.navhosts
 
 import android.content.Intent
+import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -15,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.toRoute
 import com.lts360.app.database.models.app.Board
 import com.lts360.app.database.models.chat.ChatUser
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.navhost.noTransitionComposable
 import com.lts360.compose.ui.auth.navhost.slideComposable
@@ -63,23 +66,21 @@ fun BottomNavHost(
     onNavigateUpBookmarkedServices: () -> Unit,
     onNavigateUpWelcomeScreenSheet: () -> Unit,
     onNavigateUpLogInSheet: () -> Unit,
-    isSheetExpanded: Boolean,
-    collapseSheet: () -> Unit,
     onNavigateUpChatScreen: (ChatUser, Int, Long) -> Unit,
     onDockedFabAddNewSecondsChanged: (Boolean) -> Unit,
-    onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {},
-
-
+    onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {}
     ) {
 
 
     val context = LocalContext.current
+
 
     NavHost(
         modifier = modifier,
         navController = navController,
         startDestination = BottomBar.Home(),
     ) {
+
 
 
         noTransitionComposable<BottomBar.Home> { backstackEntry ->
@@ -528,8 +529,7 @@ fun BottomNavHost(
                         chatId,
                         recipientId
                     )
-                }, isSheetExpanded,
-                collapseSheet,
+                },
                 chatListViewModel
             )
         }
@@ -539,8 +539,6 @@ fun BottomNavHost(
         noTransitionComposable<BottomBar.Notifications> {
             NotificationScreen(
                 navController,
-                isSheetExpanded,
-                collapseSheet,
                 notificationViewModel
             )
         }
@@ -586,8 +584,6 @@ fun BottomNavHost(
                 onNavigateUpGuestManageIndustriesAndInterests = onNavigateUpGuestManageIndustriesAndInterests,
                 onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet,
                 onNavigateUpLogInSheet = onNavigateUpLogInSheet,
-                isSheetExpanded = isSheetExpanded,
-                collapseSheet = collapseSheet,
                 viewModel = moreViewModel
             )
         }

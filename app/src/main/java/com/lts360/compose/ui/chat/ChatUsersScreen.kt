@@ -88,8 +88,6 @@ import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 fun ChatUsersScreen(
     navController: NavHostController,
     onNavigateUpChat: (ChatUser, Int, Long) -> Unit,
-    isSheetExpanded: Boolean,
-    collapseSheet: () -> Unit,
     viewModel: ChatListViewModel
 ) {
 
@@ -97,29 +95,24 @@ fun ChatUsersScreen(
 
     BackHandler {
 
-        if (isSheetExpanded) {
-            collapseSheet()
-        } else {
-            val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
-            val hierarchy = navBackStackEntry?.destination?.hierarchy
+        val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
+        val hierarchy = navBackStackEntry?.destination?.hierarchy
 
-            if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
+        if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
 
 
-                // Navigate back to A and preserve its state
-                navController.navigate(BottomBar.Home()) {
-                    launchSingleTop = true
-                    restoreState = true
-                    popUpTo(BottomBar.Home()) {
-                        saveState = true
-                    }
+            // Navigate back to A and preserve its state
+            navController.navigate(BottomBar.Home()) {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(BottomBar.Home()) {
+                    saveState = true
                 }
-            } else {
-                // Let the default back behavior occur
-                navController.popBackStack()
             }
+        } else {
+            // Let the default back behavior occur
+            navController.popBackStack()
         }
-
     }
 
 

@@ -66,8 +66,6 @@ import com.lts360.compose.ui.viewmodels.NotificationViewModel.Companion.getTimeA
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationScreen(navController: NavHostController,
-                       isSheetExpanded: Boolean,
-                       collapseSheet: () -> Unit,
                        viewModel: NotificationViewModel
 ) {
 
@@ -77,28 +75,22 @@ fun NotificationScreen(navController: NavHostController,
 
     BackHandler {
 
-        if (isSheetExpanded) {
-            collapseSheet()
-        } else {
-            val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
-            val hierarchy = navBackStackEntry?.destination?.hierarchy
+        val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
+        val hierarchy = navBackStackEntry?.destination?.hierarchy
 
-            if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
-
-                // Navigate back to A and preserve its state
-                navController.navigate(BottomBar.Home()) {
-                    launchSingleTop = true
-                    restoreState = true
-                    popUpTo(BottomBar.Home()) {
-                        saveState = true
-                    }
+        if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
+            // Navigate back to A and preserve its state
+            navController.navigate(BottomBar.Home()) {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(BottomBar.Home()) {
+                    saveState = true
                 }
-            } else {
-                // Let the default back behavior occur
-                navController.popBackStack()
             }
+        } else {
+            // Let the default back behavior occur
+            navController.popBackStack()
         }
-
     }
 
 

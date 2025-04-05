@@ -3,7 +3,6 @@ package com.lts360.compose.ui.main
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -50,12 +49,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.BuildConfig
 import com.lts360.R
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.components.utils.openUrlInCustomTab
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.AccountType
-import com.lts360.compose.ui.chat.ChatScreen
-import com.lts360.compose.ui.chat.ChatUsersScreen
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.shimmerLoadingAnimation
 import com.lts360.compose.ui.theme.customColorScheme
@@ -75,8 +71,6 @@ fun MoreScreen(
     onNavigateUpThemeModeSettings: () -> Unit,
     onNavigateUpWelcomeScreenSheet: () -> Unit,
     onNavigateUpLogInSheet: () -> Unit,
-    isSheetExpanded: Boolean,
-    collapseSheet: () -> Unit,
     viewModel: MoreViewModel,
     onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {}
 ) {
@@ -84,27 +78,23 @@ fun MoreScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
     BackHandler {
-        if (isSheetExpanded) {
-            collapseSheet()
-        } else {
 
-            val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
-            val hierarchy = navBackStackEntry?.destination?.hierarchy
+        val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
+        val hierarchy = navBackStackEntry?.destination?.hierarchy
 
-            if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
+        if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
 
-                // Navigate back to A and preserve its state
-                navController.navigate(BottomBar.Home()) {
-                    launchSingleTop = true
-                    restoreState = true
-                    popUpTo(BottomBar.Home()) {
-                        saveState = true
-                    }
+            // Navigate back to A and preserve its state
+            navController.navigate(BottomBar.Home()) {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(BottomBar.Home()) {
+                    saveState = true
                 }
-            } else {
-                // Let the default back behavior occur
-                navController.popBackStack()
             }
+        } else {
+            // Let the default back behavior occur
+            navController.popBackStack()
         }
 
     }
@@ -115,8 +105,6 @@ fun MoreScreen(
     val isLoading by viewModel.isLoading.collectAsState()
 
     val userProfile by viewModel.userProfile.collectAsState()
-
-    // Initialize the ModalBottomSheetState with default value
 
 
     // Define a gradient brush
