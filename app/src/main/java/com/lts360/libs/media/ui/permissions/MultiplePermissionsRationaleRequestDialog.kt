@@ -1,7 +1,6 @@
 package com.lts360.libs.media.ui.permissions
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,7 +18,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,11 +42,14 @@ fun MultiplePermissionsRationaleRequestDialog(
     permissionDescription:String,
     onAllowPermissionClicked: () -> Unit,
     onDismissRequest: () -> Unit,
-    iconSize: Dp = 80.dp) {
+    iconSize: Dp = 80.dp,
+    dismissOnClickOutside:Boolean = true
+
+) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         BasicAlertDialog(
             onDismissRequest = onDismissRequest,
-            properties = DialogProperties(usePlatformDefaultWidth = false),
+            properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = dismissOnClickOutside),
             modifier = Modifier.clip(RoundedCornerShape(16.dp))
         ) {
             Surface {

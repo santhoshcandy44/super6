@@ -1148,7 +1148,7 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
 
     val context = LocalContext.current
 
-    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
 
 
         val readExternalStoragePermission = android.Manifest.permission.READ_EXTERNAL_STORAGE
@@ -1224,6 +1224,8 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
             val isReadMediaPermissionGranted = permissions[readExternalStoragePermission]
             val isCameraPermissionGranted = permissions[accessCamera]
 
+            Toast.makeText(context,"${isReadMediaPermissionGranted}", Toast.LENGTH_SHORT)
+                .show()
 
             // Update state based on the permissions result
             if (isReadMediaPermissionGranted == true
@@ -1288,7 +1290,6 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                 arrayOf(readExternalStoragePermission)
             )
         }
-
 
         LaunchedEffect(Unit) {
             launchPermissions()
@@ -1485,6 +1486,7 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                 false
             )
         }
+
         var isShowingReadMediaPermissionRequestDialog by rememberSaveable { mutableStateOf(false) }
 
 
@@ -1508,11 +1510,11 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
             val isReadMediaPermissionGranted =
                 isReadMediaImagesPermissionGranted == true && isReadMediaVideoPermissionGranted == true
 
-            val isCameraPermissionGranted = permissions[accessCamera]
+            val isCameraPermissionGranted = permissions[accessCamera] == true
 
 
             // Update state based on the permissions result
-            if (isReadMediaPermissionGranted && isCameraPermissionGranted == true
+            if (isReadMediaPermissionGranted && isCameraPermissionGranted
             ) {
                 allRequestPermissionGranted = true
 
@@ -1536,25 +1538,26 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                         readMediaVideo
                     )
 
-                if ((!isCameraPermissionRequestRationale && isCameraPermissionGranted == false)
+                if ((!isCameraPermissionRequestRationale && !isCameraPermissionGranted)
                     && (!isReadImagesPermissionRequestRationale
                             && !isReadVideoPermissionRequestRationale
                             && !isReadMediaPermissionGranted)
                 ) {
                     isShowingAllPermissionRequestDialogRationale = true
-                } else if (!isCameraPermissionRequestRationale && isCameraPermissionGranted == false) {
+                } else if (!isCameraPermissionRequestRationale && !isCameraPermissionGranted) {
                     isShowingAccessCameraPermissionRequestDialogRationale = true
+
                 } else if ((!isReadImagesPermissionRequestRationale
-                            || isReadVideoPermissionRequestRationale)
+                            || !isReadVideoPermissionRequestRationale)
                     && !isReadMediaPermissionGranted
                 ) {
 
                     isShowingReadMediaPermissionRequestDialogRationale = true
                 } else {
-                    if (!isReadMediaPermissionGranted && isCameraPermissionGranted == false) {
+                    if (!isReadMediaPermissionGranted && !isCameraPermissionGranted) {
                         isShowingAllPermissionRequestDialog = true
 
-                    } else if (isCameraPermissionGranted == false) {
+                    } else if (!isCameraPermissionGranted) {
                         isShowingAccessCameraPermissionRequestDialog = true
                     } else {
                         isShowingReadMediaPermissionRequestDialog = true
