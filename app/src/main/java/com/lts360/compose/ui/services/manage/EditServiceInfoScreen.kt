@@ -94,7 +94,6 @@ fun EditServiceInfoScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .imePadding()
         ) { contentPadding ->
             // Toolbar
 

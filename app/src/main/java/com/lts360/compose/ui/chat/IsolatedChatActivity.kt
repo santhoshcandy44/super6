@@ -3,6 +3,7 @@ package com.lts360.compose.ui.chat
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
@@ -33,9 +34,10 @@ class IsolatedChatActivity : ComponentActivity() {
     @Inject
     lateinit var chatUserDao: ChatUserDao
 
-    val isolatedChatActivityViewModel: IsolatedChatActivityViewModel by viewModels()
+    private val isolatedChatActivityViewModel: IsolatedChatActivityViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
 

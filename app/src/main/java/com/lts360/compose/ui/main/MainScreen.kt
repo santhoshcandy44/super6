@@ -22,10 +22,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -234,87 +232,139 @@ fun MainScreen(
     var dockedFloatingActionButtonVisibility by rememberSaveable { mutableStateOf(false) } // Initially hidden
 
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding()
-    ) {
 
-        Scaffold(
-            floatingActionButton = {
+    Scaffold(
+        floatingActionButton = {
 
-                if (isHomeScreen && dockedFloatingActionButtonVisibility) {
-                    FloatingActionButton(
-                        onNavigateUpUsedProductListing,
-                        shape = CircleShape,
-                        modifier = Modifier
-                            .offset(y = 50.dp)
-                            .shadow(0.dp),
-                        elevation = FloatingActionButtonDefaults.elevation(
-                            2.dp,
-                            2.dp,
-                            2.dp,
-                            2.dp
-                        )
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                    }
-                }
-            },
-
-            floatingActionButtonPosition = FabPosition.Center,
-
-            bottomBar = {
-
-                if (bottomNavVisibility) {
-                    BottomBar(
-                        navController,
-                        signInMethod,
-//                    scrollBehavior,
-                        messageCount,
-                        notificationCount,
-                        currentScreen
-
-                    ) {
-                        coroutineScope.launch {
-                            sheetState.expand()
-                        }
-                    }
-                }
-
-
-            }) { contentPadding ->
-
-            BottomNavHost(
-                homeViewModel,
-                chatListViewModel,
-                notificationViewModel,
-                moreViewModel,
-                boards,
-                navController,
-                modifier = Modifier.padding(contentPadding),
-                onProfileNavigateUp = {
-                    onProfileNavigateUp()
-                },
-                onAccountAndProfileSettingsNavigateUp = onAccountAndProfileSettingsNavigateUp,
-                onManageIndustriesAndInterestsNavigateUp = onManageIndustriesAndInterestsNavigateUp,
-                onManageServiceNavigateUp = {
-                    context.startActivity(
-                        Intent(context, ManageServicesActivity::class.java)
-                            .apply {
-                                flags =
-                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                            }
+            if (isHomeScreen && dockedFloatingActionButtonVisibility) {
+                FloatingActionButton(
+                    onNavigateUpUsedProductListing,
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .offset(y = 50.dp)
+                        .shadow(0.dp),
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        2.dp,
+                        2.dp,
+                        2.dp,
+                        2.dp
                     )
-                },
-                onNavigateUpBookmarkedServices = onNavigateUpBookmarkedServices,
-                {
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                }
+            }
+        },
+
+        floatingActionButtonPosition = FabPosition.Center,
+
+        bottomBar = {
+
+            if (bottomNavVisibility) {
+                BottomBar(
+                    navController,
+                    signInMethod,
+//                    scrollBehavior,
+                    messageCount,
+                    notificationCount,
+                    currentScreen
+
+                ) {
                     coroutineScope.launch {
                         sheetState.expand()
                     }
-                },
+                }
+            }
 
-                {
+
+        }) { contentPadding ->
+
+        BottomNavHost(
+            homeViewModel,
+            chatListViewModel,
+            notificationViewModel,
+            moreViewModel,
+            boards,
+            navController,
+            modifier = Modifier.padding(contentPadding),
+            onProfileNavigateUp = {
+                onProfileNavigateUp()
+            },
+            onAccountAndProfileSettingsNavigateUp = onAccountAndProfileSettingsNavigateUp,
+            onManageIndustriesAndInterestsNavigateUp = onManageIndustriesAndInterestsNavigateUp,
+            onManageServiceNavigateUp = {
+                context.startActivity(
+                    Intent(context, ManageServicesActivity::class.java)
+                        .apply {
+                            flags =
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }
+                )
+            },
+            onNavigateUpBookmarkedServices = onNavigateUpBookmarkedServices,
+            {
+                coroutineScope.launch {
+                    sheetState.expand()
+                }
+            },
+
+            {
+                context.startActivity(
+                    Intent(context, AuthActivity::class.java)
+                        .apply {
+                            flags =
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                            putExtra("force_type", "force_login")
+                        })
+            },
+            onNavigateUpChatWindow,
+            {
+                dockedFloatingActionButtonVisibility = it
+            }, onNavigateUpGuestManageIndustriesAndInterests
+        )
+
+    }
+    // Check if isConnected has a value
+    isConnected?.let { connectionState ->
+
+
+        when {
+            connectionState && !wasConnected -> {
+                ShowFloatingViewConnectionAvailable {
+                    wasConnected = true
+                    isDismissed = false
+                }
+
+                // If currently connected and previously was not connected
+
+            }
+
+            !connectionState && !isDismissed -> {
+                // If currently disconnected
+                ShowFloatingViewInternetDisconnected(
+                    onDismiss = { /* Handle dismiss logic here */
+                        isDismissed = true
+                    }
+                )
+                wasConnected = false
+
+            }
+            // If already connected, do nothing
+        }
+    }
+
+    if (sheetState.currentValue == SheetValue.Expanded) {
+        ModalBottomSheet(
+            {
+                coroutineScope.launch {
+                    sheetState.hide()
+                }
+            },
+            dragHandle = null,
+            shape = RectangleShape,
+            sheetState = sheetState
+        ) {
+            ForceWelcomeScreen(
+                onLogInNavigate = {
                     context.startActivity(
                         Intent(context, AuthActivity::class.java)
                             .apply {
@@ -322,81 +372,24 @@ fun MainScreen(
                                     Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                                 putExtra("force_type", "force_login")
                             })
-                },
-                onNavigateUpChatWindow,
-                {
-                    dockedFloatingActionButtonVisibility = it
-                }, onNavigateUpGuestManageIndustriesAndInterests
-            )
-
-        }
-        // Check if isConnected has a value
-        isConnected?.let { connectionState ->
-
-
-            when {
-                connectionState && !wasConnected -> {
-                    ShowFloatingViewConnectionAvailable {
-                        wasConnected = true
-                        isDismissed = false
-                    }
-
-                    // If currently connected and previously was not connected
-
-                }
-
-                !connectionState && !isDismissed -> {
-                    // If currently disconnected
-                    ShowFloatingViewInternetDisconnected(
-                        onDismiss = { /* Handle dismiss logic here */
-                            isDismissed = true
-                        }
+                }, onSelectAccountNavigate = {
+                    context.startActivity(
+                        Intent(context, AuthActivity::class.java)
+                            .apply {
+                                flags =
+                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                putExtra("force_type", "force_register")
+                            }
                     )
-                    wasConnected = false
 
-                }
-                // If already connected, do nothing
-            }
-        }
-
-        if (sheetState.currentValue == SheetValue.Expanded) {
-            ModalBottomSheet(
-                {
-                    coroutineScope.launch {
-                        sheetState.hide()
-                    }
-                },
-                dragHandle = null,
-                shape = RectangleShape,
-                sheetState = sheetState
-            ) {
-                ForceWelcomeScreen(
-                    onLogInNavigate = {
-                        context.startActivity(
-                            Intent(context, AuthActivity::class.java)
-                                .apply {
-                                    flags =
-                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                                    putExtra("force_type", "force_login")
-                                })
-                    }, onSelectAccountNavigate = {
-                        context.startActivity(
-                            Intent(context, AuthActivity::class.java)
-                                .apply {
-                                    flags =
-                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                                    putExtra("force_type", "force_register")
-                                }
-                        )
-
-                    }) {
-                    coroutineScope.launch {
-                        sheetState.hide()
-                    }
+                }) {
+                coroutineScope.launch {
+                    sheetState.hide()
                 }
             }
         }
     }
+
 
 }
 

@@ -86,6 +86,7 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
+import androidx.core.net.toUri
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -375,7 +376,6 @@ fun CreateUsedProductListingScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .imePadding()
         ) { contentPadding ->
 
             Box(
@@ -716,7 +716,7 @@ fun CreateUsedProductListingScreen(
                                                     imageContainers.mapIndexed { index, bitmapContainer ->
                                                         createImagePartForUri(
                                                             context,
-                                                            Uri.parse(bitmapContainer.path),
+                                                            bitmapContainer.path.toUri(),
                                                             "IMAGE_${index}_${
                                                                 getFileExtensionFromImageFormat(
                                                                     bitmapContainer.format

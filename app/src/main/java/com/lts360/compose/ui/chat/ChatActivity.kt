@@ -14,6 +14,7 @@ import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -40,7 +41,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
@@ -240,6 +240,7 @@ class ChatActivity : ChatUtilNativeBaseActivity() {
     private lateinit var chatActivityViewModel: ChatActivityViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         val senderId = intent.getLongExtra("sender_id", -1)
@@ -1007,10 +1008,8 @@ fun ChatPanel(
     }
 
 
-
     Scaffold(
         topBar = {
-
             TopAppBar(
                 modifier = Modifier.shadow(2.dp),
                 navigationIcon = {
@@ -1076,9 +1075,7 @@ fun ChatPanel(
                     }
                 }
             )
-
-
-        }
+        },
     ) { contentPadding ->
 
 
@@ -1791,7 +1788,6 @@ fun ChatPanel(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .imePadding()
                             .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
                                 pass = PointerEventPass.Initial,
                                 onDown = {
@@ -1917,7 +1913,6 @@ fun ChatPanel(
                             .fillMaxWidth()
                             .wrapContentHeight()
                             .padding(8.dp)
-                            .imePadding()
                             .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
                                 pass = PointerEventPass.Initial,
                                 onDown = {

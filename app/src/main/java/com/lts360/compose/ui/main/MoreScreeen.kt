@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +49,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.BuildConfig
 import com.lts360.R
+import com.lts360.app.database.models.app.Board
 import com.lts360.components.utils.openUrlInCustomTab
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.AccountType
@@ -57,11 +57,13 @@ import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.shimmerLoadingAnimation
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.viewmodels.MoreViewModel
+import androidx.core.net.toUri
 
 
 @Composable
 fun   MoreScreen(
     navController: NavHostController,
+    boardItems: List<Board>,
     onProfileNavigateUp: () -> Unit,
     onAccountAndProfileSettingsNavigateUp: (String) -> Unit,
     onManageIndustriesAndInterestsNavigateUp: () -> Unit,
@@ -75,6 +77,8 @@ fun   MoreScreen(
     viewModel: MoreViewModel,
     onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {}
 ) {
+
+    val isServicesEnabled = boardItems.any { it.boardLabel == "services" }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
@@ -473,13 +477,15 @@ fun   MoreScreen(
                                 onSetupBoardsSettingsNavigateUp()
                             }
 
-                            MoreSectionItem(
-                                color = Color.Red,
-                                iconRes = R.drawable.ic_light_interest,
-                                text = "Manage Service Industries"
-                            ) {
+                            if(isServicesEnabled){
+                                MoreSectionItem(
+                                    color = Color.Red,
+                                    iconRes = R.drawable.ic_light_interest,
+                                    text = "Manage Service Industries"
+                                ) {
 
-                                onManageIndustriesAndInterestsNavigateUp()
+                                    onManageIndustriesAndInterestsNavigateUp()
+                                }
                             }
                         }
                     }
@@ -556,8 +562,8 @@ fun   MoreScreen(
                             iconRes = R.drawable.ic_light_help, text = "Help and Support"
                         ) {
                             val emailIntent =
-                                Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
-                                    putExtra(
+                                Intent(Intent.ACTION_SENDTO, "mailto:".toUri()).apply {
+                                putExtra(
                                         Intent.EXTRA_EMAIL,
                                         arrayOf(context.getString(R.string.help_and_support))
                                     )

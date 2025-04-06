@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Surface
 import com.google.firebase.auth.FirebaseAuth
 import com.lts360.R
@@ -27,6 +28,7 @@ class AuthActivity : ComponentActivity() {
     lateinit var tokenManager: TokenManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         val isWelcome = intent.getBooleanExtra("is_welcome", false)
@@ -120,7 +122,6 @@ class AuthActivity : ComponentActivity() {
             }
 
         }
-
 
 
         setContent {

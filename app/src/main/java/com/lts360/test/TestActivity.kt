@@ -24,7 +24,11 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.lts360.App
 import com.lts360.R
+import com.lts360.compose.ui.auth.LoginScreen
+import com.lts360.compose.ui.auth.RegisterScreen
+import com.lts360.compose.ui.profile.EditProfileSettingsScreen
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
@@ -71,9 +75,8 @@ class TestActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
+        super.onCreate(savedInstanceState)
         setContent {
             AppTheme {
                 Surface {

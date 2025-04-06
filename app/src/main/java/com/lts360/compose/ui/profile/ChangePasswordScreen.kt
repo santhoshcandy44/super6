@@ -83,7 +83,7 @@ fun ChangePasswordScreen(
 
     val focusManager = LocalFocusManager.current
 
-    Box(modifier = Modifier.fillMaxSize().imePadding()){
+    Box(modifier = Modifier.fillMaxSize()){
         Scaffold(
             topBar = {
                 TopAppBar(

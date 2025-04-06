@@ -1,6 +1,5 @@
 package com.lts360.libs.media.ui.permissions
 
-import android.graphics.drawable.Icon
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -46,12 +43,15 @@ fun PermissionRequestDialog(
     onAllowPermissionClicked: () -> Unit,
     onDismissRequest: () -> Unit,
     iconSize: Dp = 80.dp,
-    dismissButtonEnabled: Boolean = true
+    dismissButtonEnabled: Boolean = true,
+    dismissOnClickOutside:Boolean = true
 ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         BasicAlertDialog(
             onDismissRequest = onDismissRequest,
-            properties = DialogProperties(usePlatformDefaultWidth = false),
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false, dismissOnClickOutside = dismissOnClickOutside
+            ),
             modifier = Modifier.clip(RoundedCornerShape(16.dp))
         ) {
             Surface {

@@ -73,7 +73,6 @@ fun EditProfileEmailScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .imePadding()
 
     ) {
         Scaffold(

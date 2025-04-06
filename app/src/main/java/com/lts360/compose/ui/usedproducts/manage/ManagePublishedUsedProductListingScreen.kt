@@ -409,7 +409,6 @@ fun ManagePublishedUsedProductListingScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .imePadding()
         ) { contentPadding ->
 
 

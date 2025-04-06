@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,7 +24,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ButtonDefaults
@@ -72,10 +70,11 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     viewModel: LogInViewModel = hiltViewModel(),
     onNavigateUpForgotPassword: () -> Unit,
-    isSheet: Boolean = false,
-    onCloseLoginScreenSheet:()-> Unit={},
     onNavigateUpCreateAccountClicked: () -> Unit,
 ) {
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
 
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
@@ -96,277 +95,203 @@ fun LoginScreen(
 
 
 
-    LoginScreenContent(
-        isSheet,
-        email = email,
-        password = password,
-        emailError = emailError,
-        passwordError = passwordError,
-        isLoading = isLoading,
-        onEmailChanged = { viewModel.onEmailChanged(it) },
-        onPasswordChanged = { viewModel.onPasswordChanged(it) },
-        onLoginClicked = {
-
-            if (viewModel.validateFields()) {
-
-                coroutineScope.launch {
-                    focusManager.clearFocus()
-                }
-
-                viewModel.onLegacyEmailLogin(email, password, {
-                    context.startActivity(
-                        Intent(context, MainActivity::class.java).apply {
-                            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                        },
-                        ActivityOptions.makeCustomAnimation(
-                            context,
-                            R.anim.slide_in_right,
-                            R.anim.slide_out_left
-                        ).toBundle()
-                    )
-                    (context as Activity).finishAffinity()
-
-                }) {
-                    Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                        .show()
-                }
-
-            }
-        },
-        onForgotPasswordClicked = {
-            focusManager.clearFocus()
-            onNavigateUpForgotPassword()
-        },
-        onCreateAccountClicked = {
-            focusManager.clearFocus()
-            onNavigateUpCreateAccountClicked()
-        },
-        onGoogleSignInClicked = {
-            coroutineScope.launch {
-                focusManager.clearFocus()
-            }
-            isClickable = false
-            viewModel.onGoogleSignInOAuth(context,
-                onSuccess = { idToken ->
-                viewModel.onGoogleSignIn(idToken, onSuccess = {
-
-                    isClickable = true
-
-                    context.startActivity(
-                        Intent(context, MainActivity::class.java),
-                        ActivityOptions.makeCustomAnimation(
-                            context,
-                            R.anim.slide_in_right,
-                            R.anim.slide_out_left
-                        ).toBundle()
-                    )
-                    (context as Activity).finishAffinity()
-
-                }) {
-                    isClickable = true
-                    Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                        .show()
-                }
-
-            }) {
-                viewModel.setLoading(false)
-                isClickable = true
-                Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                    .show()
-            }
-
-        },
-        isClickable = isClickable,
-        onCloseLoginScreenSheet
-    )
-}
-
-
-@Composable
-private fun LoginScreenContent(
-    isSheet: Boolean=false,
-    email: String,
-    password: String,
-    emailError: String?,
-    passwordError: String?,
-    isLoading: Boolean,
-    onEmailChanged: (String) -> Unit,
-    onPasswordChanged: (String) -> Unit,
-    onLoginClicked: () -> Unit,
-    onForgotPasswordClicked: () -> Unit,
-    onCreateAccountClicked: () -> Unit,
-    onGoogleSignInClicked: () -> Unit,
-    isClickable: Boolean,
-    onCloseLoginScreenSheet:()->Unit={}
-) {
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    Surface(
+    Box(
         modifier = Modifier
-            .fillMaxSize()
-            .imePadding()
+            .fillMaxSize(),
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        // Scrollable Column equivalent to ScrollView
+        Column(
 
-            if (isSheet) {
-                IconButton(
-                    onClick = {
-                        onCloseLoginScreenSheet()
-                    },
-                    modifier = Modifier.padding(16.dp) // Optional padding for spacing
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close, // Use the Close icon
-                        contentDescription = "Close"
-                    )
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-            ) {
-                // Scrollable Column equivalent to ScrollView
-                Column(
-
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .align(Alignment.Center)
-                        .padding(top = 16.dp)
-                        .padding(horizontal = 16.dp),
-                ) {
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .align(Alignment.Center)
+                .padding(top = 16.dp)
+                .padding(horizontal = 16.dp),
+        ) {
 
 
-                    LongInTextFieldWithLabel(
-                        value = email,
-                        onValueChange = { onEmailChanged(it) },
-                        label = "Email",
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            autoCorrectEnabled = false,
-                            keyboardType = KeyboardType.Email
-                        ),
-                        isError = emailError != null,
-                        errorMessage = emailError
-                    )
+            LongInTextFieldWithLabel(
+                value = email,
+                onValueChange = { viewModel.onEmailChanged(it) },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    autoCorrectEnabled = false,
+                    keyboardType = KeyboardType.Email
+                ),
+                isError = emailError != null,
+                errorMessage = emailError
+            )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                    // Password Input
-                    LongInPasswordFieldWithLabel(
-                        value = password,
-                        onValueChange = { onPasswordChanged(it) },
-                        label = "Password",
-                        isError = passwordError != null,
-                        errorMessage = passwordError
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+            // Password Input
+            LongInPasswordFieldWithLabel(
+                value = password,
+                onValueChange = { viewModel.onPasswordChanged(it) },
+                isError = passwordError != null,
+                errorMessage = passwordError
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
 
-                    NavigatorSubmitButton(isLoading, onNextButtonClicked = {
-                        onLoginClicked()
-                    }, content = {
+            NavigatorSubmitButton(isLoading, onNextButtonClicked = {
+                if (viewModel.validateFields()) {
 
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                color = Color.White, // Change this to any color you prefer
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(ButtonDefaults.IconSize),
-                            )
-
-                        } else {
-                            Text(
-                                "Sign in",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White
-                            )
-                        }
-                    },Modifier.fillMaxWidth().padding(vertical = 4.dp))
-
-
-
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-
-                        // Forgot password TextView
-                        Text(
-                            text = "Forgot Password?",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier
-                                .clickable {
-                                    dropUnlessResumedV2(lifecycleOwner){
-                                        onForgotPasswordClicked()
-                                    }
-                                },
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // "Don't have an account?" with "Create Account" TextView
-                        Row(
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                "Don't have an account?",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Create Account",
-                                color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.clickable {
-                                    dropUnlessResumedV2(lifecycleOwner){
-                                        onCreateAccountClicked()
-                                    }
-                                }
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        // "Or" TextView
-                        Text(
-                            style = MaterialTheme.typography.bodyMedium,
-                            text = "Or",
-                        )
+                    coroutineScope.launch {
+                        focusManager.clearFocus()
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    viewModel.onLegacyEmailLogin(email, password, {
+                        context.startActivity(
+                            Intent(context, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                            },
+                            ActivityOptions.makeCustomAnimation(
+                                context,
+                                R.anim.slide_in_right,
+                                R.anim.slide_out_left
+                            ).toBundle()
+                        )
+                        (context as Activity).finishAffinity()
 
-                    // Google Sign In Button (Image)
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-
-
-                        GoogleButton(
-                            isClickable = isClickable,
-                            onClicked = {
-                                onGoogleSignInClicked()
-                            })
-
+                    }) {
+                        Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                            .show()
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+
                 }
 
+            }, content = {
 
                 if (isLoading) {
-                    LoadingDialog()
+                    CircularProgressIndicator(
+                        color = Color.White, // Change this to any color you prefer
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                    )
+
+                } else {
+                    Text(
+                        "Sign in",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
                 }
+            },Modifier.fillMaxWidth().padding(vertical = 4.dp))
+
+
+
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                // Forgot password TextView
+                Text(
+                    text = "Forgot Password?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier
+                        .clickable {
+                            dropUnlessResumedV2(lifecycleOwner){
+                                focusManager.clearFocus()
+                                onNavigateUpForgotPassword()
+                            }
+                        },
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // "Don't have an account?" with "Create Account" TextView
+                Row(
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        "Don't have an account?",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Create Account",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.clickable {
+                            dropUnlessResumedV2(lifecycleOwner){
+                                onNavigateUpCreateAccountClicked()
+                            }
+                        }
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                // "Or" TextView
+                Text(
+                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Or",
+                )
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Google Sign In Button (Image)
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+
+                GoogleButton(
+                    isClickable = isClickable,
+                    onClicked = {
+                        coroutineScope.launch {
+                            focusManager.clearFocus()
+                        }
+                        isClickable = false
+                        viewModel.onGoogleSignInOAuth(context,
+                            onSuccess = { idToken ->
+                                viewModel.onGoogleSignIn(idToken, onSuccess = {
+
+                                    isClickable = true
+
+                                    context.startActivity(
+                                        Intent(context, MainActivity::class.java),
+                                        ActivityOptions.makeCustomAnimation(
+                                            context,
+                                            R.anim.slide_in_right,
+                                            R.anim.slide_out_left
+                                        ).toBundle()
+                                    )
+                                    (context as Activity).finishAffinity()
+
+                                }) {
+                                    isClickable = true
+                                    Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                        .show()
+                                }
+
+                            }) {
+                            viewModel.setLoading(false)
+                            isClickable = true
+                            Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    })
+
+            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
 
+        if (isLoading) {
+            LoadingDialog()
+        }
     }
 
-
 }
+
+
 
 
 /*@OptIn(ExperimentalMaterial3Api::class)
@@ -478,10 +403,9 @@ fun CustomPasswordTextField(
 
 
 @Composable
-fun LongInTextFieldWithLabel(
+private fun LongInTextFieldWithLabel(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String,
     isError: Boolean,
     errorMessage: String?,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
@@ -491,7 +415,7 @@ fun LongInTextFieldWithLabel(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
+        label = { Text("Email") },
         keyboardOptions = keyboardOptions,
 
         modifier = Modifier
@@ -522,10 +446,9 @@ fun LongInTextFieldWithLabel(
 }
 
 @Composable
-fun LongInPasswordFieldWithLabel(
+private fun LongInPasswordFieldWithLabel(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String,
     isError: Boolean,
     errorMessage: String?,
 ) {
@@ -548,7 +471,7 @@ fun LongInPasswordFieldWithLabel(
                 tint = MaterialTheme.colorScheme.onSurface // Use the appropriate tint color
             )
         },
-        label = { Text(label) },
+        label = { Text("Password") },
         isError = isError,
         modifier = Modifier.fillMaxWidth(),
         visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),

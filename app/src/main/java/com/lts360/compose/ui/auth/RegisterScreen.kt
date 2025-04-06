@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -30,7 +29,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -103,121 +101,12 @@ fun RegisterScreen(
     val confirmPasswordError by viewModel.confirmPasswordError.collectAsState()
     val termsError by viewModel.termsError.collectAsState()
 
-    RegisterContent(
-        firstName = firstName,
-        lastName = lastName,
-        email = email,
-        password = password,
-        confirmPassword = confirmPassword,
-        isTermsAccepted = isTermsAccepted,
-        loading = loading,
-        firstNameError = firstNameError,
-        lastNameError = lastNameError,
-        emailError = emailError,
-        passwordError = passwordError,
-        confirmPasswordError = confirmPasswordError,
-        termsError = termsError,
-        onFirstNameChanged = { viewModel.onFirstNameChanged(it) },
-        onLastNameChanged = { viewModel.onLastNameChanged(it) },
-        onEmailChanged = { viewModel.onEmailChanged(it) },
-        onPasswordChanged = { viewModel.onPasswordChanged(it) },
-        onConfirmPasswordChanged = { viewModel.onConfirmPasswordChanged(it) },
-        onTermsAcceptedChanged = { viewModel.onTermsAcceptedChanged(it) },
-        onTermsAndConditionsClicked = { url ->
-            openUrlInCustomTab(
-                context,
-                url
-            )
-        },
-        onRegisterClicked = {
-
-            if (viewModel.validateFields()) {
-                scope.launch {
-                    focusManager.clearFocus()
-                    delay(300)
-                }
-
-                viewModel.onLegacyEmailSignUp(email, onSuccess = {
-                    onNavigateUpRegisterEmailOtpVerification(
-                        firstName,
-                        lastName,
-                        email,
-                        password,
-                        accountType
-                    )
-                }) {
-                    Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-        },
-        onGoogleSignInClicked = {
-
-            scope.launch {
-                focusManager.clearFocus()
-                isClickable = false
-                delay(1000)
-                viewModel.onGoogleSignUpOAuth(context,
-                    onSuccess = { idToken ->
-                    viewModel.onGoogleSignUp(idToken, accountType.name, onSuccess = {
-                        isClickable = true
-                        onNavigateUpOnBoarding()
-                    }) {
-
-                        isClickable = true
-
-                        Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                            .show()
-                    }
-
-                }) {
-                    viewModel.setLoading(false)
-                    isClickable = true
-                    Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-
-        },
-        isClickable = isClickable
-    )
-}
 
 
-@Composable
-private fun RegisterContent(
-    firstName: String,
-    lastName: String,
-    email: String,
-    password: String,
-    confirmPassword: String,
-    isTermsAccepted: Boolean,
-    loading: Boolean,
-    firstNameError: String?,
-    lastNameError: String?,
-    emailError: String?,
-    passwordError: String?,
-    confirmPasswordError: String?,
-    termsError: String?,
-    onFirstNameChanged: (String) -> Unit,
-    onLastNameChanged: (String) -> Unit,
-    onEmailChanged: (String) -> Unit,
-    onPasswordChanged: (String) -> Unit,
-    onConfirmPasswordChanged: (String) -> Unit,
-    onTermsAcceptedChanged: (Boolean) -> Unit,
-    onTermsAndConditionsClicked: (String) -> Unit,
-    onRegisterClicked: () -> Unit,
-    onGoogleSignInClicked: () -> Unit,
-    isClickable: Boolean,
-) {
 
-    val context = LocalContext.current
-
-
-    Surface(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .imePadding()
     ) {
         Column(
             modifier = Modifier
@@ -236,7 +125,7 @@ private fun RegisterContent(
             // First Name Input
             TextFieldWithLabel(
                 value = firstName,
-                onValueChange = { onFirstNameChanged(it) },
+                onValueChange = { viewModel.onFirstNameChanged(it) },
                 label = "First Name",
                 isError = firstNameError != null,
                 errorMessage = firstNameError
@@ -247,7 +136,7 @@ private fun RegisterContent(
             // Last Name Input
             TextFieldWithLabel(
                 value = lastName,
-                onValueChange = { onLastNameChanged(it) },
+                onValueChange = { viewModel.onLastNameChanged(it)},
                 label = "Last Name",
                 isError = lastNameError != null,
                 errorMessage = lastNameError
@@ -257,7 +146,7 @@ private fun RegisterContent(
             // Email Input
             TextFieldWithLabel(
                 value = email,
-                onValueChange = { onEmailChanged(it) },
+                onValueChange = { viewModel.onEmailChanged(it) },
                 label = "Email",
                 keyboardOptions = KeyboardOptions.Default.copy(
                     autoCorrectEnabled = false,
@@ -271,7 +160,7 @@ private fun RegisterContent(
             // Password Input
             PasswordFieldWithLabel(
                 value = password,
-                onValueChange = { onPasswordChanged(it) },
+                onValueChange = { viewModel.onPasswordChanged(it)  },
                 label = "Password",
                 isError = passwordError != null,
                 errorMessage = passwordError
@@ -281,7 +170,7 @@ private fun RegisterContent(
             // Confirm Password Input
             PasswordFieldWithLabel(
                 value = confirmPassword,
-                onValueChange = { onConfirmPasswordChanged(it) },
+                onValueChange = { viewModel.onConfirmPasswordChanged(it) },
                 label = "Confirm Password",
                 isError = confirmPasswordError != null,
                 errorMessage = confirmPasswordError
@@ -298,7 +187,7 @@ private fun RegisterContent(
                 ) {
                     Checkbox(
                         checked = isTermsAccepted,
-                        onCheckedChange = { onTermsAcceptedChanged(it) },
+                        onCheckedChange = { viewModel.onTermsAcceptedChanged(it) },
 
                         )
                     Text(
@@ -340,8 +229,10 @@ private fun RegisterContent(
                         )
 
                     ) {
-
-                        onTermsAndConditionsClicked(context.getString(R.string.terms_and_conditions))
+                        openUrlInCustomTab(
+                            context,
+                            context.getString(R.string.terms_and_conditions)
+                        )
                     }
                 ) {
                     append("Terms and Conditions")
@@ -353,7 +244,25 @@ private fun RegisterContent(
 
 
             NavigatorSubmitButton(loading, onNextButtonClicked = {
-                onRegisterClicked()
+                if (viewModel.validateFields()) {
+                    scope.launch {
+                        focusManager.clearFocus()
+                        delay(300)
+                    }
+
+                    viewModel.onLegacyEmailSignUp(email, onSuccess = {
+                        onNavigateUpRegisterEmailOtpVerification(
+                            firstName,
+                            lastName,
+                            email,
+                            password,
+                            accountType
+                        )
+                    }) {
+                        Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
             }, content = {
                 if (loading) {
                     CircularProgressIndicator(
@@ -393,19 +302,44 @@ private fun RegisterContent(
                     text = "Sign Up with Google",
                     isClickable = isClickable,
                     onClicked = {
-                        onGoogleSignInClicked()
+                        scope.launch {
+                            focusManager.clearFocus()
+                            isClickable = false
+                            delay(1000)
+                            viewModel.onGoogleSignUpOAuth(context,
+                                onSuccess = { idToken ->
+                                    viewModel.onGoogleSignUp(idToken, accountType.name, onSuccess = {
+                                        isClickable = true
+                                        onNavigateUpOnBoarding()
+                                    }) {
+
+                                        isClickable = true
+
+                                        Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                            .show()
+                                    }
+
+                                }) {
+                                viewModel.setLoading(false)
+                                isClickable = true
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        }
                     })
 
             }
         }
 
 
-     /*   if (loading) {
+        if (loading) {
             LoadingDialog()
-        }*/
+        }
     }
 
+
 }
+
 
 
 @Composable

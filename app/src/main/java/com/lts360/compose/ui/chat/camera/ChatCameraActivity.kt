@@ -122,7 +122,6 @@ import com.lts360.compose.ui.enterFullScreenMode
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.utils.FormatterUtils.formatTimeSeconds
 import com.lts360.compose.utils.SafeDrawingBox
-import com.lts360.libs.camera.ui.CameraPermissionRequestDialog
 import com.lts360.libs.camera.ui.CameraPreview
 import com.lts360.libs.camera.ui.TorchButton
 import com.lts360.libs.imagepicker.utils.redirectToAppSettings
@@ -169,14 +168,14 @@ class ChatCameraActivity : ComponentActivity() {
                     val cameraViewModel: ChatCameraXViewModel = hiltViewModel()
                     val capturedUri by cameraViewModel.lastCapturedUri.collectAsState()
 
-                    BackHandler(capturedUri != null) {
+                    /*BackHandler(capturedUri != null) {
                         cameraViewModel.updateLastCapturedUri(null)
-                    }
+                    }*/
 
                     capturedUri?.let {
 
 
-                        SafeDrawingBox {
+                        SafeDrawingBox(isFullScreenMode = true){
 
                             when (cameraViewModel.isImageOrVideo(context, it)) {
                                 "Image" -> {
@@ -488,7 +487,9 @@ class ChatCameraActivity : ComponentActivity() {
 
                     } ?: run {
                         SafeDrawingBox(isFullScreenMode = true) {
-                            CameraXApp(cameraViewModel)
+                            CameraXApp(cameraViewModel) {
+                                this@ChatCameraActivity.finish()
+                            }
                         }
                     }
                 }
@@ -501,7 +502,7 @@ class ChatCameraActivity : ComponentActivity() {
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
-fun CameraXApp(cameraViewModel: ChatCameraXViewModel) {
+fun CameraXApp(cameraViewModel: ChatCameraXViewModel, onFinishActivity: () -> Unit) {
 
 
     val context = LocalContext.current
@@ -586,13 +587,15 @@ fun CameraXApp(cameraViewModel: ChatCameraXViewModel) {
     Box(modifier = Modifier.fillMaxSize()) {
 
         if (!isCameraPermissionGranted) {
-            CameraAndMediaAccess {
+            CameraAndMediaAccess(onFinishActivity) {
                 cameraViewModel.updateCameraPermission(it)
             }
         }
 
         if (micAccessRequest) {
-            MicAccess {
+            MicAccess({
+                micAccessRequest = false
+            }) {
                 cameraViewModel.updateMicPermission(it)
             }
         }
@@ -930,9 +933,6 @@ private fun ActionControlsPager(
 
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(lastCapturedUri) {
-        Log.e(TAG, "${lastCapturedUri}")
-    }
 
     LaunchedEffect(pagerState.currentPage) {
         selectedIndex = pagerState.currentPage
@@ -1171,18 +1171,6 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
         }
 
 
-        var readMediaPermissionGranted by remember {
-            mutableStateOf(
-                hasReadMediaPermissionGranted()
-            )
-        }
-
-        var accessCameraPermissionGranted by remember {
-            mutableStateOf(
-                hasAccessCameraPermissionGranted()
-            )
-        }
-
         var allRequestPermissionGranted by remember {
             mutableStateOf(
                 false
@@ -1333,7 +1321,8 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     isShowingAllPermissionRequestDialog = false
                 }, {
                     onDismissRequest()
-                }
+                },
+                dismissOnClickOutside = false
             )
         }
 
@@ -1349,7 +1338,8 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     redirectToAppSettings(context)
                 }, {
                     onDismissRequest()
-                }
+                },
+                dismissOnClickOutside = false
             )
         }
 
@@ -1364,7 +1354,8 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     isShowingReadMediaPermissionRequestDialog = false
                 }, {
                     onDismissRequest()
-                }, dismissButtonEnabled = false
+                }, dismissButtonEnabled = false,
+                dismissOnClickOutside = false
             )
 
         }
@@ -1381,19 +1372,24 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     redirectToAppSettings(context)
                 }, {
                     onDismissRequest()
-                }
+                },
+                dismissOnClickOutside = false
             )
 
         }
 
         if (isShowingAccessCameraPermissionRequestDialog) {
-            CameraPermissionRequestDialog(
+            PermissionRequestDialog(
+                Icons.Filled.Camera,
+                "Camera",
+                "To take photos camera permission is required",
                 {
                     launchCameraPermission()
                     isShowingAccessCameraPermissionRequestDialog = false
                 }, {
                     onDismissRequest()
-                }, dismissButtonEnabled = false
+                }, dismissButtonEnabled = false,
+                dismissOnClickOutside = false
             )
         }
 
@@ -1408,7 +1404,8 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     redirectToAppSettings(context)
                 }, {
                     onDismissRequest()
-                }
+                },
+                dismissOnClickOutside = false
             )
 
         }
@@ -1442,17 +1439,6 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
             ) == PackageManager.PERMISSION_GRANTED
         }
 
-        var readMediaPermissionGranted by remember {
-            mutableStateOf(
-                hasReadMediaImagesPermissionGranted() && hasReadMediaVideoPermissionGranted()
-            )
-        }
-
-        var accessCameraPermissionGranted by remember {
-            mutableStateOf(
-                hasAccessCameraPermissionGranted()
-            )
-        }
 
         var allRequestPermissionGranted by remember {
             mutableStateOf(
@@ -1560,7 +1546,8 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     isShowingAccessCameraPermissionRequestDialogRationale = true
                 } else if ((!isReadImagesPermissionRequestRationale
                             || isReadVideoPermissionRequestRationale)
-                    && !isReadMediaPermissionGranted) {
+                    && !isReadMediaPermissionGranted
+                ) {
 
                     isShowingReadMediaPermissionRequestDialogRationale = true
                 } else {
@@ -1629,7 +1616,8 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     isShowingAllPermissionRequestDialog = false
                 }, {
                     onDismissRequest()
-                }
+                },
+                dismissOnClickOutside = false
             )
 
         }
@@ -1646,7 +1634,8 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     redirectToAppSettings(context)
                 }, {
                     onDismissRequest()
-                }
+                },
+                dismissOnClickOutside = false
             )
         }
 
@@ -1660,25 +1649,11 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     isShowingReadMediaPermissionRequestDialog = false
                 }, {
                     onDismissRequest()
-                }, dismissButtonEnabled = false
+                }, dismissButtonEnabled = false,
+                dismissOnClickOutside = false
             )
         }
 
-        if (isShowingReadMediaPermissionRequestDialogRationale) {
-
-            PermissionRationaleRequestDialog(
-                Icons.Filled.Photo,
-                "Photos and Video",
-                "To take photos or video permission is required",
-                {
-                    onDismissRequest()
-                    redirectToAppSettings(context)
-                }, {
-                    onDismissRequest()
-                }
-            )
-
-        }
 
         if (isShowingAccessCameraPermissionRequestDialog) {
 
@@ -1691,7 +1666,8 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     isShowingAccessCameraPermissionRequestDialog = false
                 }, {
                     onDismissRequest()
-                }, dismissButtonEnabled = false
+                }, dismissButtonEnabled = false,
+                dismissOnClickOutside = false
             )
         }
 
@@ -1706,7 +1682,8 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
                     redirectToAppSettings(context)
                 }, {
                     onDismissRequest()
-                }
+                },
+                dismissOnClickOutside = false
             )
         }
     }
@@ -1805,8 +1782,10 @@ fun MicAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: (Boolean) -
                 isShowingPermissionRequestDialog = false
             },
             {
+                isShowingPermissionRequestDialog = false
                 onDismissRequest()
-            })
+            }, dismissButtonEnabled = true
+        )
     }
 
     if (isShowingDialogRationale) {
@@ -1819,8 +1798,11 @@ fun MicAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: (Boolean) -
                 redirectToAppSettings(context)
             },
             {
+                isShowingPermissionRequestDialog = false
                 onDismissRequest()
-            })
+            },
+            dismissButtonEnabled = true
+        )
 
     }
 }

@@ -54,8 +54,6 @@ class HomeActivityViewModel @Inject constructor(
 
     val notificationCount: Flow<Int> = notificationDao.countAllUnreadNotifications()
 
-
-
     private val _bottomNavVisibility = MutableStateFlow(true)
     val bottomNavVisibility = _bottomNavVisibility.asStateFlow()
 

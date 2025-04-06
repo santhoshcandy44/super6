@@ -83,7 +83,6 @@ fun EditServicePlanScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .imePadding()
     ) {
         EditServicePlanContent(
             plansError = plansError,

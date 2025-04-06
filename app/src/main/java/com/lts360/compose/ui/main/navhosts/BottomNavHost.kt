@@ -70,7 +70,7 @@ fun BottomNavHost(
     onNavigateUpChatScreen: (ChatUser, Int, Long) -> Unit,
     onDockedFabAddNewSecondsChanged: (Boolean) -> Unit,
     onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {}
-    ) {
+) {
 
 
     val context = LocalContext.current
@@ -81,7 +81,6 @@ fun BottomNavHost(
         navController = navController,
         startDestination = BottomBar.Home(),
     ) {
-
 
 
         noTransitionComposable<BottomBar.Home> { backstackEntry ->
@@ -548,6 +547,7 @@ fun BottomNavHost(
 
             MoreScreen(
                 navController,
+                boards,
                 onProfileNavigateUp = onProfileNavigateUp,
                 onAccountAndProfileSettingsNavigateUp = { accountType ->
                     onAccountAndProfileSettingsNavigateUp(accountType)
@@ -582,7 +582,8 @@ fun BottomNavHost(
                             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                         })
                 },
-                onNavigateUpGuestManageIndustriesAndInterests = onNavigateUpGuestManageIndustriesAndInterests,
+                onNavigateUpGuestManageIndustriesAndInterests =
+                    onNavigateUpGuestManageIndustriesAndInterests,
                 onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet,
                 onNavigateUpLogInSheet = onNavigateUpLogInSheet,
                 viewModel = moreViewModel

@@ -5,8 +5,6 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -261,55 +258,59 @@ fun CreateServiceScreen(
         sheetDragHandle = null,
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
-            CreateServiceLocationBottomSheetScreen(
-                bottomSheetScaffoldState.bottomSheetState.currentValue, {
-                    viewModel.updateLocation(
-                        DraftLocation(
-                            latitude = it.latitude,
-                            longitude = it.longitude,
-                            locationType = it.locationType,
-                            geo = it.geo
+
+            if(bottomSheetScaffoldState.bottomSheetState.currentValue==SheetValue.Expanded){
+
+                CreateServiceLocationBottomSheetScreen(
+                    bottomSheetScaffoldState.bottomSheetState.currentValue, {
+                        viewModel.updateLocation(
+                            DraftLocation(
+                                latitude = it.latitude,
+                                longitude = it.longitude,
+                                locationType = it.locationType,
+                                geo = it.geo
+                            )
                         )
-                    )
 
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.hide()
-                    }
-                }, {
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
+                        }
+                    }, {
 
-                    viewModel.updateLocation(
-                        DraftLocation(
-                            latitude = it.latitude,
-                            longitude = it.longitude,
-                            locationType = it.locationType,
-                            geo = it.geo
+                        viewModel.updateLocation(
+                            DraftLocation(
+                                latitude = it.latitude,
+                                longitude = it.longitude,
+                                locationType = it.locationType,
+                                geo = it.geo
+                            )
                         )
-                    )
 
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.hide()
-                    }
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
+                        }
 
-                }, { district ->
+                    }, { district ->
 
-                    viewModel.updateLocation(
-                        DraftLocation(
-                            latitude = district.coordinates.latitude,
-                            longitude = district.coordinates.longitude,
-                            locationType = district.district,
-                            geo = district.district
+                        viewModel.updateLocation(
+                            DraftLocation(
+                                latitude = district.coordinates.latitude,
+                                longitude = district.coordinates.longitude,
+                                locationType = district.district,
+                                geo = district.district
+                            )
                         )
-                    )
 
-                },
-                {
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.hide()
-                    }
-                },
-                viewModel,
-                false
-            )
+                    },
+                    {
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
+                        }
+                    },
+                    viewModel,
+                    false
+                )
+            }
 
         },
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
@@ -340,7 +341,6 @@ fun CreateServiceScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .imePadding()
         ) { contentPadding ->
 
             Box(

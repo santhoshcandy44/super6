@@ -71,7 +71,6 @@ fun EditProfileFirstNameScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .imePadding()
 
     ) {
         Scaffold(

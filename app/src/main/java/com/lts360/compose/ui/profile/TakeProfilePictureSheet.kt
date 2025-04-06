@@ -2,6 +2,7 @@ package com.lts360.compose.ui.profile
 
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -45,6 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.lts360.components.utils.LogUtils.TAG
+import com.lts360.libs.imagepicker.utils.redirectToAppSettings
+import com.lts360.libs.media.ui.permissions.PermissionRationaleRequestDialog
+import com.lts360.libs.media.ui.permissions.PermissionRequestDialog
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,7 +116,60 @@ fun TakePictureSheet(
     }
 
 
+    // Request both permissions at once
+    val launchCameraPermission = {
+        requestPermissions.launch(
+            android.Manifest.permission.CAMERA
+        )
+    }
 
+    if (isShowingPermissionRequestDialog) {
+
+        PermissionRequestDialog(
+            Icons.Filled.Camera,
+            "Camera",
+            "To take photos camera permission is required",
+            {
+                launchCameraPermission()
+                isShowingPermissionRequestDialog = false
+            }, {
+                onDismissRequest()
+                isShowingPermissionRequestDialog = false
+            }
+        )
+
+    }
+
+    if (isShowingDialogRationale) {
+
+        PermissionRationaleRequestDialog(
+            Icons.Filled.Camera,
+            "Camera",
+            "To take photos camera permission is required",
+            {
+                onDismissRequest()
+                redirectToAppSettings(context)
+            }, {
+                onDismissRequest()
+                isShowingDialogRationale = false
+            },
+            dismissButtonEnabled = true
+        )
+
+    }
+
+
+
+
+    LifecycleResumeEffect(Unit) {
+        if (!permissionsGranted) {
+            if (hasPermissionGranted()) {
+                setPermissionsGranted(true)
+                isShowingDialogRationale = false
+            }
+        }
+        onPauseOrDispose {}
+    }
 
 
     if (sheetState) {
@@ -180,9 +239,7 @@ fun TakePictureSheet(
                                         modifier = Modifier
                                             .padding(8.dp)
                                             .size(40.dp)
-
                                     )
-
 
                                 }
                                 Spacer(Modifier.height(8.dp))
@@ -201,18 +258,15 @@ fun TakePictureSheet(
                                         .background(Color(0XFFFDF4F5), CircleShape)
                                         .clip(CircleShape)
                                         .clickable {
-                                            onDismissRequest()
                                             if (permissionsGranted) {
                                                 onCameraSelected()
                                             } else {
+                                                onDismissRequest()
 
                                                 if (!showRationale) {
                                                     isShowingDialogRationale = true
                                                 } else {
-                                                    // Request both permissions at once
-                                                    requestPermissions.launch(
-                                                        android.Manifest.permission.CAMERA
-                                                    )
+                                                    launchCameraPermission()
                                                 }
                                             }
                                         },

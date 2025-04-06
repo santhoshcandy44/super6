@@ -42,12 +42,14 @@ fun PermissionRationaleRequestDialog(
     permissionDescription:String,
     onAllowPermissionClicked: () -> Unit,
     onDismissRequest: () -> Unit,
-    iconSize: Dp = 80.dp
+    iconSize: Dp = 80.dp,
+    dismissButtonEnabled: Boolean = false,
+    dismissOnClickOutside:Boolean = true
 ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         BasicAlertDialog(
             onDismissRequest = onDismissRequest,
-            properties = DialogProperties(usePlatformDefaultWidth = false),
+            properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = dismissOnClickOutside),
             modifier = Modifier.clip(RoundedCornerShape(16.dp))
         ) {
             Surface {
@@ -81,14 +83,35 @@ fun PermissionRationaleRequestDialog(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Button(
-                        onClick = onAllowPermissionClicked,
-                        shape = CircleShape,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8B02)),
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Settings")
+                        Button(
+                            onClick = onAllowPermissionClicked,
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFE8B02)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            Text("Settings")
+                        }
+
+                        if (dismissButtonEnabled) {
+                            OutlinedButton(
+                                onClick = onDismissRequest,
+                                shape = CircleShape,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                            ) {
+                                Text("Dismiss")
+                            }
+                        }
                     }
+
                 }
             }
         }

@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import androidx.core.content.edit
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -44,7 +45,6 @@ import kotlinx.coroutines.withContext
 import okio.Path.Companion.toOkioPath
 import java.io.File
 import javax.inject.Inject
-import androidx.core.content.edit
 
 @HiltAndroidApp
 class App : Application(), Configuration.Provider, SingletonImageLoader.Factory {

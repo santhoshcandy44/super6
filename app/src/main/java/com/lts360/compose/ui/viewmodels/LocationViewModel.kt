@@ -503,8 +503,10 @@ class LocationViewModel @Inject constructor(
     }
 
 
-
-
+    override fun onCleared() {
+        super.onCleared()
+        removeLocationUpdates()
+    }
 
 }
 
