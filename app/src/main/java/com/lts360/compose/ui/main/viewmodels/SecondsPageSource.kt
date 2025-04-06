@@ -3,8 +3,8 @@ package com.lts360.compose.ui.main.viewmodels
 
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
-import com.lts360.api.Utils.ResultError
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.ResultError
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.AppClient
 import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.models.service.UsedProductListing

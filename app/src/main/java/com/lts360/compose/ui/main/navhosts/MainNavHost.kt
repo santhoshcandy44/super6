@@ -1,14 +1,12 @@
 package com.lts360.compose.ui.main.navhosts
 
 import android.content.Intent
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.account.AccountAndProfileSettingsScreen
 import com.lts360.compose.ui.auth.ForgotPasswordEmailOtpVerificationProtected

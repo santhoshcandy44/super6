@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Surface
 import com.lts360.api.auth.managers.TokenManager
+import com.lts360.compose.ui.bookmarks.BookmarksScreen
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
@@ -23,7 +24,6 @@ class BoardsSetupActivity:ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val isGuest = tokenManager.isGuest()
-
 
         setContent {
             AppTheme {

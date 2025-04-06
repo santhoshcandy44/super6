@@ -2,7 +2,6 @@ package com.lts360.compose.ui.main
 
 import android.content.Intent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -12,24 +11,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.More
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -59,7 +49,7 @@ fun Boards(
     pagerState: PagerState,
     servicesContent: @Composable () -> Unit,
     secondsContent: @Composable () -> Unit,
-    onPageChanged: (Int) -> Unit
+    onPageChanged: (String) -> Unit
 ) {
 
     val context = LocalContext.current
@@ -69,9 +59,15 @@ fun Boards(
 
     val greenColor = Color(0xFF1BB24B)
 
+    LaunchedEffect(boards) {
+        if(boards.isNotEmpty()){
+            pagerState.scrollToPage(0)
+        }
+    }
+
     LaunchedEffect(pagerState.currentPage) {
         selectedTabIndex = pagerState.currentPage
-        onPageChanged(selectedTabIndex)
+        onPageChanged(boards[selectedTabIndex].boardLabel)
     }
 
     val coroutineScope = rememberCoroutineScope()

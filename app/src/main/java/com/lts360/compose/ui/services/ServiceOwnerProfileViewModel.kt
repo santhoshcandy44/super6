@@ -4,10 +4,9 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.gson.Gson
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.AppClient
 import com.lts360.api.app.ManageServicesApiService
 import com.lts360.api.auth.managers.TokenManager

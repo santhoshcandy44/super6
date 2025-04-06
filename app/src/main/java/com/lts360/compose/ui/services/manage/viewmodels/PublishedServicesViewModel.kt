@@ -20,9 +20,9 @@ import com.lts360.api.models.service.EditableService
 import com.lts360.api.models.service.Image
 import com.lts360.api.models.service.Plan
 import com.lts360.api.models.service.toEditableImage
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.ResultError
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.ResultError
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.ManageServicesApiService
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.services.ThumbnailContainer

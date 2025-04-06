@@ -5,7 +5,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.compose.ui.auth.repos.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

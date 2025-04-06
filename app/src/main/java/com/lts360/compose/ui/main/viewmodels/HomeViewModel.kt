@@ -2,7 +2,6 @@ package com.lts360.compose.ui.main.viewmodels
 
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
@@ -12,8 +11,8 @@ import androidx.navigation.NavController
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.AppClient
 import com.lts360.api.app.ManageServicesApiService
 import com.lts360.api.app.ManageUsedProductListingService
@@ -25,7 +24,6 @@ import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.app.database.models.profile.UserLocation
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.models.LocationRepository
 import com.lts360.compose.ui.main.models.SearchTerm
@@ -36,7 +34,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest

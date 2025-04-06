@@ -53,7 +53,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
-import com.lts360.api.Utils.ResultError
+import com.lts360.api.utils.ResultError
 import com.lts360.api.models.service.Industry
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.LoadingDialog

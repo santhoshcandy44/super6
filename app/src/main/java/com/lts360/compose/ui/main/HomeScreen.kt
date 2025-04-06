@@ -428,7 +428,7 @@ fun HomeScreen(
                             )
 
                         }, {
-                            if (it == "seconds") {
+                            if (it == "second_hands") {
                                 onDockedFabAddNewSecondsVisibility(true)
                             } else {
                                 onDockedFabAddNewSecondsVisibility(false)

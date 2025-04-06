@@ -10,8 +10,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.gson.Gson
 import com.lts360.BuildConfig
-import com.lts360.R
-import com.lts360.api.Utils.Result
+import com.lts360.api.utils.Result
 import com.lts360.api.app.AccountSettingsService
 import com.lts360.api.app.AppClient
 import com.lts360.api.app.ProfileSettingsService

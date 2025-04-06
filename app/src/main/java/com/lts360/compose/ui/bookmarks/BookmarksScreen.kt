@@ -60,7 +60,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.lts360.R
-import com.lts360.api.Utils.ResultError
+import com.lts360.api.utils.ResultError
 import com.lts360.api.models.service.Service
 import com.lts360.api.models.service.UsedProductListing
 import com.lts360.compose.ui.getCurrencySymbol

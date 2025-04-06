@@ -13,8 +13,8 @@ import com.lts360.api.common.CommonClient
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.auth.managers.socket.SocketManager
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.ProfileSettingsService
 import com.lts360.api.auth.services.CommonService
 import com.lts360.app.database.daos.profile.UserProfileDao

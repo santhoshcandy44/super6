@@ -6,8 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.auth.managers.TokenManager
 import com.lts360.app.database.daos.prefs.BoardDao
 import com.lts360.app.database.daos.profile.UserProfileDao

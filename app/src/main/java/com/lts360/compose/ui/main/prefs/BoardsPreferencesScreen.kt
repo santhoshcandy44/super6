@@ -2,7 +2,6 @@ package com.lts360.compose.ui.main.prefs
 
 import android.os.Handler
 import android.os.Looper
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -72,14 +71,14 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
-import com.lts360.api.Utils.ResultError
+import com.lts360.api.utils.ResultError
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.main.prefs.viewmodels.BoardPref
 import com.lts360.compose.ui.main.prefs.viewmodels.BoardPreferencesViewModel
 import com.lts360.compose.ui.main.prefs.viewmodels.GuestBoardPreferencesViewModel
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
-import com.lts360.libs.ui.LongToast
+import com.lts360.libs.ui.ShortToast
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -115,15 +114,13 @@ fun GuestBoardsPreferencesScreen(
         if (connectivityManager.isConnectedInternet) {
 
             viewModel.onGetBoards(
-                viewModel.userId,
-                onSuccess = { }) {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                    .show()
+                viewModel.userId
+            ) {
+                ShortToast(context, it)
             }
 
         } else {
-            Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT)
-                .show()
+            ShortToast(context, "No internet connection")
         }
     }
 
@@ -133,10 +130,9 @@ fun GuestBoardsPreferencesScreen(
                 viewModel.onGetBoards(
                     viewModel.userId,
                     isLoading = false,
-                    isRefreshing = true,
-                    onSuccess = {}
+                    isRefreshing = true
                 ) { errorMessage ->
-                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                    ShortToast(context, errorMessage)
                 }
             }
 
@@ -144,8 +140,7 @@ fun GuestBoardsPreferencesScreen(
 
             NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_ON_COMPLETED_JOB -> {
                 viewModel.setRefreshing(false)
-                Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT)
-                    .show()
+                ShortToast(context, "No internet connection")
             }
         }
     }
@@ -224,11 +219,12 @@ fun GuestBoardsPreferencesScreen(
 
                     } else if (error != null && allBoards.isEmpty()) {
 
-                        Box(modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp)
-                            .verticalScroll(rememberScrollState())
-                        ){
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(8.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
                             Text(
                                 "Something went wrong",
                                 color = Color.Red,
@@ -252,20 +248,18 @@ fun GuestBoardsPreferencesScreen(
                             },
                             onUpdateBoards = {
 
-                                if(viewModel.validateSelectedBoards()){
+                                if (viewModel.validateSelectedBoards()) {
                                     viewModel.onUpdateBoards(
                                         allBoards,
                                         onSuccess = {
-                                            Toast.makeText(context, it, Toast.LENGTH_LONG)
-                                                .show()
+                                            ShortToast(context, it)
                                         },
                                         onError = {
-                                            Toast.makeText(context, it, Toast.LENGTH_LONG)
-                                                .show()
+                                            ShortToast(context, it)
                                         }
                                     )
-                                }else{
-                                   LongToast(context,"At least 1 board must be selected")
+                                } else {
+                                    ShortToast(context, "At least 1 board must be selected")
                                 }
 
                             },
@@ -324,15 +318,13 @@ fun BoardsPreferencesScreen(
         if (connectivityManager.isConnectedInternet) {
 
             viewModel.onGetBoards(
-                viewModel.userId,
-                onSuccess = { }) {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                    .show()
+                viewModel.userId) {
+                ShortToast(context, it)
+
             }
 
         } else {
-            Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT)
-                .show()
+            ShortToast(context, "No internet connection")
         }
     }
 
@@ -342,10 +334,9 @@ fun BoardsPreferencesScreen(
                 viewModel.onGetBoards(
                     viewModel.userId,
                     isLoading = false,
-                    isRefreshing = true,
-                    onSuccess = {}
+                    isRefreshing = true
                 ) { errorMessage ->
-                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                    ShortToast(context, errorMessage)
                 }
             }
 
@@ -353,8 +344,7 @@ fun BoardsPreferencesScreen(
 
             NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_ON_COMPLETED_JOB -> {
                 viewModel.setRefreshing(false)
-                Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT)
-                    .show()
+                ShortToast(context, "No internet connection")
             }
         }
     }
@@ -433,11 +423,12 @@ fun BoardsPreferencesScreen(
 
                     } else if (error != null && allBoards.isEmpty()) {
 
-                        Box(modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp)
-                            .verticalScroll(rememberScrollState())
-                        ){
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(8.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
                             Text(
                                 "Something went wrong",
                                 color = Color.Red,
@@ -460,18 +451,22 @@ fun BoardsPreferencesScreen(
                                 viewModel.boardOrderChange(id, to)
                             },
                             onUpdateBoards = {
-                                viewModel.onUpdateBoards(
-                                    viewModel.userId,
-                                    allBoards,
-                                    onSuccess = {
-                                        Toast.makeText(context, it, Toast.LENGTH_LONG)
-                                            .show()
-                                    },
-                                    onError = {
-                                        Toast.makeText(context, it, Toast.LENGTH_LONG)
-                                            .show()
-                                    }
-                                )
+                                if (viewModel.validateSelectedBoards()) {
+                                    viewModel.onUpdateBoards(
+                                        viewModel.userId,
+                                        allBoards,
+                                        onSuccess = {
+                                            ShortToast(context, it)
+                                        },
+                                        onError = {
+                                            ShortToast(context, it)
+
+                                        }
+                                    )
+                                } else {
+                                    ShortToast(context, "At least 1 board must be selected")
+                                }
+
                             },
                             modifier = Modifier.fillMaxSize()
                         )
@@ -610,7 +605,7 @@ private fun BoardsPreferencesSelectionScreen(
 
 
 @Composable
-fun DraggableBoardItem(
+private fun DraggableBoardItem(
     totalItems: Int,
     itemSize: Dp,
     board: BoardPref,
@@ -679,7 +674,7 @@ fun DraggableBoardItem(
 
 
 @Composable
-fun BoardItem(
+private fun BoardItem(
     board: BoardPref,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -699,10 +694,12 @@ fun BoardItem(
     ) {
 
 
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp),
-            contentAlignment = Alignment.Center){
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
             Column(
                 modifier = Modifier
                     .wrapContentSize(),

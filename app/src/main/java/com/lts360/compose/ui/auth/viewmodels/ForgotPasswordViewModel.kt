@@ -7,8 +7,8 @@ import com.google.gson.Gson
 import com.lts360.api.auth.AuthClient
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.auth.services.AuthService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

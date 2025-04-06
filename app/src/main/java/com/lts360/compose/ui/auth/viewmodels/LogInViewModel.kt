@@ -7,10 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.lts360.App
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.auth.AuthClient
 import com.lts360.api.auth.models.LogInResponse
 import com.lts360.api.auth.services.AuthService
@@ -18,7 +17,6 @@ import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.app.database.daos.prefs.BoardDao
 import com.lts360.compose.ui.auth.repos.AuthRepository
-import com.lts360.compose.ui.main.prefs.viewmodels.BoardPref
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers

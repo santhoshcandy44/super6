@@ -7,8 +7,8 @@ import com.google.gson.JsonObject
 import com.lts360.api.app.AppClient
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.ProfileSettingsService
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager

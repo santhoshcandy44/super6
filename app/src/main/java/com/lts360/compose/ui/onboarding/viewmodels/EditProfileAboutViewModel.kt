@@ -6,8 +6,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.AppClient
 import com.lts360.api.app.ProfileSettingsService
 import com.lts360.api.common.errors.ErrorResponse

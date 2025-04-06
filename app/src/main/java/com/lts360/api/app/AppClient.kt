@@ -4,7 +4,7 @@ import com.lts360.App
 import com.lts360.BuildConfig
 import com.lts360.api.auth.AuthInterceptor
 import com.lts360.api.auth.managers.TokenManager
-import com.lts360.api.Utils.NoInternetInterceptor
+import com.lts360.api.utils.NoInternetInterceptor
 import okhttp3.JavaNetCookieJar
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor

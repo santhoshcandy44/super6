@@ -2,7 +2,7 @@ package com.lts360.compose.ui.usedproducts.manage
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.lts360.api.Utils.Result
+import com.lts360.api.utils.Result
 import com.lts360.api.app.AppClient
 import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.common.errors.ErrorResponse

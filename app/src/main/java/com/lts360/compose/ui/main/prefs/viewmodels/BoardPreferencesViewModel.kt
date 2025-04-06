@@ -1,21 +1,19 @@
 package com.lts360.compose.ui.main.prefs.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.ResultError
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.ResultError
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.AppClient
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.prefs.BoardPreferenceApiService
 import com.lts360.app.database.daos.prefs.BoardDao
 import com.lts360.app.database.models.app.Board
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -173,6 +171,9 @@ class BoardPreferencesViewModel @Inject constructor(
 
     }
 
+    fun validateSelectedBoards() = _allBoards.value.any { it.isSelected }
+
+
     fun setRefreshing(isRefreshing: Boolean) {
         _isRefreshing.value = isRefreshing
     }
@@ -182,6 +183,8 @@ class BoardPreferencesViewModel @Inject constructor(
             mapExceptionToError(it)
         }
     }
+
+
 
 
     fun onGetBoards(
@@ -275,6 +278,10 @@ class BoardPreferencesViewModel @Inject constructor(
                     }
 
                     is Result.Error -> {
+                        if (result.error is CancellationException) {
+                            return@launch
+                        }
+                        updateError(result.error)
                         errorMessage = mapExceptionToError(result.error).errorMessage
                         onError(errorMessage)
                         // Handle the error and update the UI accordingly
@@ -624,6 +631,7 @@ class BoardsPreferencesRepository @Inject constructor() {
         selectedItems: List<BoardPref>,
     ): Result<ResponseReply> {
         return try {
+
 
             val response = AppClient.instance.create(BoardPreferenceApiService::class.java)
                 .updateBoards(userId, Gson().toJson(selectedItems))

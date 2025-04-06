@@ -10,9 +10,9 @@ import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import com.google.gson.JsonParseException
 import com.google.gson.reflect.TypeToken
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.ResultError
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.ResultError
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.ApiService
 import com.lts360.api.app.AppClient
 import com.lts360.api.app.ManageServicesApiService
@@ -404,9 +404,8 @@ class BookmarksViewModel @Inject constructor(
                 } catch (e: Exception) {
                     "An unknown error occurred"
                 }
+
                 Result.Error(Exception(errorMessage))
-
-
             }
         } catch (t: Throwable) {
             t.printStackTrace()

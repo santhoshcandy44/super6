@@ -5,7 +5,7 @@ import com.lts360.api.app.AppClient
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.app.database.daos.profile.UserLocationDao
-import com.lts360.api.Utils.Result
+import com.lts360.api.utils.Result
 import com.lts360.api.app.ProfileSettingsService
 import com.lts360.app.database.daos.profile.RecentLocationDao
 import com.lts360.app.database.models.profile.RecentLocation

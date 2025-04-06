@@ -25,7 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
-import com.lts360.api.Utils.ResultError
+import com.lts360.api.utils.ResultError
 import com.lts360.api.models.service.EditableService
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel

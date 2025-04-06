@@ -1,4 +1,4 @@
-package com.lts360.api.Utils
+package com.lts360.api.utils
 
 import android.content.Context
 import android.net.ConnectivityManager

@@ -1,15 +1,13 @@
 package com.lts360.compose.ui.onboarding.viewmodels
 
 import androidx.compose.runtime.mutableStateListOf
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.lts360.api.Utils.Result
-import com.lts360.api.Utils.ResultError
-import com.lts360.api.Utils.mapExceptionToError
+import com.lts360.api.utils.Result
+import com.lts360.api.utils.ResultError
+import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.AppClient
 import com.lts360.api.app.IndustriesSettingsService
 import com.lts360.api.common.errors.ErrorResponse
@@ -18,7 +16,6 @@ import com.lts360.api.models.service.GuestIndustryDao
 import com.lts360.api.models.service.Industry
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import com.lts360.compose.ui.onboarding.navhost.OnBoardingScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow

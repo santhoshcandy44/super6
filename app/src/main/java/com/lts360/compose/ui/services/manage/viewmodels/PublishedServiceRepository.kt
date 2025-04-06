@@ -12,7 +12,7 @@ import com.lts360.api.models.service.Plan
 import com.lts360.api.models.service.Service
 import com.lts360.api.models.service.toEditablePlan
 import com.lts360.api.models.service.toEditableService
-import com.lts360.api.Utils.Result
+import com.lts360.api.utils.Result
 import com.lts360.api.app.ManageServicesApiService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

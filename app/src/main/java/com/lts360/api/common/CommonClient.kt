@@ -2,7 +2,7 @@ package com.lts360.api.common
 
 import android.content.Context
 import com.lts360.BuildConfig
-import com.lts360.api.Utils.NoInternetInterceptor
+import com.lts360.api.utils.NoInternetInterceptor
 import okhttp3.JavaNetCookieJar
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
