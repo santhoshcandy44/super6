@@ -13,13 +13,18 @@ import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.EditableLocation
+import com.lts360.compose.ui.chat.MAX_IMAGES
 import com.lts360.compose.ui.services.BitmapContainer
 import com.lts360.compose.ui.services.BitmapContainerFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -32,6 +37,7 @@ class UsedProductsListingWorkflowViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+
 
 
     private val _isLoading = MutableStateFlow(false)
@@ -108,10 +114,23 @@ class UsedProductsListingWorkflowViewModel @Inject constructor(
     val imageContainersError = _imageContainersError.asStateFlow()
 
 
-
-
     private val _isPublishing = MutableStateFlow(false)
     val isPublishing = _isPublishing.asStateFlow()
+
+    private val _isPickerLaunch = MutableStateFlow(false)
+    val isPickerLaunch = _isPickerLaunch.asStateFlow()
+
+    private val _refreshImageIndex = MutableStateFlow(-1)
+    val refreshImageIndex = _refreshImageIndex.asStateFlow()
+
+    val slots: StateFlow<Int> = _imageContainers
+        .map { MAX_IMAGES - it.size }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            initialValue = MAX_IMAGES
+        )
+
 
     private var onCreateServiceJob: Job? = null
 
@@ -243,13 +262,14 @@ class UsedProductsListingWorkflowViewModel @Inject constructor(
         return bitmapContainerFactory.createContainer(path, width, height, format, errorMessage)
     }
 
-    // Function to update a specific container
-    private fun loadImageContainers(bitmapContainers: List<BitmapContainer>) {
-        _imageContainers.value = bitmapContainers
 
+    fun setPickerLaunch(isLaunched: Boolean) {
+        _isPickerLaunch.value = isLaunched
     }
 
-
+    fun updateRefreshImageIndex(index: Int) {
+        _refreshImageIndex.value = index
+    }
 
     // Validation logic for serviceTitle
     private fun validateServiceTitle(): Boolean {

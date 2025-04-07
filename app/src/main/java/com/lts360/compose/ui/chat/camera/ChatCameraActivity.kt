@@ -11,11 +11,9 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.TextureView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -116,7 +114,6 @@ import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.extractor.DefaultExtractorsFactory
 import coil3.compose.AsyncImage
 import com.lts360.R
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.enterFullScreenMode
 import com.lts360.compose.ui.theme.AppTheme
@@ -1217,15 +1214,12 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
 
         // Register the permission request callback for multiple permissions
         val requestPermissionsLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestMultiplePermissions()
+           ActivityResultContracts.RequestMultiplePermissions()
         ) { permissions ->
 
 
             val isReadMediaPermissionGranted = permissions[readExternalStoragePermission]
             val isCameraPermissionGranted = permissions[accessCamera]
-
-            Toast.makeText(context,"${isReadMediaPermissionGranted}", Toast.LENGTH_SHORT)
-                .show()
 
             // Update state based on the permissions result
             if (isReadMediaPermissionGranted == true
@@ -1500,7 +1494,7 @@ fun CameraAndMediaAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: 
 
         // Register the permission request callback for multiple permissions
         val requestPermissionsLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestMultiplePermissions()
+            ActivityResultContracts.RequestMultiplePermissions()
         ) { permissions ->
 
 
@@ -1729,7 +1723,7 @@ fun MicAccess(onDismissRequest: () -> Unit = {}, onPermissionResult: (Boolean) -
 
     // Register the permission request callback for multiple permissions
     val requestPermissions = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
+        ActivityResultContracts.RequestPermission()
     ) { isPermissionGranted ->
 
         // Update state based on the permissions result

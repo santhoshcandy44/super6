@@ -1,5 +1,3 @@
-
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -151,15 +149,15 @@ dependencies {
     // Jetpack Compose BOM
     implementation(platform("androidx.compose:compose-bom:2025.02.00"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.02.00"))
-    implementation("androidx.compose.ui:ui:1.7.8")
-    implementation("androidx.compose.ui:ui-test:1.7.8")
-    implementation("androidx.compose.ui:ui-graphics:1.7.8")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.7.8")
-    debugImplementation("androidx.compose.ui:ui-tooling:1.7.8")
+    implementation("androidx.compose.ui:ui:1.8.0-rc02")
+    implementation("androidx.compose.ui:ui-test:1.8.0-rc02")
+    implementation("androidx.compose.ui:ui-graphics:1.8.0-rc02")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.8.0-rc02")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.8.0-rc02")
 
     // Compose UI Testing
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.7.8")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.7.8")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.8.0-rc02")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.8.0-rc02")
 
     // Activity and Lifecycle
     implementation("androidx.activity:activity-compose:1.10.1")

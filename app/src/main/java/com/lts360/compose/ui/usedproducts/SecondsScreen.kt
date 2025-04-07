@@ -80,6 +80,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SecondsScreen(
+    isTopBarShowing:Boolean,
     onNavigateUpSecondsDetailedScreen: (UsedProductListing) -> Unit,
     viewModel: SecondsViewmodel
 ) {
@@ -118,8 +119,6 @@ fun SecondsScreen(
     LaunchedEffect(lazyGridState) {
         snapshotFlow { lazyGridState.layoutInfo }
             .collect { layoutInfo ->
-
-
                 // Check if the last item is visible
                 val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull {
                     (it.key as? String)?.startsWith("grid_items_") == true
@@ -194,7 +193,7 @@ fun SecondsScreen(
                 .fillMaxSize() // This makes the Box take up the entire available space
                 .pullToRefresh(
                     isRefreshingItems, pullToRefreshState,
-                    enabled = !(initialLoadState && items.isEmpty())
+                    enabled = !(initialLoadState && items.isEmpty()) && isTopBarShowing
                 ) {
                     onRefresh()
                 }

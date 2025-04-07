@@ -47,12 +47,11 @@ fun SearchBar(
     query: TextFieldValue,
     onQueryChange: (TextFieldValue) -> Unit,
     onSearch: () -> Unit,
-    onBackButtonClicked: () -> Unit,
     onClearClicked: () -> Unit,
     modifier: Modifier = Modifier,
     isBackButtonEnabled: Boolean = true,
+    onBackButtonClicked: () -> Unit = {}
 ) {
-
 
 
     var recentQuery by remember(query) { mutableStateOf(query) }
@@ -96,7 +95,8 @@ fun SearchBar(
             textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onSurface),
             singleLine = true,
             keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = ImeAction.Search
+                imeAction = ImeAction.Search,
+                autoCorrectEnabled = false
             ),
             keyboardActions = KeyboardActions(
                 onSearch = {
@@ -113,9 +113,8 @@ fun SearchBar(
                 .fillMaxWidth()
                 .background(MaterialTheme.customColorScheme.searchBarColor, CircleShape)
                 .padding(8.dp)
-                .height(28.dp),
-
-            ) { innerTextField ->
+                .height(28.dp)
+        ) { innerTextField ->
             Row(modifier, verticalAlignment = Alignment.CenterVertically) {
 
                 IconButton(onClick = {}, interactionSource = NoRippleInteractionSource()) {
@@ -126,6 +125,8 @@ fun SearchBar(
                     )
                 }
 
+
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -133,7 +134,7 @@ fun SearchBar(
                     contentAlignment = Alignment.CenterStart
                 ) {
 
-                    if (recentQuery.text.trim().isEmpty()) {
+                    if (recentQuery.text.isEmpty()) {
                         Text(
                             text = "Search",
                             style = LocalTextStyle.current.copy(
@@ -148,7 +149,7 @@ fun SearchBar(
                 }
 
 
-                if (recentQuery.text.trim().isNotEmpty()) {
+                if (recentQuery.text.isNotEmpty()) {
 
                     IconButton(onClick = {
                         onClearClicked()

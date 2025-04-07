@@ -14,6 +14,7 @@ import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.EditableLocation
 import com.lts360.api.models.service.EditableUsedProductListing
+import com.lts360.compose.ui.chat.MAX_IMAGES
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.services.manage.models.CombinedContainer
 import com.lts360.compose.ui.services.manage.models.CombinedContainerFactory
@@ -22,7 +23,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -135,6 +140,20 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     private val containerFactory = CombinedContainerFactory()
 
 
+    val slots: StateFlow<Int> = _imageContainers
+        .map { MAX_IMAGES - it.size }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            initialValue = MAX_IMAGES
+        )
+
+    private val _isPickerLaunch = MutableStateFlow(false)
+    val isPickerLaunch = _isPickerLaunch.asStateFlow()
+
+    private val _refreshImageIndex = MutableStateFlow(-1)
+    val refreshImageIndex = _refreshImageIndex.asStateFlow()
+
     init {
 
         _isLoading.value = true
@@ -152,6 +171,13 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         }
     }
 
+    fun setPickerLaunch(isLaunched: Boolean) {
+        _isPickerLaunch.value = isLaunched
+    }
+
+    fun updateRefreshImageIndex(index: Int) {
+        _refreshImageIndex.value = index
+    }
 
     fun refreshPublishedSeconds(userId: Long) {
         _resultError.value = null
@@ -183,9 +209,8 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         repository.removeSelectedUsedProductListing(secondsId)
     }
 
-    fun inValidateSelectedSeconds() {
-        repository.invalidateSelectedItem()
-    }
+
+
 
     private fun loadManageProductInfoDetails(publishedSeconds: EditableUsedProductListing) {
         // Reset all values before initializing

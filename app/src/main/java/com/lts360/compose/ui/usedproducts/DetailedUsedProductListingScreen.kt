@@ -24,16 +24,21 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -114,7 +119,7 @@ fun DetailedUsedProductListingScreen(
         },
         {
             selectedItem?.let {
-                Button(
+                OutlinedButton(
                     onClick = dropUnlessResumed {
 
                         if (job?.isActive == true) {
@@ -131,16 +136,19 @@ fun DetailedUsedProductListingScreen(
                                 navigateUpChat(
                                     selectedChatUser,
                                     selectedChatId,
-                                    it.user.userId)
+                                    it.user.userId
+                                )
                             }
                         }
 
                     },
-
                     shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.onSurface,
+                    ),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(text = "Send message", color = Color.White)
+                    Text(text = "Send message", color = MaterialTheme.colorScheme.surface)
                 }
             }
         }
@@ -178,7 +186,7 @@ fun FeedUserDetailedSecondsInfoScreen(
         {
 
             selectedItem?.let {
-                Button(
+                OutlinedButton(
                     onClick = dropUnlessResumed {
 
                         if (job?.isActive == true) {
@@ -195,16 +203,19 @@ fun FeedUserDetailedSecondsInfoScreen(
                                 navigateUpChat(
                                     selectedChatUser,
                                     selectedChatId,
-                                    it.user.userId)
+                                    it.user.userId
+                                )
                             }
                         }
 
                     },
-
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.onSurface,
+                    ),
                     shape = RectangleShape,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(text = "Send message", color = Color.White)
+                    Text(text = "Send message", color = MaterialTheme.colorScheme.surface)
                 }
             }
 
@@ -245,7 +256,7 @@ fun BookmarkedDetailedUsedProductListingInfoScreen(
         {
 
             item.let {
-                Button(
+                OutlinedButton(
                     onClick = dropUnlessResumed {
                         if (job?.isActive == true) {
                             return@dropUnlessResumed
@@ -266,11 +277,13 @@ fun BookmarkedDetailedUsedProductListingInfoScreen(
                         }
 
                     },
-
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.onSurface,
+                    ),
                     shape = RectangleShape,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(text = "Send message", color = Color.White)
+                    Text(text = "Send message", color = MaterialTheme.colorScheme.surface)
                 }
             }
         }
@@ -311,7 +324,7 @@ fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
         {},
         {
 
-            Button(
+            OutlinedButton(
                 onClick = dropUnlessResumed {
 
                     if (job?.isActive == true) {
@@ -334,11 +347,13 @@ fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
                     }
 
                 },
-
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.onSurface,
+                ),
                 shape = RectangleShape,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = "Send message", color = Color.White)
+                Text(text = "Send message", color = MaterialTheme.colorScheme.surface)
             }
 
         }
@@ -350,7 +365,7 @@ fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailedUsedProductListingContent(
+private fun DetailedUsedProductListingContent(
     userId: Long,
     selectedSeconds: UsedProductListing?,
     onNavigateUpSlider: (Int) -> Unit,
@@ -442,7 +457,6 @@ fun DetailedUsedProductListingContent(
                     it,
                     onNavigateUpSlider,
                     onUsedProductListingOwnerProfileClicked
-
                 ) {
                     onChatButtonClicked {
                         coroutineScope.launch {
@@ -459,7 +473,7 @@ fun DetailedUsedProductListingContent(
 }
 
 @Composable
-fun DetailedUsedProductListingInfo(
+private fun DetailedUsedProductListingInfo(
     userId: Long,
     seconds: UsedProductListing,
     onNavigateUpSlider: (Int) -> Unit,
@@ -467,44 +481,54 @@ fun DetailedUsedProductListingInfo(
     chatButtonClicked: @Composable () -> Unit
 ) {
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1f),
+            contentPadding = PaddingValues(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
 
-        item(key = "secondsOwner-${seconds.user.userId}") {
-            SecondsOwner(
-                "${seconds.user.firstName} ${seconds.user.lastName ?: ""}",
-                seconds.user.profilePicUrl,
-                "${seconds.country}/${seconds.state}",
-                seconds.user.isOnline,
-                onUsedProductListingOwnerProfileClicked
-            )
-        }
 
-        item(key = "secondsImages-${seconds.productId}") {
-            SecondsImagesSliderDetailedSecondsInfo(seconds.images, onNavigateUpSlider)
-        }
+            item(key = "secondsImages-${seconds.productId}") {
+                SecondsImagesSliderDetailedSecondsInfo(seconds.images, onNavigateUpSlider)
+            }
 
-        item(key = "secondsDescription-${seconds.productId}") {
-            SecondsDescription(
-                seconds.name,
-                seconds.description,
-                formatCurrency(
-                    seconds.price,
-                    seconds.priceUnit
+            item(key = "secondsOwner-${seconds.user.userId}") {
+                SecondsOwner(
+                    "${seconds.user.firstName} ${seconds.user.lastName ?: ""}",
+                    seconds.user.profilePicUrl,
+                    "${seconds.country}/${seconds.state}",
+                    seconds.user.isOnline,
+                    onUsedProductListingOwnerProfileClicked
                 )
-            )
+            }
+
+            item(key = "secondsDescription-${seconds.productId}") {
+                SecondsDescription(
+                    seconds.name,
+                    seconds.description,
+                    formatCurrency(
+                        seconds.price,
+                        seconds.priceUnit
+                    )
+                )
+            }
+
+
         }
 
-        if (userId != seconds.user.userId) {
-            item(key = "sendMessage-${seconds.productId}") {
-                SendMessageButton(chatButtonClicked)
+        Box(modifier = Modifier.fillMaxWidth()){
+            Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                if (userId != seconds.user.userId) {
+                    SendMessageButton(chatButtonClicked)
+                }
             }
         }
+
     }
+
 
 }
 
@@ -624,6 +648,7 @@ private fun SecondsOwner(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 16.dp)
             .clickable { onUsedProductListingClicked() },
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -694,7 +719,10 @@ private fun SecondsDescription(
 
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+
     ) {
 
 
@@ -741,42 +769,66 @@ private fun SecondsDescription(
 @Composable
 private fun SecondsImagesSliderDetailedSecondsInfo(
     images: List<Image>,
-    onNavigateUpSlider: (Int) -> Unit,
+    onImageClick: (Int) -> Unit,
 ) {
 
-
     val lifecycleOwner = LocalLifecycleOwner.current
-
+    val pagerState = rememberPagerState(pageCount = { images.size })
 
     if (images.isNotEmpty()) {
 
-        LazyRow(
+        Card {  }
+        // Image Pager
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(16 / 9f)
-                .background(MaterialTheme.customColorScheme.serviceSurfaceContainer),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(8.dp)
-        ) {
-            itemsIndexed(images) { index, image ->
-                AsyncImage(
-                    model = image.imageUrl,  // Use the URL for the image
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,  // Adjust content scale based on your needs
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }) {
-                            dropUnlessResumedV2(lifecycleOwner) {
-                                onNavigateUpSlider(index)  // Pass the index of the image
-                            }
+                .aspectRatio(1f)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow),
+            pageSpacing = 8.dp
+        ) { page ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        dropUnlessResumedV2(lifecycleOwner) {
+                            onImageClick(page)
                         }
+                    }
+            ) {
+                AsyncImage(
+                    model = images[page].imageUrl,
+                    contentDescription = "Product image ${page + 1}",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        // Page indicators (optional)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            repeat(images.size) { iteration ->
+                val color = if (pagerState.currentPage == iteration)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+
+                Box(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(color)
                 )
             }
         }
     }
-
-
 }
-

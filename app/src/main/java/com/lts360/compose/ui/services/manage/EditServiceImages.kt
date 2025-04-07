@@ -81,6 +81,7 @@ import com.lts360.compose.ui.services.ThumbnailContainer
 import com.lts360.compose.ui.services.manage.models.Container
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
+import com.lts360.libs.ui.ShortToast
 import kotlinx.coroutines.Job
 
 
@@ -88,30 +89,26 @@ import kotlinx.coroutines.Job
 @Composable
 fun EditServiceImagesScreen(onPopBackStack:()-> Unit, viewModel: PublishedServicesViewModel) {
 
-
-
     val containers = viewModel.editableContainers
-
     val userId = viewModel.userId
-
 
     val editableService = requireNotNull(viewModel.selectedService.collectAsState().value) {
         "Selected service should not be null"
     }
 
-
-
     // Collect state from the ViewModel
     val refreshImageIndex by viewModel.refreshImageIndex.collectAsState()
     val isPickerLaunch by viewModel.isPickerLaunch.collectAsState()
 
+    val slots  = viewModel.slots
 
     val context = LocalContext.current
 
     // Create a launcher for picking multiple images
-    val pickImagesLauncher = rememberLauncherForActivityResult(
-        GalleryPagerActivityResultContracts.PickMultipleImages(MAX_IMAGES)
-    ) { uris ->
+    val pickImagesLauncher = if(slots>0){
+        rememberLauncherForActivityResult(
+            GalleryPagerActivityResultContracts.PickMultipleImages(slots, allowSingleItemChoose = true)
+        ) { uris ->
 
             // Proceed if there are URIs to handle
             if (uris.isNotEmpty()) {
@@ -193,9 +190,12 @@ fun EditServiceImagesScreen(onPopBackStack:()-> Unit, viewModel: PublishedServic
 
             }
 
-        viewModel.togglePickerLaunch()
+            viewModel.togglePickerLaunch()
 
 
+        }
+    }else{
+        null
     }
 
     // Create a launcher for picking a single image
@@ -410,12 +410,20 @@ fun EditServiceImagesScreen(onPopBackStack:()-> Unit, viewModel: PublishedServic
 
                 }, {
 
-                    if (isPickerLaunch)
-                        return@ContainerList
+                    if (containers.size == MAX_IMAGES) {
+                        ShortToast(
+                            context,
+                            "You already selected maximum $MAX_IMAGES images"
+                        )
+                    } else {
+                        if (isPickerLaunch)
+                            return@ContainerList
 
-                    viewModel.togglePickerLaunch()
+                        viewModel.togglePickerLaunch()
 
-                    pickImagesLauncher.launch(Unit)
+                        pickImagesLauncher?.launch(Unit)
+                    }
+
 
                 }
             )

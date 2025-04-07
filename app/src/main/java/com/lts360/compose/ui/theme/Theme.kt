@@ -126,8 +126,8 @@ val LocalCustomIcons = staticCompositionLocalOf { LightIcons }
 
 
 val CustomFontFamily = FontFamily(
-    Font(R.font.helvetica), // Regular font
-    Font(R.font.helvetica_bold, FontWeight.Bold) // Bold font
+    Font(R.font.roboto), // Regular font
+    Font(R.font.roboto_bold, FontWeight.Bold) // Bold font
 )
 
 

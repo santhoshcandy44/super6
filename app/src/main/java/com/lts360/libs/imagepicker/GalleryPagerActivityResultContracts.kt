@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContract
 import com.lts360.components.getParcelableArrayListExtraCompat
+import androidx.core.net.toUri
 
 
 class GalleryPagerActivityResultContracts {
@@ -27,7 +28,7 @@ class GalleryPagerActivityResultContracts {
         override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
 
             return if (resultCode == Activity.RESULT_OK) {
-                Uri.parse(intent?.getStringExtra(EXTRA_DATA))
+                intent?.getStringExtra(EXTRA_DATA)?.toUri()
             } else {
                 null
             }
@@ -35,11 +36,15 @@ class GalleryPagerActivityResultContracts {
         }
     }
 
-    class PickMultipleImages(private val maxItems: Int = Integer.MAX_VALUE) :
+    class PickMultipleImages(private val maxItems: Int = Integer.MAX_VALUE, allowSingleItemChoose:Boolean=false) :
         ActivityResultContract<Unit, List<Uri>>() {
 
         init {
-            require(maxItems > 1) { "Max items must be higher than 1" }
+            if(allowSingleItemChoose){
+                require(maxItems > 0 ) { "Max items must be higher than 0" }
+            }else{
+                require(maxItems > 1) { "Max items must be higher than 1" }
+            }
         }
 
         companion object {

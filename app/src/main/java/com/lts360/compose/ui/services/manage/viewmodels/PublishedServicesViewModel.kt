@@ -24,6 +24,7 @@ import com.lts360.api.utils.Result
 import com.lts360.api.utils.ResultError
 import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.ManageServicesApiService
+import com.lts360.compose.ui.chat.MAX_IMAGES
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.services.ThumbnailContainer
 import com.lts360.compose.ui.services.ValidatedPlan
@@ -32,8 +33,11 @@ import com.lts360.compose.ui.services.manage.models.ContainerFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -154,6 +158,8 @@ class PublishedServicesViewModel @Inject constructor(
 
     private val containerFactory = ContainerFactory()
 
+    val slots: Int
+        get() = MAX_IMAGES - _editableContainers.size
 
     init {
         _isLoading.value = true
@@ -170,6 +176,15 @@ class PublishedServicesViewModel @Inject constructor(
             })
         }
     }
+
+    fun setPickerLaunch(isLaunched: Boolean) {
+        _isPickerLaunch.value = isLaunched
+    }
+
+    fun updateRefreshImageIndex(index: Int) {
+        _refreshImageIndex.value = index
+    }
+
 
     fun setSelectedService(serviceId: Long) {
         repository.setSelectedItem(serviceId)

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,6 +39,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -84,7 +86,8 @@ fun HomeScreen(
 
     val boardLabels by remember { mutableStateOf(boardItems.map { it.boardLabel }) }
 
-    val initialPageIndex = if (nestedType.isNullOrEmpty()) 0 else boardLabels.indexOf(nestedType).coerceAtLeast(0)
+    val initialPageIndex =
+        if (nestedType.isNullOrEmpty()) 0 else boardLabels.indexOf(nestedType).coerceAtLeast(0)
 
     val pagerState = rememberPagerState(initialPageIndex, pageCount = { boardItems.size })
 
@@ -92,36 +95,21 @@ fun HomeScreen(
     val isGuest = viewModel.isGuest
     val selectedLocationGeo by viewModel.selectedLocationGeo.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val topBarBarHeight = remember { mutableFloatStateOf(0f) }
-    val topBarOffsetHeightPx = remember { mutableFloatStateOf(0f) }
-    val showTopBar = remember { mutableStateOf(true) }
 
     val searchQuery by viewModel.searchQuery.collectAsState()
-    val searchJob by viewModel.searchJob.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
-
     val suggestions by viewModel.suggestions.collectAsState()
-
     val isLazyLoading by viewModel.isLazyLoading.collectAsState()
 
     val focusManager = LocalFocusManager.current
 
     val scope = rememberCoroutineScope()
 
-    if (!onlySearchBar) {
-        BackHandler(isSearching) {
-            // Handle search collapse on the main screen
-            if (isSearching) {
-                viewModel.collapseSearchAction(true)
-            }
-        }
-    }
+    if (isSearching) {
+        BackHandler {
+            viewModel.collapseSearchAction(true)
 
-    if (onlySearchBar) {
-        BackHandler(isSearching) {
-            // Handle search collapse or pop overlay if no search
-            if (isSearching) {
-                viewModel.collapseSearchAction(true)
+            if (onlySearchBar) {
                 scope.launch {
                     delay(100)
                     focusManager.clearFocus()
@@ -136,7 +124,12 @@ fun HomeScreen(
 
     val context = LocalContext.current
 
-    Surface (modifier = Modifier.fillMaxSize()) {
+
+    var topBarBarHeight by remember { mutableFloatStateOf(0f) }
+    var topBarOffsetHeightPx by remember { mutableFloatStateOf(0f) }
+    var showTopBar by remember { mutableStateOf(true) }
+
+    Surface(modifier = Modifier.fillMaxSize()) {
 
         Column(
             modifier = Modifier
@@ -147,20 +140,17 @@ fun HomeScreen(
                             available: Offset,
                             source: NestedScrollSource
                         ): Offset {
-                            val delta = available.y
-                            val newOffset = topBarOffsetHeightPx.floatValue + delta
-                            topBarOffsetHeightPx.floatValue =
-                                newOffset.coerceIn(-topBarBarHeight.floatValue, 0f)
-                            showTopBar.value = newOffset >= 0f
+                            val newOffset = topBarOffsetHeightPx + available.y
+                            topBarOffsetHeightPx = newOffset.coerceIn(-topBarBarHeight, 0f)
+                            showTopBar = newOffset >= 0f
                             return Offset.Zero
                         }
                     }
                 })
         ) {
 
-
             AnimatedVisibility(
-                visible = showTopBar.value,
+                visible = showTopBar,
                 enter = fadeIn(),  // Optional fade-in for showing
                 exit = fadeOut()   // Optional fade-out for hiding
             ) {
@@ -169,7 +159,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .onGloballyPositioned { coordinates ->
-                            topBarBarHeight.floatValue = coordinates.size.height.toFloat()
+                            topBarBarHeight = coordinates.size.height.toFloat()
                         }, verticalArrangement = Arrangement.Center
                 ) {
                     Row(
@@ -193,286 +183,131 @@ fun HomeScreen(
 
             }
 
-
             Spacer(Modifier.height(8.dp))
 
-            if (onlySearchBar) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 0.dp
+            ) {
+                val currentLabel = boardLabels[pagerState.currentPage]
 
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    shadowElevation = 0.dp
-                ) {
+                fun handleQueryChange(query: String) {
+                    if (query.trim().isNotEmpty()) {
+                        if (viewModel.searchQuery.value.text != query) {
+                            viewModel.setSearching(true)
+                            viewModel.setSearchQuery(query)
+                            viewModel.clearJob()
 
-                    SearchBar(
-                        query = searchQuery,
-                        onQueryChange = { query ->
-
-                            if (query.text.trim().isNotEmpty()) {
-
-                                if (viewModel.searchQuery.value.text != query.text) {
-
-                                    viewModel.setSearching(true)
-                                    viewModel.setSearchQuery(query.text)
-                                    // Cancel any ongoing search job
-                                    searchJob?.cancel()
-                                    viewModel.clearJob()
-
-                                    if (boardLabels[pagerState.currentPage] == "services") {
-                                        viewModel.onGetServiceSearchQuerySuggestions(
-                                            userId,
-                                            query.text
-                                        )
-                                    } else if (boardLabels[pagerState.currentPage] == "second_hands") {
-                                        viewModel.onGetUsedProductListingSearchQuerySuggestions(
-                                            userId,
-                                            query.text
-                                        )
-
-                                    }
-                                }
-
-                            } else {
-
-                                if (viewModel.searchQuery.value.text != query.text
-                                    && viewModel.isSearching.value
-                                ) {
-                                    searchJob?.cancel()
-                                    viewModel.clearJob()
-                                    viewModel.setSearching(false)
-                                    viewModel.setSearchQuery("")
-                                    viewModel.setSuggestions(emptyList())
-                                }
-
+                            when (currentLabel) {
+                                "services" -> viewModel.onGetServiceSearchQuerySuggestions(userId, query)
+                                "second_hands" -> viewModel.onGetUsedProductListingSearchQuerySuggestions(userId, query)
                             }
-
-                        },
-                        onSearch = {
-
-                            if (searchQuery.text.isNotEmpty()) {
-
-
-                                if (boardLabels[pagerState.currentPage] == "services") {
-                                    viewModel.navigateToOverlay(
-                                        navController, BottomBar.NestedServices(
-                                            servicesViewModel.getKey() + 1,
-                                            searchQuery.text,
-                                            true
-                                        )
-                                    )
-                                } else if (boardLabels[pagerState.currentPage] == "second_hands") {
-
-                                    viewModel.navigateToOverlay(
-                                        navController, BottomBar.NestedSeconds(
-                                            secondsViewModel.getKey() + 1,
-                                            searchQuery.text,
-                                            true
-                                        )
-                                    )
-
-                                }
-
-                            }
-
-                        },
-                        onBackButtonClicked = {
-
-                            if (!isSearching) {
-                                onPopBackStack()
-                            } else {
-                                searchJob?.cancel()
-                                viewModel.setSuggestions(emptyList())
-                                viewModel.setSearching(false)
-                            }
-                        },
-                        onClearClicked = {
-                            searchJob?.cancel()
-                            viewModel.setSuggestions(emptyList())
-                            viewModel.setSearchQuery("")
-                            viewModel.setSearching(false)
-                        },
-                    )
-
+                        }
+                    } else if (viewModel.searchQuery.value.text != query && viewModel.isSearching.value) {
+                        viewModel.setSearching(false)
+                        viewModel.clearJob()
+                        viewModel.setSearchQuery("")
+                        viewModel.setSuggestions(emptyList())
+                    }
                 }
 
+                fun navigateToResults() {
+                    if (searchQuery.text.isNotEmpty()) {
+                        val destination = when (currentLabel) {
+                            "services" -> BottomBar.NestedServices(servicesViewModel.getKey() + 1, searchQuery.text, true)
+                            "second_hands" -> BottomBar.NestedSeconds(secondsViewModel.getKey() + 1, searchQuery.text, true)
+                            else -> return
+                        }
 
-            } else {
-
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    shadowElevation = 0.dp
-                ) {
-
-                    SearchBar(
-                        query = searchQuery,
-                        onQueryChange = { query ->
-
-                            if (!isSearching) {
-                                viewModel.setSearching(true)
+                        if (onlySearchBar) {
+                            viewModel.navigateToOverlay(navController, destination)
+                        } else {
+                            scope.launch {
+                                viewModel.navigateToOverlay(navController, destination)
                             }
-
-                            if (query.text.trim().isNotEmpty()) {
-
-                                if (viewModel.searchQuery.value.text != query.text
-                                    && viewModel.isSearching.value
-                                ) {
-
-
-                                    viewModel.setSearchQuery(query.text)
-                                    // Cancel any ongoing search job
-                                    searchJob?.cancel()
-                                    viewModel.clearJob()
-
-                                    if (boardLabels[pagerState.currentPage] == "services") {
-                                        viewModel.onGetServiceSearchQuerySuggestions(
-                                            userId,
-                                            query.text
-                                        )
-                                    } else if (boardLabels[pagerState.currentPage] == "second_hands") {
-
-                                        viewModel.onGetUsedProductListingSearchQuerySuggestions(
-                                            userId,
-                                            query.text
-                                        )
-                                    }
-
-                                }
-
-
-                            } else {
-
-                                if (viewModel.searchQuery.value.text != query.text
-                                    && viewModel.isSearching.value
-                                ) {
-                                    searchJob?.cancel()
-                                    viewModel.clearJob()
-                                    viewModel.setSearchQuery("")
-                                    viewModel.setSuggestions(emptyList())
-                                }
-
-                            }
-                        },
-                        onSearch = {
-                            if (searchQuery.text.isNotEmpty()) {
-
-                                scope.launch {
-
-                                    if (boardLabels[pagerState.currentPage] == "services") {
-                                        viewModel.navigateToOverlay(
-                                            navController, BottomBar.NestedServices(
-                                                servicesViewModel.getKey() + 1,
-                                                searchQuery.text,
-                                                true
-
-                                            )
-                                        )
-                                    } else if (boardLabels[pagerState.currentPage] == "second_hands") {
-                                        viewModel.navigateToOverlay(
-                                            navController, BottomBar.NestedSeconds(
-                                                secondsViewModel.getKey() + 1,
-                                                searchQuery.text,
-                                                true
-
-                                            )
-                                        )
-
-                                    }
-                                }
-                            }
-
-                        },
-                        onBackButtonClicked = { },
-                        onClearClicked = {
-                            searchJob?.cancel()
-                            viewModel.setSuggestions(emptyList())
-                            viewModel.setSearchQuery("")
-                            viewModel.setSearching(false)
-                        },
-                        isBackButtonEnabled = false
-                    )
-
+                        }
+                    }
                 }
 
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = { handleQueryChange(it.text) },
+                    onSearch = { navigateToResults() },
+                    onBackButtonClicked = {
+                        if (!isSearching) {
+                            onPopBackStack()
+                        } else {
+                            viewModel.clearJob()
+                            viewModel.setSuggestions(emptyList())
+                            viewModel.setSearching(false)
+                        }
+                    },
+                    onClearClicked = {
+                        viewModel.clearJob()
+                        viewModel.setSuggestions(emptyList())
+                        viewModel.setSearchQuery("")
+                        viewModel.setSearching(false)
+                    },
+                    isBackButtonEnabled = onlySearchBar // disable back button only for full screen
+                )
             }
 
+
+
             Box(modifier = Modifier.fillMaxSize()) {
-                if (!onlySearchBar) {
-
-                    Boards(
-                        boardItems,
-                        pagerState,
-                        servicesContent = {
-                            ServicesScreen(
-                                {
-                                    viewModel.setSelectedServiceItem(it)
-                                    servicesViewModel.setSelectedItem(it)
-                                    onNavigateUpServiceDetailedScreen()
-                                },
-                                { service, ownerId ->
-                                    viewModel.setSelectedServiceOwnerServiceItem(service)
-                                    servicesViewModel.setSelectedItem(service)
-                                    onNavigateUpServiceOwnerProfile(ownerId)
-                                },
-                                servicesViewModel
-                            )
-                        }, secondsContent = {
-                            SecondsScreen(
-                                {
-                                    viewModel.setSelectedUsedProductListingItem(it)
-                                    secondsViewModel.setSelectedItem(it)
-                                    onNavigateUpUsedProductListingDetailedScreen()
-                                },
-                                secondsViewModel
-                            )
-
-                        }, {
-                            if (it == "second_hands") {
-                                onDockedFabAddNewSecondsVisibility(true)
-                            } else {
-                                onDockedFabAddNewSecondsVisibility(false)
-                            }
-                        })
 
 
-                } else {
-
-                    if (nestedType == "services") {
-                        ServicesScreen(
-                            {
-                                viewModel.setSelectedServiceItem(it)
-                                servicesViewModel.setSelectedItem(it)
-                                onNavigateUpServiceDetailedScreen()
-                            },
-                            { service, ownerId ->
-                                viewModel.setSelectedServiceOwnerServiceItem(service)
-                                servicesViewModel.setSelectedItem(service)
-                                onNavigateUpServiceOwnerProfile(ownerId)
-                            },
-                            servicesViewModel
-                        )
-                    }
-
-                    if (nestedType == "second_hands") {
-                        SecondsScreen(
-                            {
-                                viewModel.setSelectedUsedProductListingItem(it)
-                                secondsViewModel.setSelectedItem(it)
-                                onNavigateUpUsedProductListingDetailedScreen()
-                            },
-                            secondsViewModel
-                        )
-                    }
-
+                val servicesContent: @Composable () -> Unit = {
+                    ServicesScreen(
+                        showTopBar,
+                        {
+                            viewModel.setSelectedServiceItem(it)
+                            servicesViewModel.setSelectedItem(it)
+                            onNavigateUpServiceDetailedScreen()
+                        },
+                        { service, ownerId ->
+                            viewModel.setSelectedServiceOwnerServiceItem(service)
+                            servicesViewModel.setSelectedItem(service)
+                            onNavigateUpServiceOwnerProfile(ownerId)
+                        },
+                       servicesViewModel
+                    )
                 }
 
+                val secondsContent: @Composable () -> Unit = {
+                    SecondsScreen(
+                        showTopBar,
+                        {
+                            viewModel.setSelectedUsedProductListingItem(it)
+                            secondsViewModel.setSelectedItem(it)
+                            onNavigateUpUsedProductListingDetailedScreen()
+                        },
+                        secondsViewModel
+                    )
+                }
+
+                if (!onlySearchBar) {
+                    Boards(
+                        boards = boardItems,
+                        pagerState = pagerState,
+                        servicesContent = servicesContent,
+                        secondsContent = secondsContent,
+                        onPageChanged = {
+                            onDockedFabAddNewSecondsVisibility(it == "second_hands")
+                        }
+                    )
+                } else {
+                    when (nestedType) {
+                        "services" -> servicesContent()
+                        "second_hands" -> secondsContent()
+                    }
+                }
+
+
                 if (isSearching) {
-
-
                     Box(
                         modifier = Modifier
-                            .fillMaxSize() // This makes the Box take up the entire available space
+                            .fillMaxSize()
                             .background(MaterialTheme.colorScheme.surface)
                     ) {
 
@@ -483,7 +318,6 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         } else {
-
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
 
                                 items(suggestions) {
@@ -514,7 +348,6 @@ fun HomeScreen(
                                                                     servicesViewModel.getKey() + 1,
                                                                     it,
                                                                     true
-
                                                                 )
                                                             )
 
@@ -551,12 +384,8 @@ fun HomeScreen(
 
                             }
                         }
-
-
                     }
-
                 }
-
             }
 
         }
@@ -576,13 +405,15 @@ fun HomeScreen(
                 dragHandle = null,
                 shape = RectangleShape,
                 sheetState = modalBottomSheetState,
-                properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false,
+                properties = ModalBottomSheetProperties(
+                    shouldDismissOnBackPress = false,
                     isAppearanceLightStatusBars = false,
                     isAppearanceLightNavigationBars = false
                 ),
+                modifier = Modifier.safeDrawingPadding()
             ) {
 
-                Box(modifier = Modifier.fillMaxSize()){
+                Box(modifier = Modifier.fillMaxSize()) {
 
                     BackHandler(modalBottomSheetState.currentValue == SheetValue.Expanded) {
 
@@ -718,17 +549,3 @@ fun HomeScreen(
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

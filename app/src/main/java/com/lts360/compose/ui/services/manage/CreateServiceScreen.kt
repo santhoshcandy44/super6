@@ -1,7 +1,5 @@
 package com.lts360.compose.ui.services.manage
 
-
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -54,7 +52,6 @@ import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -87,10 +84,12 @@ import com.lts360.compose.ui.main.CreateServiceLocationBottomSheetScreen
 import com.lts360.compose.ui.services.ValidatedPlan
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
+import com.lts360.libs.ui.ShortToast
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
+import androidx.core.net.toUri
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -144,43 +143,51 @@ fun CreateServiceScreen(
     // Observe the state from ViewModel
     val deleteDraftDialogVisibility by viewModel.deleteDraftDialogVisibility.collectAsState()
 
-
-    // Mutable state for isPickerLaunch and refreshImageIndex
-    var isPickerLaunch by remember { mutableStateOf(false) }
-    var refreshImageIndex by remember { mutableIntStateOf(-1) }
+    val isPickerLaunch by viewModel.isPickerLaunch.collectAsState()
+    val refreshImageIndex by viewModel.refreshImageIndex.collectAsState()
+    val slots by viewModel.slots.collectAsState()
 
     val context = LocalContext.current
 
 
     // Create a launcher for picking multiple images
-    val pickImagesLauncher = rememberLauncherForActivityResult(
-        GalleryPagerActivityResultContracts.PickMultipleImages(MAX_IMAGES)
-    ) { uris ->
-        // Check if the number of selected images is less than 12
-        if (imageContainers.size < MAX_IMAGES) {
-            // Proceed if there are URIs to handle
-            if (uris.isNotEmpty()) {
+    val pickImagesLauncher = if(slots>0){
+        rememberLauncherForActivityResult(
+            GalleryPagerActivityResultContracts.PickMultipleImages(slots, allowSingleItemChoose = true)
+        ) { uris ->
+            // Check if the number of selected images is less than 12
+            if (imageContainers.size < MAX_IMAGES) {
+                // Proceed if there are URIs to handle
+                if (uris.isNotEmpty()) {
 
-                uris.forEach { uri ->
-                    val result = isValidImageDimensions(context, uri)
-                    val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
-                    viewModel.addContainer(
-                        uri.toString(),
-                        result.width,
-                        result.height,
-                        result.format.toString(),
-                        errorMessage = errorMessage
-                    )
+                    uris.forEach { uri ->
+                        val result = isValidImageDimensions(context, uri)
+                        val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
+                        viewModel.addContainer(
+                            uri.toString(),
+                            result.width,
+                            result.height,
+                            result.format.toString(),
+                            errorMessage = errorMessage
+                        )
+                    }
+
                 }
 
+
+            } else {
+                // Show a toast message if the image limit is reached
+                Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
+                    .show()
             }
-            // Reset picker launch flag
-            isPickerLaunch = false
-        } else {
-            // Show a toast message if the image limit is reached
-            Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
-                .show()
+
+            viewModel.setPickerLaunch(false)
+
         }
+
+
+    }else{
+        null
     }
 
 
@@ -203,8 +210,8 @@ fun CreateServiceScreen(
                 )
             }
         }
-        // Reset picker launch flag
-        isPickerLaunch = false
+
+        viewModel.setPickerLaunch(false)
 
     }
 
@@ -230,8 +237,8 @@ fun CreateServiceScreen(
             )
 
         }
-        // Reset picker launch flag
-        isPickerLaunch = false
+
+        viewModel.setPickerLaunch(false)
 
     }
 
@@ -379,7 +386,7 @@ fun CreateServiceScreen(
                                     if (isPickerLaunch)
                                         return@UploadServiceThumbnailContainer
 
-                                    isPickerLaunch = true
+                                    viewModel.setPickerLaunch(true)
 
                                     pickThumbnailImageLauncher.launch(
                                        Unit
@@ -590,9 +597,9 @@ fun CreateServiceScreen(
                                         ReloadImageIconButton {
                                             if (isPickerLaunch)
                                                 return@ReloadImageIconButton
+                                            viewModel.setPickerLaunch(true)
 
-                                            isPickerLaunch = true
-                                            refreshImageIndex = index
+                                            viewModel.updateRefreshImageIndex(index)
                                             pickSingleImageLauncher.launch(Unit)
                                         }
 
@@ -620,15 +627,19 @@ fun CreateServiceScreen(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             UploadServiceImagesContainer(imageContainersError) {
-
-                                if (isPickerLaunch)
-                                    return@UploadServiceImagesContainer
-
-                                isPickerLaunch = true
-
-                                pickImagesLauncher.launch(
-                                    Unit
-                                )
+                                if(imageContainers.size == MAX_IMAGES){
+                                    ShortToast(
+                                        context,
+                                        "You already selected maximum $MAX_IMAGES images"
+                                    )
+                                }else{
+                                    if (isPickerLaunch)
+                                        return@UploadServiceImagesContainer
+                                    viewModel.setPickerLaunch(true)
+                                    pickImagesLauncher?.launch(
+                                        Unit
+                                    )
+                                }
                             }
 
                         }
@@ -852,7 +863,7 @@ fun CreateServiceScreen(
                                                     imageContainers.mapIndexed { index, bitmapContainer ->
                                                         createImagePartForUri(
                                                             context,
-                                                            Uri.parse(bitmapContainer.path),
+                                                            bitmapContainer.path.toUri(),
                                                             "IMAGE_${index}_${
                                                                 getFileExtensionFromImageFormat(
                                                                     bitmapContainer.format
@@ -866,7 +877,7 @@ fun CreateServiceScreen(
                                                 val bodyThumbnail = thumbnailContainer!!.let {
                                                     createImagePartForUri(
                                                         context,
-                                                        Uri.parse(it.path),
+                                                        it.path.toUri(),
                                                         "IMAGE_THUMBNAIL_${
                                                             getFileExtensionFromImageFormat(
                                                                 it.format

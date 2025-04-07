@@ -1,6 +1,5 @@
 package com.lts360.compose.ui.main.viewmodels
 
-
 import android.content.Context
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -28,7 +27,6 @@ import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.models.LocationRepository
 import com.lts360.compose.ui.main.models.SearchTerm
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
-import com.lts360.compose.ui.managers.LocationCoordinates
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -66,9 +64,6 @@ class HomeViewModel @Inject constructor(
     private val _selectedLocationGeo = MutableStateFlow<String?>(null)
     val selectedLocationGeo = _selectedLocationGeo.asStateFlow()
 
-    private val _selectedLocation = MutableStateFlow<LocationCoordinates?>(null)
-    val selectedLocation = _selectedLocation.asStateFlow()
-
 
     var error = ""
 
@@ -86,8 +81,7 @@ class HomeViewModel @Inject constructor(
     private val _isSearching = MutableStateFlow(false)
     val isSearching = _isSearching.asStateFlow()
 
-    private val _searchJob = MutableStateFlow<Job?>(null)
-    val searchJob = _searchJob.asStateFlow()
+    private var searchJob:Job? = null
 
 
     private val _isLazyLoading = MutableStateFlow(false)
@@ -97,19 +91,13 @@ class HomeViewModel @Inject constructor(
     private val _suggestions = MutableStateFlow<List<String>>(emptyList())
     val suggestions = _suggestions.asStateFlow()
 
-    private val _selectedServiceItem = MutableStateFlow<Service?>(null)
-    val selectedServiceItem = _selectedServiceItem.asStateFlow()
+    private var selectedServiceItem: Service? = null
 
-    private val _selectedServiceOwnerServiceItem = MutableStateFlow<Service?>(null)
-    val selectedServiceOwnerServiceItem = _selectedServiceOwnerServiceItem.asStateFlow()
+    private var selectedServiceOwnerServiceItem: Service? = null
 
-    private val _selectedServiceOwnerUsedProductListingItem = MutableStateFlow<UsedProductListing?>(null)
-    val selectedServiceOwnerUsedProductListingItem = _selectedServiceOwnerUsedProductListingItem.asStateFlow()
+    private var selectedUsedProductListingItem: UsedProductListing? = null
 
-    private val _selectedUsedProductListingItem = MutableStateFlow<UsedProductListing?>(null)
-    val selectedUsedProductListingItem = _selectedUsedProductListingItem.asStateFlow()
-
-
+    private var selectedServiceOwnerUsedProductListingItem: UsedProductListing? = null
 
     init {
 
@@ -120,45 +108,34 @@ class HomeViewModel @Inject constructor(
                     userProfileDetailsNonNull.userLocation?.let {
                         setLocationType(it.locationType)
                         setLocationGeo(it.geo)
-
-                        if (it.latitude != null && it.longitude != null) {
-                            setLocationCoordinates(
-                                LocationCoordinates(
-                                    it.latitude,
-                                    it.longitude
-                                )
-                            )
-                        }
                     }
                 }
             }
         }
     }
 
+    fun isSelectedServiceItemNull() = selectedServiceItem ==null
 
+    fun isSelectedUsedProductListingItemNull() = selectedUsedProductListingItem == null
 
-    fun isSelectedServiceItemNull() = _selectedServiceItem.value==null
+    fun isSelectedServiceOwnerServiceItemNull() = selectedServiceOwnerServiceItem == null
 
-    fun isSelectedUsedProductListingItemNull() = _selectedUsedProductListingItem.value == null
-
-    fun isSelectedServiceOwnerServiceItemNull() = _selectedServiceOwnerServiceItem.value == null
-
-    fun isSelectedServiceOwnerUsedProductListingItemNull() = _selectedServiceOwnerUsedProductListingItem.value == null
+    fun isSelectedServiceOwnerUsedProductListingItemNull() = selectedServiceOwnerUsedProductListingItem == null
 
     fun setSelectedServiceItem(item: Service?) {
-        _selectedServiceItem.value = item
+        selectedServiceItem = item
     }
 
     fun setSelectedServiceOwnerServiceItem(item: Service?) {
-        _selectedServiceOwnerServiceItem.value = item
+        selectedServiceOwnerServiceItem = item
     }
 
     fun setSelectedUsedProductListingItem(item: UsedProductListing?) {
-        _selectedUsedProductListingItem.value = item
+        selectedUsedProductListingItem = item
     }
 
     fun setSelectedSecondsOwnerUsedProductListingIItem(item: UsedProductListing?) {
-        _selectedServiceOwnerUsedProductListingItem.value = item
+        selectedServiceOwnerUsedProductListingItem = item
     }
 
     private fun setLocationType(locationType: String?) {
@@ -169,11 +146,6 @@ class HomeViewModel @Inject constructor(
         _selectedLocationGeo.value = locationGeo
 
     }
-
-    private fun setLocationCoordinates(locationCoordinates: LocationCoordinates) {
-        _selectedLocation.value = locationCoordinates
-    }
-
 
     fun setSuggestions(suggestions: List<String>) {
         _suggestions.value = suggestions
@@ -186,15 +158,11 @@ class HomeViewModel @Inject constructor(
 
 
     fun setSearchQuery(query: String) {
-        // Update the TextFieldValue with new query and move the cursor to the end
         _searchQuery.value = TextFieldValue(
             text = query,
             selection = TextRange(query.length)
         )
-
     }
-
-
 
     fun navigateToOverlay(navController: NavController, route: BottomBar) {
         viewModelScope.launch {
@@ -202,7 +170,6 @@ class HomeViewModel @Inject constructor(
                 route
             )
         }
-
         setEmptySuggestions()
 
     }
@@ -225,7 +192,6 @@ class HomeViewModel @Inject constructor(
         currentLocation: CurrentLocation,
         onSuccess: (String) -> Unit, onError: (String) -> Unit,
     ) {
-
         onSaveLocationCoordinates(
             userId,
             currentLocation.latitude,
@@ -234,9 +200,7 @@ class HomeViewModel @Inject constructor(
             currentLocation.geo,
             onSuccess, onError
         )
-
     }
-
 
     fun setRecentLocation(
         recentLocation: RecentLocation,
@@ -253,7 +217,6 @@ class HomeViewModel @Inject constructor(
             onError
         )
     }
-
 
     private fun onSaveLocationCoordinates(
         userId: Long,
@@ -327,7 +290,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-
     fun setGuestCurrentLocation(
         userId: Long,
         currentLocation: CurrentLocation,
@@ -370,7 +332,7 @@ class HomeViewModel @Inject constructor(
 
         if (isGuest) {
 
-            _searchJob.value = viewModelScope.launch {
+            searchJob = viewModelScope.launch {
                 try {
                     when (val result = getGuestServiceSearchQuerySuggestions(userId, query)) {
                         is Result.Success -> {
@@ -401,7 +363,7 @@ class HomeViewModel @Inject constructor(
             }
 
         } else {
-            _searchJob.value = viewModelScope.launch {
+            searchJob = viewModelScope.launch {
                 try {
                     when (val result = getServiceSearchQuerySuggestions(userId, query)) {
                         is Result.Success -> {
@@ -440,7 +402,7 @@ class HomeViewModel @Inject constructor(
 
         if (isGuest) {
 
-            _searchJob.value = viewModelScope.launch {
+            searchJob = viewModelScope.launch {
                 try {
                     when (val result = getGuestUsedProductListingSearchQuerySuggestions(userId, query)) {
                         is Result.Success -> {
@@ -471,7 +433,7 @@ class HomeViewModel @Inject constructor(
             }
 
         } else {
-            _searchJob.value = viewModelScope.launch {
+            searchJob = viewModelScope.launch {
                 try {
                     when (val result = getUsedProductListingSearchQuerySuggestions(userId, query)) {
                         is Result.Success -> {
@@ -665,7 +627,8 @@ class HomeViewModel @Inject constructor(
 
 
     fun clearJob() {
-        _searchJob.value = null
+        searchJob?.cancel()
+        searchJob = null
     }
 
 }

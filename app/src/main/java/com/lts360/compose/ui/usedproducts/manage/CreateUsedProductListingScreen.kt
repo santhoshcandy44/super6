@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -49,7 +48,6 @@ import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,6 +62,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.google.gson.Gson
 import com.lts360.api.models.service.EditableLocation
@@ -81,12 +80,12 @@ import com.lts360.compose.ui.services.manage.RemoveImageIconButton
 import com.lts360.compose.ui.services.manage.UploadServiceImagesContainer
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
+import com.lts360.libs.ui.ShortToast
 import com.lts360.libs.utils.createImageFileDCIMExternalStorage
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
-import androidx.core.net.toUri
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -132,43 +131,54 @@ fun CreateUsedProductListingScreen(
 
 
     // Mutable state for isPickerLaunch and refreshImageIndex
-    var isPickerLaunch by remember { mutableStateOf(false) }
-    var refreshImageIndex by remember { mutableIntStateOf(-1) }
+    val isPickerLaunch by viewModel.isPickerLaunch.collectAsState()
+    val refreshImageIndex by viewModel.refreshImageIndex.collectAsState()
 
     val context = LocalContext.current
 
 
+    val slots by viewModel.slots.collectAsState()
+    val pickImagesLauncher = if (slots > 0) {
+        // Create a launcher for picking multiple images
+        rememberLauncherForActivityResult(
+            GalleryPagerActivityResultContracts.PickMultipleImages(
+                slots,
+                allowSingleItemChoose = true
+            )
+        ) { uris ->
+            // Check if the number of selected images is less than 12
+            if (imageContainers.size < MAX_IMAGES) {
+                // Proceed if there are URIs to handle
+                if (uris.isNotEmpty()) {
 
+                    uris.take(MAX_IMAGES - imageContainers.size).forEach { uri ->
+                        val result = isValidImageDimensions(context, uri)
+                        val errorMessage =
+                            if (result.isValidDimension) null else "Invalid Dimension"
+                        viewModel.addContainer(
+                            uri.toString(),
+                            result.width,
+                            result.height,
+                            result.format.toString(),
+                            errorMessage = errorMessage
+                        )
+                    }
 
-    // Create a launcher for picking multiple images
-    val pickImagesLauncher = rememberLauncherForActivityResult(
-        GalleryPagerActivityResultContracts.PickMultipleImages(MAX_IMAGES)
-    ) { uris ->
-        // Check if the number of selected images is less than 12
-        if (imageContainers.size < MAX_IMAGES) {
-            // Proceed if there are URIs to handle
-            if (uris.isNotEmpty()) {
-
-                uris.forEach { uri ->
-                    val result = isValidImageDimensions(context, uri)
-                    val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
-                    viewModel.addContainer(
-                        uri.toString(),
-                        result.width,
-                        result.height,
-                        result.format.toString(),
-                        errorMessage = errorMessage
-                    )
                 }
 
+            } else {
+                // Show a toast message if the image limit is reached
+                Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
+                    .show()
             }
-            // Reset picker launch flag
-            isPickerLaunch = false
-        } else {
-            // Show a toast message if the image limit is reached
-            Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
-                .show()
+
+            viewModel.setPickerLaunch(false)
+
         }
+
+    } else {
+
+        null
     }
 
 
@@ -191,17 +201,15 @@ fun CreateUsedProductListingScreen(
                 )
             }
         }
-        // Reset picker launch flag
-        isPickerLaunch = false
+
+        viewModel.setPickerLaunch(false)
 
     }
-
 
 
     var pickerSheetState by rememberSaveable { mutableStateOf(false) }
     var cameraData: Uri? by rememberSaveable { mutableStateOf(null) }
     var requestedData: Uri? by rememberSaveable { mutableStateOf(null) }
-
 
 
     val cameraPickerLauncher = rememberLauncherForActivityResult(
@@ -222,14 +230,14 @@ fun CreateUsedProductListingScreen(
                     errorMessage = errorMessage
                 )
             }
-        }else{
-            // Check if the number of selected images is less than 12
+        } else {
             if (imageContainers.size < MAX_IMAGES) {
                 if (isSuccess) {
                     requestedData?.let {
                         cameraData = it
                         val result = isValidImageDimensions(context, it)
-                        val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
+                        val errorMessage =
+                            if (result.isValidDimension) null else "Invalid Dimension"
                         viewModel.addContainer(
                             requestedData.toString(),
                             result.width,
@@ -254,8 +262,9 @@ fun CreateUsedProductListingScreen(
                     .show()
             }
         }
-        // Reset picker launch flag
-        isPickerLaunch = false
+
+        viewModel.setPickerLaunch(false)
+
     }
 
 
@@ -322,7 +331,7 @@ fun CreateUsedProductListingScreen(
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
 
-                    }, { district->
+                    }, { district ->
 
                         viewModel.updateLocation(
                             EditableLocation(
@@ -574,7 +583,7 @@ fun CreateUsedProductListingScreen(
                                         )
 
                                         ReloadImageIconButton {
-                                            refreshImageIndex = index
+                                            viewModel.updateRefreshImageIndex(index)
                                             pickerSheetState = true
                                         }
 
@@ -602,7 +611,14 @@ fun CreateUsedProductListingScreen(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             UploadServiceImagesContainer(imageContainersError) {
-                                pickerSheetState = true
+                                if (imageContainers.size == MAX_IMAGES) {
+                                    ShortToast(
+                                        context,
+                                        "You already selected maximum $MAX_IMAGES images"
+                                    )
+                                } else {
+                                    pickerSheetState = true
+                                }
                             }
 
                         }
@@ -788,11 +804,11 @@ fun CreateUsedProductListingScreen(
     TakePictureSheet(pickerSheetState, onGallerySelected = {
         if (isPickerLaunch)
             return@TakePictureSheet
-        isPickerLaunch = true
-        if(refreshImageIndex!=-1){
+        viewModel.setPickerLaunch(true)
+        if (refreshImageIndex != -1) {
             pickSingleImageLauncher.launch(Unit)
-        }else{
-            pickImagesLauncher.launch(Unit)
+        } else {
+            pickImagesLauncher?.launch(Unit)
         }
         pickerSheetState = false
     }, onCameraSelected = {

@@ -432,9 +432,6 @@ private fun DetailedServiceInfo(
         ) {
             selectedService?.let {
 
-
-                // Set up the top bar with the toolbar and title
-
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize(),

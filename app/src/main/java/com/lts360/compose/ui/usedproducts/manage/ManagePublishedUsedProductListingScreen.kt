@@ -87,6 +87,7 @@ import com.lts360.compose.ui.services.manage.UploadServiceImagesContainer
 import com.lts360.compose.ui.services.manage.models.ContainerType
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
+import com.lts360.libs.ui.ShortToast
 import com.lts360.libs.utils.createImageFileDCIMExternalStorage
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
@@ -137,21 +138,25 @@ fun ManagePublishedUsedProductListingScreen(
 
 
     // Mutable state for isPickerLaunch and refreshImageIndex
-    var isPickerLaunch by remember { mutableStateOf(false) }
-    var refreshImageIndex by remember { mutableIntStateOf(-1) }
+    val isPickerLaunch by viewModel.isPickerLaunch.collectAsState()
+    val refreshImageIndex by viewModel.refreshImageIndex.collectAsState()
 
     val context = LocalContext.current
 
+    val slots by viewModel.slots.collectAsState()
+
     // Create a launcher for picking multiple images
-    val pickImagesLauncher = rememberLauncherForActivityResult(
-        GalleryPagerActivityResultContracts.PickMultipleImages(MAX_IMAGES)
+    val pickImagesLauncher =   if (slots > 0) {
+
+        rememberLauncherForActivityResult(
+    GalleryPagerActivityResultContracts.PickMultipleImages(slots, allowSingleItemChoose = true)
     ) { uris ->
-        // Check if the number of selected images is less than 12
+
         if (imageContainers.size < MAX_IMAGES) {
             // Proceed if there are URIs to handle
             if (uris.isNotEmpty()) {
 
-                uris.forEach { uri ->
+                uris.take(MAX_IMAGES-imageContainers.size).forEach { uri ->
                     val result = isValidImageDimensions(context, uri)
                     val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
                     viewModel.addContainer(
@@ -171,9 +176,11 @@ fun ManagePublishedUsedProductListingScreen(
         }
 
         // Reset picker launch flag
-        isPickerLaunch = false
+        viewModel.setPickerLaunch(false)
+    }}
+    else {
+        null
     }
-
 
     // Create a launcher for picking multiple images
     val pickSingleImageLauncher = rememberLauncherForActivityResult(
@@ -196,7 +203,7 @@ fun ManagePublishedUsedProductListingScreen(
             }
         }
         // Reset picker launch flag
-        isPickerLaunch = false
+        viewModel.setPickerLaunch(false)
 
     }
 
@@ -255,8 +262,8 @@ fun ManagePublishedUsedProductListingScreen(
                     .show()
             }
         }
-        // Reset picker launch flag
-        isPickerLaunch = false
+
+        viewModel.setPickerLaunch(false)
     }
 
 
@@ -612,7 +619,7 @@ fun ManagePublishedUsedProductListingScreen(
                                         )
 
                                         ReloadImageIconButton {
-                                            refreshImageIndex = index
+                                            viewModel.updateRefreshImageIndex(index)
                                             pickerSheetState = true
                                         }
 
@@ -642,7 +649,11 @@ fun ManagePublishedUsedProductListingScreen(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             UploadServiceImagesContainer(imageContainersError) {
-                                pickerSheetState = true
+                                if(imageContainers.size == MAX_IMAGES){
+                                    ShortToast(context, "You already selected maximum $MAX_IMAGES images")
+                                }else{
+                                    pickerSheetState = true
+                                }
                             }
 
                         }
@@ -891,11 +902,11 @@ fun ManagePublishedUsedProductListingScreen(
     TakePictureSheet(pickerSheetState, onGallerySelected = {
         if (isPickerLaunch)
             return@TakePictureSheet
-        isPickerLaunch = true
+        viewModel.setPickerLaunch(true)
         if(refreshImageIndex!=-1){
             pickSingleImageLauncher.launch(Unit)
         }else{
-            pickImagesLauncher.launch(Unit)
+            pickImagesLauncher?.launch(Unit)
         }
         pickerSheetState = false
     }, onCameraSelected = {

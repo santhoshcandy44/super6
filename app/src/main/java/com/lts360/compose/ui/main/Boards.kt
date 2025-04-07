@@ -1,6 +1,7 @@
 package com.lts360.compose.ui.main
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.lts360.R
 import com.lts360.app.database.models.app.Board
+import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.main.prefs.BoardsSetupActivity
 import kotlinx.coroutines.launch
 
@@ -59,15 +61,14 @@ fun Boards(
 
     val greenColor = Color(0xFF1BB24B)
 
-    LaunchedEffect(boards) {
-        if(boards.isNotEmpty()){
-            pagerState.scrollToPage(0)
-        }
-    }
 
-    LaunchedEffect(pagerState.currentPage) {
-        selectedTabIndex = pagerState.currentPage
-        onPageChanged(boards[selectedTabIndex].boardLabel)
+
+    LaunchedEffect(pagerState.currentPage, boards) {
+        if(boards.isNotEmpty()){
+            val safeIndex = pagerState.currentPage.coerceIn(0, boards.lastIndex)
+            selectedTabIndex = safeIndex
+            onPageChanged(boards[safeIndex].boardLabel)
+        }
     }
 
     val coroutineScope = rememberCoroutineScope()

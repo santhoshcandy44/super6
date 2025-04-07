@@ -32,6 +32,7 @@ import com.lts360.app.database.models.service.toImage
 import com.lts360.app.database.models.service.toLocation
 import com.lts360.app.database.models.service.toPlan
 import com.lts360.app.database.models.service.toThumbnail
+import com.lts360.compose.ui.chat.MAX_IMAGES
 import com.lts360.compose.ui.chat.isValidImageDimensionsByMetaData
 import com.lts360.compose.ui.chat.isValidThumbnailDimensionsByMetaData
 import com.lts360.compose.ui.services.BitmapContainer
@@ -43,9 +44,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
@@ -187,6 +191,22 @@ class ServicesWorkflowViewModel @Inject constructor(
     private var onCreateServiceJob: Job? = null
 
 
+    val slots: StateFlow<Int> = _imageContainers
+        .map { MAX_IMAGES - it.size }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            initialValue = MAX_IMAGES
+        )
+
+
+    private val _isPickerLaunch = MutableStateFlow(false)
+    val isPickerLaunch = _isPickerLaunch.asStateFlow()
+
+    private val _refreshImageIndex = MutableStateFlow(-1)
+    val refreshImageIndex = _refreshImageIndex.asStateFlow()
+
+
     init {
 
         val savedStatus = savedStateHandle.get<String>("status") ?: "default_status"
@@ -205,6 +225,15 @@ class ServicesWorkflowViewModel @Inject constructor(
 
 
     }
+
+    fun setPickerLaunch(isLaunched: Boolean) {
+        _isPickerLaunch.value = isLaunched
+    }
+
+    fun updateRefreshImageIndex(index: Int) {
+        _refreshImageIndex.value = index
+    }
+
 
     private suspend fun loadDraftServices(
         isLoading: Boolean = true,
