@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,6 +20,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import androidx.core.net.toUri
 
 
 @HiltViewModel
@@ -52,15 +52,19 @@ class ProfileViewModel @Inject constructor(
         if (savedUserProfile != null) {
             _userProfile.value = savedUserProfile
             viewModelScope.launch {
-                updateProfilePicUrl(savedUserProfile.profilePicUrl)
+                savedUserProfile.profilePicUrl?.let {
+                    updateProfilePicUrl(it)
+                }
             }
         } else {
-            // Collect the user profile from the repository
+
             viewModelScope.launch(Dispatchers.IO){
                 userProfileRepository.getUserProfileFlow(userId).collectLatest { userProfile ->
                     _userProfile.value = userProfile
                     userProfile?.let {
-                        updateProfilePicUrl(userProfile.profilePicUrl)
+                        userProfile.profilePicUrl?.let {
+                            updateProfilePicUrl(it)
+                        }
                         savedStateHandle["userProfile"] = UserProfileSerializer.serializeUserProfile(userProfile)
                     }
 
@@ -76,20 +80,13 @@ class ProfileViewModel @Inject constructor(
     }
 
 
-    private suspend fun updateProfilePicUrl(profilePicUrl: String?) {
+    private suspend fun updateProfilePicUrl(profilePicUrl: String) {
 
         _profileImageBitmap.value = withContext(Dispatchers.IO) {
-            // Delay for 1 minute (60,000 milliseconds)
             try {
-                BitmapFactory.decodeStream(
-                    contentResolver.openInputStream(
-                        Uri.parse(
-                            profilePicUrl
-                        )
-                    )
-                )
+                BitmapFactory.decodeStream(contentResolver.openInputStream(profilePicUrl.toUri()))
             } catch (e: Exception) {
-                null // Handle the error gracefully
+                null
             }
         }
     }

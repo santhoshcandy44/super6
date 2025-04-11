@@ -85,7 +85,6 @@ import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.services.SendMessageButton
-import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.utils.ExpandableText
 import kotlinx.coroutines.Job
@@ -777,7 +776,6 @@ private fun SecondsImagesSliderDetailedSecondsInfo(
 
     if (images.isNotEmpty()) {
 
-        Card {  }
         // Image Pager
         HorizontalPager(
             state = pagerState,

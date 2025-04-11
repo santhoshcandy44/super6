@@ -38,6 +38,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Tab
@@ -199,7 +201,8 @@ fun FeedUserDetailedServiceInfoScreen(
                                 navigateUpChat(
                                     selectedChatUser,
                                     selectedChatId,
-                                    it.user.userId)
+                                    it.user.userId
+                                )
                             }
                         }
 
@@ -435,9 +438,15 @@ private fun DetailedServiceInfo(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+
+                    // Image Slider
+                    item(key = "serviceImages-${it.serviceId}") {
+                        ServiceImagesSliderDetailedServiceInfo(it.images, onNavigateUpSlider)
+                    }
+
 
                     // Service Owner
                     item(key = "serviceOwner-${it.user.userId}") {
@@ -449,10 +458,6 @@ private fun DetailedServiceInfo(
                         )
                     }
 
-                    // Image Slider
-                    item(key = "serviceImages-${it.serviceId}") {
-                        ServiceImagesSliderDetailedServiceInfo(it.images, onNavigateUpSlider)
-                    }
 
                     // Service Title and Description
                     item(key = "serviceDescription-${it.serviceId}") {
@@ -475,10 +480,13 @@ private fun DetailedServiceInfo(
                     // Send Message Button (if not the service owner)
                     if (userId != it.user.userId) {
                         item(key = "sendMessage-${it.serviceId}") {
-                            SendMessageButton {
-                                onChatButtonClicked {
-                                    coroutineScope.launch {
-                                        bottomSheetScaffoldState.bottomSheetState.expand()
+
+                            Row(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                SendMessageButton {
+                                    onChatButtonClicked {
+                                        coroutineScope.launch {
+                                            bottomSheetScaffoldState.bottomSheetState.expand()
+                                        }
                                     }
                                 }
                             }
@@ -607,24 +615,21 @@ private fun ServiceOwner(
 
     val context = LocalContext.current
 
-    val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(context)
-            .data(urlImage)
-            .placeholder(R.drawable.user_placeholder)
-            .error(R.drawable.user_placeholder)
-            .build()
-    )
-
     Row(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier.size(40.dp)
         ) {
-            Image(
-                painter = painter, // Replace with your image resource
+            AsyncImage(
+                ImageRequest.Builder(context)
+                    .data(urlImage)
+                    .placeholder(R.drawable.user_placeholder)
+                    .error(R.drawable.user_placeholder)
+                    .build(), // Replace with your image resource
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
@@ -684,7 +689,11 @@ private fun ServiceDescription(
 ) {
 
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+    ) {
 
         Text(
             text = serviceTitle, // Replace with your data
@@ -737,100 +746,77 @@ private fun ServiceDescription(
 @Composable
 private fun ServiceImagesSliderDetailedServiceInfo(
     images: List<Image>,
-    onNavigateUpSlider: (Int) -> Unit,
+    onImageClick: (Int) -> Unit,
 ) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
+    val pagerState = rememberPagerState(pageCount = { images.size })
 
     if (images.isNotEmpty()) {
 
-        LazyRow(
+        // Image Pager
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(16 / 9f)
-                .background(MaterialTheme.customColorScheme.serviceSurfaceContainer),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(8.dp)
-        ) {
-            itemsIndexed(images) { index, image ->
-                AsyncImage(
-                    model = image.imageUrl,  // Use the URL for the image
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,  // Adjust content scale based on your needs
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }) {
-                            dropUnlessResumedV2(lifecycleOwner) {
-                                onNavigateUpSlider(index)  // Pass the index of the image
-                            }
+                .aspectRatio(1f)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow),
+            pageSpacing = 8.dp
+        ) { page ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        dropUnlessResumedV2(lifecycleOwner) {
+                            onImageClick(page)
                         }
+                    }
+            ) {
+                AsyncImage(
+                    model = images[page].imageUrl,
+                    contentDescription = "Product image ${page + 1}",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        // Page indicators (optional)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            repeat(images.size) { iteration ->
+                val color = if (pagerState.currentPage == iteration)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+
+                Box(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(color)
                 )
             }
         }
     }
-
-
 }
 
 
 @Composable
 private fun PlanTabs(plans: List<Plan>) {
 
-    val selectedTab by remember { mutableIntStateOf(0) }
-    val pagerState = rememberPagerState(initialPage = selectedTab, pageCount = { plans.size })
-    val scrollToPageCoroutinePage = rememberCoroutineScope()
-
-    ScrollableTabRow(
-        selectedTabIndex = pagerState.currentPage,
-        edgePadding = 0.dp,
-        indicator = {},
-        divider = {},
-        modifier = Modifier.fillMaxWidth()
-    ) {
-
-        plans.forEachIndexed { index, plan ->
-            Tab(
-                selectedContentColor = Color.Unspecified,
-                selected = pagerState.currentPage == index,
-                onClick = {
-                    scrollToPageCoroutinePage.launch {
-                        pagerState.scrollToPage(index)
-                    }
-                },
-                modifier = Modifier
-                    .padding(end = 8.dp) // Padding between tabs
-                    .height(32.dp)
-                    .clip(CircleShape) // Make the tab rounded
-                    .background(
-                        if (pagerState.currentPage == index) {
-                            MaterialTheme.colorScheme.primary // Selected color (purple_500)
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerHighest // Default color (white)
-                        }
-                    )
-                    .border(
-                        1.dp, if (pagerState.currentPage == index) {
-                            MaterialTheme.colorScheme.primary // Selected color (purple_500)
-                        } else {
-                            Color.LightGray // Default color (gray)
-                        }, CircleShape
-                    ),
-
-                text = {
-                    Text(
-                        color = if (pagerState.currentPage == index) Color.White else MaterialTheme.colorScheme.onSurface,
-                        text = plan.planName,
-                    )
-                },
-            )
-        }
-
-    }
+    val pagerState = rememberPagerState(pageCount = { plans.size })
 
 
-    Spacer(Modifier.height(8.dp))
+
     // Horizontal Pager
     HorizontalPager(
         state = pagerState,
@@ -873,13 +859,14 @@ private fun ServicePlanDetails(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
+            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+            .padding(8.dp)
     ) {
 
 
         Text(
             text = planName,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
+            style = MaterialTheme.typography.headlineSmall,
         )
 
         Text(

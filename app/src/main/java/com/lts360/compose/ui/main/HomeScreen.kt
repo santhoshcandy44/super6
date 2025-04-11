@@ -189,9 +189,10 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shadowElevation = 0.dp
             ) {
-                val currentLabel = boardLabels[pagerState.currentPage]
+
 
                 fun handleQueryChange(query: String) {
+                    val currentLabel = boardLabels[pagerState.currentPage.coerceIn(0, boardItems.lastIndex)]
                     if (query.trim().isNotEmpty()) {
                         if (viewModel.searchQuery.value.text != query) {
                             viewModel.setSearching(true)
@@ -212,6 +213,7 @@ fun HomeScreen(
                 }
 
                 fun navigateToResults() {
+                    val currentLabel = boardLabels[pagerState.currentPage.coerceIn(0, boardItems.lastIndex)]
                     if (searchQuery.text.isNotEmpty()) {
                         val destination = when (currentLabel) {
                             "services" -> BottomBar.NestedServices(servicesViewModel.getKey() + 1, searchQuery.text, true)

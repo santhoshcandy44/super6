@@ -243,8 +243,6 @@ fun EditProfileSettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(contentPadding)
         ) {
-            // AppBarLayout equivalent using TopAppBar in Compose
-
 
             userProfile?.let { nonNullUserProfile ->
 

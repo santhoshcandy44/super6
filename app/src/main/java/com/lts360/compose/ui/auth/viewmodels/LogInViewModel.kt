@@ -209,10 +209,10 @@ class LogInViewModel @Inject constructor(
 
             if (response.isSuccessful) {
                 // Handle successful response
-                val loginResponse = response.body()
+                val body = response.body()
 
-                if (loginResponse != null && loginResponse.isSuccessful) {
-                    Result.Success(loginResponse)
+                if (body != null && body.isSuccessful) {
+                    Result.Success(body)
 
                 } else {
                     val errorMessage = "Failed, try again later..."

@@ -30,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
@@ -45,10 +46,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun SearchBar(
     query: TextFieldValue,
-    onQueryChange: (TextFieldValue) -> Unit,
-    onSearch: () -> Unit,
-    onClearClicked: () -> Unit,
     modifier: Modifier = Modifier,
+    onQueryChange: (TextFieldValue) -> Unit={},
+    onSearch: () -> Unit={},
+    onClearButtonEnabled: Boolean = true,
+    onClearClicked: () -> Unit={},
     isBackButtonEnabled: Boolean = true,
     onBackButtonClicked: () -> Unit = {}
 ) {
@@ -115,7 +117,7 @@ fun SearchBar(
                 .padding(8.dp)
                 .height(28.dp)
         ) { innerTextField ->
-            Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier, verticalAlignment = Alignment.CenterVertically) {
 
                 IconButton(onClick = {}, interactionSource = NoRippleInteractionSource()) {
                     Icon(
@@ -124,8 +126,6 @@ fun SearchBar(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-
-
 
                 Box(
                     modifier = Modifier
@@ -144,24 +144,26 @@ fun SearchBar(
                         )
                     }
 
-
                     innerTextField()
                 }
 
 
-                if (recentQuery.text.isNotEmpty()) {
+                if(onClearButtonEnabled){
+                    if (recentQuery.text.isNotEmpty()) {
 
-                    IconButton(onClick = {
-                        onClearClicked()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Close",
-                            modifier = Modifier.size(24.dp)
-                        )
+                        IconButton(onClick = {
+                            onClearClicked()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Close",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
                     }
-
                 }
+
             }
         }
 

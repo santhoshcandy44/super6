@@ -35,6 +35,7 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
+import androidx.core.net.toUri
 
 
 @HiltViewModel
@@ -114,15 +115,11 @@ class ProfileSettingsViewModel @Inject constructor(
 
 
 
-    private suspend fun updateProfilePicUrl(profilePicUrl: String?) {
+    private suspend fun updateProfilePicUrl(profilePicUrl: String) {
         _profileImageBitmap.value = withContext(Dispatchers.IO) {
             try {
                 BitmapFactory.decodeStream(
-                    contentResolver.openInputStream(
-                        Uri.parse(
-                            profilePicUrl
-                        )
-                    )
+                    contentResolver.openInputStream(profilePicUrl.toUri())
                 )
             } catch (e: Exception) {
                 null // Handle the error gracefully
