@@ -13,10 +13,10 @@ interface DraftImageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(draftImage: List<DraftImage>)
 
-
     @Query("DELETE FROM draft_image WHERE service_id = :serviceId")
     suspend fun deleteImagesByServiceId(serviceId: Long)
 
     @Query("SELECT image_path FROM draft_image WHERE service_id = :serviceId")
-    suspend fun deleteImagesCachePathsByServiceId(serviceId: Long) : List<String>
+    suspend fun getImagesCachePathsByServiceId(serviceId: Long) : List<String>
+
 }

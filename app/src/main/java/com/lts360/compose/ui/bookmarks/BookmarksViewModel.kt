@@ -159,9 +159,7 @@ class BookmarksViewModel @Inject constructor(
             val chatUser = chatUserDao.getChatUserByRecipientId(userProfile.userId)
 
             // If chat user exists, update selected values
-            chatUser?.let {
-                it
-            } ?: run {
+            chatUser ?: run {
                 // Insert new chat user and then update the state
                 val newChatUser = ChatUser(
                     userId = userId,

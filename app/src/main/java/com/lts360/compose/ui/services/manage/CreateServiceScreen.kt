@@ -320,6 +320,7 @@ fun CreateServiceScreen(
             }
 
         },
+        sheetShape = RectangleShape,
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
         sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -575,10 +576,9 @@ fun CreateServiceScreen(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Box(
                                         modifier = Modifier
-                                            .size(140.dp) // Container size
-                                            .clip(RoundedCornerShape(4.dp)) // Clips to rounded corners
+                                            .size(140.dp)
+                                            .clip(RoundedCornerShape(4.dp))
                                     ) {
-                                        // Image
 
                                         AsyncImage(
                                             bitmapContainer.path,

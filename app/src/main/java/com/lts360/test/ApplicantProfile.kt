@@ -1,6 +1,5 @@
 package com.lts360.test
 
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -16,9 +16,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
@@ -27,7 +31,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.pullToRefresh
@@ -43,153 +46,173 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.lts360.R
+import com.lts360.api.utils.ResultError
+import com.lts360.compose.ui.main.common.NoInternetScreen
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.libs.ui.ClockWiseCircularProgressBar
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-@Serializable
-data class JobProfessionalInfo(
-    @SerialName("profile_pic")
-    val profilePic: String? = null,
-
-    @SerialName("first_name")
-    val firstName: String = "",
-
-    @SerialName("last_name")
-    val lastName: String = "",
-
-    @SerialName("gender")
-    val gender: String = "",
-
-    @SerialName("email")
-    val email: String = "",
-
-    @SerialName("intro")
-    val intro: String = ""
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ApplicantProfileScreen() {
+fun ApplicantProfileScreen(
+    applicantProfile: ApplicantProfile?,
+    error: ResultError?,
+    onEditProfile: () -> Unit,
+    onEditEducation: () -> Unit,
+    onEditExperience: () -> Unit,
+    onEditSkill: () -> Unit,
+    onEditCertificate: () -> Unit,
+    onEditLanguage: () -> Unit,
+    onEditResume: () -> Unit,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+) {
 
     val pullToRefreshState = rememberPullToRefreshState()
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
-
-        Box(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pullToRefresh(isRefreshing, pullToRefreshState, onRefresh = onRefresh)
+    ) {
+        LazyColumn (
             modifier = Modifier
                 .fillMaxSize()
-                .pullToRefresh(false, pullToRefreshState) { /*onRefresh*/ }) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(MaterialTheme.customColorScheme.jobUserProfileBackground)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.Start
-            ) {
+                .background(MaterialTheme.customColorScheme.jobUserProfileBackground),
+            contentPadding = PaddingValues(vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            error?.let {
+               item {
+                   Box(
+                       modifier = Modifier.fillParentMaxSize(),
+                       contentAlignment = Alignment.Center
+                   ) {
+                       when (error) {
+                           is ResultError.NoInternet -> {
+                               NoInternetScreen {
+                                   onRefresh()
+                               }
+                           }
 
-                JobProfileDisplayCard(
-                    0.7f,
-                    JobProfessionalInfo(
-                        firstName = "Saravana",
-                        lastName = "Kumar",
-                        gender = "Male",
-                        email = "santhoshcandy44@gmail.com",
-                        intro = "As a dedicated Kotlin seeker, I am passionate about mastering Kotlin, a modern, expressive, and powerful programming language. With a focus on building efficient, scalable, and maintainable solutions, I am particularly drawn to its applications in Android development and cross-platform projects. My journey in Kotlin is driven by a desire to harness its full potential to create high-quality software that delivers seamless user experiences."
-                    ), {
+                           else -> {
+                               Column(modifier = Modifier.wrapContentSize()) {
+                                   Image(
+                                       painter = painterResource(R.drawable.something_went_wrong),
+                                       contentDescription = "Image from drawable",
+                                       modifier = Modifier
+                                           .sizeIn(
+                                               maxWidth = 200.dp,
+                                               maxHeight = 200.dp
+                                           )
+                                   )
 
-                    })
+                                   Spacer(Modifier.height(16.dp))
 
-                val sampleEducationList = listOf(
-                    EducationEntry("MIT", "Computer Science", "2015", "2019", "A"),
-                    EducationEntry("Stanford", "AI Research", "2020", "2022", "A+"),
-                    EducationEntry("Harvard", "Business", "2018", "2020", "B+")
-                )
+                                   Text(text = "Oops, something went wrong")
+                               }
+                           }
+                       }
 
-                EducationDisplayCards(sampleEducationList, {})
+                   }
+               }
+            } ?: run {
+                applicantProfile?.let {
 
-                val sampleExperienceList = listOf(
-                    ExperienceEntry(
-                        companyName = "Google",
-                        jobTitle = "Software Engineer",
-                        employmentType = "Full-Time",
-                        location = "Mountain View, CA",
-                        startDate = "Jan 2020",
-                        endDate = "Dec 2023",
-                        isCurrentJob = false
-                    ),
-                    ExperienceEntry(
-                        companyName = "Meta",
-                        jobTitle = "Senior Developer",
-                        employmentType = "Contract",
-                        location = "Remote",
-                        startDate = "Jan 2024",
-                        endDate = "",
-                        isCurrentJob = true
-                    )
-                )
+                    item {
+                        LazyRow(modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp)){
+                            val suggestions = it.getMissingFieldSuggestions()
+                            items(suggestions){
+                                SuggestionCard(it.title, it.message,it.contribution * 100)
+                            }
+                        }
+                    }
 
-                ExperienceDisplayCards(sampleExperienceList, {})
+                    item {
+                        ProfileDisplayCard(
+                            profileProgress = it.getProfileCompletion(),
+                            professionalInfo = it.applicantProfessionalInfo,
+                            onEditClicked = onEditProfile
+                        )
+                    }
 
-                val sampleSkills = listOf(
-                    JobSkill("Kotlin"),
-                    JobSkill("Jetpack Compose"),
-                    JobSkill("Firebase"),
-                    JobSkill("SQL")
-                )
+                    item{
+                        EducationDisplayCards(
+                            educationList = it.applicantEducations,
+                            onEditClicked = onEditEducation
+                        )
+                    }
 
-                JobSkillDisplayChips(sampleSkills, {})
+                    item{
+                        ExperienceDisplayCards(
+                            experienceList = it.applicantExperiences,
+                            onEditClicked = onEditExperience
+                        )
+                    }
 
-                val sampleCertificates = listOf(
-                    JobCertificateInfo(
-                        "Google",
-                        "https://cdn.create.microsoft.com/catalog-assets/en-us/5824ad94-f1f1-4ef0-8f4a-312e98b556a3/thumbnails/1034/olive-branch-certificate-of-accomplishment-gray-organic-simple-1-1-a60a7e665ae6.webp"
-                    ),
-                    JobCertificateInfo(
-                        "Coursera",
-                        "https://marketplace.canva.com/EAFy42rCTA0/1/0/1600w/canva-blue-minimalist-certificate-of-achievement-_asVJz8YgJE.jpg"
-                    ),
-                    JobCertificateInfo(
-                        "Udemy",
-                        "https://d1csarkz8obe9u.cloudfront.net/posterpreviews/professional-certificate-design-template-882d9df12b1505d88cfb20c9b7ed22bb_screen.jpg?ts=1689415226"
-                    )
-                )
+                    item{
+                        SkillDisplayChips(
+                            skills = it.applicantSkills,
+                            onEditClicked = onEditSkill
+                        )
+                    }
 
-                CertificateDisplayCards(sampleCertificates, {})
+                    item {
+                        CertificateDisplayCards(
+                            certificateList = it.applicantCertificate,
+                            onEditClicked = onEditCertificate
+                        )
+                    }
 
-                val languageList = listOf(
-                    JobProfileLanguage(language = JobLanguageOption("English", "en"), proficiency = "Fluent"),
-                    JobProfileLanguage(language = JobLanguageOption("Spanish", "es"), proficiency = "Intermediate"),
-                    JobProfileLanguage(language = JobLanguageOption("French", "fr"), proficiency = "Basic")
-                )
+                    item {
+                        ProfileLanguagesDisplay(
+                            languages = it.applicantLanguages,
+                            onEditClicked = onEditLanguage
+                        )
+                    }
 
-                JobProfileLanguagesDisplay(languageList, {})
-
-                ResumeCardDisplay({})
+                    item {
+                        ResumeCardDisplay(
+                            applicantResumeDocument = it.applicantResumeDocument,
+                            onEditClicked = onEditResume
+                        )
+                    }
+                }
             }
-
-            Indicator(pullToRefreshState, false, modifier = Modifier.align(Alignment.TopCenter))
         }
+
+        Indicator(pullToRefreshState, isRefreshing, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
 
 
+
 @Composable
-private fun JobProfileDisplayCard(
-    profileProgress:Float,
-    professionalInfo: JobProfessionalInfo,
-    onEditClicked: () -> Unit) {
+private fun ProfileDisplayCard(
+    profileProgress: Float,
+    professionalInfo: ApplicantProfessionalInfo,
+    onEditClicked: () -> Unit
+) {
+
 
 
     Card(modifier = Modifier.fillMaxSize(), shape = RectangleShape) {
 
-        Column(modifier = Modifier
-                .fillMaxSize()) {
+
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -236,15 +259,28 @@ private fun JobProfileDisplayCard(
                                 .weight(1f)
                         ) {
 
-                            Image(
-                                painter = painterResource(R.drawable.user_placeholder),
-                                contentDescription = "Profile Image",
-                                modifier = Modifier
-                                    .size(100.dp)
-                                    .clip(CircleShape)
-                                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
+                            professionalInfo.profilePic?.let {
+                                AsyncImage(it,
+                                    contentDescription = "Profile Image",
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .padding(4.dp)
+                                        .clip(CircleShape),
+                                    placeholder = painterResource(R.drawable.user_placeholder),
+                                    error = painterResource(R.drawable.user_placeholder),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } ?: run {
+                                Image(
+                                    painter = painterResource(R.drawable.user_placeholder),
+                                    contentDescription = "Profile Image",
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .padding(4.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
                         }
 
                         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
@@ -258,15 +294,20 @@ private fun JobProfileDisplayCard(
 
 
                             ClockWiseCircularProgressBar(
-                                progress = 0.7f,
+                                progress = profileProgress,
                                 radius = 40.dp,
                                 strokeWidth = 16.dp,
                                 circleColor = Color.LightGray,
                                 progressColor = progressColor,
                                 isClockWise = true
                             )
-
-                            Text("${profileProgress*100}%", fontWeight = FontWeight.Bold)
+                            val percentage = profileProgress * 100
+                            val formattedString = if (percentage % 1f == 0f) {
+                                String.format(Locale.getDefault(), "%.0f", percentage)
+                            } else {
+                                String.format(Locale.getDefault(), "%.1f", percentage)
+                            }
+                            Text("${formattedString}%", fontWeight = FontWeight.Bold)
                         }
 
                     }
@@ -339,7 +380,7 @@ private fun JobProfileDisplayCard(
 
 @Composable
 private fun EducationDisplayCards(
-    educationList: List<EducationEntry>,
+    educationList: List<ApplicantEducationEntry>,
     onEditClicked: () -> Unit
 ) {
     Card(
@@ -388,13 +429,32 @@ private fun EducationDisplayCards(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(
-                            "Start: ${entry.startYear}",
+                            "Start: ${
+                                SimpleDateFormat(
+                                    "dd-MM-yyyy",
+                                    Locale.getDefault()
+                                ).format(Date(entry.startYear))
+                            }",
                             style = MaterialTheme.typography.bodySmall
                         )
-                        Text(
-                            "End: ${entry.endYear}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+
+                        if (entry.currentlyStudying) {
+                            Text(
+                                "Currently Working",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } else {
+                            Text(
+                                "End: ${
+                                    SimpleDateFormat(
+                                        "dd-MM-yyyy",
+                                        Locale.getDefault()
+                                    ).format(Date(entry.endYear))
+                                }",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+
                         Text(
                             "Grade: ${entry.grade}",
                             style = MaterialTheme.typography.bodySmall
@@ -410,9 +470,11 @@ private fun EducationDisplayCards(
 
 @Composable
 private fun ExperienceDisplayCards(
-    experienceList: List<ExperienceEntry>,
+    experienceList: List<ApplicantExperienceEntry>,
     onEditClicked: () -> Unit
 ) {
+
+    val hasNoExperience = experienceList.any { !it.experienced }
 
     Card(
         modifier = Modifier
@@ -444,42 +506,66 @@ private fun ExperienceDisplayCards(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Experience Cards
-            experienceList.forEach { entry ->
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = entry.companyName, style = MaterialTheme.typography.titleLarge)
-                    Text(text = entry.jobTitle, style = MaterialTheme.typography.bodyMedium)
-                    Text(text = entry.employmentType, style = MaterialTheme.typography.bodySmall)
-                    Text(text = entry.location, style = MaterialTheme.typography.bodySmall)
 
-                    Spacer(modifier = Modifier.height(8.dp))
+            if (hasNoExperience) {
+                Text(
+                    "No Experience (Fresher)",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(16.dp)
+                )
+            } else {
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Experience Cards
+                experienceList.forEach { entry ->
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(text = entry.companyName, style = MaterialTheme.typography.titleLarge)
+                        Text(text = entry.jobTitle, style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            "Start: ${entry.startDate}",
+                            text = entry.employmentType,
                             style = MaterialTheme.typography.bodySmall
                         )
-                        if (entry.isCurrentJob) {
-                            Text("Present", style = MaterialTheme.typography.bodySmall)
-                        } else {
+                        Text(text = entry.location, style = MaterialTheme.typography.bodySmall)
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             Text(
-                                "End: ${entry.endDate}",
+                                "Start: ${
+                                    SimpleDateFormat(
+                                        "dd-MM-yyyy",
+                                        Locale.getDefault()
+                                    ).format(Date(entry.startDate))
+                                }",
                                 style = MaterialTheme.typography.bodySmall
                             )
+                            if (entry.isCurrentJob) {
+                                Text("Present", style = MaterialTheme.typography.bodySmall)
+                            } else {
+                                Text(
+                                    "End: ${
+                                        SimpleDateFormat(
+                                            "dd-MM-yyyy",
+                                            Locale.getDefault()
+                                        ).format(Date(entry.endDate))
+                                    }",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
                     }
-                }
 
-                HorizontalDivider(thickness = 1.dp)
+                    HorizontalDivider(thickness = 1.dp)
+                }
             }
+
         }
     }
 }
 
 
 @Composable
-private fun JobSkillDisplayChips(
-    skills: List<JobSkill>,
+private fun SkillDisplayChips(
+    skills: List<ApplicantSkill>,
     onEditClicked: () -> Unit
 ) {
 
@@ -487,7 +573,6 @@ private fun JobSkillDisplayChips(
         modifier = Modifier
             .fillMaxWidth(),
         shape = RectangleShape
-
     ) {
         Column(
             modifier = Modifier
@@ -535,7 +620,7 @@ private fun JobSkillDisplayChips(
 
 @Composable
 private fun CertificateDisplayCards(
-    certificateList: List<JobCertificateInfo>,
+    certificateList: List<ApplicantCertificateInfo>,
     onEditClicked: () -> Unit
 ) {
 
@@ -548,7 +633,6 @@ private fun CertificateDisplayCards(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -569,51 +653,65 @@ private fun CertificateDisplayCards(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Certificate Cards
-            certificateList.forEach { certificate ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                ) {
-                    Box(
+            if(certificateList.isNotEmpty()){
+                certificateList.forEach { certificate ->
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .padding(16.dp),
                     ) {
                         // Image if available
-                        certificate.image?.let { uri ->
-                            AsyncImage(
-                                model = uri,
-                                contentDescription = "Certificate Image",
-                                contentScale = ContentScale.Crop,
+                        certificate.image?.let { url ->
+
+                            // Image Picker Preview
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .aspectRatio(16 / 9f)
                                     .clip(MaterialTheme.shapes.medium)
                                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                            )
+                                    .border(
+                                        width = 1.dp,
+                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                        shape = MaterialTheme.shapes.medium
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                AsyncImage(
+                                    model = url,
+                                    contentDescription = "Certificate Image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(16 / 9f)
+                                        .clip(MaterialTheme.shapes.medium)
+                                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                )
+                            }
+
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 
-                        // Issued By
                         Text(
                             text = "Issued By: ${certificate.issuedBy}",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                }
 
-                HorizontalDivider(thickness = 1.dp)
+                    HorizontalDivider(thickness = 1.dp)
+                }
             }
+
         }
     }
 }
 
 @Composable
-private fun JobProfileLanguagesDisplay(
-    languages: List<JobProfileLanguage>,
+private fun ProfileLanguagesDisplay(
+    languages: List<ApplicantLanguage>,
     onEditClicked: () -> Unit
 ) {
+
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -671,7 +769,7 @@ private fun JobProfileLanguagesDisplay(
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Text(
-                                text = languageEntry.proficiency,
+                                text = languageEntry.proficiency?.name ?: "",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -684,7 +782,10 @@ private fun JobProfileLanguagesDisplay(
 }
 
 @Composable
-private fun ResumeCardDisplay(onEditClicked: () -> Unit) {
+private fun ResumeCardDisplay(
+    applicantResumeDocument: ApplicantResumeDocument?,
+    onEditClicked: () -> Unit
+) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -713,23 +814,43 @@ private fun ResumeCardDisplay(onEditClicked: () -> Unit) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            applicantResumeDocument?.let {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                ResumeCard(
-                    fileName = "My_Resume.pdf",
-                    fileSizeInBytes = 1024 * 1024,
-                    lastModified = System.currentTimeMillis(),
-                    removeButtonEnabled = false
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    ResumeCard(
+                        it,
+                        removeButtonEnabled = false
+                    )
+                }
             }
+
         }
     }
 }
 
 
+
+@Composable
+private fun SuggestionCard(title: String, message: String, percentBoost: Float) {
+    Card(
+        modifier = Modifier
+            .wrapContentWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            Text(text = message, style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "+${String.format(Locale.getDefault(), "%.1f", percentBoost)}% profile completion",
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.Green
+            )
+        }
+    }
+}

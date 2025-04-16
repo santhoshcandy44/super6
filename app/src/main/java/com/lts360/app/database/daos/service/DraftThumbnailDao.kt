@@ -20,7 +20,6 @@ interface DraftThumbnailDao {
     @Query("DELETE FROM draft_thumbnail WHERE service_id = :serviceId")
     suspend fun deleteThumbnailByServiceId(serviceId: Long)
 
-    // Get the path of a draft thumbnail based on serviceId
     @Query("SELECT image_path FROM draft_thumbnail WHERE service_id = :draftId")
     suspend fun getThumbnailPathByServiceId(draftId: Long): String?
 

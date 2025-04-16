@@ -76,7 +76,6 @@ fun BookmarksScreen(
     onNavigateUpDetailedService: () -> Unit,
     onNavigateUpServiceOwnerProfile: (Long) -> Unit,
     onNavigateUpDetailedUsedProductListing: () -> Unit,
-
     onPopBackStack: () -> Unit,
     viewModel: BookmarksViewModel
 ) {

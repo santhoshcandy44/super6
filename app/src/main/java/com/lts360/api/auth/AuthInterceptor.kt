@@ -121,9 +121,8 @@ class AuthInterceptor @Inject constructor(
                             // This ensures that the coroutine is canceled if `sharedJob` is canceled
                         }
                     }
+
                     waitingJobs.add(childJob)
-
-
 
                     childJob.invokeOnCompletion { cause ->
                         if (cause != null) {

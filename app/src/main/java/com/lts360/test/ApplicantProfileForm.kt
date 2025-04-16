@@ -1,8 +1,10 @@
 package com.lts360.test
 
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -12,7 +14,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,29 +29,36 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -60,11 +68,12 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -93,16 +102,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.lts360.BuildConfig
 import com.lts360.R
+import com.lts360.api.utils.ResultError
+import com.lts360.components.utils.getFileNameForUri
+import com.lts360.components.utils.getFileSizeForUri
 import com.lts360.compose.ui.NoRippleInteractionSource
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
@@ -120,19 +134,21 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ApplicantProfileForm(viewModel: ApplicantProfileViewModel = hiltViewModel()) {
 
     val step by viewModel.step.collectAsState()
     val completedStep by viewModel.completedStep.collectAsState()
 
-    val jobProfessionalInfo by viewModel.jobProfessionalInfo.collectAsState()
-    val jobProfessionalInfoError by viewModel.jobProfessionalInfoError.collectAsState()
+    val applicantProfile by viewModel.applicantProfile.collectAsState()
+
+    val professionalInfo by viewModel.professionalInfo.collectAsState()
+    val professionalInfoError by viewModel.professionalInfoError.collectAsState()
 
     val isImagePickerLaunched by viewModel.isImagePickerLauncherLaunched.collectAsState()
     val isCameraPickerLaunched by viewModel.isCameraPickerLauncherLaunched.collectAsState()
     val cameraPickerUri by viewModel.cameraPickerUri.collectAsState()
-
 
     val educationList by viewModel.educationList.collectAsState()
 
@@ -140,52 +156,169 @@ fun ApplicantProfileForm(viewModel: ApplicantProfileViewModel = hiltViewModel())
     val hasNoExperience by viewModel.hasNoExperience.collectAsState()
 
     val selectedSkills by viewModel.selectedSkills.collectAsState()
+    val skillInfoError by viewModel.skillInfoError.collectAsState()
+
     val certificates by viewModel.certificates.collectAsState()
 
     val userPrefsLanguages by viewModel.userPrefsLanguages.collectAsState()
 
-    // Collect state from the ViewModel
-    val fileName by viewModel.fileName.collectAsState()
-    val fileSizeInBytes by viewModel.fileSizeInBytes.collectAsState()
-    val lastModified by viewModel.lastModified.collectAsState()
+    val applicantResumeDocument by viewModel.applicantResumeDocument.collectAsState()
 
-    val jobLanguages = viewModel.jobLanguages
+    val applicantLanguages = viewModel.languages
 
     val isLoading by viewModel.isLoading.collectAsState()
     val isUpdating by viewModel.isUpdating.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+
+    val resumeError by viewModel.resumeError.collectAsState()
+
+    val error by viewModel.error.collectAsState()
 
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+    val mimeTypes = arrayOf(
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
 
-            Box(modifier = Modifier.fillMaxSize()){
+    val resumePickLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri: Uri? ->
+            uri?.let {
+                val contentResolver = context.contentResolver
 
-                if(!isLoading){
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                    ) {
+                contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
 
-                        StepProgressIndicator(
-                            totalSteps = 7,
-                            currentStep = step,
-                            completedStep = completedStep
+                val fileName: String? = getFileNameForUri(context, it)
+                val fileSizeInBytes: Long = getFileSizeForUri(context, it)
+                val fileExtension = fileName?.substringAfterLast('.', "")?.lowercase()
+
+                if (fileName != null && fileSizeInBytes > 0 && fileExtension != null &&
+                    fileExtension in listOf("pdf", "doc", "docx")
+                ) {
+                    viewModel.updateFile(
+                        ApplicantResumeDocument(
+                            fileName,
+                            fileSizeInBytes,
+                            fileExtension.uppercase(),
+                            it.toString()
+                        )
+                    )
+                } else {
+                    ShortToast(context, "Failed to upload resume. Invalid file type or size.")
+                }
+            }
+        }
+    )
+
+    var updateCertificateIndex by remember { mutableIntStateOf(-1) }
+
+    val certificatePickLauncher = rememberLauncherForActivityResult(
+        contract = GalleryPagerActivityResultContracts.PickSingleImage(),
+        onResult = { uri: Uri? ->
+            uri?.let {
+                val contentResolver = context.contentResolver
+
+                try {
+                    contentResolver.takePersistableUriPermission(
+                        it,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: SecurityException) {
+                }
+
+                val fileName: String? = getFileNameForUri(context, it)
+                val fileSizeInBytes: Long = getFileSizeForUri(context, it)
+                val fileExtension = fileName?.substringAfterLast('.', "")?.lowercase()
+
+                if (fileName != null &&
+                    fileSizeInBytes > 0 &&
+                    fileExtension != null &&
+                    fileExtension in listOf("jpg", "jpeg", "png")
+                ) {
+
+                    if (updateCertificateIndex in certificates.indices) {
+
+                        val updatedCert = certificates[updateCertificateIndex].copy(
+                            image = it.toString(),
+                            fileName = fileName,
+                            fileSize = fileSizeInBytes,
+                            type = fileExtension.uppercase()
                         )
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                        ) {
-                            when (step) {
-                                0 -> PersonalInfoFormM3(
+                        viewModel.updateCertificate(updateCertificateIndex, updatedCert)
+                    }
+                } else {
+                    ShortToast(context, "Failed to upload certificate. Invalid image type or size.")
+                }
+            }
+        }
+    )
+
+    val content by viewModel.content.collectAsState()
+
+    val bottomSheetScaffold = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    )
+    val scope = rememberCoroutineScope()
+
+    BackHandler(bottomSheetScaffold.bottomSheetState.currentValue == SheetValue.Expanded) {
+        scope.launch {
+            bottomSheetScaffold.bottomSheetState.hide()
+        }
+    }
+
+
+    val onRefresh: () -> Unit = {
+        viewModel.isRefreshing(true)
+        viewModel.onGetApplicantProfile(
+            userId = viewModel.userId,
+            onSuccess = {
+                viewModel.isRefreshing(false)
+            }
+        ) {
+            viewModel.isRefreshing(false)
+            it?.let {
+                ShortToast(context, it)
+            }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        BottomSheetScaffold(
+            sheetShape = RectangleShape,
+            sheetDragHandle = null,
+            sheetContent = {
+
+                if (bottomSheetScaffold.bottomSheetState.isVisible) {
+
+                    TopAppBar(
+                        title = {},
+                        navigationIcon = {
+                            IconButton({
+                                scope.launch {
+                                    bottomSheetScaffold.bottomSheetState.hide()
+                                }
+                            }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                            }
+                        })
+
+                    Box(modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f)) {
+                        when (content) {
+                            "edit_profile" -> {
+                                PersonalInfoForm(
                                     isImagePickerLauncherLaunched = isImagePickerLaunched,
                                     isCameraPickerLauncherLaunched = isCameraPickerLaunched,
                                     cameraPickerUri = cameraPickerUri,
-                                    jobProfessionalInfo = jobProfessionalInfo,
-                                    jobProfessionalInfoError = jobProfessionalInfoError,
+                                    professionalInfo = professionalInfo,
+                                    professionalInfoError = professionalInfoError,
                                     onFirstNameChange = viewModel::onFirstNameChange,
                                     onLastNameChange = viewModel::onLastNameChange,
                                     onGenderChange = viewModel::onGenderChange,
@@ -194,28 +327,117 @@ fun ApplicantProfileForm(viewModel: ApplicantProfileViewModel = hiltViewModel())
                                     onUpdateProfilePic = viewModel::onUpdateProfilePic,
                                     onUpdateImagePickerLaunched = viewModel::onUpdateImagePickerLaunched,
                                     onUpdateCameraPickerLaunched = viewModel::onUpdateCameraPickerLaunched,
-                                    onUpdateCameraUri = viewModel::onUpdateCameraUri
+                                    onUpdateCameraUri = viewModel::onUpdateCameraUri,
+                                    isEditScreen = true,
+                                    onSaveClicked = {
+                                        if (viewModel.validatePersonalInfoForm()) {
+                                            viewModel.onUpdatePersonalInfoForm(
+                                                professionalInfo = professionalInfo,
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
                                 )
+                            }
 
-                                1 -> EducationFormM3(
+                            "edit_education" -> {
+                                EducationForm(
                                     educationList = educationList,
-                                    onEducationListChange = viewModel::updateEducationList
+                                    onEducationListChange = viewModel::updateEducationList,
+                                    isEditScreen = true,
+                                    onSaveClicked = {
+                                        if (viewModel.validateEducationInfoForm()) {
+                                            viewModel.onUpdateEducationInfoForm(
+                                                applicantEducationEntries = educationList,
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
                                 )
+                            }
 
-                                2 -> ExperienceFormM3(
+                            "edit_experience" -> {
+                                ExperienceForm(
                                     experienceList = experienceList,
                                     hasNoExperience = hasNoExperience,
                                     onExperienceListChange = viewModel::updateExperienceList,
-                                    onHasNoExperienceChange = viewModel::setHasNoExperience
-                                )
+                                    onHasNoExperienceChange = viewModel::setHasNoExperience,
+                                    isEditScreen = true,
+                                    onSaveClicked = {
 
-                                3 -> SkillsFormM3(
+                                        if (hasNoExperience) {
+                                            viewModel.onUpdateNoExperienceInfoForm(
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        } else {
+                                            if (viewModel.validateExperienceInfoForm()) {
+                                                viewModel.onUpdateExperienceInfoForm(
+                                                    applicantExperienceEntries = experienceList,
+                                                    onSuccess = {
+                                                        ShortToast(context, it)
+                                                    },
+                                                    onError = { errorMessage ->
+                                                        errorMessage?.let {
+                                                            ShortToast(context, it)
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        }
+
+                                    }
+                                )
+                            }
+
+                            "edit_skill" -> {
+                                SkillsForm(
                                     selectedSkills = selectedSkills,
                                     onSkillsChanged = viewModel::updateSelectedSkills,
-                                    onSkillRemoved = viewModel::removeSkill
-                                )
+                                    onSkillRemoved = viewModel::removeSkill,
+                                    skillSError = skillInfoError,
+                                    isEditScreen = true,
+                                    onSaveClicked = {
+                                        if (viewModel.validateSkillInfoForm()) {
 
-                                4 -> CertificationsFormM3(
+                                            viewModel.onUpdateSkillInfoForm(
+                                                applicantSkillsEntries = selectedSkills,
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+
+                            "edit_certificate" -> {
+                                CertificationsForm(
                                     certificates = certificates,
                                     onCertificateUpdated = { index, updatedCertificate ->
                                         viewModel.updateCertificate(index, updatedCertificate)
@@ -225,14 +447,41 @@ fun ApplicantProfileForm(viewModel: ApplicantProfileViewModel = hiltViewModel())
                                     },
                                     onAddCertificate = {
                                         viewModel.addCertificate()
+                                    },
+                                    onPickCertificateImage = {
+                                        updateCertificateIndex = it // before launching picker
+                                        certificatePickLauncher.launch(Unit)
+                                    },
+                                    isEditScreen = true,
+                                    onSaveClicked = {
+                                        if (viewModel.validateCertificateInfoForm()) {
+
+                                            viewModel.onUpdateCertificateInfoForm(
+                                                applicantCertificateInfoList = certificates,
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        }
                                     }
                                 )
+                            }
 
-                                5 -> LanguagesFormM3(
-                                    jobLanguages = jobLanguages,
+                            "edit_language" -> {
+                                LanguagesForm(
+                                    languageOptions = applicantLanguages,
                                     userPrefsLanguages = userPrefsLanguages,
                                     onAddLanguage = { viewModel.addLanguage() },
-                                    onRemoveLanguage = { viewModel.removeLanguage(userPrefsLanguages.size - 1) },
+                                    onRemoveLanguage = {
+                                        viewModel.removeLanguage(
+                                            userPrefsLanguages.size - 1
+                                        )
+                                    },
                                     onLanguageSelected = { index, language ->
                                         viewModel.updateLanguage(
                                             index,
@@ -244,59 +493,392 @@ fun ApplicantProfileForm(viewModel: ApplicantProfileViewModel = hiltViewModel())
                                             index,
                                             proficiency
                                         )
-                                    })
-
-                                6 -> ResumeUploadSectionM3(
-                                    fileName = fileName,
-                                    fileSizeInBytes = fileSizeInBytes,
-                                    lastModified = lastModified,
-                                    onUploadClicked = {
-                                        // Handle file upload, e.g., open file picker
-                                        val newFileName = "New_Resume.pdf"
-                                        val newFileSizeInBytes: Long = 1024 * 1024 * 3 // 3MB
-                                        val newLastModified = System.currentTimeMillis()
-
-                                        // Update the ViewModel with new file details
-                                        viewModel.updateFile(
-                                            newFileName,
-                                            newFileSizeInBytes,
-                                            newLastModified
-                                        )
                                     },
-                                    onRemoveClicked = {
-                                        // Remove the current file
-                                        viewModel.removeFile()
+                                    isEditScreen = true,
+                                    onSaveClicked = {
+                                        if (viewModel.validateLanguageInfoForm()) {
+
+                                            viewModel.onUpdateLanguageInfoForm(
+                                                applicantLanguageEntries = userPrefsLanguages,
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        }
                                     }
                                 )
                             }
+
+                            "edit_resume" -> {
+
+                                ResumeUploadSection(
+                                    applicantResumeDocument = applicantResumeDocument,
+                                    onUploadClicked = {
+                                        resumePickLauncher.launch(mimeTypes)
+                                    },
+                                    onRemoveClicked = {
+                                        viewModel.removeFile()
+                                    },
+                                    resumeError = resumeError,
+                                    isEditScreen = true,
+                                    onSaveClicked = {
+                                        if (viewModel.validateResumeInfoForm()) {
+                                            applicantResumeDocument?.let { nonNullApplicantResumeDocument ->
+                                                if (nonNullApplicantResumeDocument.resume.startsWith(
+                                                        "content://"
+                                                    )
+                                                ) {
+                                                    viewModel.onUpdateResumeInfoForm(
+                                                        applicantResumeDocument = nonNullApplicantResumeDocument,
+                                                        onSuccess = {
+                                                            ShortToast(context, it)
+                                                        },
+                                                        onError = { errorMessage ->
+                                                            errorMessage?.let {
+                                                                ShortToast(context, it)
+                                                            }
+                                                        }
+                                                    )
+                                                }
+
+                                            } ?: run {
+                                                ShortToast(context, "Choose resume")
+                                            }
+                                        }
+                                    },
+                                )
+
+
+                            }
+                        }
+                    }
+                }
+            },
+            scaffoldState = bottomSheetScaffold,
+            modifier = Modifier.fillMaxSize()
+        ) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+
+
+                if (!isLoading) {
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+
+                        if (step < 0 || (error != null && error !is ResultError.Unknown)) {
+                            ApplicantProfileScreen(
+                                applicantProfile = applicantProfile,
+                                error = error,
+                                onEditProfile = {
+                                    viewModel.updateContent("edit_profile")
+                                    scope.launch {
+                                        bottomSheetScaffold.bottomSheetState.expand()
+                                    }
+                                }, onEditEducation = {
+                                    viewModel.updateContent("edit_education")
+                                    scope.launch {
+                                        bottomSheetScaffold.bottomSheetState.expand()
+                                    }
+                                }, onEditExperience = {
+                                    viewModel.updateContent("edit_experience")
+                                    scope.launch {
+                                        bottomSheetScaffold.bottomSheetState.expand()
+                                    }
+                                }, onEditSkill = {
+                                    viewModel.updateContent("edit_skill")
+                                    scope.launch {
+                                        bottomSheetScaffold.bottomSheetState.expand()
+                                    }
+                                }, onEditCertificate = {
+                                    viewModel.updateContent("edit_certificate")
+                                    scope.launch {
+                                        bottomSheetScaffold.bottomSheetState.expand()
+                                    }
+                                }, onEditLanguage = {
+                                    viewModel.updateContent("edit_language")
+                                    scope.launch {
+                                        bottomSheetScaffold.bottomSheetState.expand()
+                                    }
+                                }, onEditResume = {
+                                    viewModel.updateContent("edit_resume")
+                                    scope.launch {
+                                        bottomSheetScaffold.bottomSheetState.expand()
+                                    }
+                                }, isRefreshing = isRefreshing,
+                                onRefresh = onRefresh
+                            )
+                        } else {
+
+
+                            StepProgressIndicator(
+                                totalSteps = 7,
+                                currentStep = step,
+                                completedStep = completedStep
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                            ) {
+                                when (step) {
+                                    0 -> PersonalInfoForm(
+                                        isImagePickerLauncherLaunched = isImagePickerLaunched,
+                                        isCameraPickerLauncherLaunched = isCameraPickerLaunched,
+                                        cameraPickerUri = cameraPickerUri,
+                                        professionalInfo = professionalInfo,
+                                        professionalInfoError = professionalInfoError,
+                                        onFirstNameChange = viewModel::onFirstNameChange,
+                                        onLastNameChange = viewModel::onLastNameChange,
+                                        onGenderChange = viewModel::onGenderChange,
+                                        onEmailChange = viewModel::onEmailChange,
+                                        onIntroChange = viewModel::onIntroChange,
+                                        onUpdateProfilePic = viewModel::onUpdateProfilePic,
+                                        onUpdateImagePickerLaunched = viewModel::onUpdateImagePickerLaunched,
+                                        onUpdateCameraPickerLaunched = viewModel::onUpdateCameraPickerLaunched,
+                                        onUpdateCameraUri = viewModel::onUpdateCameraUri
+                                    )
+
+                                    1 -> EducationForm(
+                                        educationList = educationList,
+                                        onEducationListChange = viewModel::updateEducationList
+                                    )
+
+                                    2 -> ExperienceForm(
+                                        experienceList = experienceList,
+                                        hasNoExperience = hasNoExperience,
+                                        onExperienceListChange = viewModel::updateExperienceList,
+                                        onHasNoExperienceChange = viewModel::setHasNoExperience
+                                    )
+
+                                    3 -> SkillsForm(
+                                        selectedSkills = selectedSkills,
+                                        onSkillsChanged = viewModel::updateSelectedSkills,
+                                        onSkillRemoved = viewModel::removeSkill,
+                                        skillSError = skillInfoError
+                                    )
+
+
+                                    4 -> LanguagesForm(
+                                        languageOptions = applicantLanguages,
+                                        userPrefsLanguages = userPrefsLanguages,
+                                        onAddLanguage = { viewModel.addLanguage() },
+                                        onRemoveLanguage = {
+                                            viewModel.removeLanguage(
+                                                userPrefsLanguages.size - 1
+                                            )
+                                        },
+                                        onLanguageSelected = { index, language ->
+                                            viewModel.updateLanguage(
+                                                index,
+                                                language
+                                            )
+                                        },
+                                        onProficiencySelected = { index, proficiency ->
+                                            viewModel.updateProficiency(
+                                                index,
+                                                proficiency
+                                            )
+                                        })
+
+                                    5 -> ResumeUploadSection(
+                                        applicantResumeDocument = applicantResumeDocument,
+                                        onUploadClicked = {
+                                            resumePickLauncher.launch(mimeTypes)
+                                        },
+                                        resumeError = resumeError,
+                                        onRemoveClicked = {
+                                            viewModel.removeFile()
+                                        }
+                                    )
+
+
+                                    6 -> CertificationsForm(
+                                        certificates = certificates,
+                                        onCertificateUpdated = { index, updatedCertificate ->
+                                            viewModel.updateCertificate(
+                                                index,
+                                                updatedCertificate
+                                            )
+                                        },
+                                        onCertificateRemoved = { index ->
+                                            viewModel.removeCertificate(index)
+                                        },
+                                        onAddCertificate = {
+                                            viewModel.addCertificate()
+                                        },
+                                        onPickCertificateImage = {
+                                            updateCertificateIndex =
+                                                it // before launching picker
+                                            certificatePickLauncher.launch(Unit)
+                                        }
+                                    )
+                                }
+                            }
+
+                            FormNavigationControls(
+                                currentStep = step,
+                                onPrevious = {
+                                    viewModel.previousStep()
+                                },
+                                onNext = {
+                                    if (step == 0) {
+                                        if (viewModel.validatePersonalInfoForm()) {
+
+                                            viewModel.onUpdatePersonalInfoForm(
+                                                professionalInfo = professionalInfo,
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                    if (step == 1) {
+                                        if (viewModel.validateEducationInfoForm()) {
+
+                                            viewModel.onUpdateEducationInfoForm(
+                                                applicantEducationEntries = educationList,
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    } else if (step == 2) {
+                                        if (hasNoExperience) {
+                                            viewModel.onUpdateNoExperienceInfoForm(
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        } else {
+                                            if (viewModel.validateExperienceInfoForm()) {
+                                                viewModel.onUpdateExperienceInfoForm(
+                                                    applicantExperienceEntries = experienceList,
+                                                    onSuccess = {
+                                                        ShortToast(context, it)
+                                                    },
+                                                    onError = { errorMessage ->
+                                                        errorMessage?.let {
+                                                            ShortToast(context, it)
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    } else if (step == 3) {
+                                        if (viewModel.validateSkillInfoForm()) {
+
+                                            viewModel.onUpdateSkillInfoForm(
+                                                applicantSkillsEntries = selectedSkills,
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    } else if (step == 4) {
+                                        if (viewModel.validateLanguageInfoForm()) {
+
+                                            viewModel.onUpdateLanguageInfoForm(
+                                                applicantLanguageEntries = userPrefsLanguages,
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    } else if (step == 5) {
+                                        if (viewModel.validateResumeInfoForm()) {
+                                            applicantResumeDocument?.let { nonNullApplicantResumeDocument ->
+
+                                                if (nonNullApplicantResumeDocument.resume.startsWith(
+                                                        "content://"
+                                                    )
+                                                ) {
+                                                    viewModel.onUpdateResumeInfoForm(
+                                                        applicantResumeDocument = nonNullApplicantResumeDocument,
+                                                        onSuccess = {
+                                                            ShortToast(context, it)
+                                                        },
+                                                        onError = { errorMessage ->
+                                                            errorMessage?.let {
+                                                                ShortToast(context, it)
+                                                            }
+                                                        }
+                                                    )
+                                                } else {
+                                                    viewModel.nextStep()
+                                                }
+
+                                            } ?: run {
+                                                ShortToast(context, "Choose resume")
+                                            }
+                                        }
+                                    } else if (step == 6) {
+                                        if (viewModel.validateCertificateInfoForm()) {
+
+                                            viewModel.onUpdateCertificateInfoForm(
+                                                applicantCertificateInfoList = certificates,
+                                                onSuccess = {
+                                                    ShortToast(context, it)
+                                                },
+                                                onError = { errorMessage ->
+                                                    errorMessage?.let {
+                                                        ShortToast(context, it)
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                },
+                                onSkip = {
+                                    if (step == 6) {
+                                        viewModel.fetchApplicantProfile()
+                                    }
+                                },
+                                isUpdating
+                            )
                         }
 
-                        FormNavigationControlsM3(
-                            currentStep = step,
-                            onPrevious = {
-                                viewModel.previousStep()
-                            },
-                            onNext = {
-                                if (step == 0) {
-                                    if (viewModel.validatePersonalInfoForm()) {
 
-                                        viewModel.onUpdatePersonalInfoForm(
-                                            jobProfessionalInfo = jobProfessionalInfo,
-                                            onError = { errorMessage ->
-                                                errorMessage?.let {
-                                                    ShortToast(context, it)
-                                                }
-                                            }
-                                        )
-                                    }
-                                } else {
-                                    if (step < 7) viewModel.nextStep() else viewModel.nextStep()
-                                }
-                            },
-                            isUpdating
-                        )
                     }
-                }else{
+
+
+                } else {
                     CircularProgressIndicatorLegacy(
                         modifier = Modifier
                             .align(Alignment.Center),
@@ -370,11 +952,12 @@ fun StepProgressIndicator(
 
 
 @Composable
-private fun FormNavigationControlsM3(
+private fun FormNavigationControls(
     currentStep: Int,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
-    isLoading:Boolean=false
+    onSkip: () -> Unit = {},
+    isLoading: Boolean = false
 ) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -397,46 +980,76 @@ private fun FormNavigationControlsM3(
             Spacer(modifier = Modifier.weight(1f))
         }
 
-
-        Surface(
-            modifier = Modifier.clickable {
-                onNext()
-            },
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White,
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-
-
-            Row(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            ) {
-                Text(if (currentStep == 7) "Submit" else "Save & Continue")
-
-                if(isLoading){
-                    CircularProgressIndicatorLegacy(modifier = Modifier.size(24.dp))
-                }else{
-                    if (currentStep < 7) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next")
-                    }
-                }
+            if (currentStep == 6) {
+                Text("Skip", modifier = Modifier.clickable {
+                    onSkip()
+                })
+                Spacer(Modifier.width(8.dp))
             }
-
+            CircleButton(
+                onClick = onNext,
+                isLoading = isLoading,
+                label = if (currentStep == 6) "Complete" else "Save & Continue",
+                icon = if (currentStep < 7) Icons.AutoMirrored.Filled.ArrowForward else null
+            )
         }
-
     }
 }
 
 
 @Composable
-private fun BoxScope.PersonalInfoFormM3(
+private fun CircleButton(
+    onClick: () -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
+    icon: ImageVector? = null
+) {
+    Surface(
+        modifier = modifier
+            .clip(CircleShape)
+            .clickable(enabled = !isLoading) { onClick() },
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = Color.White
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+        ) {
+            Text(text = label)
+
+            if (isLoading) {
+                CircularProgressIndicatorLegacy(
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            icon?.let {
+                Icon(
+                    icon,
+                    contentDescription = null
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun PersonalInfoForm(
     isImagePickerLauncherLaunched: Boolean,
     isCameraPickerLauncherLaunched: Boolean,
     cameraPickerUri: Uri?,
-    jobProfessionalInfo: JobProfessionalInfo,
-    jobProfessionalInfoError: JobProfessionalInfoError,
+    professionalInfo: ApplicantProfessionalInfo,
+    professionalInfoError: ApplicantProfessionalInfoError,
     onFirstNameChange: (String) -> Unit,
     onLastNameChange: (String) -> Unit,
     onGenderChange: (String) -> Unit,
@@ -446,6 +1059,8 @@ private fun BoxScope.PersonalInfoFormM3(
     onUpdateImagePickerLaunched: (Boolean) -> Unit,
     onUpdateCameraPickerLaunched: (Boolean) -> Unit,
     onUpdateCameraUri: (Uri) -> Unit,
+    isEditScreen: Boolean = false,
+    onSaveClicked: () -> Unit = {}
 ) {
 
     val context = LocalContext.current
@@ -464,11 +1079,8 @@ private fun BoxScope.PersonalInfoFormM3(
 
     val imagePickerLauncher =
         rememberLauncherForActivityResult(GalleryPagerActivityResultContracts.PickSingleImage()) { uri: Uri? ->
-
             uri?.let { selectedUri ->
-
                 try {
-
                     // Step 1: Get InputStream from URI safely
                     val inputStream: InputStream? =
                         context.contentResolver.openInputStream(selectedUri)
@@ -521,112 +1133,126 @@ private fun BoxScope.PersonalInfoFormM3(
 
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1f),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
 
-        item {
-            Text(
-                text = "Personal Information",
-                style = MaterialTheme.typography.headlineSmall
-            )
-        }
+            item {
+                Text(text = "Personal Information", style = MaterialTheme.typography.headlineSmall)
+            }
 
-        item {
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .align(Alignment.Center)
-            ) {
-                jobProfessionalInfo.profilePic?.let {
-                    AsyncImage(
-                        it,
-                        contentDescription = "Profile Image",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .padding(4.dp)
-                            .clip(CircleShape),
-                        placeholder = painterResource(R.drawable.user_placeholder),
-                        error = painterResource(R.drawable.user_placeholder),
-                        contentScale = ContentScale.Crop
-                    )
-                } ?: run {
-                    Image(
-                        painter = painterResource(R.drawable.user_placeholder),
-                        contentDescription = "Profile Image",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .padding(4.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+            item {
+                Box(
+                    modifier = Modifier
+                        .size(100.dp),
+                    contentAlignment = Alignment.Center
 
-                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
-                    IconButton(
-                        modifier = Modifier.align(Alignment.BottomEnd),
-                        onClick = {
-                            profilePickerState = true
-                        }
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_edit),
-                            contentDescription = "Edit profile pic"
+                ) {
+
+                    professionalInfo.profilePic?.let {
+                        AsyncImage(
+                            if (it.startsWith("content://")) it.toUri() else it,
+                            contentDescription = "Profile Image",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .padding(4.dp)
+                                .clip(CircleShape),
+                            placeholder = painterResource(R.drawable.user_placeholder),
+                            error = painterResource(R.drawable.user_placeholder),
+                            contentScale = ContentScale.Crop
                         )
+                    } ?: run {
+                        Image(
+                            painter = painterResource(R.drawable.user_placeholder),
+                            contentDescription = "Profile Image",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .padding(4.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                        IconButton(
+                            modifier = Modifier.align(Alignment.BottomEnd),
+                            onClick = {
+                                profilePickerState = true
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_edit),
+                                contentDescription = "Edit profile pic"
+                            )
+                        }
                     }
                 }
             }
+
+            item {
+                CustomTextField(
+                    value = professionalInfo.firstName,
+                    onValueChange = onFirstNameChange,
+                    label = "First Name",
+                    errorMessage = professionalInfoError.firstName
+                )
+            }
+
+            item {
+                CustomTextField(
+                    value = professionalInfo.lastName,
+                    onValueChange = onLastNameChange,
+                    label = "Last Name",
+                    errorMessage = professionalInfoError.lastName
+                )
+            }
+
+            item {
+                GenderSelector(
+                    selectedGender = professionalInfo.gender,
+                    onGenderSelected = onGenderChange,
+                    errorMessage = professionalInfoError.gender
+                )
+            }
+
+            item {
+                CustomTextField(
+                    value = professionalInfo.email,
+                    onValueChange = onEmailChange,
+                    label = "Email",
+                    errorMessage = professionalInfoError.email
+                )
+            }
+
+            item {
+                CustomTextField(
+                    value = professionalInfo.intro,
+                    onValueChange = onIntroChange,
+                    label = "Intro",
+                    minLines = 5,
+                    errorMessage = professionalInfoError.intro
+                )
+            }
         }
 
-        item {
-            CustomTextField(
-                value = jobProfessionalInfo.firstName,
-                onValueChange = onFirstNameChange,
-                label = "First Name",
-                errorMessage = jobProfessionalInfoError.firstName
-            )
-        }
-
-        item {
-            CustomTextField(
-                value = jobProfessionalInfo.lastName,
-                onValueChange = onLastNameChange,
-                label = "Last Name",
-                errorMessage = jobProfessionalInfoError.lastName
-            )
-        }
-
-        item {
-            GenderSelector(
-                selectedGender = jobProfessionalInfo.gender,
-                onGenderSelected = onGenderChange,
-                errorMessage = jobProfessionalInfoError.gender
-            )
-        }
-
-        item {
-            CustomTextField(
-                value = jobProfessionalInfo.email,
-                onValueChange = onEmailChange,
-                label = "Email",
-                errorMessage = jobProfessionalInfoError.email
-            )
-        }
-
-        item {
-            CustomTextField(
-                value = jobProfessionalInfo.intro,
-                onValueChange = onIntroChange,
-                label = "Intro",
-                minLines = 5,
-                errorMessage = jobProfessionalInfoError.intro
-            )
+        if (isEditScreen) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                CircleButton(
+                    onClick = onSaveClicked,
+                    label = "Save",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
         }
     }
-
-
 
     TakePictureSheet(
         profilePickerState,
@@ -655,167 +1281,51 @@ private fun BoxScope.PersonalInfoFormM3(
         })
 }
 
-
-data class EducationEntry(
-    val institution: String = "",
-    val fieldOfStudy: String = "",
-    val startYear: String = "",
-    val endYear: String = "",
-    val grade: String = ""
-)
-
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EducationFormM3(
-    educationList: List<EducationEntry>,
-    onEducationListChange: (List<EducationEntry>) -> Unit
+private fun EducationForm(
+    educationList: List<ApplicantEducationEntry>,
+    onEducationListChange: (List<ApplicantEducationEntry>) -> Unit,
+    isEditScreen: Boolean = false,
+    onSaveClicked: () -> Unit = {}
 ) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(16.dp),
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        item {
-            Text(
-                text = "Education Information",
-                style = MaterialTheme.typography.headlineSmall
-            )
-        }
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedField by remember { mutableStateOf<Pair<Int, String>?>(null) }
+    val datePickerState = rememberDatePickerState()
 
-        itemsIndexed(educationList) { index, entry ->
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                CustomTextField(
-                    value = entry.institution,
-                    onValueChange = {
-                        onEducationListChange(
-                            educationList.toMutableList().apply {
-                                this[index] = this[index].copy(institution = it)
-                            }
-                        )
-                    },
-                    label = "Institution/School"
-                )
-
-                CustomTextField(
-                    value = entry.fieldOfStudy,
-                    onValueChange = {
-                        onEducationListChange(
-                            educationList.toMutableList().apply {
-                                this[index] = this[index].copy(fieldOfStudy = it)
-                            }
-                        )
-                    },
-                    label = "Field of Study"
-                )
-
-                CustomTextField(
-                    value = entry.startYear,
-                    onValueChange = {
-                        onEducationListChange(
-                            educationList.toMutableList().apply {
-                                this[index] = this[index].copy(startYear = it)
-                            }
-                        )
-                    },
-                    label = "Start Year"
-                )
-
-                CustomTextField(
-                    value = entry.endYear,
-                    onValueChange = {
-                        onEducationListChange(
-                            educationList.toMutableList().apply {
-                                this[index] = this[index].copy(endYear = it)
-                            }
-                        )
-                    },
-                    label = "End Year"
-                )
-
-                CustomTextField(
-                    value = entry.grade,
-                    onValueChange = {
-                        onEducationListChange(
-                            educationList.toMutableList().apply {
-                                this[index] = this[index].copy(grade = it)
-                            }
-                        )
-                    },
-                    label = "Grade (e.g., 3.8 GPA)"
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                ) {
-                    if (educationList.size > 1) {
-                        RectangleButton(icon = Icons.Default.Remove, label = "Remove") {
+    if (showDialog) {
+        DatePickerDialog(
+            onDismissRequest = {
+                selectedField = null
+                showDialog = false
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val millis = datePickerState.selectedDateMillis
+                    millis?.let {
+                        selectedField?.let { (index, type) ->
                             onEducationListChange(
                                 educationList.toMutableList().apply {
-                                    removeAt(index)
+                                    this[index] = if (type == "start") {
+                                        this[index].copy(startYear = it)
+                                    } else {
+                                        this[index].copy(endYear = it)
+                                    }
                                 }
                             )
                         }
                     }
-                }
-
-                HorizontalDivider(thickness = 1.dp)
-            }
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.aligned(Alignment.End)
-            ) {
-                if (educationList.size < 3) {
-                    RectangleButton(icon = Icons.Default.Add, label = "Add School") {
-                        onEducationListChange(educationList + EducationEntry())
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-data class ExperienceEntry(
-    var companyName: String = "",
-    var jobTitle: String = "",
-    var employmentType: String = "",
-    var location: String = "",
-    var startDate: String = "",
-    var endDate: String = "",
-    var isCurrentJob: Boolean = false
-)
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ExperienceFormM3(
-    experienceList: List<ExperienceEntry>,
-    hasNoExperience: Boolean,
-    onExperienceListChange: (List<ExperienceEntry>) -> Unit,
-    onHasNoExperienceChange: (Boolean) -> Unit,
-) {
-    var showDialog by remember { mutableStateOf(false) }
-
-    if (showDialog) {
-        val datePickerState = rememberDatePickerState()
-
-        DatePickerDialog(
-            onDismissRequest = { showDialog = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis // use selected date if needed
+                    selectedField = null
                     showDialog = false
                 }) {
                     Text("OK")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
+                TextButton(onClick = {
+                    selectedField = null
+                    showDialog = false
+                }) {
                     Text("Cancel")
                 }
             }
@@ -824,35 +1334,282 @@ private fun ExperienceFormM3(
         }
     }
 
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        item {
-            Text(
-                text = "Experience Information",
-                style = MaterialTheme.typography.headlineSmall
-            )
-        }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1f)
+        ) {
+            item {
+                Text(
+                    text = "Education Information",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
 
-        item {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-                    Checkbox(
-                        checked = hasNoExperience,
-                        onCheckedChange = onHasNoExperienceChange
+            itemsIndexed(educationList) { index, entry ->
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    CustomTextField(
+                        value = entry.institution,
+                        onValueChange = {
+                            onEducationListChange(educationList.toMutableList().apply {
+                                this[index] = this[index].copy(institution = it)
+                            })
+                        },
+                        label = "Institution/School",
+                        errorMessage = entry.error?.institution
                     )
+
+                    CustomTextField(
+                        value = entry.fieldOfStudy,
+                        onValueChange = {
+                            onEducationListChange(educationList.toMutableList().apply {
+                                this[index] = this[index].copy(fieldOfStudy = it)
+                            })
+                        },
+                        label = "Field of Study",
+                        errorMessage = entry.error?.fieldOfStudy
+                    )
+
+                    CustomTextField(
+                        value = if (entry.startYear != 0L) {
+                            SimpleDateFormat(
+                                "dd-MM-yyyy",
+                                Locale.getDefault()
+                            ).format(Date(entry.startYear))
+                        } else {
+                            ""
+                        },
+                        label = "Start Year",
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = Icons.Default.Edit,
+                        onTrailingIconClick = {
+                            selectedField = index to "start"
+                            showDialog = true
+                        },
+                        errorMessage = entry.error?.startYear
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+                            Checkbox(
+                                checked = entry.currentlyStudying,
+                                onCheckedChange = {
+                                    onEducationListChange(
+                                        educationList.toMutableList().apply {
+                                            this[index] =
+                                                this[index].copy(
+                                                    currentlyStudying = it,
+                                                    endYear = 0,
+                                                    grade = 0.0
+                                                )
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                        Text("Currently studying at")
+
+                        entry.error?.currentlyStudying?.let {
+                            ErrorText(it)
+                        }
+                    }
+
+                    if (!entry.currentlyStudying) {
+                        CustomTextField(
+                            label = "End Year",
+                            value = if (entry.endYear != 0L) {
+                                SimpleDateFormat(
+                                    "dd-MM-yyyy",
+                                    Locale.getDefault()
+                                ).format(Date(entry.endYear))
+                            } else {
+                                ""
+                            },
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = Icons.Default.Edit,
+                            onTrailingIconClick = {
+                                selectedField = index to "end"
+                                showDialog = true
+                            },
+                            errorMessage = entry.error?.endYear
+                        )
+
+                        var gradeInput by remember {
+                            mutableStateOf(
+                                if (entry.grade > 0.0) {
+                                    if (entry.grade == entry.grade.toInt().toDouble())
+                                        entry.grade.toInt().toString()
+                                    else
+                                        entry.grade.toString()
+                                } else ""
+                            )
+                        }
+
+                        CustomTextField(
+                            value = gradeInput,
+                            onValueChange = {
+                                if (it.matches(Regex("^\\d*(\\.\\d{0,1})?$"))) {
+                                    gradeInput = it
+
+                                    val parsedValue = it.toDoubleOrNull() ?: 0.0
+                                    onEducationListChange(educationList.toMutableList().apply {
+                                        this[index] = this[index].copy(grade = parsedValue)
+                                    })
+                                }
+                            },
+                            label = "Grade/Percentage/CGPA",
+                            keyBoardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Decimal
+                            ),
+                            errorMessage = entry.error?.grade
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                    ) {
+                        if (educationList.size > 1) {
+                            RectangleButton(icon = Icons.Default.Remove, label = "Remove") {
+                                onEducationListChange(
+                                    educationList.toMutableList().apply {
+                                        removeAt(index)
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(thickness = 1.dp)
                 }
-                Text("I have no experience yet")
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.aligned(Alignment.End)
+                ) {
+                    if (educationList.size < 3) {
+                        RectangleButton(icon = Icons.Default.Add, label = "Add School/Institute") {
+                            onEducationListChange(educationList + ApplicantEducationEntry())
+                        }
+                    }
+                }
             }
         }
 
-        if (!hasNoExperience) {
-            itemsIndexed(experienceList) { index, entry ->
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (isEditScreen) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                CircleButton(
+                    onClick = onSaveClicked,
+                    label = "Save",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        }
+    }
+
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExperienceForm(
+    experienceList: List<ApplicantExperienceEntry>,
+    hasNoExperience: Boolean,
+    onExperienceListChange: (List<ApplicantExperienceEntry>) -> Unit,
+    onHasNoExperienceChange: (Boolean) -> Unit,
+    isEditScreen: Boolean = false,
+    onSaveClicked: () -> Unit = {}
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedField by remember { mutableStateOf<Pair<Int, String>?>(null) }
+    val datePickerState = rememberDatePickerState()
+
+    if (showDialog) {
+        DatePickerDialog(
+            onDismissRequest = {
+                selectedField = null
+                showDialog = false
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val millis = datePickerState.selectedDateMillis
+                    millis?.let {
+                        selectedField?.let { (index, type) ->
+                            onExperienceListChange(
+                                experienceList.toMutableList().apply {
+                                    this[index] = if (type == "start") {
+                                        this[index].copy(startDate = it)
+                                    } else {
+                                        this[index].copy(endDate = it)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    selectedField = null
+                    showDialog = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    selectedField = null
+                    showDialog = false
+                }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            item {
+                Text(
+                    text = "Experience Information",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+                        Checkbox(
+                            checked = hasNoExperience,
+                            onCheckedChange = onHasNoExperienceChange
+                        )
+                    }
+                    Text("I have no experience yet")
+                }
+            }
+
+            if (!hasNoExperience) {
+                itemsIndexed(experienceList) { index, entry ->
                     CustomTextField(
                         value = entry.jobTitle,
                         onValueChange = {
@@ -862,16 +1619,23 @@ private fun ExperienceFormM3(
                         },
                         label = "Job Title"
                     )
+                    entry.error?.jobTitle?.let {
+                        ErrorText(it)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    CustomTextField(
-                        value = entry.employmentType,
-                        onValueChange = {
+                    EmploymentTypeDropdown(
+                        selectedType = entry.employmentType,
+                        onSelected = {
                             onExperienceListChange(experienceList.toMutableList().apply {
                                 this[index] = this[index].copy(employmentType = it)
                             })
-                        },
-                        label = "Employment Type"
+                        }
                     )
+                    entry.error?.employmentType?.let {
+                        ErrorText(it)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     CustomTextField(
                         value = entry.companyName,
@@ -882,6 +1646,11 @@ private fun ExperienceFormM3(
                         },
                         label = "Company or Organization"
                     )
+
+                    entry.error?.companyName?.let {
+                        ErrorText(it)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     val isAnotherCurrentJobExists = experienceList.any {
                         it.isCurrentJob && it != entry
@@ -915,28 +1684,59 @@ private fun ExperienceFormM3(
 
                             Text("I currently work here")
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
                     }
 
                     CustomTextField(
-                        value = entry.startDate,
-                        onValueChange = {
-                            onExperienceListChange(experienceList.toMutableList().apply {
-                                this[index] = this[index].copy(startDate = it)
-                            })
+                        value = if (entry.startDate != 0L) {
+                            SimpleDateFormat(
+                                "dd-MM-yyyy",
+                                Locale.getDefault()
+                            ).format(Date(entry.startDate))
+                        } else {
+                            ""
                         },
-                        label = "Start Date (e.g., Jan 2020)"
+                        onValueChange = {},
+                        label = "Start Date (e.g., Jan 2020)",
+                        readOnly = true,
+                        trailingIcon = Icons.Default.Edit,
+                        onTrailingIconClick = {
+                            selectedField = index to "start"
+                            showDialog = true
+                        }
                     )
+
+                    entry.error?.startDate?.let {
+                        ErrorText(it)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     if (!entry.isCurrentJob) {
                         CustomTextField(
-                            value = entry.endDate,
-                            onValueChange = {
-                                onExperienceListChange(experienceList.toMutableList().apply {
-                                    this[index] = this[index].copy(endDate = it)
-                                })
+                            value = if (entry.endDate != 0L) {
+                                SimpleDateFormat(
+                                    "dd-MM-yyyy",
+                                    Locale.getDefault()
+                                ).format(Date(entry.endDate))
+                            } else {
+                                ""
                             },
-                            label = "End Date (e.g., Dec 2023)"
+                            onValueChange = {},
+                            label = "End Date (e.g., Dec 2023)",
+                            readOnly = true,
+                            trailingIcon = Icons.Default.Edit,
+                            onTrailingIconClick = {
+                                selectedField = index to "end"
+                                showDialog = true
+                            }
                         )
+
+                        entry.error?.endDate?.let {
+                            ErrorText(it)
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     CustomTextField(
@@ -962,82 +1762,176 @@ private fun ExperienceFormM3(
                         }
                     }
 
+                    entry.error?.location?.let {
+                        ErrorText(it)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     HorizontalDivider(thickness = 1.dp)
                 }
-            }
 
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                ) {
-                    if (experienceList.size < 5) {
-                        RectangleButton(icon = Icons.Default.Add, label = "Add") {
-                            onExperienceListChange(experienceList + ExperienceEntry())
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                    ) {
+                        if (experienceList.size < 5) {
+                            RectangleButton(icon = Icons.Default.Add, label = "Add") {
+                                onExperienceListChange(experienceList + ApplicantExperienceEntry())
+                            }
                         }
                     }
                 }
             }
         }
+
+        if (isEditScreen) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                CircleButton(
+                    onClick = onSaveClicked,
+                    label = "Save",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        }
+    }
+
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EmploymentTypeDropdown(
+    selectedType: String,
+    onSelected: (String) -> Unit
+) {
+    val employmentTypes = listOf(
+        "full_time" to "Full Time",
+        "part_time" to "Part Time",
+        "contract" to "Contract",
+        "intern" to "Internship",
+        "freelance" to "Freelance"
+    )
+
+    var expanded by remember { mutableStateOf(false) }
+
+    val selectedLabel = employmentTypes.find { it.first == selectedType }?.second ?: ""
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }) {
+        CustomTextField(
+            value = selectedLabel,
+            onValueChange = {},
+            readOnly = true,
+            label = "Employment Type",
+            modifier = Modifier
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
+            trailingIcon = Icons.Default.ArrowDropDown
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }) {
+            employmentTypes.forEach { (value, label) ->
+                DropdownMenuItem(
+                    text = { Text(label) },
+                    onClick = {
+                        expanded = false
+                        onSelected(value)
+                    }
+                )
+            }
+        }
+
     }
 }
 
 
-data class JobSkill(val skill: String = "")
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SkillsFormM3(
-    selectedSkills: List<JobSkill>,
-    onSkillsChanged: (List<JobSkill>) -> Unit,
-    onSkillRemoved: (JobSkill) -> Unit
+private fun SkillsForm(
+    selectedSkills: List<ApplicantSkill>,
+    onSkillsChanged: (List<ApplicantSkill>) -> Unit,
+    onSkillRemoved: (ApplicantSkill) -> Unit,
+    skillSError: String? = null,
+    isEditScreen: Boolean = false,
+    onSaveClicked: () -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
     val skillsChooserModalBottomSheetState =
         rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Text(text = "Skills", style = MaterialTheme.typography.headlineSmall)
-        }
+    Column(modifier = Modifier.fillMaxSize()) {
 
-        item {
-            CustomTextField(
-                value = selectedSkills.joinToString(", ") { it.skill },
-                onValueChange = {}, // readOnly
-                label = "Skill Name (e.g., Kotlin, Figma)",
-                readOnly = true,
-                onFocus = {
-                    if (it) {
-                        scope.launch { skillsChooserModalBottomSheetState.expand() }
-                    }
-                }
-            )
-        }
-
-        if (selectedSkills.isNotEmpty()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1f),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             item {
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    selectedSkills.forEach { skill ->
-                        SkillChip(
-                            skill = skill.skill,
-                            onRemove = { onSkillRemoved(skill) }
-                        )
+                Text(text = "Skills", style = MaterialTheme.typography.headlineSmall)
+            }
+
+            item {
+                CustomTextField(
+                    value = selectedSkills.joinToString(", ") { it.skill },
+                    onValueChange = {},
+                    label = "Skill Name",
+                    readOnly = true,
+                    onFocus = {
+                        if (it) {
+                            scope.launch { skillsChooserModalBottomSheetState.expand() }
+                        }
+                    }
+                )
+
+                skillSError?.let {
+                    ErrorText(it)
+                }
+            }
+
+            item {
+                if (selectedSkills.isNotEmpty()) {
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        selectedSkills.forEach { skill ->
+                            SkillChip(
+                                skill = skill.skill,
+                                onRemove = { onSkillRemoved(skill) }
+                            )
+                        }
                     }
                 }
             }
+
+
         }
+
+        if (isEditScreen) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                CircleButton(
+                    onClick = onSaveClicked,
+                    label = "Save",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        }
+
     }
 
     // Skill Picker Modal
@@ -1050,18 +1944,30 @@ private fun SkillsFormM3(
             sheetState = skillsChooserModalBottomSheetState,
             dragHandle = null,
             shape = RectangleShape,
+            containerColor = MaterialTheme.colorScheme.surface,
             modifier = Modifier.safeDrawingPadding()
         ) {
             SkillsPickerScreen(
                 allSkills = listOf(
-                    "Kotlin", "Java", "Swift", "React", "Figma", "Photoshop",
-                    "Python", "Node.js", "Flutter", "SQL", "Docker", "AWS"
+                    ApplicantSkill("Kotlin", "SK001"),
+                    ApplicantSkill("Java", "SK002"),
+                    ApplicantSkill("Swift", "SK003"),
+                    ApplicantSkill("React", "SK004"),
+                    ApplicantSkill("Figma", "SK005"),
+                    ApplicantSkill("Photoshop", "SK006"),
+                    ApplicantSkill("Python", "SK007"),
+                    ApplicantSkill("Node.js", "SK008"),
+                    ApplicantSkill("Flutter", "SK009"),
+                    ApplicantSkill("SQL", "SK010"),
+                    ApplicantSkill("Docker", "SK011"),
+                    ApplicantSkill("AWS", "SK012")
                 ),
                 onSkillsSelected = { skills ->
-                    onSkillsChanged(skills.map { JobSkill(it) })
+                    onSkillsChanged(skills)
                     focusManager.clearFocus()
                     scope.launch { skillsChooserModalBottomSheetState.hide() }
-                }
+                },
+                preSelectedSkills = selectedSkills
             )
         }
     }
@@ -1069,16 +1975,17 @@ private fun SkillsFormM3(
 
 
 @Composable
-fun SkillsPickerScreen(
-    allSkills: List<String>,
-    onSkillsSelected: (List<String>) -> Unit
+private fun SkillsPickerScreen(
+    preSelectedSkills: List<ApplicantSkill>,
+    allSkills: List<ApplicantSkill>,
+    onSkillsSelected: (List<ApplicantSkill>) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val filteredSkills = remember(searchQuery) {
-        allSkills.filter { it.contains(searchQuery.text, ignoreCase = true) }
+        allSkills.filter { it.skill.contains(searchQuery.text, ignoreCase = true) }
     }
 
-    var selectedSkills by remember { mutableStateOf<List<String>>(emptyList()) }
+    var selectedSkills by remember(preSelectedSkills) { mutableStateOf(preSelectedSkills) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         com.lts360.compose.ui.main.SearchBar(
@@ -1095,27 +2002,30 @@ fun SkillsPickerScreen(
         ) {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
 
-                item {
-                    FlowRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        selectedSkills.forEach { skill ->
-                            SkillChip(
-                                skill = skill,
-                                onRemove = {
-                                    selectedSkills = selectedSkills - skill
-                                }
-                            )
+                if (selectedSkills.isNotEmpty()) {
+                    item {
+                        FlowRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            selectedSkills.forEach { skill ->
+                                SkillChip(
+                                    skill = skill.skill,
+                                    onRemove = {
+                                        selectedSkills = selectedSkills - skill
+                                    }
+                                )
+                            }
                         }
                     }
                 }
 
+
                 items(filteredSkills) { skill ->
-                    val isSelected = selectedSkills.contains(skill)
+                    val isSelected = selectedSkills.map { it.skillCode }.contains(skill.skillCode)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1128,7 +2038,7 @@ fun SkillsPickerScreen(
                             }
                             .padding(16.dp)
                     ) {
-                        Text(skill, modifier = Modifier.weight(1f))
+                        Text(skill.skill, modifier = Modifier.weight(1f))
                         if (isSelected) {
                             Icon(Icons.Default.Check, contentDescription = null)
                         }
@@ -1194,120 +2104,145 @@ fun SkillChip(
 }
 
 
-data class JobCertificateInfo(val issuedBy: String = "", val image: String? = null)
-
 @Composable
-private fun CertificationsFormM3(
-    certificates: List<JobCertificateInfo>,
-    onCertificateUpdated: (Int, JobCertificateInfo) -> Unit,
+private fun CertificationsForm(
+    certificates: List<ApplicantCertificateInfo>,
+    onCertificateUpdated: (Int, ApplicantCertificateInfo) -> Unit,
     onCertificateRemoved: (Int) -> Unit,
-    onAddCertificate: () -> Unit
+    onAddCertificate: () -> Unit,
+    onPickCertificateImage: (Int) -> Unit,
+    isEditScreen: Boolean = false,
+    onSaveClicked: () -> Unit = {}
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Text(
-                text = "Certifications",
-                style = MaterialTheme.typography.headlineSmall
-            )
-        }
 
-        itemsIndexed(certificates) { index, certificate ->
+    Column(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1f),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Text(
+                    text = "Certificates",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
 
-            // Issued By Field
-            CustomTextField(
-                value = certificate.issuedBy,
-                onValueChange = {
-                    onCertificateUpdated(index, certificate.copy(issuedBy = it))
-                },
-                label = "Issued By",
-                icon = Icons.Default.Business
-            )
+            itemsIndexed(certificates) { index, certificate ->
 
-            Spacer(Modifier.height(16.dp))
+                CustomTextField(
+                    value = certificate.issuedBy,
+                    onValueChange = {
+                        onCertificateUpdated(index, certificate.copy(issuedBy = it))
+                    },
+                    label = "Issued By"
+                )
 
-            // Image Picker Preview
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(16 / 9f)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .clickable {
-                        // Open image picker logic here
+                certificate.error?.issuedBy?.let { ErrorText(it) }
+
+
+                Spacer(Modifier.height(16.dp))
+
+                // Image Picker Preview
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16 / 9f)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                        .clickable {
+                            onPickCertificateImage(index)
+                        }
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                            shape = MaterialTheme.shapes.medium
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    certificate.image?.let {
+                        AsyncImage(
+                            model = it,
+                            contentDescription = "Certificate image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } ?: run {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddPhotoAlternate,
+                                contentDescription = "Upload",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(36.dp)
+                            )
+                            Text(
+                                text = "Tap to upload certificate",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                    .border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = MaterialTheme.shapes.medium
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                certificate.image?.let {
-                    AsyncImage(
-                        model = it,
-                        contentDescription = "Certificate image",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } ?: run {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AddPhotoAlternate,
-                            contentDescription = "Upload",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(36.dp)
-                        )
-                        Text(
-                            text = "Tap to upload certificate",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                }
+
+                certificate.error?.image?.let { ErrorText(it) }
+
+            }
+
+            // Add/Remove Buttons
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                ) {
+                    if (certificates.size > 1) {
+                        RectangleButton(icon = Icons.Default.Remove, label = "Remove") {
+                            onCertificateRemoved(certificates.size - 1)
+                        }
+                    }
+
+                    if (certificates.size < 5) {
+                        RectangleButton(icon = Icons.Default.Add, label = "Add") {
+                            onAddCertificate()
+                        }
                     }
                 }
             }
         }
 
-        // Add/Remove Buttons
-        item {
-            Row(
+        if (isEditScreen) {
+            Box(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                contentAlignment = Alignment.BottomEnd
             ) {
-                if (certificates.size > 1) {
-                    RectangleButton(icon = Icons.Default.Remove, label = "Remove") {
-                        onCertificateRemoved(certificates.size - 1)
-                    }
-                }
-
-                if (certificates.size < 5) {
-                    RectangleButton(icon = Icons.Default.Add, label = "Add") {
-                        onAddCertificate()
-                    }
-                }
+                CircleButton(
+                    onClick = onSaveClicked,
+                    label = "Save",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
             }
         }
     }
+
+
 }
 
 
-data class JobProfileLanguage(val language: JobLanguageOption? = null, val proficiency: String = "")
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LanguagesFormM3(
-    jobLanguages: List<JobLanguageOption>,
-    userPrefsLanguages: List<JobProfileLanguage>,
+private fun LanguagesForm(
+    languageOptions: List<ApplicantLanguageOption>,
+    userPrefsLanguages: List<ApplicantLanguage>,
     onAddLanguage: () -> Unit,
     onRemoveLanguage: () -> Unit,
-    onLanguageSelected: (Int, JobLanguageOption) -> Unit,
-    onProficiencySelected: (Int, String) -> Unit
+    onLanguageSelected: (Int, ApplicantLanguageOption) -> Unit,
+    onProficiencySelected: (Int, ApplicantProficiencyOption) -> Unit,
+    isEditScreen: Boolean = false,
+    onSaveClicked: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val languageChooserModalBottomSheetState =
@@ -1319,66 +2254,85 @@ private fun LanguagesFormM3(
 
     val focusManager = LocalFocusManager.current
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Text(
-                text = "Languages",
-                style = MaterialTheme.typography.headlineSmall
-            )
-        }
-        itemsIndexed(userPrefsLanguages) { index, item ->
-            CustomTextField(
-                value = item.language?.name ?: "",
-                onValueChange = {},
-                label = "Language (e.g., English, Tamil)",
-                readOnly = true,
-                onFocus = {
-                    if (it) {
-                        selectedIndex = index
-                        scope.launch { languageChooserModalBottomSheetState.expand() }
-                    }
-                }
-            )
+    Column(modifier = Modifier.fillMaxSize()) {
 
-            Spacer(Modifier.height(8.dp))
-
-            CustomTextField(
-                value = item.proficiency,
-                onValueChange = {},
-                label = "Proficiency (e.g., Fluent, Intermediate)",
-                readOnly = true,
-                onFocus = {
-                    if (it) {
-                        selectedIndex = index
-                        scope.launch { proficiencyChooserModalBottomSheetState.expand() }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Text(
+                    text = "Languages",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+            itemsIndexed(userPrefsLanguages) { index, item ->
+                CustomTextField(
+                    value = item.language?.name ?: "",
+                    onValueChange = {},
+                    label = "Language (e.g., English, Tamil)",
+                    readOnly = true,
+                    onFocus = {
+                        if (it) {
+                            selectedIndex = index
+                            scope.launch { languageChooserModalBottomSheetState.expand() }
+                        }
                     }
-                }
-            )
-        }
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-            ) {
-                if (userPrefsLanguages.size > 1) {
-                    RectangleButton(icon = Icons.Default.Remove, label = "Remove") {
-                        onRemoveLanguage()
-                    }
-                }
+                )
 
-                if (userPrefsLanguages.size < 5) {
-                    RectangleButton(icon = Icons.Default.Add, label = "Add") {
-                        onAddLanguage()
+                Spacer(Modifier.height(8.dp))
+
+                CustomTextField(
+                    value = item.proficiency?.name ?: "",
+                    onValueChange = {},
+                    label = "Proficiency (e.g., Fluent, Intermediate)",
+                    readOnly = true,
+                    onFocus = {
+                        if (it) {
+                            selectedIndex = index
+                            scope.launch { proficiencyChooserModalBottomSheetState.expand() }
+                        }
+                    }
+                )
+            }
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                ) {
+                    if (userPrefsLanguages.size > 1) {
+                        RectangleButton(icon = Icons.Default.Remove, label = "Remove") {
+                            onRemoveLanguage()
+                        }
+                    }
+
+                    if (userPrefsLanguages.size < 5) {
+                        RectangleButton(icon = Icons.Default.Add, label = "Add") {
+                            onAddLanguage()
+                        }
                     }
                 }
             }
         }
+
+        if (isEditScreen) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                CircleButton(
+                    onClick = onSaveClicked,
+                    label = "Save",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        }
+
     }
+
 
     // Language Picker
     if (languageChooserModalBottomSheetState.currentValue == SheetValue.Expanded) {
@@ -1390,10 +2344,11 @@ private fun LanguagesFormM3(
             sheetState = languageChooserModalBottomSheetState,
             dragHandle = null,
             shape = RectangleShape,
+            containerColor = MaterialTheme.colorScheme.surface,
             modifier = Modifier.safeDrawingPadding()
         ) {
             LanguagePickerScreen(
-                jobLanguages,
+                languageOptions,
                 onLanguageSelected = { selectedLanguage ->
                     onLanguageSelected(selectedIndex, selectedLanguage)
                     focusManager.clearFocus()
@@ -1413,6 +2368,7 @@ private fun LanguagesFormM3(
             sheetState = proficiencyChooserModalBottomSheetState,
             dragHandle = null,
             shape = RectangleShape,
+            containerColor = MaterialTheme.colorScheme.surface,
             modifier = Modifier.safeDrawingPadding()
         ) {
             ProficiencyPickerScreen { selectedProficiency ->
@@ -1424,33 +2380,10 @@ private fun LanguagesFormM3(
     }
 }
 
-
 @Composable
-fun RectangleButton(
-    icon: ImageVector,
-    label: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        shape = RoundedCornerShape(4.dp), // Rectangle-like
-        modifier = modifier.size(width = 32.dp, height = 32.dp), // Adjust size as needed
-        contentPadding = PaddingValues(0.dp),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = Color.White
-        )
-    }
-}
-
-
-@Composable
-fun LanguagePickerScreen(
-    allLanguages: List<JobLanguageOption>,
-    onLanguageSelected: (JobLanguageOption) -> Unit
+private fun LanguagePickerScreen(
+    allLanguages: List<ApplicantLanguageOption>,
+    onLanguageSelected: (ApplicantLanguageOption) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
@@ -1490,9 +2423,19 @@ fun LanguagePickerScreen(
 
 
 @Composable
-fun ProficiencyPickerScreen(
-    proficiencies: List<String> = listOf("Fluent", "Intermediate", "Basic"),
-    onProficiencySelected: (String) -> Unit
+private fun ProficiencyPickerScreen(
+    proficiencies: List<ApplicantProficiencyOption> = listOf(
+        ApplicantProficiencyOption(
+            "Fluent", "fluent"
+        ),
+        ApplicantProficiencyOption(
+            "Basic", "basic"
+        ),
+        ApplicantProficiencyOption(
+            "Intermediate", "intermediate"
+        ),
+    ),
+    onProficiencySelected: (ApplicantProficiencyOption) -> Unit
 ) {
     Column(Modifier.fillMaxSize()) {
         Text(
@@ -1504,7 +2447,7 @@ fun ProficiencyPickerScreen(
 
         proficiencies.forEach { level ->
             Text(
-                text = level,
+                text = level.name,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
@@ -1518,93 +2461,130 @@ fun ProficiencyPickerScreen(
 
 
 @Composable
-private fun ResumeUploadSectionM3(
-    fileName: String,
-    fileSizeInBytes: Long,
-    lastModified: Long,
+private fun ResumeUploadSection(
+    applicantResumeDocument: ApplicantResumeDocument?,
     onUploadClicked: () -> Unit,
-    onRemoveClicked: () -> Unit
+    onRemoveClicked: () -> Unit,
+    resumeError: String?,
+    isEditScreen: Boolean = false,
+    onSaveClicked: () -> Unit = {}
 ) {
+
     Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceBetween
+        modifier = Modifier
+            .fillMaxWidth()
+
     ) {
+
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .weight(1f),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "Upload Resume",
-                style = MaterialTheme.typography.headlineSmall,
-            )
 
-            Text(
-                text = "Always update latest updated Resume",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.customColorScheme.grayTextVariant1
-            )
+            Column(
+                modifier = Modifier
+                    .wrapContentSize()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Upload Resume",
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
 
-            // Resume Card Display
-            if (fileName.isNotEmpty()) {
-                ResumeCard(
-                    fileName = fileName,
-                    fileSizeInBytes = fileSizeInBytes,
-                    lastModified = lastModified,
-                    onRemoveClicked = onRemoveClicked
-                )
+                    Text(
+                        text = "Always update latest updated Resume",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.customColorScheme.grayTextVariant1
+                    )
+
+                    applicantResumeDocument?.let {
+                        ResumeCard(
+                            it,
+                            onRemoveClicked = onRemoveClicked
+                        )
+                    }
+
+                    // Upload Button
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(
+                                BorderStroke(1.dp, Color.LightGray),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .clickable { onUploadClicked() }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Choose a file",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+
+                    // File Types and Size Info
+                    Text(
+                        text = "PDF, DOC/DOCX (MAX 3MB)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.customColorScheme.grayTextVariant1
+                    )
+
+
+                }
+                resumeError?.let {
+                    ErrorText(it)
+                }
             }
 
-            // Upload Button
+            // Default Resume Info
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(
-                        BorderStroke(1.dp, Color.LightGray),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .clickable { onUploadClicked() }
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                    .padding(horizontal = 16.dp),
             ) {
                 Text(
-                    text = "Choose a file",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "This resume will be used by default, but you can change it when applying.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.customColorScheme.grayTextVariant1
                 )
             }
-
-            // File Types and Size Info
-            Text(
-                text = "PDF, DOC/DOCX (MAX 3MB)",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.customColorScheme.grayTextVariant1
-            )
         }
 
-        // Default Resume Info
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "This resume will be used by default, but you can change it when applying.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.customColorScheme.grayTextVariant1
-            )
+        if (isEditScreen && applicantResumeDocument?.resume?.startsWith("content://") == true) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                CircleButton(
+                    onClick = onSaveClicked,
+                    label = "Save",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
         }
+
     }
+
+
 }
 
 @Composable
 fun ResumeCard(
-    fileName: String,
-    fileSizeInBytes: Long,
-    lastModified: Long,
+    applicantResumeDocument: ApplicantResumeDocument,
     removeButtonEnabled: Boolean = true,
     onRemoveClicked: () -> Unit = {}
 ) {
-    val fileExtension = fileName.substringAfterLast('.', "").lowercase()
-    val isPdf = fileExtension == "pdf"
-    val isDoc = fileExtension == "doc" || fileExtension == "docx"
+    val isPdf = applicantResumeDocument.type == "PDF"
+    val isDoc = applicantResumeDocument.type == "DOC" || applicantResumeDocument.type == "DOCX"
 
     val fileColor = when {
         isPdf -> Color(0xFFD32F2F) // Red for PDF
@@ -1613,11 +2593,14 @@ fun ResumeCard(
     }
 
     val fileIcon = Icons.Default.Description
-    val fileSizeInMB = humanReadableBytesSize(fileSizeInBytes)
+    val fileSizeInMB = humanReadableBytesSize(applicantResumeDocument.fileSize)
 
-    val lastModifiedDate = remember(lastModified) {
-        SimpleDateFormat("MMM dd, yyyy hh:mm a", Locale.getDefault()).format(Date(lastModified))
+    val lastUsedDate = remember(applicantResumeDocument.lastUsed) {
+        applicantResumeDocument.lastUsed?.let {
+            SimpleDateFormat("MMM dd, yyyy hh:mm a", Locale.getDefault()).format(Date(it))
+        }
     }
+
 
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -1647,7 +2630,7 @@ fun ResumeCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = fileName,
+                        text = applicantResumeDocument.fileName,
                         style = MaterialTheme.typography.bodyMedium,
                         color = fileColor,
                         overflow = TextOverflow.Ellipsis,
@@ -1667,11 +2650,15 @@ fun ResumeCard(
 
                 }
 
-                Text(
-                    text = "Last used: $lastModifiedDate",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.customColorScheme.grayTextVariant1
-                )
+                lastUsedDate?.let {
+
+                    Text(
+                        text = "Last used: $it",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.customColorScheme.grayTextVariant1
+                    )
+                }
+
                 Text(
                     text = "Size: $fileSizeInMB",
                     style = MaterialTheme.typography.bodySmall,
@@ -1737,13 +2724,16 @@ fun CustomTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
+    modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     readOnly: Boolean = false,
     singLine: Boolean = false,
     minLines: Int = 1,
     maxLines: Int = if (singLine) 1 else Int.MAX_VALUE,
     trailingIcon: ImageVector? = null,
+    onTrailingIconClick: () -> Unit = {},
     onFocus: (Boolean) -> Unit = {},
+    keyBoardOptions: KeyboardOptions = KeyboardOptions.Default,
     errorMessage: String? = null
 ) {
 
@@ -1757,7 +2747,8 @@ fun CustomTextField(
             readOnly = readOnly,
             maxLines = maxLines,
             minLines = minLines,
-            modifier = Modifier
+            keyboardOptions = keyBoardOptions,
+            modifier = modifier
                 .fillMaxWidth()
                 .border(
                     BorderStroke(
@@ -1813,7 +2804,11 @@ fun CustomTextField(
                         Icon(
                             imageVector = it,
                             contentDescription = "Search",
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable {
+                                    onTrailingIconClick()
+                                }
                         )
                     }
 
@@ -1823,6 +2818,27 @@ fun CustomTextField(
         errorMessage?.let {
             ErrorText(errorMessage)
         }
+    }
+}
+
+@Composable
+fun RectangleButton(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(4.dp),
+        modifier = modifier.size(width = 32.dp, height = 32.dp),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = Color.White
+        )
     }
 }
 

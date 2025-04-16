@@ -93,7 +93,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServicesScreen(
-    isTopBarvisible:Boolean,
+    isTopBarVisible:Boolean,
     onNavigateUpServiceDetailedScreen: (Service) -> Unit,
     onNavigateUpServiceOwnerProfile: (Service, Long) -> Unit,
     viewModel: ServicesViewModel
@@ -218,7 +218,7 @@ fun ServicesScreen(
 
 
     Box(modifier = Modifier.pullToRefresh(isRefreshingItems, pullToRefreshState,
-        enabled = !(initialLoadState && items.isEmpty()) && isTopBarvisible,
+        enabled = !(initialLoadState && items.isEmpty()) && isTopBarVisible,
         threshold = 160.dp){ onRefresh() }) {
 
         LazyColumn(

@@ -59,6 +59,7 @@ import com.lts360.BuildConfig
 import com.lts360.R
 import com.lts360.components.utils.InputStreamRequestBody
 import com.lts360.components.utils.LogUtils.TAG
+import com.lts360.components.utils.getFileNameForUri
 import com.lts360.compose.transformations.PlaceholderTransformation
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
@@ -104,20 +105,8 @@ fun EditProfileSettingsScreen(
         // Convert the URI to a file and upload the image
         val inputStreamRequestBody = InputStreamRequestBody(context, uri)
 
-        val resolver = context.contentResolver
-        val cursor = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
-
-        val displayName = cursor?.use {
-            if (it.moveToFirst()) {
-                it.getString(it.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
-            } else {
-                null
-            }
-        }
-
-        if (displayName == null) {
-            throw NullPointerException("Display name is null")
-        }
+        val displayName = getFileNameForUri(context, uri)
+            ?: throw NullPointerException("Display name is null")
 
         val imagePart =
             MultipartBody.Part.createFormData("profile_pic", displayName, inputStreamRequestBody)

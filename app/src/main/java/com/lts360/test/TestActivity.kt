@@ -55,6 +55,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.rememberNavController
 import com.lts360.App
 import com.lts360.R
 import com.lts360.compose.ui.auth.LoginScreen
@@ -76,39 +77,19 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-/*      var items by remember { mutableStateOf(emptyList<NewsArticle>()) }
-
-                   val context = LocalContext.current
-
-                   LaunchedEffect(Unit) {
-
-                       val data = context.assets.open("recent_articles.json")
-                           .bufferedReader()
-                           .use {
-                               it.readText()
-                           }
-
-                       val serializer = Json { ignoreUnknownKeys }
-                       items = serializer.decodeFromString(data) as List<NewsArticle>
-                   }*/
-
-
-@Serializable
-data class NewsArticle(
-    val title: String,
-    val description: String,
-    val url: String,
-    val thumbnail: String,
-    @SerialName("published_date") val publishedDate: String
-)
 
 
 @AndroidEntryPoint
 class TestActivity : ComponentActivity() {
+
+
 
     companion object {
         init {
@@ -120,13 +101,11 @@ class TestActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-
-
         setContent {
             AppTheme {
                 Surface {
                     SafeDrawingBox {
-                        ApplicantProfileForm()
+                        JobNavHost()
                     }
                 }
             }

@@ -20,7 +20,6 @@ data class EditableImage(
     @SerializedName("size")
     val size: Int,
 
-
     @SerializedName("format")
     val format: String,
 

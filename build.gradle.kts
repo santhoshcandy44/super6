@@ -3,7 +3,7 @@
 
 
 plugins {
-    id("com.android.application") version "8.9.0" apply false
+    id("com.android.application") version "8.9.1" apply false
     id("org.jetbrains.kotlin.android") version "1.9.24" apply false
 
     id("com.google.devtools.ksp") version "2.1.10-1.0.31" apply false
@@ -14,16 +14,16 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0" apply false
     // Add the dependency for the Crashlytics Gradle plugin
     id("com.google.firebase.crashlytics") version "3.0.3" apply false
-    id("com.android.library") version "8.9.0" apply false
+    id("com.android.library") version "8.9.1" apply false
 }
 
 buildscript {
 
 
     dependencies {
-        classpath("com.google.dagger:hilt-android-gradle-plugin:2.55")
-        classpath("com.google.devtools.ksp:symbol-processing-gradle-plugin:2.1.10-1.0.31")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22")
+        classpath(libs.hilt.android.gradle.plugin)
+        classpath(libs.symbol.processing.gradle.plugin)
+        classpath(libs.kotlin.gradle.plugin)
     }
 }
 

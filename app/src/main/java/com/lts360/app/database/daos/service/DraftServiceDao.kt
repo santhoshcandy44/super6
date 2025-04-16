@@ -19,7 +19,7 @@ interface DraftServiceDao {
 
     @Transaction
     @Query("SELECT * FROM draft_service WHERE id = :serviceId")
-    fun getDraftServiceWithDetails(serviceId: Long): DraftServiceWithDetails
+    fun getDraftServiceWithDetails(serviceId: Long): DraftServiceWithDetails?
 
     @Transaction
     @Query("SELECT * FROM draft_service")

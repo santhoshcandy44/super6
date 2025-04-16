@@ -17,6 +17,7 @@ import com.lts360.compose.ui.main.MainActivity
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
+import com.lts360.test.TestActivity
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -30,6 +31,8 @@ class AuthActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+
 
         val isWelcome = intent.getBooleanExtra("is_welcome", false)
         val forceType = intent.getStringExtra("force_type")

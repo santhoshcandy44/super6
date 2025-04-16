@@ -138,12 +138,10 @@ sealed class FileUploadState {
 
 }
 
-// Function to serialize the FileUploadState to JSON string
 fun serializeFileUploadState(state: FileUploadState): String {
     return Json.encodeToString(state)
 }
 
-// Function to deserialize the JSON string back into FileUploadState
 fun deserializeFileUploadState(jsonString: String): FileUploadState {
     return Json.decodeFromString(jsonString)
 }

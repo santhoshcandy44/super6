@@ -2,9 +2,8 @@ package com.lts360.compose.ui.services
 
 import com.lts360.api.models.service.EditablePlan
 
-
 class BitmapContainerFactory {
-    private var idCounter = 0 // Instance variable to track unique IDs
+    private var idCounter = 0
 
     fun createContainer(path: String, width:Int, height:Int, format: String, errorMessage: String?): BitmapContainer {
         return BitmapContainer(
@@ -12,13 +11,14 @@ class BitmapContainerFactory {
             width=width,
             height=height,
             format = format,
-            containerId = generateId(), // Generate a unique ID for each new container
+            containerId = generateId(),
+
             errorMessage = errorMessage
         )
     }
 
     private fun generateId(): String {
-        return "CONTAINER_ID_${idCounter++}" // Generate a unique ID
+        return "CONTAINER_ID_${idCounter++}"
     }
 }
 
@@ -28,9 +28,8 @@ data class ThumbnailContainer(
     val height:Int,
     val format: String,
     val containerId: String,
-    val errorMessage: String? = null,
+    val errorMessage: String? = null
 )
-
 
 data class BitmapContainer(
     val path: String,
@@ -38,7 +37,7 @@ data class BitmapContainer(
     val height:Int,
     val format: String,
     val containerId: String,
-    val errorMessage: String? = null,
+    val errorMessage: String? = null
 )
 
 

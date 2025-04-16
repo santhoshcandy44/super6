@@ -102,7 +102,7 @@ val CustomDarkColorScheme = CustomColorScheme(
     textVariant1 = Color.White,
     grayTextVariant1=Color.White,
 
-    jobUserProfileBackground = Color(0xFF1E1E1E),
+    jobUserProfileBackground = Color.Black,
 
     colorScheme = DarkColorPalette // Include the dark color palette
 )

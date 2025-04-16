@@ -51,10 +51,8 @@ data class EditableService(
     @SerializedName("country")
     val country: String?,
 
-
     @SerializedName("state")
     val state: String?,
-
 
     @SerializedName("status")
     val status: String,

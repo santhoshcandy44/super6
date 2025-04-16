@@ -3,6 +3,8 @@ package com.lts360.compose.ui.services.manage.viewmodels
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
+import androidx.core.content.FileProvider
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -55,9 +57,10 @@ import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import java.io.File
-import java.io.FileInputStream
 import java.math.BigDecimal
 import javax.inject.Inject
+import androidx.core.net.toUri
+import com.lts360.components.utils.LogUtils.TAG
 
 @HiltViewModel
 class ServicesWorkflowViewModel @Inject constructor(
@@ -78,32 +81,22 @@ class ServicesWorkflowViewModel @Inject constructor(
     val draftServices = _draftServices.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> get() = _isLoading
+    val isLoading = _isLoading.asStateFlow()
+
 
     private val _refreshing = MutableStateFlow(false)
-    val refreshing: StateFlow<Boolean> get() = _refreshing
-
-
-    private val _isDraftLoading = MutableStateFlow(false)
-    val isDraftLoading: StateFlow<Boolean> get() = _isDraftLoading
+    val refreshing = _refreshing.asStateFlow()
 
 
     private val bitmapContainerFactory = BitmapContainerFactory()
 
-    /*
-        private val _isLoading = MutableStateFlow(false)
-        val isLoading = _isLoading.asStateFlow()*/
 
-    // Define MutableStateFlow for service fields
-    private val _status = MutableStateFlow<String>("")
+    private val _status = MutableStateFlow("")
     val status = _status.asStateFlow()
 
-    // Define MutableStateFlow for service fields
     private val _draftId = MutableStateFlow<Long>(-1)
     val draftId = _draftId.asStateFlow()
 
-
-    // Define MutableStateFlow for service fields
     private val _title = MutableStateFlow("")
     val title = _title.asStateFlow()
 
@@ -117,34 +110,26 @@ class ServicesWorkflowViewModel @Inject constructor(
     private val _selectedLocation = MutableStateFlow<DraftLocation?>(null)
     val selectedLocation = _selectedLocation.asStateFlow()
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _country = MutableStateFlow<String?>(null)
     val selectedCountry = _country.asStateFlow()
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _state = MutableStateFlow<String?>(null)
     val selectedState = _state.asStateFlow()
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _industry = MutableStateFlow(-1)
     val selectedIndustry = _industry.asStateFlow()
 
 
-    // MutableStateFlow to hold the list of EditablePlans
     private val _plans = MutableStateFlow<List<ValidatedPlan>>(emptyList())
     val plans = _plans.asStateFlow()
 
-    // Define a MutableStateFlow for the containers list
     private val _imageContainers = MutableStateFlow<List<BitmapContainer>>(emptyList())
     val imageContainers = _imageContainers.asStateFlow()
 
 
-    // Define a MutableStateFlow for the containers list
     private val _thumbnailContainer = MutableStateFlow<ThumbnailContainer?>(null)
     val thumbnailContainer = _thumbnailContainer.asStateFlow()
 
-
-    // Error messages
     private val _titleError = MutableStateFlow<String?>(null)
     val titleError = _titleError.asStateFlow()
 
@@ -157,11 +142,9 @@ class ServicesWorkflowViewModel @Inject constructor(
     private val _selectedLocationError = MutableStateFlow<String?>(null)
     val selectedLocationError = _selectedLocationError.asStateFlow()
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _countryError = MutableStateFlow<String?>(null)
     val selectedCountryError = _countryError.asStateFlow()
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _stateError = MutableStateFlow<String?>(null)
     val selectedStateError = _stateError.asStateFlow()
 
@@ -176,12 +159,6 @@ class ServicesWorkflowViewModel @Inject constructor(
     val imageContainersError = _imageContainersError.asStateFlow()
 
 
-    // UI state
-    private val _editableService = MutableStateFlow<EditableService?>(null)
-    val editableService: StateFlow<EditableService?> = _editableService.asStateFlow()
-
-
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _deleteDraftDialogVisibility = MutableStateFlow(false)
     val deleteDraftDialogVisibility: StateFlow<Boolean> = _deleteDraftDialogVisibility
 
@@ -223,7 +200,10 @@ class ServicesWorkflowViewModel @Inject constructor(
             loadDraftServices()
         }
 
+    }
 
+    fun updateLastEntry(lastEntry: String?) {
+        _lastEntry.value = lastEntry
     }
 
     fun setPickerLaunch(isLaunched: Boolean) {
@@ -249,49 +229,60 @@ class ServicesWorkflowViewModel @Inject constructor(
 
         draftServicesDao.getAllDraftServicesWithDetails().collectLatest {
 
-
-            /*     // Automatically load draft details if conditions are met
-                 if (_status.value == "draft" && _draftId.value != -1L) {
-
-                     val foundedDraftServiceWithDetails =
-                         it.firstOrNull { it.draftService.id == _draftId.value }
-                     foundedDraftServiceWithDetails?.let {
-                         loadDraftDetails(_draftId.value, it)
-                     }
-                 }*/
-
-
             _draftServices.value = it.map { draftServiceDetails ->
 
-
                 val draftService = draftServiceDetails.draftService
-                val images = draftServiceDetails.draftImages
-                val plans = draftServiceDetails.draftPlans
+                val draftImages = draftServiceDetails.draftImages
+                val draftThumbnail = draftServiceDetails.draftThumbnail
+                val draftPlans = draftServiceDetails.draftPlans
 
+                Log.e(
+                    TAG, "RECEIVER ${
+                        EditableService(
+                            serviceId = draftService.id,
+                            title = draftService.title ?: "",
+                            shortDescription = draftService.shortDescription ?: "",
+                            longDescription = draftService.longDescription ?: "",
+                            industry = draftService.industry ?: -1,
+                            status = "draft",
+                            images = draftImages.map { image -> image.toImage() },
+                            plans = draftPlans.map { plan -> plan.toPlan() },
+                            location = _selectedLocation.value?.toLocation(),
+                            thumbnail = draftThumbnail?.toThumbnail(),
+                            country = draftService.country,
+                            state = draftService.state
+                        )
+                    }"
+                )
                 EditableService(
-                    draftService.id,
-                    draftService.title ?: "",
-                    draftService.shortDescription ?: "",
-                    draftService.longDescription ?: "",
-                    draftService.industry ?: -1,
-                    draftService.country,
-                    draftService.state,
-                    "draft",
-                    images.map { it.toImage() },
-                    plans.map { it.toPlan() }
+                    serviceId = draftService.id,
+                    title = draftService.title ?: "",
+                    shortDescription = draftService.shortDescription ?: "",
+                    longDescription = draftService.longDescription ?: "",
+                    industry = draftService.industry ?: -1,
+                    status = "draft",
+                    images = draftImages.map { image -> image.toImage() },
+                    plans = draftPlans.map { plan -> plan.toPlan() },
+                    location = _selectedLocation.value?.toLocation(),
+                    thumbnail = draftThumbnail?.toThumbnail(),
+                    country = draftService.country,
+                    state = draftService.state
                 )
             }
+
+            if (_status.value == "draft" && _draftId.value != -1L) {
+                loadDraftDetails(_draftId.value)
+            }
+
             if (isLoading) {
                 _isLoading.value = false
-
             }
 
             if (isRefreshing) {
                 _refreshing.value = false
-
             }
-        }
 
+        }
 
     }
 
@@ -307,37 +298,22 @@ class ServicesWorkflowViewModel @Inject constructor(
         _status.value = status
         _draftId.value = draftId
 
-        // Save values in SavedStateHandle
         savedStateHandle["status"] = status
         savedStateHandle["draftId"] = draftId
 
-        // Load draft details if conditions are met
         if (status == "draft" && draftId != -1L) {
             loadDraftDetails(draftId)
         }
     }
 
-
-    /*
-
-        init {
-            if (_status.value == "draft") {
-                if (_draftId.value != -1L) {
-                    loadDraftDetails(_draftId.value)
-                }
-            }
-        }*/
-
-    // Function to toggle or update the visibility of the location bottom sheet
     fun setDeleteDraftDialogVisibility(isVisible: Boolean) {
         _deleteDraftDialogVisibility.value = isVisible
     }
 
-    // Optionally add functions to update fields if required
     fun updateTitle(newTitle: String) {
         _title.value = newTitle
         if (newTitle.isNotBlank()) {
-            _titleError.value = null // Clear error
+            _titleError.value = null
         }
     }
 
@@ -345,50 +321,46 @@ class ServicesWorkflowViewModel @Inject constructor(
     fun updateShortDescription(newDescription: String) {
         _shortDescription.value = newDescription
         if (newDescription.isNotBlank()) {
-            _shortDescriptionError.value = null // Clear error
+            _shortDescriptionError.value = null
         }
     }
 
     fun updateLongDescription(newDescription: String) {
         _longDescription.value = newDescription
         if (newDescription.isNotBlank()) {
-            _longDescriptionError.value = null // Clear error
+            _longDescriptionError.value = null
         }
     }
 
-    // Optionally add functions to update fields if required
     fun updateIndustry(newIndustry: Int) {
         _industry.value = newIndustry
         if (newIndustry != -1) {
-            _industryError.value = null // Clear error
+            _industryError.value = null
         }
     }
 
-    // Optionally add functions to update fields if required
     fun updateCountry(newCountry: String?) {
         _country.value = newCountry
         if (newCountry != null) {
-            _countryError.value = null // Clear error
+            _countryError.value = null
         }
     }
 
 
-    // Optionally add functions to update fields if required
     fun updateState(newState: String?) {
         _state.value = newState
         if (newState != null) {
-            _stateError.value = null // Clear error
+            _stateError.value = null
         }
     }
 
     fun updateLocation(newLocation: DraftLocation) {
         _selectedLocation.value = newLocation
-        _selectedLocationError.value = null // Clear error
+        _selectedLocationError.value = null
 
     }
 
 
-    // Function to add a new plan
     fun addPlan() {
         val newPlan = ValidatedPlan(
             true,
@@ -406,35 +378,28 @@ class ServicesWorkflowViewModel @Inject constructor(
             )
         )
 
-        // Create a new list with the new plan added
         _plans.value += newPlan
-        _plansError.value = null // Clear error
+        _plansError.value = null
 
     }
 
 
-    // Function to remove a plan
     fun removePlan(plan: EditablePlan) {
-        // Create a new list excluding the removed plan
         _plans.value = _plans.value.filter { it.editablePlan.planId != plan.planId }
     }
 
-    // Function to update a specific plan at a given index
     fun updatePlan(index: Int, updatedPlan: ValidatedPlan) {
-        // Create a new list with the updated plan at the specified index
         _plans.value = _plans.value.mapIndexed { i, plan ->
             if (i == index) updatedPlan else plan
         }
 
     }
 
-    // Function to update the plans
     private fun updatePlans(newPlans: List<ValidatedPlan>) {
         _plans.value = newPlans
     }
 
 
-    // Function to add a new BitmapContainer
     fun addContainer(
         path: String,
         width: Int,
@@ -442,15 +407,13 @@ class ServicesWorkflowViewModel @Inject constructor(
         format: String,
         errorMessage: String? = null
     ) {
-        // Create a mutable copy of the current list, add the new container, and update the state
         _imageContainers.value = _imageContainers.value.toMutableList().apply {
             add(createBitmapContainer(path, width, height, format, errorMessage))
         }
-        _imageContainersError.value = null // Clear error
+        _imageContainersError.value = null
 
     }
 
-    // Function to update a specific container
     fun updateContainer(
         index: Int,
         path: String,
@@ -472,7 +435,6 @@ class ServicesWorkflowViewModel @Inject constructor(
         }
     }
 
-    // Function to remove a BitmapContainer at a specific position
     fun removeContainer(index: Int) {
         val updatedContainers = _imageContainers.value.toMutableList()
         if (index in updatedContainers.indices) {
@@ -524,10 +486,8 @@ class ServicesWorkflowViewModel @Inject constructor(
     }
 
 
-    // Function to update a specific container
     private fun loadImageContainers(bitmapContainers: List<BitmapContainer>) {
         _imageContainers.value = bitmapContainers
-
     }
 
 
@@ -535,26 +495,33 @@ class ServicesWorkflowViewModel @Inject constructor(
         draftId: Long,
         draftServiceWithDetails: DraftServiceWithDetails? = null
     ) {
-        _isDraftLoading.value = true
         viewModelScope.launch(Dispatchers.IO) {
 
-            var draftServiceDetails = draftServiceWithDetails
-            if (draftServiceDetails == null) {
-                // Perform database query
-                draftServiceDetails = draftServicesDao.getDraftServiceWithDetails(draftId)
+            val draftServiceDetails = draftServiceWithDetails ?: draftServicesDao.getDraftServiceWithDetails(draftId) ?: return@launch
 
-            }
-
-
-            // Extract the details
             val draftService = draftServiceDetails.draftService
-
-
             val draftImages = draftServiceDetails.draftImages
             val draftPlans = draftServiceDetails.draftPlans
             val draftLocation = draftServiceDetails.draftLocation
-
             val draftThumbnail = draftServiceDetails.draftThumbnail
+
+
+            updateTitle(draftService.title ?: "")
+            updateShortDescription(draftService.shortDescription ?: "")
+            updateLongDescription(draftService.longDescription ?: "")
+            draftService.industry?.let {
+                updateIndustry(it)
+            }
+            draftService.country?.let {
+                updateCountry(it)
+            }
+            draftService.state?.let {
+                updateState(it)
+            }
+            updatePlans(draftPlans.map { plan -> ValidatedPlan(true, plan.toPlan()) })
+            draftLocation?.let {
+                updateLocation(it)
+            }
 
             loadImageContainers(draftImages.map {
                 val result = isValidImageDimensionsByMetaData(
@@ -562,7 +529,6 @@ class ServicesWorkflowViewModel @Inject constructor(
                     it.height,
                     it.format
                 )
-
                 val errorMessage = when {
                     !result.first -> "Invalid Dimension"
                     !result.second -> "Invalid Format"
@@ -600,52 +566,44 @@ class ServicesWorkflowViewModel @Inject constructor(
                 )
             }
 
-
-            // Create the editable service object
-            val editableService = EditableService(
-                serviceId = draftService.id,
-                title = draftService.title ?: "",
-                shortDescription = draftService.shortDescription ?: "",
-                longDescription = draftService.longDescription ?: "",
-                industry = draftService.industry ?: -1,
-                status = "draft",
-                images = draftImages.map { image -> image.toImage() },
-                plans = draftPlans.map { plan -> plan.toPlan() },
-                location = _selectedLocation.value?.toLocation(),
-                thumbnail = draftThumbnail?.toThumbnail(),
-                country = draftService.country,
-                state = draftService.state
-
-            )
-
-            // Update the state
-            _editableService.value = editableService
-
-            updateTitle(draftService.title ?: "")
-            updateShortDescription(draftService.shortDescription ?: "")
-            updateLongDescription(draftService.longDescription ?: "")
-            draftService.industry?.let {
-                updateIndustry(it)
-            }
-            draftService.country?.let {
-                updateCountry(it)
-            }
-            draftService.state?.let {
-                updateState(it)
-            }
-            updatePlans(draftPlans.map { plan -> ValidatedPlan(true, plan.toPlan()) })
-            draftLocation?.let {
-                updateLocation(it)
-            }
-
-
-            _isDraftLoading.value = false
-
         }
     }
 
 
-    // Validation logic for serviceTitle
+    fun clearSelectedDraft() {
+
+        onCreateServiceJob?.cancel()
+
+        _draftId.value = -1
+        _status.value = ""
+
+        savedStateHandle.remove<String>("status")
+        savedStateHandle.remove<Long>("draftId")
+
+        _title.value = ""
+        _shortDescription.value = ""
+        _longDescription.value = ""
+        _thumbnailContainer.value = null
+        _imageContainers.value = emptyList()
+        _industry.value = -1
+        _plans.value = emptyList()
+        _country.value = ""
+        _state.value = ""
+        _selectedLocation.value = null
+
+        _titleError.value = null
+        _shortDescriptionError.value = null
+        _longDescriptionError.value = null
+        _imageContainersError.value = null
+        _plansError.value = null
+        _industryError.value = null
+        _countryError.value = null
+        _stateError.value = null
+        _selectedLocationError.value = null
+
+    }
+
+
     private fun validateServiceTitle(): Boolean {
         return if (_title.value.isBlank()) {
             _titleError.value = "Service title cannot be empty"
@@ -659,7 +617,6 @@ class ServicesWorkflowViewModel @Inject constructor(
         }
     }
 
-    // Validation logic for shortDescription
     private fun validateShortDescription(): Boolean {
         return if (_shortDescription.value.isBlank()) {
             _shortDescriptionError.value = "Short description cannot be empty"
@@ -673,7 +630,6 @@ class ServicesWorkflowViewModel @Inject constructor(
         }
     }
 
-    // Validation logic for longDescription
     private fun validateLongDescription(): Boolean {
         return if (_longDescription.value.isBlank()) {
             _longDescriptionError.value = "Long description cannot be empty"
@@ -687,7 +643,6 @@ class ServicesWorkflowViewModel @Inject constructor(
         }
     }
 
-    // Validation logic for selectedIndustry
     private fun validateSelectedIndustry(): Boolean {
         return if (_industry.value == -1) {
             _industryError.value = "Industry must be selected"
@@ -723,7 +678,6 @@ class ServicesWorkflowViewModel @Inject constructor(
     }
 
 
-    // Validation logic for plans
     private fun validatePlans(): Boolean {
         if (_plans.value.isEmpty()) {
             _plansError.value = "At least one plan must be added"
@@ -749,11 +703,11 @@ class ServicesWorkflowViewModel @Inject constructor(
                     false
             }
 
-            ValidatedPlan(isValid, editablePlan) // Create a new ValidatedPlan instance
+            ValidatedPlan(isValid, editablePlan)
         }
 
 
-        _plans.value = updatedPlans // Update all plans at once
+        _plans.value = updatedPlans
 
         _plansError.value =
             if (updatedPlans.all { it.isValid }) null else "One or more plans are invalid"
@@ -761,7 +715,6 @@ class ServicesWorkflowViewModel @Inject constructor(
     }
 
 
-    // Validation logic for containers
     private fun validateThumbnailContainer(): Boolean {
 
         return if (_thumbnailContainer.value != null && _thumbnailContainer.value?.errorMessage == null) {
@@ -776,7 +729,6 @@ class ServicesWorkflowViewModel @Inject constructor(
     }
 
 
-    // Validation logic for containers
     private fun validateImageContainers(): Boolean {
         return if (_imageContainers.value.isEmpty()) {
             _imageContainersError.value = "At least one image must be added"
@@ -787,7 +739,6 @@ class ServicesWorkflowViewModel @Inject constructor(
         }
     }
 
-    // Validation logic for selectedLocation
     private fun validateSelectedLocation(): Boolean {
         return if (_selectedLocation.value == null) {
             _selectedLocationError.value = "Location must be selected"
@@ -799,7 +750,6 @@ class ServicesWorkflowViewModel @Inject constructor(
     }
 
 
-    // Perform full validation
     fun validateAll(): Boolean {
 
         val isServiceTitleValid = validateServiceTitle()
@@ -836,38 +786,36 @@ class ServicesWorkflowViewModel @Inject constructor(
 
 
             if (draftImages.isNotEmpty()) {
-                // Ensure the cache directory exists
-                val cacheDir = File(context.cacheDir, "draft")
+                val cacheDir = File(context.filesDir, "draft")
                 if (!cacheDir.exists()) {
                     cacheDir.mkdirs()
                 }
 
-                // Process each draft image
                 val cachedDraftImages = draftImages.mapNotNull { draftImage ->
                     try {
-                        // Open InputStream from original file path (assuming 'path' is the original file path)
                         val inputStream =
-                            context.contentResolver.openInputStream(Uri.parse(draftImage.path))
+                            context.contentResolver.openInputStream(draftImage.path.toUri())
                                 ?: return@mapNotNull null
 
-                        // Create a new cache file with a unique name (based on current timestamp)
-                        val cacheFile = File(
+                        val outputFile = File(
                             cacheDir,
-                            "draft_images_${System.currentTimeMillis()}.jpg"
-                        ) // Change extension as needed
-                        val outputStream = cacheFile.outputStream()
+                            "draft_image_${System.currentTimeMillis()}.jpg"
+                        )
+                        val outputStream = outputFile.outputStream()
 
-                        // Copy the InputStream to the cache file
                         inputStream.use { input ->
                             outputStream.use { output ->
                                 input.copyTo(output)
                             }
                         }
 
-                        // Return a DraftImage object with the new cached file path
                         DraftImage(
                             serviceId = serviceId,
-                            data = cacheFile.absolutePath,  // Store the cached file path
+                            data = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.provider",
+                                outputFile
+                            ).toString(),
                             format = draftImage.format,
                             width = draftImage.width,
                             height = draftImage.height
@@ -878,7 +826,6 @@ class ServicesWorkflowViewModel @Inject constructor(
                     }
                 }
 
-                // Only insert into the database if there are valid cached files
                 if (cachedDraftImages.isNotEmpty()) {
                     draftImagesDao.insert(cachedDraftImages)
                 }
@@ -914,37 +861,36 @@ class ServicesWorkflowViewModel @Inject constructor(
             }
 
             draftThumbnail?.let {
-                // Open the InputStream for the thumbnail file
-                val thumbnailUri = Uri.parse(it.path)
+                val thumbnailUri = it.path.toUri()
                 context.contentResolver.openInputStream(thumbnailUri)?.use { inputStream ->
 
-                    // Create the directory for the draft images (if it doesn't exist)
-                    val draftDir = File(context.cacheDir, "draft")
+                    val draftDir = File(context.filesDir, "draft")
                     if (!draftDir.exists()) {
                         draftDir.mkdirs()
                     }
 
-                    // Create a new file in the cache directory with the same filename
                     val outputFile = File(
                         draftDir,
                         "thumbnail_${System.currentTimeMillis()}.jpg"
-                    ) // You can choose the filename
+                    )
 
 
                     val outputStream = outputFile.outputStream()
 
-                    // Copy the InputStream to the cache file
                     inputStream.use { input ->
                         outputStream.use { output ->
                             input.copyTo(output)
                         }
                     }
 
-                    // Insert the details of the file into the database
                     draftThumbnailDao.insert(
                         DraftThumbnail(
                             serviceId = serviceId,
-                            data = outputFile.absolutePath, // Path of the new file
+                            data = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.provider",
+                                outputFile
+                            ).toString(),
                             format = it.format,
                             width = it.width,
                             height = it.height
@@ -956,7 +902,6 @@ class ServicesWorkflowViewModel @Inject constructor(
             _draftId.value = serviceId
             _status.value = "draft"
 
-            // Save values in SavedStateHandle
             savedStateHandle["draftId"] = serviceId
             savedStateHandle["status"] = "draft"
 
@@ -978,64 +923,46 @@ class ServicesWorkflowViewModel @Inject constructor(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
 
+
             draftImagesDao.deleteImagesByServiceId(draftId)
-            draftImagesDao.deleteImagesCachePathsByServiceId(draftId).onEach {
-                deleteDraftCacheFile(it)
-            }
             draftPlansDao.deletePlanByServiceId(draftId)
             draftLocationDao.deleteLocationByServiceId(draftId)
             draftThumbnailDao.deleteThumbnailByServiceId(draftId)
-            draftThumbnailDao.getThumbnailPathByServiceId(draftId)?.let {
-                deleteDraftCacheFile(it)
-            }
+
             draftServicesDao.update(draftService)
 
             if (draftImages.isNotEmpty()) {
-                // Ensure the cache directory exists
-                val cacheDir = File(context.cacheDir, "draft")
+
+                val cacheDir = File(context.filesDir, "draft")
                 if (!cacheDir.exists()) {
                     cacheDir.mkdirs()
                 }
 
-                // Process each draft image
                 val cachedDraftImages = draftImages.mapNotNull { draftImage ->
                     try {
 
-                        val inputStream = if (draftImage.path.startsWith("content://")) {
-                            // Open InputStream from original file path (assuming 'path' is the original file path)
-                            context.contentResolver.openInputStream(Uri.parse(draftImage.path))
+                        val inputStream =
+                            context.contentResolver.openInputStream(draftImage.path.toUri())
                                 ?: return@mapNotNull null
-                        } else {
-                            val file = File(draftImage.path)
-                            if (file.exists()) {
-                                // Return the FileInputStream if the file exists
-                                FileInputStream(file)
-                            } else {
-                                // Return null if the file doesn't exist
-                                return@mapNotNull null
-                            }
-                        }
 
-
-                        // Create a new cache file with a unique name (based on current timestamp)
-                        val cacheFile = File(
+                        val outputFile = File(
                             cacheDir,
-                            "draft_images_${System.currentTimeMillis()}.jpg"
-                        ) // Change extension as needed
-                        // Copy the InputStream to the cache file
-                        val outputStream = cacheFile.outputStream()
+                            "draft_image_${System.currentTimeMillis()}.jpg"
+                        )
 
-                        // Copy the InputStream to the cache file
                         inputStream.use { input ->
-                            outputStream.use { output ->
+                            outputFile.outputStream().use { output ->
                                 input.copyTo(output)
                             }
                         }
 
-                        // Return a DraftImage object with the new cached file path
                         DraftImage(
                             serviceId = draftId,
-                            data = cacheFile.absolutePath,  // Store the cached file path
+                            data = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.provider",
+                                outputFile
+                            ).toString(),
                             format = draftImage.format,
                             width = draftImage.width,
                             height = draftImage.height
@@ -1046,9 +973,12 @@ class ServicesWorkflowViewModel @Inject constructor(
                     }
                 }
 
-                // Only insert into the database if there are valid cached files
                 if (cachedDraftImages.isNotEmpty()) {
                     draftImagesDao.insert(cachedDraftImages)
+                }
+
+                draftImages.forEach {
+                    deleteDraftCacheFile(it.path.toUri())
                 }
             }
 
@@ -1081,58 +1011,42 @@ class ServicesWorkflowViewModel @Inject constructor(
 
             draftThumbnail?.let { nonNullDraftThumbnail ->
 
-                // Open the InputStream for the thumbnail file
-                val thumbnailUri = Uri.parse(nonNullDraftThumbnail.path)
+                context.contentResolver.openInputStream(nonNullDraftThumbnail.path.toUri())
+                    ?.use { input ->
 
+                        val draftDir = File(context.filesDir, "draft")
 
-                val inputStream = if (nonNullDraftThumbnail.path.startsWith("content://")) {
-                    // Open InputStream from original file path (assuming 'path' is the original file path)
-                    context.contentResolver.openInputStream(thumbnailUri)
-                } else {
-                    val file = File(nonNullDraftThumbnail.path)
-                    if (file.exists()) {
-                        // Return the FileInputStream if the file exists
-                        FileInputStream(file)
-                    } else {
-                        // Return null if the file doesn't exist
-                        null
-                    }
-                }
+                        if (!draftDir.exists()) {
+                            draftDir.mkdirs()
+                        }
 
-                inputStream?.use {
+                        val outputFile = File(
+                            draftDir,
+                            "thumbnail_${System.currentTimeMillis()}.jpg"
+                        )
 
-                    // Create the directory for the draft images (if it doesn't exist)
-                    val draftDir = File(context.cacheDir, "draft")
-                    if (!draftDir.exists()) {
-                        draftDir.mkdirs()
-                    }
-
-                    // Create a new file in the cache directory with the same filename
-                    val outputFile = File(
-                        draftDir,
-                        "thumbnail_${System.currentTimeMillis()}.jpg"
-                    ) // You can choose the filename
-                    val outputStream = outputFile.outputStream()
-
-                    // Copy the InputStream to the cache file
-                    inputStream.use { input ->
-                        outputStream.use { output ->
+                        outputFile.outputStream().use { output ->
                             input.copyTo(output)
                         }
-                    }
-                    // Insert the details of the file into the database
-                    draftThumbnailDao.insert(
-                        DraftThumbnail(
-                            serviceId = draftId,
-                            data = outputFile.absolutePath, // Path of the new file
-                            format = nonNullDraftThumbnail.format,
-                            width = nonNullDraftThumbnail.width,
-                            height = nonNullDraftThumbnail.height
-                        )
-                    )
-                }
-            }
 
+                        draftThumbnailDao.insert(
+                            DraftThumbnail(
+                                serviceId = draftId,
+                                data = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.provider",
+                                    outputFile
+                                ).toString(),
+                                format = nonNullDraftThumbnail.format,
+                                width = nonNullDraftThumbnail.width,
+                                height = nonNullDraftThumbnail.height
+                            )
+                        )
+                    }
+
+                deleteDraftCacheFile(nonNullDraftThumbnail.path.toUri())
+
+            }
 
             withContext(Dispatchers.Main) {
                 onSuccess()
@@ -1142,6 +1056,13 @@ class ServicesWorkflowViewModel @Inject constructor(
 
     fun deleteDraft(serviceId: Long, onSuccess: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
+            draftImagesDao.getImagesCachePathsByServiceId(serviceId)
+                .forEach {
+                    deleteDraftCacheFile(it.toUri())
+                }
+            draftThumbnailDao.getThumbnailPathByServiceId(serviceId)?.let {
+                deleteDraftCacheFile(it.toUri())
+            }
             draftServicesDao.deleteDraftById(serviceId)
 
             withContext(Dispatchers.Main) {
@@ -1150,16 +1071,19 @@ class ServicesWorkflowViewModel @Inject constructor(
         }
     }
 
-    private fun deleteDraftCacheFile(path: String) {
+    private fun deleteDraftCacheFile(contentUri: Uri) {
 
         try {
-            File(path).also {
-                if (it.exists()) {
-                    it.delete()
-                }
+            val rowsDeleted = context.contentResolver.delete(contentUri, null, null)
+            if (rowsDeleted > 0) {
+                Log.d("Delete", "Content URI deleted successfully")
+            } else {
+                Log.d("Delete", "No rows deleted. Possibly not found or no permission.")
             }
+        } catch (e: SecurityException) {
+            Log.e("Delete", "Security exception when deleting: ${e.message}")
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("Delete", "General error deleting content URI: ${e.message}")
         }
     }
 
@@ -1268,46 +1192,6 @@ class ServicesWorkflowViewModel @Inject constructor(
         }
     }
 
-    fun updateLastEntry(lastEntry: String?){
-        _lastEntry.value = lastEntry
-    }
-
-
-    fun clearSelectedDraft() {
-
-        onCreateServiceJob?.cancel()
-
-        _isDraftLoading.value = false
-
-        _draftId.value = -1
-        _status.value = ""
-
-        savedStateHandle.remove<String>("status")
-        savedStateHandle.remove<Long>("draftId")
-
-        _title.value = ""
-        _shortDescription.value = ""
-        _longDescription.value = ""
-        _thumbnailContainer.value = null
-        _imageContainers.value = emptyList()
-        _industry.value = -1
-        _plans.value = emptyList()
-        _country.value = ""
-        _state.value = ""
-        _selectedLocation.value = null
-
-        _titleError.value = null
-        _shortDescriptionError.value = null
-        _longDescriptionError.value = null
-        _imageContainersError.value = null
-        _plansError.value = null
-        _industryError.value = null
-        _countryError.value = null
-        _stateError.value = null
-        _selectedLocationError.value = null
-        _editableService.value = null
-
-    }
 
 
 }
