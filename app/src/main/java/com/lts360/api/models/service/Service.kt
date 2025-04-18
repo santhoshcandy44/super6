@@ -139,10 +139,8 @@ data class UsedProductListing(
     @SerializedName("price")
     var price: Double,
 
-
     @SerializedName("price_unit")
     var priceUnit: String,
-
 
     @SerializedName("location")
     var location: Location?,
@@ -155,6 +153,9 @@ data class UsedProductListing(
 
     @SerializedName("total_relevance")
     var totalRelevance: String?
+
+
+
 ) : BookMarkedItem("used_product_listing")
 
 

@@ -1,9 +1,11 @@
 package com.lts360.test
 
 
+import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Paint
 import android.os.Bundle
+import android.telephony.TelephonyManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
@@ -58,10 +60,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.lts360.App
 import com.lts360.R
+import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.auth.LoginScreen
 import com.lts360.compose.ui.auth.RegisterScreen
+import com.lts360.compose.ui.main.DistrictsScreen
 import com.lts360.compose.ui.main.HomeScreen
+import com.lts360.compose.ui.main.MoreScreen
 import com.lts360.compose.ui.main.SearchBar
+import com.lts360.compose.ui.onboarding.viewmodels.LocationAccessViewModel
 import com.lts360.compose.ui.profile.EditProfileSettingsScreen
 import com.lts360.compose.ui.services.DetailedServiceScreen
 import com.lts360.compose.ui.services.manage.CreateServiceScreen
@@ -71,6 +77,7 @@ import com.lts360.compose.ui.usedproducts.DetailedUsedProductListingScreen
 import com.lts360.compose.ui.usedproducts.manage.CreateUsedProductListingScreen
 import com.lts360.compose.ui.usedproducts.manage.ManagePublishedUsedProductListingScreen
 import com.lts360.compose.ui.usedproducts.manage.ManageUsedProductListingScreen
+import com.lts360.compose.ui.viewmodels.LocationViewModel
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -100,12 +107,13 @@ class TestActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-
         setContent {
             AppTheme {
                 Surface {
+
+
                     SafeDrawingBox {
-                        JobNavHost()
+                         JobNavHost()
                     }
                 }
             }

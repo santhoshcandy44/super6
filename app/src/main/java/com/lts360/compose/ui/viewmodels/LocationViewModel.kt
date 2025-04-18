@@ -21,22 +21,22 @@ import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
-import com.google.common.reflect.TypeToken
-import com.google.gson.Gson
 import com.lts360.app.database.daos.profile.RecentLocationDao
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.components.findActivity
 import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.main.District
-import com.lts360.compose.ui.main.StateModel
+import com.lts360.compose.ui.main.State
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.models.LocationRepository
 import com.lts360.compose.ui.main.navhosts.routes.LocationSetUpRoutes
 import com.lts360.compose.ui.main.navhosts.routes.RecentLocationSerializer
-import com.lts360.compose.ui.main.navhosts.routes.StateMapSerializer
+import com.lts360.compose.ui.main.navhosts.routes.StateSerializer
 import com.lts360.compose.ui.managers.LocationManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
+import com.lts360.compose.ui.settings.viewmodels.RegionalSettingsRepository
+import com.lts360.libs.ui.ShortToast
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -53,7 +54,6 @@ import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-typealias StateMap = Map<String, StateModel>
 
 @HiltViewModel
 class LocationViewModel @Inject constructor(
@@ -63,24 +63,25 @@ class LocationViewModel @Inject constructor(
     val userProfileDao: UserProfileDao,
     private val recentLocationDao: RecentLocationDao,
     val repository: LocationRepository,
+    regionalSettingsRepository: RegionalSettingsRepository
 ) : ViewModel() {
 
+    private  val countryCode = regionalSettingsRepository.getCountryFromPreferences()?.code
+        ?: regionalSettingsRepository.getCountryFromSim()?.code
 
 
     private val args = savedStateHandle.toRoute<LocationSetUpRoutes.LocationChooser>()
     val isLocationStatesEnabled = args.locationStatesEnabled
 
 
-
     val userId = UserSharedPreferencesManager.userId
 
     private val _currentLocation = MutableStateFlow<CurrentLocation?>(null)
-    val currentLocation: StateFlow<CurrentLocation?> = _currentLocation
+    val currentLocation = _currentLocation.asStateFlow()
 
 
-    // StateFlows and LiveData for UI updates
     private val _recentLocations = MutableStateFlow<List<RecentLocation>>(emptyList())
-    val recentLocations: StateFlow<List<RecentLocation>> = _recentLocations
+    val recentLocations = _recentLocations.asStateFlow()
 
 
     private var isAnyLocationCaptured = false
@@ -99,28 +100,30 @@ class LocationViewModel @Inject constructor(
     val isLocationManagerAvailable = _isLocationManagerAvailable.asStateFlow()
 
 
-    private val _locations = MutableStateFlow<StateMap?>(null)
-    val locations: StateFlow<StateMap?> = _locations.asStateFlow()
+    private val _locations = MutableStateFlow< Map<String, State>?>(null)
+    val locations: StateFlow< Map<String, State>?> = _locations.asStateFlow()
 
 
     private val _districts = MutableStateFlow<List<District>>(emptyList())
     val districts: StateFlow<List<District>> = _districts.asStateFlow()
 
 
-
-
     init {
+
 
         if (isLocationStatesEnabled) {
             val stateMap = savedStateHandle.get<String>("locations")
                 ?.let {
-                    StateMapSerializer.deserializeLocationsList(it)
+                    StateSerializer.deserializeLocationsList(it)
                 }
+
             if (stateMap != null) {
                 _locations.value = stateMap
                 loadDistrictsIf()
             } else {
-                loadLocations(context)
+                countryCode?.let {
+                    loadLocations(context, it)
+                }
             }
 
             val recentLocations = savedStateHandle.get<String>("recent_locations")
@@ -131,7 +134,7 @@ class LocationViewModel @Inject constructor(
             viewModelScope.launch {
                 _locations.collectLatest { stateMap ->
                     stateMap?.let {
-                        savedStateHandle["locations"] = StateMapSerializer.serializeLocationsList(it)
+                        savedStateHandle["locations"] = StateSerializer.serializeLocationsList(it)
                     }
                 }
             }
@@ -149,16 +152,13 @@ class LocationViewModel @Inject constructor(
             viewModelScope.launch {
                 _recentLocations.collectLatest {
                     if (it.isNotEmpty()) {
-                        savedStateHandle["recent_locations"] =
-                            RecentLocationSerializer.serializeLocationsList(it)
+                        savedStateHandle["recent_locations"] = RecentLocationSerializer.serializeLocationsList(it)
                     }
                 }
             }
         }
 
     }
-
-
 
 
     private fun loadDistrictsIf() {
@@ -170,31 +170,26 @@ class LocationViewModel @Inject constructor(
         }
     }
 
-    private fun loadLocations(context: Context) {
-        _locations.value = readJsonFromAssets(context)
+    private fun loadLocations(context: Context, countryCode:String) {
+        _locations.value = readJsonFromAssets(context, countryCode)
     }
 
 
-    // Function to read JSON from assets and parse it into StateMap
-    private fun readJsonFromAssets(context: Context): StateMap? {
-        return try {
-            val json = loadJsonFromAssets(context)
-            if (json != null) {
-                parseJson(json)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
+    private fun readJsonFromAssets(context: Context, countryCode: String): Map<String, State>? =
+        runCatching {
+            loadJsonFromAssets(context, countryCode)?.let { parseJson(it) }
+        }.getOrNull()
 
-    // Helper function to load the raw JSON from the assets folder
-    private fun loadJsonFromAssets(context: Context): String? {
+
+    private fun loadJsonFromAssets(context: Context, countryCode:String): String? {
         return try {
             val assetManager = context.assets
-            val inputStream: InputStream = assetManager.open("in_locations.json")
+            val inputStream: InputStream = when(countryCode){
+                "IN" -> assetManager.open("in_locations.json")
+                else -> {
+                    throw UnsupportedOperationException("Invalid country user")
+                }
+            }
             val reader = BufferedReader(InputStreamReader(inputStream))
             val stringBuilder = StringBuilder()
             var line: String?
@@ -209,11 +204,11 @@ class LocationViewModel @Inject constructor(
         }
     }
 
-    // Function to parse the JSON into StateMap
-    private fun parseJson(json: String): StateMap {
-        val gson = Gson()
-        val type = object : TypeToken<StateMap>() {}.type
-        return gson.fromJson(json, type)
+
+
+    private fun parseJson(data: String): Map<String, State> {
+        val json = Json { ignoreUnknownKeys = true }
+        return json.decodeFromString<Map<String, State>>(data)
     }
 
 
@@ -263,7 +258,6 @@ class LocationViewModel @Inject constructor(
                 if (coordinates != null && !isAnyLocationCaptured) {
                     setLoading(false)
                     setLocationCaptured(true)
-                    Log.d(TAG, "Precise: $coordinates")
                     handleLocationUpdate(
                         coordinates.latitude,
                         coordinates.longitude,
@@ -273,23 +267,14 @@ class LocationViewModel @Inject constructor(
 
                         if (it) {
                             Handler(Looper.getMainLooper()).post {
-                                Toast.makeText(
-                                    context,
-                                    "Current Location is Retrieved",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                ShortToast(context, "Current Location is Retrieved")
                             }
 
                         } else {
 
                             Handler(Looper.getMainLooper()).post {
-                                Toast.makeText(
-                                    context,
-                                    "Failed to Retrieve Current Location",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                ShortToast(context, "Failed to Retrieve Current Location")
                             }
-
 
                         }
 
@@ -302,7 +287,6 @@ class LocationViewModel @Inject constructor(
             callbackApproximateLocationUpdate = { coordinates ->
                 if (coordinates != null && !isAnyLocationCaptured) {
                     setLocationCaptured(true)
-                    Log.d(TAG, "Approximate: $coordinates")
                     handleLocationUpdate(
                         coordinates.latitude,
                         coordinates.longitude,
@@ -311,24 +295,13 @@ class LocationViewModel @Inject constructor(
                     ) {
 
                         if (it) {
-                            val handler = Handler(Looper.getMainLooper())
-                            handler.post {
-                                Toast.makeText(
-                                    context,
-                                    "Current Location is Retrieved",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                            Handler(Looper.getMainLooper()).post {
+                                ShortToast(context, "Current Location is Retrieved")
                             }
                         } else {
 
-                            val handler = Handler(Looper.getMainLooper())
-
-                            handler.post {
-                                Toast.makeText(
-                                    context,
-                                    "Failed to Retrieve Current Location",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                            Handler(Looper.getMainLooper()).post {
+                                ShortToast(context, "Failed to Retrieve Current Location")
                             }
                         }
                     }
@@ -356,8 +329,6 @@ class LocationViewModel @Inject constructor(
             }
         }
     }
-
-
 
 
     fun enableLoc(
@@ -422,7 +393,6 @@ class LocationViewModel @Inject constructor(
     private val _citySuggestions = MutableStateFlow<List<AutocompletePrediction>>(emptyList())
     val citySuggestions = _citySuggestions.asStateFlow()
 
-    // Function to fetch cities from Google Places API
     fun fetchCities(query: String, placesClient: PlacesClient) {
 
         if (query.isEmpty()) return
@@ -455,30 +425,32 @@ class LocationViewModel @Inject constructor(
         lon: Double,
         type: String,
         context: Context,
-        callback: (Boolean) -> Unit,
+        onGeoCallBack: (Boolean) -> Unit,
     ) {
         viewModelScope.launch {
             isAnyLocationCaptured = true
 
-            val addressName = withContext(Dispatchers.IO) {
+            val geoResult = withContext(Dispatchers.IO) {
                 getAddressName(context, lat, lon) {
-                    callback(false)
-                } // Assuming this returns null or a valid address
+                    onGeoCallBack(false)
+                }
             }
+
+            val addressName  = geoResult?.first
 
             if (addressName != null) {
                 _currentLocation.value = CurrentLocation(
                     lat,
                     lon,
                     addressName,
-                    type
+                    type,
+                    geoResult.second
                 )
                 setLoading(false)
-                callback(true)
+                onGeoCallBack(true)
             } else {
                 setLoading(false)
-                // Handle the error
-                callback(false)
+                onGeoCallBack(false)
             }
         }
 
@@ -490,12 +462,12 @@ class LocationViewModel @Inject constructor(
         lat: Double,
         lon: Double,
         onError: (String) -> Unit,
-    ): String? = suspendCoroutine { continuation ->
-        LocationManager.getAddressName(context, lat, lon, onSuccess = { result ->
-            if (result != null) {
-                continuation.resume(result.toString()) // Resume with the result
+    ): Pair<String?, String?>? = suspendCoroutine { continuation ->
+        LocationManager.getAddressName(context, lat, lon, { address, countryCode ->
+            if (address != null) {
+                continuation.resume(Pair(address.toString(), countryCode))
             } else {
-                continuation.resume(null) // Resume with null if there's an error
+                continuation.resume(null)
             }
         }) {
             onError(it)

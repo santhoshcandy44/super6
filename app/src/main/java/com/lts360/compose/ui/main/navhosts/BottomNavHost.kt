@@ -1,8 +1,6 @@
 package com.lts360.compose.ui.main.navhosts
 
 import android.content.Intent
-import android.util.Log
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,11 +12,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.lts360.app.database.models.app.Board
 import com.lts360.app.database.models.chat.ChatUser
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.navhost.noTransitionComposable
 import com.lts360.compose.ui.auth.navhost.slideComposable
@@ -38,7 +34,7 @@ import com.lts360.compose.ui.services.FeedUserDetailedServiceInfoScreen
 import com.lts360.compose.ui.services.FeedUserImagesSliderScreen
 import com.lts360.compose.ui.services.ImagesSliderScreen
 import com.lts360.compose.ui.services.ServiceOwnerProfileViewModel
-import com.lts360.compose.ui.theme.ThemeModeSettingsActivity
+import com.lts360.compose.ui.settings.SettingsActivity
 import com.lts360.compose.ui.usedproducts.DetailedUsedProductListingScreen
 import com.lts360.compose.ui.usedproducts.FeedUserDetailedSecondsInfoScreen
 import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
@@ -577,7 +573,7 @@ fun BottomNavHost(
                     context.startActivity(
                         Intent(
                             context,
-                            ThemeModeSettingsActivity::class.java
+                            SettingsActivity::class.java
                         ).apply {
                             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                         })

@@ -3,14 +3,11 @@ package com.lts360.compose.ui.main.navhosts.routes
 import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.app.database.models.profile.UserProfile
-import com.lts360.app.database.models.profile.UserProfileDetails
 import com.lts360.compose.ui.auth.AccountType
-import com.lts360.compose.ui.onboarding.navhost.OnBoardingScreen
-import com.lts360.compose.ui.viewmodels.StateMap
+import com.lts360.compose.ui.main.State
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-
 
 @Serializable
 sealed class MainRoutes  {
@@ -29,7 +26,6 @@ sealed class MainRoutes  {
     data object GuestChooseIndustries  : MainRoutes()
 
 }
-
 
 @Serializable
 sealed class BottomNavRoutes {
@@ -107,7 +103,6 @@ sealed class  BookMarkRoutes{
 @Serializable
 sealed class AccountAndProfileSettingsRoutes{
 
-
     @Serializable
     data object Profile
 
@@ -151,26 +146,22 @@ sealed class LocationSetUpRoutes{
 
 
 
-object StateMapSerializer{
-    // Function to serialize a list of EditableService objects to a JSON string
-    fun serializeLocationsList(stateMap: StateMap): String {
-        return Json.encodeToString(stateMap)  // The default serializer for the List type is automatically used
+object StateSerializer{
+    fun serializeLocationsList(stateMap:  Map<String, State>): String {
+        return Json.encodeToString(stateMap)
     }
 
-    // Function to deserialize a JSON string back to a list of EditableService objects
-    fun deserializeLocationsList(stateMap: String): StateMap {
+    fun deserializeLocationsList(stateMap: String):  Map<String, State> {
         return Json.decodeFromString(stateMap)
     }
 }
 
 
 object RecentLocationSerializer{
-    // Function to serialize a list of EditableService objects to a JSON string
     fun serializeLocationsList(recentLocation: List<RecentLocation>): String {
-        return Json.encodeToString(recentLocation)  // The default serializer for the List type is automatically used
+        return Json.encodeToString(recentLocation)
     }
 
-    // Function to deserialize a JSON string back to a list of EditableService objects
     fun deserializeLocationsList(recentLocation: String): List<RecentLocation>{
         return Json.decodeFromString(recentLocation)
     }
@@ -178,30 +169,18 @@ object RecentLocationSerializer{
 
 object UserProfileSerializer{
 
-
-    fun serializeUserProfileDetails(userProfileDetails: UserProfileDetails): String {
-        return Json.encodeToString(userProfileDetails)  // The default serializer for the List type is automatically used
-    }
-
-    // Function to deserialize a JSON string back to a list of EditableService objects
-    fun deserializeUserProfileDetails(userProfileDetailsString: String): UserProfileDetails {
-        return Json.decodeFromString(userProfileDetailsString)
-    }
-
     fun serializeUserProfile(userProfile: UserProfile): String {
-        return Json.encodeToString(userProfile)  // The default serializer for the List type is automatically used
+        return Json.encodeToString(userProfile)
     }
 
-    // Function to deserialize a JSON string back to a list of EditableService objects
     fun deserializeUserProfile(userProfileString: String): UserProfile {
         return Json.decodeFromString(userProfileString)
     }
 
     fun serializeFeedUserProfileInfo(feedUserProfileInfo: FeedUserProfileInfo): String {
-        return Json.encodeToString(feedUserProfileInfo)  // The default serializer for the List type is automatically used
+        return Json.encodeToString(feedUserProfileInfo)
     }
 
-    // Function to deserialize a JSON string back to a list of EditableService objects
     fun deserializeFeedUserProfile(feedUserProfileString: String): FeedUserProfileInfo {
         return Json.decodeFromString(feedUserProfileString)
     }

@@ -14,7 +14,6 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
-import java.io.IOException
 import java.util.Locale
 
 
@@ -143,7 +142,7 @@ class LocationManager(
         }
     }
 
-    fun requestPreciseLocation() {
+    private fun requestPreciseLocation() {
         if (ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -161,24 +160,9 @@ class LocationManager(
             null
         )
 
-        /*
-           fusedLocationClient.lastLocation.addOnCompleteListener { task ->
-             if (task.isSuccessful && task.result != null) {
-                 val location = task.result
-                 val latitude = location?.latitude
-                 val longitude = location?.longitude
-                 Toast.makeText(context, "Last Known Precise Location: $latitude, $longitude", Toast.LENGTH_LONG).show()
-             } else {
-
-                 return@addOnCompleteListener null
-                 Toast.makeText(context, "Failed to get last known precise location", Toast.LENGTH_SHORT).show()
-             }
-         }
-         */
-
     }
 
-    fun requestApproximateLocation() {
+    private fun requestApproximateLocation() {
         if (ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -196,39 +180,26 @@ class LocationManager(
             null
         )
 
-        /*  fusedLocationClient.lastLocation.addOnCompleteListener { task ->
-              if (task.isSuccessful && task.result != null) {
-                  val location = task.result
-                  val latitude = location?.latitude
-                  val longitude = location?.longitude
-                  Toast.makeText(context, "Last Known Approximate Location: $latitude, $longitude", Toast.LENGTH_LONG).show()
-              } else {
-                  Toast.makeText(context, "Failed to get last known approximate location", Toast.LENGTH_SHORT).show()
-              }
-          } */
-
     }
 
 
     companion object {
 
         fun getAddressName(
-            context: Context, lat: Double, lon: Double,
-            onSuccess: (String?) -> Unit,
+            context: Context,
+            lat: Double, lon: Double,
+            onSuccess: (String?, String?) -> Unit,
             onError: (String) -> Unit,
         ) {
             val geocoder = Geocoder(context, Locale.getDefault())
 
             try {
+                // For API 33 and above
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    // For API 33 and above
                     geocoder.getFromLocation(lat, lon, 1, object : Geocoder.GeocodeListener {
                         override fun onGeocode(addresses: List<Address>) {
-                            val addressName = addresses.firstOrNull()?.getAddressLine(0)
                             addresses.firstOrNull()?.let { address ->
-                                // Extract the components from the Address object
-                                // Format the address string
-                                onSuccess(formatAddressLine(address))
+                                onSuccess(formatAddressLine(address), addresses.firstOrNull()?.countryCode)
                             }
                         }
 
@@ -237,22 +208,10 @@ class LocationManager(
                             throw error
                         }
                     })
-
-
                 } else {
-                    // For older APIs
                     @Suppress("DEPRECATION")
-                    try {
-                        val addresses = geocoder.getFromLocation(lat, lon, 1)
-                        onSuccess(addresses?.firstOrNull()?.getAddressLine(0))
-
-                    } catch (e: IOException) {
-
-                        e.message?.let {
-                            onError(it)
-                        }
-
-                    }
+                    val addresses = geocoder.getFromLocation(lat, lon, 1)
+                    onSuccess(addresses?.firstOrNull()?.getAddressLine(0), addresses?.firstOrNull()?.countryCode)
                 }
             } catch (e: Exception) {
                 e.message?.let {
@@ -263,7 +222,7 @@ class LocationManager(
         }
 
         private fun formatAddressLine(address: Address): String {
-            // Extract address components
+
             val thoroughfare = address.thoroughfare
             val subThoroughfare = address.subThoroughfare
             val subLocality = address.subLocality
@@ -273,7 +232,6 @@ class LocationManager(
             val country = address.countryName
             val postalCode = address.postalCode
 
-            // Format the address line
             return buildString {
                 if (!thoroughfare.isNullOrEmpty()) append("$thoroughfare, ")
                 if (!subThoroughfare.isNullOrEmpty()) append("$subThoroughfare, ")
@@ -284,7 +242,6 @@ class LocationManager(
                 if (!country.isNullOrEmpty()) append("$country, ")
                 if (!postalCode.isNullOrEmpty()) append(postalCode)
 
-                // Remove trailing comma and space if needed
                 if (endsWith(", ")) delete(length - 2, length)
             }
         }

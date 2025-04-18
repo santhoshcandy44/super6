@@ -21,6 +21,7 @@ import com.lts360.compose.ui.main.prefs.viewmodels.BoardPref
 import com.lts360.compose.ui.main.prefs.viewmodels.BoardsPreferencesRepository
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.onboarding.GuestIdUtil.generateGuestId
+import com.lts360.compose.ui.settings.viewmodels.RegionalSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -32,12 +33,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LocationAccessViewModel @Inject constructor(
-    val authRepository: AuthRepository,
-    private val locationRepository: LocationRepository,
-    val boardsPreferencesRepository: BoardsPreferencesRepository,
     val userProfileDao: UserProfileDao,
     val boardDao:BoardDao,
     tokenManager: TokenManager,
+    val authRepository: AuthRepository,
+    private val locationRepository: LocationRepository,
+    private val boardsPreferencesRepository: BoardsPreferencesRepository,
+    private val regionalSettingsRepository: RegionalSettingsRepository
 ) : ViewModel() {
 
 
@@ -237,6 +239,11 @@ class LocationAccessViewModel @Inject constructor(
             }
         }
 
+    }
+
+
+    fun selectCountry(isoCountryCode: String) {
+        regionalSettingsRepository.saveCountryToPreferences(isoCountryCode)
     }
 
 }

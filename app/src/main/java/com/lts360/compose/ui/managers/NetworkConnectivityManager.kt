@@ -155,7 +155,6 @@ class NetworkConnectivityManager @Inject constructor(@ApplicationContext context
                         handler.postDelayed(this, 1000)
                     } else {
                         statusCallBack(STATUS.STATUS_NOT_CONNECTED_ON_COMPLETED_JOB)
-
                     }
                 }
             }

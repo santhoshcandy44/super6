@@ -3,16 +3,20 @@ package com.lts360.test.job
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
 import com.lts360.api.app.AppClient
+import com.lts360.api.app.JobPostingsApiService
 import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.models.service.UsedProductListing
 import com.lts360.api.utils.ResultError
 import com.lts360.api.utils.mapExceptionToError
+import com.lts360.test.JobFilters
+import com.lts360.test.JobPosting
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.Json
 
 class JobsPageSource(
     private val pageSize: Int = 1,
@@ -21,7 +25,7 @@ class JobsPageSource(
     private val _initialLoadState = MutableStateFlow(true)
     val initialLoadState = _initialLoadState.asStateFlow()
 
-    private val _items = MutableStateFlow<List<UsedProductListing>>(emptyList())
+    private val _items = MutableStateFlow<List<JobPosting>>(emptyList())
     val items = _items.asStateFlow()
 
     private val _isLoadingItems = MutableStateFlow(false)
@@ -40,7 +44,7 @@ class JobsPageSource(
     val hasMoreItems = _hasMoreItems.asStateFlow()
 
 
-    private var page =  1
+    private var page = 1
     private var lastTimeStamp: String? = null
     private var lastTotalRelevance: String? = null
 
@@ -69,7 +73,6 @@ class JobsPageSource(
         }
 
 
-
     private var currentHasMoreItems: Boolean
         get() = _hasMoreItems.value
         set(value) {
@@ -90,42 +93,41 @@ class JobsPageSource(
         }
 
 
-
     private var currentAppendError: Boolean
         get() = _hasAppendError.value
         set(value) {
             _hasAppendError.value = value
         }
 
-    fun setRefreshingItems(value: Boolean){
-        _isRefreshingItems.value=value
+    fun setRefreshingItems(value: Boolean) {
+        _isRefreshingItems.value = value
     }
 
-    fun setNetWorkError(value: Boolean){
-        currentNetworkError=value
+    fun setNetWorkError(value: Boolean) {
+        currentNetworkError = value
     }
 
 
-    fun updateServiceBookMarkedInfo(serviceId: Long, isBookMarked: Boolean) {
-        _items.update { currentItems ->
-            currentItems.map { service ->
-                if (service.productId == serviceId) {
-                    service.copy(isBookmarked = isBookMarked)
-                } else {
-                    service
-                }
-            }
-        }
+    fun updateServiceBookMarkedInfo(jobPostingId: Long, isBookMarked: Boolean) {
+        /*  _items.update { currentItems ->
+              currentItems.map { jobPosting ->
+                  if (jobPosting.id == jobPostingId) {
+                      jobPosting.copy(isBookmarked = isBookMarked)
+                  } else {
+                      jobPosting
+                  }
+              }
+          }*/
 
     }
 
-    suspend fun refresh(userId: Long, query: String?) {
+    suspend fun refresh(userId: Long, query: String?, jobFilters: JobFilters? = null) {
         if (isLoadingItems.value) {
             setRefreshingItems(false)
             return
         }
         _isRefreshingItems.value = true
-        nextPage(userId, query, isRefreshing = true)
+        nextPage(userId, query, isRefreshing = true, filters = jobFilters)
 
     }
 
@@ -140,16 +142,16 @@ class JobsPageSource(
             return
         }
         _isRefreshingItems.value = true
-        guestNextPage(userId, query,latitude, longitude, isRefreshing = true)
+        guestNextPage(userId, query, latitude, longitude, isRefreshing = true)
 
     }
 
-    suspend fun retry(userId: Long, query: String?) {
+    suspend fun retry(userId: Long, query: String?, jobFilters: JobFilters? = null) {
         if (isRefreshingItems.value) {
             return
         }
         currentAppendError = false
-        nextPage(userId, query)
+        nextPage(userId, query, filters = jobFilters)
     }
 
     suspend fun guestRetry(
@@ -161,95 +163,15 @@ class JobsPageSource(
         if (isRefreshingItems.value) {
             return
         }
-        currentAppendError= false
+        currentAppendError = false
         guestNextPage(userId, query, latitude, longitude)
     }
 
-    suspend fun nextPage(userId: Long, query: String?, isRefreshing: Boolean = false) {
-
-        if (!isRefreshing) {
-            if (_isLoadingItems.value || !_hasMoreItems.value) return
-            _isLoadingItems.value = true
-        }
-
-        mutex.withLock {
-
-            if (isRefreshing) {
-                resetState()
-            }
-
-            try {
-                val response = AppClient.instance.create(ManageUsedProductListingService::class.java)
-                    .getUsedProductListings(userId, page, query, lastTimeStamp, lastTotalRelevance)
-
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null && body.isSuccessful) {
-                        val services = Gson().fromJson(
-                            body.data,
-                            object : TypeToken<List<UsedProductListing>>() {}.type
-                        ) as List<UsedProductListing>
-
-                        if (services.isNotEmpty()) {
-                            if (lastTimeStamp == null) {
-                                currentLastTimeStamp = services[0].initialCheckAt
-                            }
-
-                            currentLastTotalRelevance = services.last().totalRelevance
-
-
-                            _items.value = if (isRefreshing) {
-                                services
-                            } else {
-                                _items.value + services
-                            }
-
-                            currentPage++
-                            currentHasMoreItems = services.size == pageSize
-                            currentAppendError = false
-
-                        } else {
-
-                            if (page == 1) {
-                                _items.value = emptyList()
-                            }
-                            currentHasMoreItems = false
-                        }
-                    } else {
-                        if (isRefreshing) {
-                            _items.value = emptyList()
-                            currentHasMoreItems = true
-                        }
-                        currentAppendError= true
-                    }
-                } else {
-                    if (isRefreshing) {
-                        _items.value = emptyList()
-                        currentHasMoreItems= true
-                    }
-                    currentAppendError = true
-                }
-
-                currentNetworkError=false
-            }
-            catch (c:CancellationException){
-                throw c
-            }
-            catch (e: Exception) {
-                e.printStackTrace()
-                handleError(e, isRefreshing)
-            } finally {
-                finalizeLoad(isRefreshing)
-            }
-        }
-    }
-
-
-    suspend fun guestNextPage(
-        userId: Long, query: String?,
-        latitude: Double? = null,
-        longitude: Double? = null,
+    suspend fun nextPage(
+        userId: Long,
+        query: String?,
         isRefreshing: Boolean = false,
+        filters: JobFilters? = null
     ) {
 
         if (!isRefreshing) {
@@ -264,37 +186,44 @@ class JobsPageSource(
             }
 
             try {
-                val response = AppClient.instance.create(ManageUsedProductListingService::class.java)
-                    .guestGetUsedProductListings(
+                val response = AppClient.instance.create(JobPostingsApiService::class.java)
+                    .getJobListings(
                         userId, page, query, lastTimeStamp, lastTotalRelevance,
-                        latitude, longitude)
+
+                        workModes = filters?.workModes?.joinToString(",") { it.value },
+                        salaryMin = filters?.salaryRange?.min,
+                        salaryMax = filters?.salaryRange?.max
+                    )
 
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body != null && body.isSuccessful) {
-                        val services = Gson().fromJson(
-                            body.data,
-                            object : TypeToken<List<UsedProductListing>>() {}.type
-                        ) as List<UsedProductListing>
 
-                        if (services.isNotEmpty()) {
+                        val json = Json {
+                            ignoreUnknownKeys = true
+                        }
+
+                        val jobPostings = json.decodeFromString<List<JobPosting>>(body.data)
+
+                        if (jobPostings.isNotEmpty()) {
                             if (lastTimeStamp == null) {
-                                currentLastTimeStamp = services[0].initialCheckAt
+                                currentLastTimeStamp = jobPostings[0].initialCheckAt
                             }
-                            currentLastTotalRelevance = services.last().totalRelevance
 
+                            currentLastTotalRelevance = jobPostings.last().totalRelevance
 
                             _items.value = if (isRefreshing) {
-                                services
+                                jobPostings
                             } else {
-                                _items.value + services
+                                _items.value + jobPostings
                             }
 
                             currentPage++
-                            currentHasMoreItems = services.size == pageSize
+                            currentHasMoreItems = jobPostings.size == pageSize
                             currentAppendError = false
 
                         } else {
+
                             if (page == 1) {
                                 _items.value = emptyList()
                             }
@@ -316,6 +245,8 @@ class JobsPageSource(
                 }
 
                 currentNetworkError = false
+            } catch (c: CancellationException) {
+                throw c
             } catch (e: Exception) {
                 e.printStackTrace()
                 handleError(e, isRefreshing)
@@ -323,6 +254,87 @@ class JobsPageSource(
                 finalizeLoad(isRefreshing)
             }
         }
+    }
+
+
+    suspend fun guestNextPage(
+        userId: Long, query: String?,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        isRefreshing: Boolean = false,
+    ) {
+
+        /*        if (!isRefreshing) {
+                    if (_isLoadingItems.value || !_hasMoreItems.value) return
+                    _isLoadingItems.value = true
+                }
+
+                mutex.withLock {
+
+                    if (isRefreshing) {
+                        resetState()
+                    }
+
+                    try {
+                        val response = AppClient.instance.create(ManageUsedProductListingService::class.java)
+                            .guestGetUsedProductListings(
+                                userId, page, query, lastTimeStamp, lastTotalRelevance,
+                                latitude, longitude)
+
+                        if (response.isSuccessful) {
+                            val body = response.body()
+                            if (body != null && body.isSuccessful) {
+                                val services = Gson().fromJson(
+                                    body.data,
+                                    object : TypeToken<List<UsedProductListing>>() {}.type
+                                ) as List<UsedProductListing>
+
+                                if (services.isNotEmpty()) {
+                                    if (lastTimeStamp == null) {
+                                        currentLastTimeStamp = services[0].initialCheckAt
+                                    }
+                                    currentLastTotalRelevance = services.last().totalRelevance
+
+
+                                    _items.value = if (isRefreshing) {
+                                        services
+                                    } else {
+                                        _items.value + services
+                                    }
+
+                                    currentPage++
+                                    currentHasMoreItems = services.size == pageSize
+                                    currentAppendError = false
+
+                                } else {
+                                    if (page == 1) {
+                                        _items.value = emptyList()
+                                    }
+                                    currentHasMoreItems = false
+                                }
+                            } else {
+                                if (isRefreshing) {
+                                    _items.value = emptyList()
+                                    currentHasMoreItems = true
+                                }
+                                currentAppendError = true
+                            }
+                        } else {
+                            if (isRefreshing) {
+                                _items.value = emptyList()
+                                currentHasMoreItems = true
+                            }
+                            currentAppendError = true
+                        }
+
+                        currentNetworkError = false
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        handleError(e, isRefreshing)
+                    } finally {
+                        finalizeLoad(isRefreshing)
+                    }
+                }*/
     }
 
 
@@ -343,14 +355,14 @@ class JobsPageSource(
             if (error is ResultError.NoInternet) {
                 currentNetworkError = true
             } else {
-                if(currentNetworkError){
+                if (currentNetworkError) {
                     setNetWorkError(false)
                 }
                 currentAppendError = true
             }
         } else {
 
-            if (error is ResultError.NoInternet && page==1) {
+            if (error is ResultError.NoInternet && page == 1) {
                 currentNetworkError = true
             } else {
                 currentAppendError = true

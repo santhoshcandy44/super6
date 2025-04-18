@@ -55,11 +55,12 @@ android {
         debug {
             buildConfigField("String", "BASE_URL", "\"http://192.168.217.85:3000\"")
             buildConfigField("String", "SOCKET_BASE_URL", "\"http://192.97.217.85:3080\"")
-           /* buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
+      /*      buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
             buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")*/
             buildConfigField("String", "REFERER", "\"referer.lts360.com\"")
             buildConfigField("String", "GOOGLE_SIGN_IN_OAUTH_WEB_CLIENT_ID", "\"300991981824-m4ovoojo09sklaqcvijandmnndduda0r.apps.googleusercontent.com\"")
         }
+
         release {
             buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
             buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")

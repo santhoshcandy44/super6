@@ -376,7 +376,7 @@ fun   MoreScreen(
                                 color = Color(
                                     0xFF007cf9
                                 ),
-                                iconRes = R.drawable.ic_light_settings,
+                                iconRes = R.drawable.ic_light_login_user,
                                 text = "Account and Profile Settings"
                             ) {
 
@@ -509,7 +509,7 @@ fun   MoreScreen(
                     ) {
                         MoreSectionItem(
                             color = Color.Black,
-                            iconRes = R.drawable.ic_light_theme_mode, text = "Theme Mode"
+                            iconRes = R.drawable.ic_light_settings, text = "Settings"
                         ) {
                             onNavigateUpThemeModeSettings()
                         }

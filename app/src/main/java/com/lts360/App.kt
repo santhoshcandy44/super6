@@ -3,7 +3,6 @@ package com.lts360
 
 import android.app.Activity
 import android.app.Application
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -19,7 +18,6 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
 import coil3.gif.AnimatedImageDecoder
-import coil3.imageLoader
 import coil3.request.CachePolicy
 import coil3.request.allowHardware
 import com.lts360.api.app.AppClient
@@ -34,7 +32,7 @@ import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.main.MainActivity
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import com.lts360.compose.ui.theme.ThemePreferences
+import com.lts360.compose.ui.settings.viewmodels.RegionalSettingsRepository
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,6 +62,9 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
     lateinit var tokenManager: TokenManager
 
     @Inject
+    lateinit var regionalSettingsRepository: RegionalSettingsRepository
+
+    @Inject
     lateinit var appDatabase: AppDatabase
 
     @Inject
@@ -80,7 +81,6 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
 
     companion object {
         var isAppInForeground = false
-
     }
 
     var isInitialStart = true
@@ -95,8 +95,6 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
     lateinit var chatUsersImageLoader: ImageLoader
         private set
 
-    @Inject
-    lateinit var themePreferences: ThemePreferences
 
     override fun onCreate() {
         super.onCreate()
@@ -153,7 +151,7 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
         UserSharedPreferencesManager.initialize(applicationContext)
         AuthClient.init(applicationContext)
         CommonClient.init(applicationContext)
-        AppClient.init(this, tokenManager)
+        AppClient.init(this, tokenManager ,regionalSettingsRepository)
         /*        if (!Places.isInitialized()) {
                     Places.initialize(applicationContext, "<YOUR_GOOGLE_API_KEY>")
                 }*/
@@ -236,20 +234,11 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
     }
 
 
-    // Function to clear the memory cache manually
-    fun clearMemoryCache(context: Context) {
-        val imageLoader = context.imageLoader
-        // Clear the memory cache
-        imageLoader.memoryCache?.clear()
-    }
-
-
     fun reconnectSocket() {
         CoroutineScope(Dispatchers.IO).launch{
             socketManager.reconnect()
         }
     }
-
 
     fun destroySocketSocket() {
         socketManager.destroySocket()

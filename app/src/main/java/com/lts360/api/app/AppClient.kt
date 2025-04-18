@@ -4,7 +4,9 @@ import com.lts360.App
 import com.lts360.BuildConfig
 import com.lts360.api.auth.AuthInterceptor
 import com.lts360.api.auth.managers.TokenManager
+import com.lts360.api.utils.CountryHeaderInterceptor
 import com.lts360.api.utils.NoInternetInterceptor
+import com.lts360.compose.ui.settings.viewmodels.RegionalSettingsRepository
 import okhttp3.JavaNetCookieJar
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -14,8 +16,6 @@ import java.net.CookieHandler
 import java.net.CookieManager
 import java.util.concurrent.TimeUnit
 
-
-// Retrofit client with OkHttp and token refresh logic
 object AppClient {
 
     private const val BASE_URL = BuildConfig.BASE_URL
@@ -29,11 +29,13 @@ object AppClient {
     private var mediaDownloadRetrofit: Retrofit? = null
 
     private lateinit var tokenManager: TokenManager
+    private lateinit var regionalSettingsRepository: RegionalSettingsRepository
     private lateinit var appContext: App
 
-    fun init(app: App, tokenManager: TokenManager) {
+    fun init(app: App, tokenManager: TokenManager, repository: RegionalSettingsRepository) {
         appContext = app
         AppClient.tokenManager =tokenManager
+        regionalSettingsRepository = repository
     }
 
     private var interceptor: AuthInterceptor?=null
@@ -53,7 +55,7 @@ object AppClient {
             .addInterceptor(interceptor!!)
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
-            })
+            }).addInterceptor(CountryHeaderInterceptor(regionalSettingsRepository))
 
         return builder.build()
     }

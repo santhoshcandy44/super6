@@ -1,6 +1,7 @@
 package com.lts360.api.app
 
 import com.lts360.api.common.responses.ResponseReply
+import com.lts360.test.JobFilters
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -10,6 +11,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApplicantProfileApiService {
 
@@ -69,7 +71,18 @@ interface ApplicantProfileApiService {
 
 
 interface JobPostingsApiService {
-    @GET("api/app/serve/jobs/job-listings")
-    suspend fun gteJobPostings(): Response<ResponseReply>
+
+    @GET("api/app/serve/jobs/get-job-listings")
+    suspend fun getJobListings(
+        @Query("user_id") userId: Long,
+        @Query("page") page: Int,
+        @Query("s") query: String?,
+        @Query("last_timestamp") lastTimestamp: String?,
+        @Query("last_total_relevance") lastTotalRelevance: String?,
+        @Query("work_modes") workModes: String?=null,
+        @Query("salary_min") salaryMin: Int?=-1,
+        @Query("salary_max") salaryMax: Int?=-1
+    ): Response<ResponseReply>
+
 }
 

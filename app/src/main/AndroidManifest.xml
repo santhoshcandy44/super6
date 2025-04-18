@@ -170,7 +170,7 @@
 
             />
 
-        <activity android:name=".compose.ui.theme.ThemeModeSettingsActivity" />
+        <activity android:name=".compose.ui.settings.SettingsActivity" />
 
 
         <service

@@ -116,5 +116,6 @@ interface AuthService {
         @Header("Authorization") refreshToken: String,
     ): Response<ResponseReply>
 
-
+    @GET("api/auth-app/ip-country")
+    suspend fun getIPCountry(): Response<ResponseReply>
 }

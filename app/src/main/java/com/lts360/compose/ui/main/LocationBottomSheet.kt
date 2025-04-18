@@ -65,12 +65,17 @@ import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.compose.ui.viewmodels.LocationViewModel
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class StateLocation(
-    val latitude: Double,
-    val longitude: Double,
+data class State(
+    val state: String,
+    @SerialName("district_count")
+    val districtCount: Int,
+    @SerialName("state_location")
+    val stateLocation: Coordinates,
+    val districts: List<District>,
 )
 
 @Serializable
@@ -84,15 +89,6 @@ data class Coordinates(
     val latitude: Double,
     val longitude: Double,
 )
-
-@Serializable
-data class StateModel(
-    val state: String,
-    val district_count: Int,
-    val state_location: StateLocation,
-    val districts: List<District>,
-)
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -280,9 +276,7 @@ private fun LocationBottomSheetContent(
     val context = LocalContext.current
 
     val currentLocation by locationViewModel.currentLocation.collectAsState()
-    /*
-        val selectedLocationGeo by locationViewModel.selectedLocationGeo.collectAsState()
-    */
+
     val recentLocations by locationViewModel.recentLocations.collectAsState()
 
     val isLoading by locationViewModel.isLoading.collectAsState()
@@ -293,7 +287,6 @@ private fun LocationBottomSheetContent(
 
     val activity = context.findActivity() as ComponentActivity
 
-    // Registering the result launcher for intent sender resolution
     val resolutionLauncher = remember {
         activity.activityResultRegistry.register(
             "resolutionLauncher",
@@ -308,7 +301,6 @@ private fun LocationBottomSheetContent(
     }
 
 
-    // Remember the permissions launcher
     val requestPermissionsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -460,7 +452,6 @@ private fun LocationBottomSheetContent(
 
                             currentLocation?.let {
 
-                                // Current Location Section
                                 Text(
                                     text = "Current Location",
                                     color = MaterialTheme.colorScheme.primary,
@@ -494,7 +485,6 @@ private fun LocationBottomSheetContent(
 
                             selectedLocationGeo?.let {
 
-                                // Current Location Section
                                 Text(
                                     text = "Selected Location",
                                     color = MaterialTheme.colorScheme.primary,

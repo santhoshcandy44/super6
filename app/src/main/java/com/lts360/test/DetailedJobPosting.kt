@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.Business
 import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Commit
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Info
@@ -131,11 +132,13 @@ fun DetailedJobPosting(jobPosting: JobPosting) {
                                 WorkMode.REMOTE -> Icons.Outlined.Wifi
                                 WorkMode.HYBRID -> Icons.Outlined.Hub
                                 WorkMode.OFFICE -> Icons.Outlined.Business
+                                WorkMode.FLEXIBLE -> Icons.Outlined.Commit
                             },
                             text = when (jobPosting.workMode) {
                                 WorkMode.REMOTE -> "Remote"
                                 WorkMode.HYBRID -> "Hybrid"
-                                WorkMode.OFFICE -> "On-site"
+                                WorkMode.OFFICE -> "Office"
+                                WorkMode.FLEXIBLE -> "Flexible"
                             }
                         )
                     }

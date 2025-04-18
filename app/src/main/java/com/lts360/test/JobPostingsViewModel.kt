@@ -1,44 +1,55 @@
 package com.lts360.test
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
-import com.lts360.api.app.AppClient
-import com.lts360.api.app.JobPostingsApiService
-import com.lts360.api.common.errors.ErrorResponse
-import com.lts360.api.common.responses.ResponseReply
-import com.lts360.api.utils.Result
+import com.lts360.api.auth.managers.TokenManager
 import com.lts360.api.utils.ResultError
-import com.lts360.api.utils.mapExceptionToError
-import com.lts360.compose.ui.main.viewmodels.SecondsPageSource
+import com.lts360.app.database.daos.profile.UserLocationDao
+import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
+import com.lts360.compose.ui.settings.viewmodels.RegionalSettingsRepository
 import com.lts360.test.job.JobsPageSource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
-class JobPostingsViewModel @Inject constructor() : ViewModel(){
+class JobPostingsViewModel @Inject constructor(
+    val savedStateHandle: SavedStateHandle,
+    tokenManager: TokenManager,
+    private val guestUserLocationDao: UserLocationDao,
+    networkConnectivityManager: NetworkConnectivityManager,
+    private val regionalSettingsRepository: RegionalSettingsRepository
+
+) : ViewModel() {
+
+    val submittedQuery = savedStateHandle.get<String?>("submittedQuery")
+    val onlySearchBar = savedStateHandle.get<Boolean>("onlySearchBar") ?: false
+    private val key = savedStateHandle.get<Int>("key") ?: 0
 
     val userId = UserSharedPreferencesManager.userId
 
-    private val _isLoading = MutableStateFlow(true)
-    val isLoading = _isLoading.asStateFlow()
-
-
-    private val _jobPostings = MutableStateFlow<List<JobPosting>>(emptyList())
-    val jobPostings = _jobPostings.asStateFlow()
+    val countryCode = regionalSettingsRepository.getCountryFromPreferences()?.code
+        ?: Locale.getDefault().country.uppercase()
 
     private val _selectedJobPosting = MutableStateFlow<JobPosting?>(null)
     val selectedJobPosting = _selectedJobPosting.asStateFlow()
+
+
+    private val _showFilters = MutableStateFlow(false)
+    val showFilters = _showFilters.asStateFlow()
+
+    private val _filters = MutableStateFlow(JobFilters())
+    val filters = _filters.asStateFlow()
 
     private val _error = MutableStateFlow<ResultError?>(null)
     val error = _error.asStateFlow()
@@ -50,15 +61,39 @@ class JobPostingsViewModel @Inject constructor() : ViewModel(){
     private val _lastLoadedItemPosition = MutableStateFlow(-1)
     val lastLoadedItemPosition = _lastLoadedItemPosition.asStateFlow()
 
+    val connectivityManager = networkConnectivityManager
+
+    val isGuest = tokenManager.isGuest()
+
+    private var loadingItemsJob: Job? = null
+
     init {
-        onGetJobPostings(onSuccess = {
-            _isLoading.value = false
-        }, onError = {
-            _isLoading.value = false
-        })
+
+        if (isGuest) {
+            viewModelScope.launch {
+
+                launch {
+                    val userLocation = guestUserLocationDao.getLocation(userId)
+                    pageSource.guestNextPage(
+                        userId,
+                        submittedQuery,
+                        userLocation?.latitude,
+                        userLocation?.longitude
+                    )
+                }.join()
+
+            }
+        } else {
+            loadingItemsJob = viewModelScope.launch {
+                launch {
+                    pageSource.nextPage(userId, submittedQuery)
+                }.join()
+            }
+        }
+
     }
 
-    fun updateSelectedJobPosting(selectedJobPosting:JobPosting){
+    fun updateSelectedJobPosting(selectedJobPosting: JobPosting) {
         _selectedJobPosting.value = selectedJobPosting
     }
 
@@ -68,67 +103,80 @@ class JobPostingsViewModel @Inject constructor() : ViewModel(){
         }
     }
 
-    fun onGetJobPostings(
-        onSuccess: () -> Unit = {},
-        onError: (message: String?) -> Unit = {}
-    ) {
-
+    fun updateJobFiltersAndRefresh(userId: Long, submittedQuery: String, filters: JobFilters) {
         viewModelScope.launch {
-            try {
-                when (val result = getJobPostings()) {
-                    is Result.Success -> {
+            _filters.value = filters
+            refresh(userId, submittedQuery, filters)
+        }
+    }
 
-                        val json = Json {
-                            ignoreUnknownKeys = true
-                        }
-                        val data = json.decodeFromString<List<JobPosting>>(result.data.data)
-                        _jobPostings.value = data
-                        onSuccess()
-                        _error.value?.also { _error.value = null }
 
-                    }
+    fun updateShowFilters(isShowFilters: Boolean) {
+        viewModelScope.launch {
+            _showFilters.value = isShowFilters
+        }
+    }
 
-                    is Result.Error -> {
-                        _error.value = mapExceptionToError(result.error)
-                        onError(result.error.message)
-                    }
 
+    fun nextPage(
+        userId: Long, query: String?,
+        filters: JobFilters? = null
+    ) {
+        viewModelScope.launch {
+            if (isGuest) {
+
+                val userLocation = guestUserLocationDao.getLocation(userId)
+                if (userLocation != null) {
+                    pageSource.guestNextPage(
+                        userId, query, userLocation.latitude,
+                        userLocation.longitude
+                    )
+                } else {
+                    pageSource.guestNextPage(userId, query)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                onError(e.message)
+
+            } else {
+                loadingItemsJob?.cancel()
+                loadingItemsJob = launch {
+                    pageSource.nextPage(userId, query, filters = filters)
+                }
             }
         }
     }
 
-    private suspend fun getJobPostings(): Result<ResponseReply> {
-
-        return try {
-
-            AppClient.instance.create(JobPostingsApiService::class.java)
-                .gteJobPostings()
-                .let { response ->
-                    if (response.isSuccessful) {
-                        val body = response.body()
-                        if (body != null && body.isSuccessful) {
-                            Result.Success(body)
-                        } else {
-                            val errorMessage = "Failed, try again later..."
-                            Result.Error(Exception(errorMessage))
-                        }
-                    } else {
-                        val errorBody = response.errorBody()?.string()
-                        val errorMessage = try {
-                            Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                        } catch (e: Exception) {
-                            "An unknown error occurred"
-                        }
-                        Result.Error(Exception(errorMessage))
-                    }
+    fun refresh(userId: Long, query: String?, filters: JobFilters?) {
+        viewModelScope.launch {
+            if (isGuest) {
+                val location = guestUserLocationDao.getLocation(userId)
+                pageSource.guestRefresh(
+                    userId,
+                    query,
+                    location?.latitude,
+                    location?.longitude
+                )
+            } else {
+                loadingItemsJob?.cancel()
+                loadingItemsJob = launch {
+                    pageSource.refresh(userId, query, filters)
                 }
+            }
+        }
+    }
 
-        } catch (t: Throwable) {
-            Result.Error(t)
+
+    fun retry(userId: Long, query: String?, filters: JobFilters?) {
+        viewModelScope.launch {
+            if (isGuest) {
+                val location = guestUserLocationDao.getLocation(userId)
+                pageSource.guestRetry(
+                    userId,
+                    query,
+                    location?.latitude,
+                    location?.longitude
+                )
+            } else {
+                pageSource.retry(userId, query, filters)
+            }
         }
     }
 
@@ -227,10 +275,16 @@ data class JobPosting(
     @SerialName("organization")
     val organization: Organization,
     @SerialName("recruiter")
-    val recruiter:Recruiter
+    val recruiter: Recruiter,
+
+    @SerialName("initial_check_at")
+    var initialCheckAt: String?,
+
+    @SerialName("total_relevance")
+    var totalRelevance: String?
 )
 
-fun JobPosting.formattedPostedBy():String{
+fun JobPosting.formattedPostedBy(): String {
     val zonedDateTime = ZonedDateTime.parse(postedAt)
     val formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.ENGLISH)
     return zonedDateTime.format(formatter)
@@ -269,6 +323,7 @@ data class Organization(
     @SerialName("postal_code")
     val postalCode: String? = null
 )
+
 @Serializable
 data class Recruiter(
     val id: Int,
@@ -297,21 +352,27 @@ data class Recruiter(
 )
 
 
-enum class Role{
+enum class Role {
     RECRUITER,
     HIRING_MANAGER,
     TALENT_ACQUISITION,
     HR
 }
-enum class WorkMode {
+
+@Serializable
+enum class WorkMode(val displayName: String, val value: String) {
+
     @SerialName("remote")
-    REMOTE,
+    REMOTE("Remote", "remote"),
 
     @SerialName("office")
-    OFFICE,
+    OFFICE("Office", "office"),
 
     @SerialName("hybrid")
-    HYBRID
+    HYBRID("Hybrid", "hybrid"),
+
+    @SerialName("flexible")
+    FLEXIBLE("Flexible", "flexible");
 }
 
 enum class ExperienceType {

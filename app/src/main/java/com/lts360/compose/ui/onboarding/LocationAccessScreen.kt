@@ -15,7 +15,6 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -38,6 +37,7 @@ import com.lts360.compose.ui.main.OnBoardUserLocationBottomSheetScreen
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.onboarding.viewmodels.LocationAccessViewModel
 import com.lts360.compose.ui.theme.icons
+import com.lts360.libs.ui.ShortToast
 import kotlinx.coroutines.launch
 
 
@@ -46,7 +46,7 @@ import kotlinx.coroutines.launch
 fun LocationAccessScreen(
     type: String,
     viewModel: LocationAccessViewModel = hiltViewModel(),
-    onLocationUpdated:()->Unit={}
+    onLocationUpdated: () -> Unit = {}
 ) {
 
     val coroutineScope = rememberCoroutineScope()
@@ -64,18 +64,14 @@ fun LocationAccessScreen(
         }
     }
 
-
     val isLoading by viewModel.isLoading.collectAsState()
-
-
     val context = LocalContext.current
-
 
     BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
 
-            if(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded){
+            if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
                 if (type == "guest") {
                     OnBoardGuestUserLocationAccessBottomSheetScreen(
                         bottomSheetScaffoldState.bottomSheetState.currentValue,
@@ -125,23 +121,24 @@ fun LocationAccessScreen(
                     OnBoardUserLocationBottomSheetScreen(
                         bottomSheetScaffoldState.bottomSheetState.currentValue,
                         { currentLocation ->
-                            viewModel.setCurrentLocation(currentLocation, {
+                            viewModel.setCurrentLocation(currentLocation, { message ->
                                 onLocationUpdated()
-                                Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                    .show()
+                                currentLocation.countryCode?.let {
+                                    viewModel.selectCountry(it)
+                                }
+
+                                ShortToast(context, message)
 
                             }) {
-                                Toast
-                                    .makeText(context, it, Toast.LENGTH_SHORT)
-                                    .show()
+                                ShortToast(context, it)
                             }
                         },
                         { recentLocation ->
                             viewModel.setRecentLocation(recentLocation, {
                                 onLocationUpdated()
-                                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                ShortToast(context, it)
                             }) {
-                                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                ShortToast(context, it)
                             }
                         },
                         { district ->
@@ -153,13 +150,9 @@ fun LocationAccessScreen(
                                     "approximate"
                                 ), {
                                     onLocationUpdated()
-                                    Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                        .show()
+                                    ShortToast(context, it)
                                 }) {
-                                Toast
-                                    .makeText(context, it, Toast.LENGTH_SHORT)
-                                    .show()
-
+                                ShortToast(context, it)
                             }
                         },
                         {
@@ -174,64 +167,59 @@ fun LocationAccessScreen(
         },
         sheetShape = RectangleShape,
         sheetDragHandle = null,
-        sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
-//            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        sheetPeekHeight = 0.dp,
+        sheetSwipeEnabled = false,
     ) { innerPadding ->
 
-        Scaffold { nestedInnerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-                    .padding(nestedInnerPadding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .padding(innerPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
 
-                Image(
-                    painter = painterResource(MaterialTheme.icons.locationAccessOnBoarding), // Your location image
-                    contentDescription = "Location",
-                    modifier = Modifier.size(96.dp)
-                )
+            Image(
+                painter = painterResource(MaterialTheme.icons.locationAccessOnBoarding), // Your location image
+                contentDescription = "Location",
+                modifier = Modifier.size(96.dp)
+            )
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
 
-                Text(
-                    text = "Allow Your Location",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+            Text(
+                text = "Allow Your Location",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
 
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "We need your location to provide personalized experiences.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-                Button(onClick = {
-                    coroutineScope.launch {
-                        bottomSheetScaffoldState.bottomSheetState.expand()
-                    }
-                }) {
-                    Text(text = "Sure, I'd like that")
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "We need your location to provide personalized experiences.",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(horizontal = 16.dp),
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(onClick = {
+                coroutineScope.launch {
+                    bottomSheetScaffoldState.bottomSheetState.expand()
                 }
-
-
-                /*
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Text("Skip Now", style = MaterialTheme.typography.bodyLarge)
-                */
+            }) {
+                Text(text = "Sure, I'd like that")
             }
+
+
+            /*
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text("Skip Now", style = MaterialTheme.typography.bodyLarge)
+            */
         }
 
-
     }
-
 
 }
 

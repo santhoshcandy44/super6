@@ -35,14 +35,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.compose.ui.theme.viewmodels.ThemeMode
 import com.lts360.compose.ui.theme.viewmodels.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ThemeSettingsScreen(
-    onPopBackStack:()-> Unit,
-    viewModel: ThemeViewModel = hiltViewModel()) {
+fun ThemeSettingsScreen(viewModel: ThemeViewModel = hiltViewModel(),
+    onPopBackStack:()-> Unit) {
 
     val themeMode by viewModel.themeMode.collectAsState()
 
@@ -50,11 +50,12 @@ fun ThemeSettingsScreen(
     val isDarkMode by remember(themeMode) { mutableStateOf(themeMode == 1) }
 
 
-
     Scaffold( topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onPopBackStack) {
+                    IconButton(onClick = dropUnlessResumed {
+                        onPopBackStack()
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back Icon"

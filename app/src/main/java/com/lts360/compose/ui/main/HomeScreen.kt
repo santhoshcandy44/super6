@@ -392,7 +392,7 @@ fun HomeScreen(
 
         }
 
-        if (modalBottomSheetState.currentValue == SheetValue.Expanded) {
+        if (modalBottomSheetState.isVisible) {
 
             val bottomSheetNavController = rememberNavController()
 
@@ -425,7 +425,6 @@ fun HomeScreen(
                             }
                         }
                     }
-
 
                     fun reloadItems() {
                         if (boardLabels[pagerState.currentPage] == "services") {

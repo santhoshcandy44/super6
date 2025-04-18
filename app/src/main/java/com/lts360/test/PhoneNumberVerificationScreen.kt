@@ -1,3 +1,4 @@
+/*
 package com.lts360.test
 
 
@@ -191,9 +192,11 @@ fun CountryBottomSheetScreen() {
                 BasicTextField(
                     value = phoneNumber,
                     onValueChange = { phoneNumberText ->
-                       /* if (phoneNumberText.length <= 10 && phoneNumberText.all { it.isDigit() }) {
+                       */
+/* if (phoneNumberText.length <= 10 && phoneNumberText.all { it.isDigit() }) {
                             phoneNumber = phoneNumberText
-                        }*/
+                        }*//*
+
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier
@@ -525,4 +528,4 @@ fun PinVerificationAppOpenScreen() {
         }
 
     }
-}
+}*/
