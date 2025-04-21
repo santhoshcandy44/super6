@@ -32,7 +32,9 @@ fun JobNavHost() {
 
         composable<JobRoutes.JobDetails> {
             viewModel.selectedJobPosting.value?.let {
-                DetailedJobPosting(it)
+                DetailedJobPosting(it){
+                    navController.popBackStack()
+                }
             }
         }
     }

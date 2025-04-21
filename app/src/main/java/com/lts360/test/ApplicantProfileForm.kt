@@ -1385,10 +1385,14 @@ private fun EducationForm(
                         label = "Start Year",
                         onValueChange = {},
                         readOnly = true,
-                        trailingIcon = Icons.Default.Edit,
-                        onTrailingIconClick = {
-                            selectedField = index to "start"
-                            showDialog = true
+                        trailingIcon = {
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier =
+                            Modifier
+                                .size(24.dp)
+                                .clickable {
+                                selectedField = index to "start"
+                                showDialog = true
+                            })
                         },
                         errorMessage = entry.error?.startYear
                     )
@@ -1434,11 +1438,17 @@ private fun EducationForm(
                             },
                             onValueChange = {},
                             readOnly = true,
-                            trailingIcon = Icons.Default.Edit,
-                            onTrailingIconClick = {
-                                selectedField = index to "end"
-                                showDialog = true
+
+                            trailingIcon = {
+                                Icon(Icons.Default.Edit, contentDescription = null, modifier =
+                                    Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                        selectedField = index to "end"
+                                        showDialog = true
+                                    })
                             },
+
                             errorMessage = entry.error?.endYear
                         )
 
@@ -1701,11 +1711,16 @@ private fun ExperienceForm(
                         onValueChange = {},
                         label = "Start Date (e.g., Jan 2020)",
                         readOnly = true,
-                        trailingIcon = Icons.Default.Edit,
-                        onTrailingIconClick = {
-                            selectedField = index to "start"
-                            showDialog = true
-                        }
+                        trailingIcon = {
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier =
+                                Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                    selectedField = index to "start"
+                                    showDialog = true
+                                })
+                        },
+
                     )
 
                     entry.error?.startDate?.let {
@@ -1726,11 +1741,16 @@ private fun ExperienceForm(
                             onValueChange = {},
                             label = "End Date (e.g., Dec 2023)",
                             readOnly = true,
-                            trailingIcon = Icons.Default.Edit,
-                            onTrailingIconClick = {
-                                selectedField = index to "end"
-                                showDialog = true
-                            }
+                            trailingIcon = {
+                                Icon(Icons.Default.Edit, contentDescription = null, modifier =
+                                    Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                        selectedField = index to "end"
+                                        showDialog = true
+                                    })
+                            },
+
                         )
 
                         entry.error?.endDate?.let {
@@ -1830,7 +1850,10 @@ fun EmploymentTypeDropdown(
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth(),
-            trailingIcon = Icons.Default.ArrowDropDown
+            trailingIcon = {
+                Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(24.dp))
+            },
+
         )
 
         ExposedDropdownMenu(
@@ -2719,19 +2742,21 @@ fun GenderSelector(
 }
 
 
+
+
 @Composable
 fun CustomTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
+    minHeight:Dp = 28.dp,
     readOnly: Boolean = false,
     singLine: Boolean = false,
     minLines: Int = 1,
     maxLines: Int = if (singLine) 1 else Int.MAX_VALUE,
-    trailingIcon: ImageVector? = null,
-    onTrailingIconClick: () -> Unit = {},
+    leadingIcon: @Composable () -> Unit = {},
+    trailingIcon: @Composable () -> Unit = {},
     onFocus: (Boolean) -> Unit = {},
     keyBoardOptions: KeyboardOptions = KeyboardOptions.Default,
     errorMessage: String? = null
@@ -2757,7 +2782,7 @@ fun CustomTextField(
                     ), RoundedCornerShape(8.dp)
                 )
                 .padding(horizontal = 16.dp, vertical = 8.dp)
-                .defaultMinSize(minHeight = 28.dp)
+                .defaultMinSize(minHeight = minHeight)
                 .onFocusChanged { focusState ->
                     onFocus(focusState.isFocused)
                 }
@@ -2773,13 +2798,7 @@ fun CustomTextField(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
-                    icon?.let {
-                        Icon(
-                            imageVector = it,
-                            contentDescription = "Search",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    leadingIcon()
 
                     Box(
                         modifier = Modifier
@@ -2796,30 +2815,23 @@ fun CustomTextField(
                                 )
                             )
                         }
+
                         innerTextField()
                     }
 
-
-                    trailingIcon?.let {
-                        Icon(
-                            imageVector = it,
-                            contentDescription = "Search",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    onTrailingIconClick()
-                                }
-                        )
-                    }
+                    trailingIcon()
 
                 }
             }
         )
+
         errorMessage?.let {
             ErrorText(errorMessage)
         }
     }
 }
+
+
 
 @Composable
 fun RectangleButton(

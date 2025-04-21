@@ -48,6 +48,9 @@ class JobPostingsViewModel @Inject constructor(
     private val _showFilters = MutableStateFlow(false)
     val showFilters = _showFilters.asStateFlow()
 
+    private val _filterCategory = MutableStateFlow(FilterCategory.WORK_MODE)
+    val filterCategory = _filterCategory.asStateFlow()
+
     private val _filters = MutableStateFlow(JobFilters())
     val filters = _filters.asStateFlow()
 
@@ -103,17 +106,29 @@ class JobPostingsViewModel @Inject constructor(
         }
     }
 
+
     fun updateJobFiltersAndRefresh(userId: Long, submittedQuery: String, filters: JobFilters) {
         viewModelScope.launch {
-            _filters.value = filters
+            updateJobFilters(filters)
             refresh(userId, submittedQuery, filters)
         }
     }
 
+    fun updateJobFilters(filters: JobFilters){
+        viewModelScope.launch {
+            _filters.value = filters
+        }
+    }
 
     fun updateShowFilters(isShowFilters: Boolean) {
         viewModelScope.launch {
             _showFilters.value = isShowFilters
+        }
+    }
+
+    fun updateShowFilters(filterCategory: FilterCategory) {
+        viewModelScope.launch {
+            _filterCategory.value = filterCategory
         }
     }
 

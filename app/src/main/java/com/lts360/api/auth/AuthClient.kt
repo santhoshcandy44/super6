@@ -12,8 +12,6 @@ import java.net.CookieHandler
 import java.net.CookieManager
 import java.util.concurrent.TimeUnit
 
-
-// Retrofit client with OkHttp and token refresh logic
 object AuthClient {
 
     private const val BASE_URL = BuildConfig.BASE_URL
@@ -22,7 +20,6 @@ object AuthClient {
 
     // Set the application context to use in interceptors
     fun init(context: Context) {
-
         appContext = context.applicationContext
     }
 

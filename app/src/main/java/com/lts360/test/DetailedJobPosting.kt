@@ -74,7 +74,7 @@ import com.lts360.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailedJobPosting(jobPosting: JobPosting) {
+fun DetailedJobPosting(jobPosting: JobPosting, onPopBackStack: ()-> Unit) {
     Scaffold { paddingValues ->
 
         LazyColumn(
@@ -84,9 +84,7 @@ fun DetailedJobPosting(jobPosting: JobPosting) {
         ) {
             item {
                 TopAppBar(title = {}, navigationIcon = {
-                    IconButton({
-
-                    }) {
+                    IconButton(onPopBackStack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = null)
                     }
                 })

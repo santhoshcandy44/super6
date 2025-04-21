@@ -5,7 +5,6 @@ import com.lts360.api.auth.managers.CriticalListener
 import com.lts360.api.auth.managers.RefreshTokenManager
 import com.lts360.api.auth.managers.RetryListener
 import com.lts360.api.auth.managers.TokenManager
-import com.lts360.api.models.service.Service
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,14 +25,11 @@ class AuthInterceptor @Inject constructor(
     private val tokenManager: TokenManager,
 ) : Interceptor {
 
-
     private val mutex = Mutex()
 
-    private val waitingJobs = mutableListOf<Job>() // List to hold jobs
+    private val waitingJobs = mutableListOf<Job>()
 
-    // Function that adds a job under a lock
-    private var parentJob = Job() // Separate parent job
-
+    private var parentJob = Job()
     var scope = CoroutineScope(Dispatchers.IO + parentJob)
 
 
@@ -41,33 +37,24 @@ class AuthInterceptor @Inject constructor(
         var request = chain.request()
         val signInMethod = tokenManager.getSignInMethod()
 
-        // Create a variable to hold the response
         var response: Response
-
-
-        // List to store all waiting jobs
 
         when (signInMethod) {
             "legacy_email" -> {
 
-                // Get the current ID token
                 val authToken = tokenManager.getAccessToken()
 
-                // Add Authorization header with the ID token
                 request = request.newBuilder()
                     .header("Authorization", "Bearer $authToken")
                     .build()
 
                 response = chain.proceed(request)
 
-                // If the token is expired, try to refresh it
                 if (response.code == 401) {
 
                     val isFirstJob = waitingJobs.isEmpty()
-//                    val index = waitingJobs.size
 
                     val deferredResult = CompletableDeferred<Response>()
-
 
                     val childJob = scope.launch {
 
@@ -111,14 +98,13 @@ class AuthInterceptor @Inject constructor(
                                                 .build()
                                             response = chain.proceed(request)
                                             deferredResult.complete(response)
-                                        }catch (e:Exception){
+                                        }catch (_:Exception){
                                             deferredResult.completeExceptionally(IOException("Unexpected behaviour"))
                                         }
                                     }
                                 }
                             )
 
-                            // This ensures that the coroutine is canceled if `sharedJob` is canceled
                         }
                     }
 
@@ -136,8 +122,6 @@ class AuthInterceptor @Inject constructor(
                     }
 
                     runBlocking {
-
-
                         try {
                             parentJob.join()
                             deferredResult.await()
@@ -146,7 +130,7 @@ class AuthInterceptor @Inject constructor(
                             throw e
                         } finally {
                             mutex.withLock {
-                                waitingJobs.remove(childJob) // Remove the completed job
+                                waitingJobs.remove(childJob)
                             }
                         }
                     }
@@ -163,15 +147,13 @@ class AuthInterceptor @Inject constructor(
                                 }
                             } else {
                                 if (childJob.isCancelled) {
-                                    delay(1000) //wai for
+                                    delay(1000)
                                     throw IOException("Job cancelled: Unexpected behaviour")
                                 }
                             }
                         }
                     }
-
                 }
-
 
                 if(response.code==498){
                     runBlocking {
@@ -197,11 +179,9 @@ class AuthInterceptor @Inject constructor(
 
                 response = chain.proceed(request)
 
-                // If the token is expired, try to refresh it
                 if (response.code == 401) {
 
                     val isFirstJob = waitingJobs.isEmpty()
-//                    val index = waitingJobs.size
 
                     val deferredResult = CompletableDeferred<Response>()
 
@@ -240,21 +220,19 @@ class AuthInterceptor @Inject constructor(
 
                                     override fun onRetry(newToken: String) {
                                         try {
-                                            // Retry the original request with the new token
                                             response.close()
                                             request = request.newBuilder()
                                                 .header("Authorization", "Bearer $newToken")
                                                 .build()
                                             response = chain.proceed(request)
                                             deferredResult.complete(response)
-                                        }catch (e:Exception){
+                                        }catch (_:Exception){
                                             deferredResult.completeExceptionally(IOException("Unexpected behaviour"))
                                         }
                                     }
                                 }
                             )
 
-                            // This ensures that the coroutine is canceled if `sharedJob` is canceled
                         }
                     }
                     waitingJobs.add(childJob)
@@ -284,7 +262,6 @@ class AuthInterceptor @Inject constructor(
                             }
                         }
                     }
-
 
                     runBlocking {
                         mutex.withLock {
@@ -321,16 +298,15 @@ class AuthInterceptor @Inject constructor(
             }
 
             "guest"->{
-                response = chain.proceed(request) // Optionally return an error response
+                response = chain.proceed(request)
             }
             else -> {
-                response = chain.proceed(request) // Optionally return an error response
+                response = chain.proceed(request)
                 if (response.code == 401) {
                     runBlocking {
                         app.logout(signInMethod)
                     }
                 }
-                // Handle unsupported sign-in methods or provide a fallback response
             }
         }
 
@@ -338,9 +314,7 @@ class AuthInterceptor @Inject constructor(
     }
 
     fun clearJobs() {
-        // Cancel any ongoing jobs
         parentJob.cancel()
-        // Reinitialize the worker
         newWorkerBuild()
     }
 

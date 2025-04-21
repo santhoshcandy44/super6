@@ -53,10 +53,10 @@ android {
     buildTypes {
 
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://192.168.217.85:3000\"")
-            buildConfigField("String", "SOCKET_BASE_URL", "\"http://192.97.217.85:3080\"")
-      /*      buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
-            buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")*/
+           /* buildConfigField("String", "BASE_URL", "\"http://192.168.217.85:3000\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"http://192.97.217.85:3080\"")*/
+            buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")
             buildConfigField("String", "REFERER", "\"referer.lts360.com\"")
             buildConfigField("String", "GOOGLE_SIGN_IN_OAUTH_WEB_CLIENT_ID", "\"300991981824-m4ovoojo09sklaqcvijandmnndduda0r.apps.googleusercontent.com\"")
         }
@@ -265,6 +265,13 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.3")
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
     implementation("org.apache.commons:commons-math3:3.6.1")
+
+/*    implementation("io.ktor:ktor-client-core:3.1.2")
+    implementation("io.ktor:ktor-client-android:3.1.2")
+    implementation("io.ktor:ktor-client-content-negotiation:3.1.2")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.2")
+    implementation("io.ktor:ktor-client-logging:3.1.2")*/
+
 }
 
 java {

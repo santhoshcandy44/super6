@@ -117,6 +117,7 @@ fun JobPostings(
     val searchQuery = ""
 
     val currentFilters by viewModel.filters.collectAsState()
+    val filterCategory by viewModel.filterCategory.collectAsState()
     val showFilters by viewModel.showFilters.collectAsState()
 
 
@@ -140,7 +141,8 @@ fun JobPostings(
                     viewModel.updateLastLoadedItemPosition(if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex)
                     viewModel.nextPage(
                         userId,
-                        searchQuery
+                        searchQuery,
+                        filters = currentFilters
                     )
                 }
             }
@@ -187,10 +189,7 @@ fun JobPostings(
     Column(modifier = Modifier.fillMaxSize()) {
 
         TopAppBar(
-            title = { Text("Job Openings", style = MaterialTheme.typography.titleLarge) },
-            actions = {
-                // Add filter/sort icons if needed
-            }
+            title = { Text("Job Openings", style = MaterialTheme.typography.titleLarge) }
         )
 
         Box(
@@ -421,12 +420,20 @@ fun JobPostings(
 
             if (showFilters) {
                 JobFilterBottomSheet(
+                    selectedCategory = filterCategory ,
+                    filters = currentFilters,
                     userCountryCode = viewModel.countryCode,
                     onDismiss = {
                         viewModel.updateShowFilters(false)
                     },
-                    onFiltersApplied = { filters ->
-                        viewModel.updateJobFiltersAndRefresh(userId, searchQuery, filters)
+                    onFiltersChanged = {
+                        viewModel.updateJobFilters(it)
+                    },
+                    onCategoryChanged = {
+                        viewModel.updateShowFilters(it)
+                    },
+                    onFiltersApplied = {
+                        viewModel.updateJobFiltersAndRefresh(userId, searchQuery, it)
                         viewModel.updateShowFilters(false)
                     }
                 )
@@ -435,6 +442,157 @@ fun JobPostings(
 
         }
 
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun JobFilterBottomSheet(
+    filters:JobFilters,
+    selectedCategory:FilterCategory,
+    userCountryCode: String,
+    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit,
+    onFiltersChanged: (JobFilters) -> Unit,
+    onCategoryChanged: (FilterCategory) -> Unit,
+    onFiltersApplied: (JobFilters) -> Unit
+) {
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        dragHandle = null,
+        shape = RectangleShape,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        modifier = modifier.safeDrawingPadding()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+        ) {
+
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+            ) {
+
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Filter Jobs",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
+                if (filters.hasValidFilters()) {
+
+                    SelectedFiltersChips(
+                        filters = filters,
+                        onFilterWorkModeRemoved = {
+                            onFiltersChanged(filters.copy(workModes = filters.workModes - it))
+                        },
+                        onFilterSalaryRemoved = {
+                            onFiltersChanged(filters.copy(salaryRange = null))
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+
+                    Column(
+                        modifier = Modifier
+                            .width(120.dp)
+                            .fillMaxHeight()
+
+                    ) {
+                        FilterCategory.entries.forEach { category ->
+                            CategoryTab(
+                                category = category,
+                                isSelected = category == selectedCategory,
+                                onClick = { onCategoryChanged(category) }
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                            .padding(start = 16.dp)
+                    ) {
+                        when (selectedCategory) {
+                            FilterCategory.WORK_MODE -> WorkModeSection(
+                                selectedModes = filters.workModes,
+                                onModeSelected = { mode ->
+                                    onFiltersChanged(
+                                        filters.copy(
+                                            workModes = if (filters.workModes.contains(mode)) {
+                                                filters.workModes - mode
+                                            } else {
+                                                filters.workModes + mode
+                                            }
+                                        )
+                                    )
+                                }
+                            )
+
+                            FilterCategory.SALARY_RANGE -> SalaryRangeSection(
+                                userCountryCode = userCountryCode,
+                                selectedRange = filters.salaryRange,
+                                onRangeSelected = { range ->
+                                    onFiltersChanged(
+                                        filters.copy(
+                                            salaryRange = if (filters.salaryRange == range) null else range
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .padding(8.dp)
+
+                ) {
+                    Text("Cancel")
+                }
+
+                Button(
+                    onClick = { onFiltersApplied(filters) },
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .padding(8.dp)
+                ) {
+                    Text("Apply Filters")
+                }
+            }
+        }
     }
 }
 
@@ -649,7 +807,6 @@ private fun EmploymentTypeChip(employmentType: EmploymentType) {
     }
 }
 
-
 @Composable
 private fun SelectedFiltersChips(
     filters: JobFilters,
@@ -727,155 +884,6 @@ private fun Chip(
     }
 }
 
-enum class FilterCategory {
-    WORK_MODE, SALARY_RANGE
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun JobFilterBottomSheet(
-    userCountryCode: String,
-    modifier: Modifier = Modifier,
-    onDismiss: () -> Unit,
-    onFiltersApplied: (JobFilters) -> Unit
-) {
-    var filters by remember { mutableStateOf(JobFilters()) }
-    var selectedCategory by remember { mutableStateOf(FilterCategory.WORK_MODE) }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        dragHandle = null,
-        shape = RectangleShape,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        modifier = modifier.safeDrawingPadding()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .navigationBarsPadding()
-        ) {
-
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f)
-            ) {
-
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Filter Jobs",
-                        style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-
-                if (filters.hasValidFilters()) {
-
-                    SelectedFiltersChips(
-                        filters = filters,
-                        onFilterWorkModeRemoved = {
-                            filters = filters.copy(workModes = filters.workModes - it)
-                        },
-                        onFilterSalaryRemoved = {
-                            filters = filters.copy(salaryRange = null)
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-
-                    Column(
-                        modifier = Modifier
-                            .width(120.dp)
-                            .fillMaxHeight()
-
-                    ) {
-                        FilterCategory.entries.forEach { category ->
-                            CategoryTab(
-                                category = category,
-                                isSelected = category == selectedCategory,
-                                onClick = { selectedCategory = category }
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                            .padding(start = 16.dp)
-                    ) {
-                        when (selectedCategory) {
-                            FilterCategory.WORK_MODE -> WorkModeSection(
-                                selectedModes = filters.workModes,
-                                onModeSelected = { mode ->
-                                    filters = filters.copy(
-                                        workModes = if (filters.workModes.contains(mode)) {
-                                            filters.workModes - mode
-                                        } else {
-                                            filters.workModes + mode
-                                        }
-                                    )
-                                }
-                            )
-
-                            FilterCategory.SALARY_RANGE -> SalaryRangeSection(
-                                userCountryCode = userCountryCode,
-                                selectedRange = filters.salaryRange,
-                                onRangeSelected = { range ->
-                                    filters = filters.copy(
-                                        salaryRange = if (filters.salaryRange == range) null else range
-                                    )
-                                }
-                            )
-                        }
-                    }
-                }
-
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-            ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .padding(8.dp)
-
-                ) {
-                    Text("Cancel")
-                }
-
-                Button(
-                    onClick = { onFiltersApplied(filters) },
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .padding(8.dp)
-                ) {
-                    Text("Apply Filters")
-                }
-            }
-        }
-    }
-}
-
 @Composable
 private fun CategoryTab(
     category: FilterCategory,
@@ -948,7 +956,6 @@ private fun WorkModeSection(
     }
 }
 
-
 @Composable
 private fun SalaryRangeSection(
     userCountryCode:String,
@@ -959,7 +966,20 @@ private fun SalaryRangeSection(
 
     val (currency, ranges) = remember(userCountryCode) {
         when (userCountryCode) {
-            "IN" -> Currency.getInstance("INR") to listOf(2_00_000, 3_00_000, 6_00_000, 12_00_000)
+            "IN" -> Currency.getInstance("INR") to listOf(
+                1_50_000,   // New salary range
+                2_00_000,   // Existing range
+                3_00_000,   // New range
+                4_00_000,   // New range
+                5_00_000,   // New range
+                6_00_000,   // Existing range
+                7_00_000,   // New range
+                8_00_000,   // New range
+                9_00_000,   // New range
+                10_00_000,  // New range
+                11_00_000,  // New range
+                12_00_000   // Existing range
+            )
             "US" -> Currency.getInstance("USD") to listOf(50_000, 100_000, 150_000)
             "GB" -> Currency.getInstance("GBP") to listOf(40_000, 80_000, 120_000)
             "FR" -> Currency.getInstance("EUR") to listOf(35_000, 70_000, 100_000)
@@ -974,22 +994,28 @@ private fun SalaryRangeSection(
         }
     }
 
+
     val salaryRanges = remember(ranges, currencyFormatter) {
-        listOf(
-            SalaryRange("Under ${currencyFormatter.format(ranges[0])}", 0, ranges[0]),
-            SalaryRange(
-                "${currencyFormatter.format(ranges[0])} - ${currencyFormatter.format(ranges[1])}",
-                ranges[0],
-                ranges[1]
-            ),
-            SalaryRange(
-                "${currencyFormatter.format(ranges[1])} - ${currencyFormatter.format(ranges[2])}",
-                ranges[1],
-                ranges[2]
-            ),
-            SalaryRange("Over ${currencyFormatter.format(ranges[2])}", ranges[2], Int.MAX_VALUE)
-        )
+        buildList {
+
+            for (i in ranges.indices) {
+                add(SalaryRange("Under ${currencyFormatter.format(ranges[i])}", 0, ranges[i]))
+            }
+
+            for (i in 0 until ranges.size - 1) {
+                add(
+                    SalaryRange(
+                        "${currencyFormatter.format(ranges[i])} - ${currencyFormatter.format(ranges[i + 1])}",
+                        ranges[i],
+                        ranges[i + 1]
+                    )
+                )
+            }
+
+            add(SalaryRange("Over ${currencyFormatter.format(ranges.last())}", ranges.last(), Int.MAX_VALUE))
+        }
     }
+
 
     Column(modifier = modifier.verticalScroll(rememberScrollState())) {
         Text(
@@ -1021,6 +1047,9 @@ private fun SalaryRangeSection(
     }
 }
 
+enum class FilterCategory {
+    WORK_MODE, SALARY_RANGE
+}
 
 data class JobFilters(
     val workModes: Set<WorkMode> = emptySet(),

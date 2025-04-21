@@ -20,10 +20,7 @@ import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.theme.ThemePreferences
 import com.lts360.compose.utils.SafeDrawingBox
-import com.lts360.test.TestActivity
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
