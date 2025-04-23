@@ -1,8 +1,7 @@
-package com.lts360.compose.ui.usedproducts.manage
+package com.lts360.compose.ui.localjobs.manage
 
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
@@ -57,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
@@ -71,14 +72,14 @@ import com.lts360.compose.ui.chat.MAX_IMAGES
 import com.lts360.compose.ui.chat.createImagePartForUri
 import com.lts360.compose.ui.chat.getFileExtensionFromImageFormat
 import com.lts360.compose.ui.chat.isValidImageDimensions
-import com.lts360.compose.ui.main.CreateUsedProductListingLocationBottomSheetScreen
+import com.lts360.compose.ui.localjobs.manage.viewmodels.LocalJobWorkFlowViewModel
+import com.lts360.compose.ui.main.CreateLocalJobLocationBottomSheetScreen
 import com.lts360.compose.ui.profile.TakePictureSheet
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.ui.services.manage.ExposedDropdownCountry
 import com.lts360.compose.ui.services.manage.ReloadImageIconButton
 import com.lts360.compose.ui.services.manage.RemoveImageIconButton
 import com.lts360.compose.ui.services.manage.UploadServiceImagesContainer
-import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
 import com.lts360.libs.ui.ShortToast
 import com.lts360.libs.utils.createImageFileDCIMExternalStorage
@@ -90,68 +91,43 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateUsedProductListingScreen(
-    onUsedProductListingCreated: () -> Unit,
+fun CreateLocalJobScreen(
+    onLocalJobCreated: () -> Unit,
     onPopBackStack: () -> Unit,
-    viewModel: UsedProductsListingWorkflowViewModel
-) {
+    viewModel: LocalJobWorkFlowViewModel) {
 
 
-    val name by viewModel.title.collectAsState()
-    val description by viewModel.shortDescription.collectAsState()
-    val selectedCountry by viewModel.selectedCountry.collectAsState()
-    val selectedState by viewModel.selectedState.collectAsState()
+    val localJob by viewModel.localJob.collectAsState()
+    val maritalStatusUnits = viewModel.maritalStatusUnits
+    val salaryUnits = viewModel.salaryUnits
 
-    val price by viewModel.price.collectAsState()
-    val priceUnit by viewModel.priceUnit.collectAsState()
-
-
-    val selectedLocation by viewModel.selectedLocation.collectAsState()
-    // Ensure containers reflect the latest state of imageContainers
-    val imageContainers by viewModel.imageContainers.collectAsState()
-
-
-    val serviceTitleError by viewModel.titleError.collectAsState()
-    val shortDescriptionError by viewModel.shortDescriptionError.collectAsState()
-    val priceError by viewModel.priceError.collectAsState()
-    val priceUnitError by viewModel.priceUnitError.collectAsState()
-    val selectedCountryError by viewModel.selectedCountryError.collectAsState()
-    val selectedStateError by viewModel.selectedStateError.collectAsState()
-
-    val imageContainersError by viewModel.imageContainersError.collectAsState()
-    val selectedLocationError by viewModel.selectedLocationError.collectAsState()
-
+    val errors by viewModel.errors.collectAsState()
 
     /*
         val isLoading by viewModel.isDraftLoading.collectAsState()
     */
+
     val isLoading = false
 
     val isPublishing by viewModel.isPublishing.collectAsState()
 
-
-    // Mutable state for isPickerLaunch and refreshImageIndex
     val isPickerLaunch by viewModel.isPickerLaunch.collectAsState()
     val refreshImageIndex by viewModel.refreshImageIndex.collectAsState()
 
     val context = LocalContext.current
-
-
     val slots by viewModel.slots.collectAsState()
+
     val pickImagesLauncher = if (slots > 0) {
-        // Create a launcher for picking multiple images
         rememberLauncherForActivityResult(
             GalleryPagerActivityResultContracts.PickMultipleImages(
                 slots,
                 allowSingleItemChoose = true
             )
         ) { uris ->
-            // Check if the number of selected images is less than 12
-            if (imageContainers.size < MAX_IMAGES) {
-                // Proceed if there are URIs to handle
+            if (localJob.imageContainers.size < MAX_IMAGES) {
                 if (uris.isNotEmpty()) {
 
-                    uris.take(MAX_IMAGES - imageContainers.size).forEach { uri ->
+                    uris.take(MAX_IMAGES - localJob.imageContainers.size).forEach { uri ->
                         val result = isValidImageDimensions(context, uri)
                         val errorMessage =
                             if (result.isValidDimension) null else "Invalid Dimension"
@@ -167,9 +143,7 @@ fun CreateUsedProductListingScreen(
                 }
 
             } else {
-                // Show a toast message if the image limit is reached
-                Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
-                    .show()
+                ShortToast(context, "Only $MAX_IMAGES images are allowed")
             }
 
             viewModel.setPickerLaunch(false)
@@ -177,12 +151,10 @@ fun CreateUsedProductListingScreen(
         }
 
     } else {
-
         null
     }
 
 
-    // Create a launcher for picking multiple images
     val pickSingleImageLauncher = rememberLauncherForActivityResult(
         GalleryPagerActivityResultContracts.PickSingleImage()
     ) { uri ->
@@ -231,7 +203,7 @@ fun CreateUsedProductListingScreen(
                 )
             }
         } else {
-            if (imageContainers.size < MAX_IMAGES) {
+            if (localJob.imageContainers.size < MAX_IMAGES) {
                 if (isSuccess) {
                     requestedData?.let {
                         cameraData = it
@@ -257,9 +229,8 @@ fun CreateUsedProductListingScreen(
                 }
 
             } else {
-                // Show a toast message if the image limit is reached
-                Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
-                    .show()
+                ShortToast(context, "Only $MAX_IMAGES images are allowed")
+
             }
         }
 
@@ -287,20 +258,16 @@ fun CreateUsedProductListingScreen(
         }
     }
 
+    var maritalStatusExpanded by remember { mutableStateOf(false) }
+    var salaryExpanded by remember { mutableStateOf(false) }
 
-    var expanded by remember { mutableStateOf(false) }
-
-    val priceUnits = viewModel.priceUnits
-
-    val selectedPriceUnit by viewModel.priceUnit.collectAsState()
 
     BottomSheetScaffold(
         sheetDragHandle = null,
         scaffoldState = bottomSheetScaffoldState,
         sheetContent = {
-
-            if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
-                CreateUsedProductListingLocationBottomSheetScreen(
+            if (bottomSheetScaffoldState.bottomSheetState.isVisible) {
+                CreateLocalJobLocationBottomSheetScreen(
                     bottomSheetScaffoldState.bottomSheetState.currentValue, {
                         viewModel.updateLocation(
                             EditableLocation(
@@ -308,10 +275,7 @@ fun CreateUsedProductListingScreen(
                                 latitude = it.latitude,
                                 longitude = it.longitude,
                                 locationType = it.locationType,
-                                geo = it.geo
-                            )
-                        )
-
+                                geo = it.geo))
                         coroutineScope.launch {
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
@@ -342,7 +306,6 @@ fun CreateUsedProductListingScreen(
                                 geo = district.district
                             )
                         )
-
                     },
                     {
                         coroutineScope.launch {
@@ -357,9 +320,9 @@ fun CreateUsedProductListingScreen(
 
 
         },
-        sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
-//            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        sheetShape = RectangleShape,
+        sheetPeekHeight = 0.dp,
+        sheetSwipeEnabled = false
     ) { _ ->
 
 
@@ -377,7 +340,7 @@ fun CreateUsedProductListingScreen(
                     },
                     title = {
                         Text(
-                            text = "Create Seconds",
+                            text = "Create Local Job",
                             style = MaterialTheme.typography.titleMedium
                         )
                     },
@@ -400,7 +363,6 @@ fun CreateUsedProductListingScreen(
                         strokeWidth = 4.dp
                     )
                 } else {
-                    // Main content
                     LazyVerticalGrid(
                         modifier = Modifier.fillMaxWidth(),
                         columns = GridCells.Adaptive(140.dp),
@@ -408,169 +370,258 @@ fun CreateUsedProductListingScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
 
-                        item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
+                        item(span = { GridItemSpan(maxLineSpan) }) {
                             Text(
-                                text = "Add New Product",
+                                text = "Add New Local Job",
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
 
-
                         item(span = { GridItemSpan(maxLineSpan) }) {
-
                             Column(modifier = Modifier.fillMaxWidth()) {
 
-                                // Text Field for UsedProductListing Title
                                 OutlinedTextField(
-                                    value = name,
+                                    value = localJob.title,
                                     onValueChange = { viewModel.updateTitle(it) },
-                                    label = { Text("Name") },
+                                    label = { Text("Title") },
                                     modifier = Modifier
-                                        .fillMaxWidth()
+                                        .fillMaxWidth(),
+                                    isError = errors.title != null
                                 )
 
-                                if (name.length > 100) {
+                                if (localJob.title.length > 100) {
                                     Text(
-                                        text = "Limit: ${name.length}/${100}",
+                                        text = "Limit: ${localJob.title.length}/${100}",
                                         color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.padding(
                                             horizontal = 16.dp,
                                             vertical = 4.dp
-                                        ) // Adjust padding as needed
+                                        )
                                     )
                                 }
 
-                                // Display error message if there's an error
-                                serviceTitleError?.let {
+                                errors.title?.let {
                                     ErrorText(it)
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
-                                // Text Field for Short Description
+
                                 OutlinedTextField(
-                                    value = description,
-                                    onValueChange = { viewModel.updateShortDescription(it) },
+                                    value = localJob.description,
+                                    onValueChange = { viewModel.updateDescription(it) },
                                     label = { Text("Description") },
                                     modifier = Modifier
                                         .fillMaxWidth(),
-                                    minLines = 4
+                                    minLines = 4,
+                                    isError = errors.description != null
                                 )
 
 
-                                if (description.length > 250) {
+                                if (localJob.description.length > 250) {
                                     Text(
-                                        text = "Limit: ${description.length}/${250}",
+                                        text = "Limit: ${localJob.description.length}/${250}",
                                         color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.padding(
                                             horizontal = 16.dp,
                                             vertical = 4.dp
-                                        ) // Adjust padding as needed
+                                        )
                                     )
                                 }
 
-                                shortDescriptionError?.let {
+                                errors.description?.let {
                                     ErrorText(it)
                                 }
 
+                                Spacer(modifier = Modifier.height(8.dp))
 
+                                OutlinedTextField(
+                                    value = localJob.company,
+                                    onValueChange = {
+                                        viewModel.updateCompany(it)
+                                    },
+                                    label = { Text("Company") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    minLines = 1,
+                                    isError = errors.company != null
+                                )
+
+                                errors.company?.let {
+                                    ErrorText(it)
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                AgeRangeSelector(
+                                    value = localJob.ageMin.toFloat()..localJob.ageMax.toFloat(),
+                                    onUpdateAgeMin = {
+                                        viewModel.updateAgeMin(it)
+                                    },
+                                    onUpdateAgeMax = {
+                                        viewModel.updateAgeMax(it)
+                                    },
+                                    error = errors.age
+                                )
+
+                                errors.age?.let {
+                                    ErrorText(it)
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                ExposedDropdownMenuBox(
+                                    expanded = maritalStatusExpanded,
+                                    onExpandedChange = {
+                                        maritalStatusExpanded = !maritalStatusExpanded
+                                    },
+                                    modifier = Modifier
+                                        .background(
+                                            MaterialTheme.colorScheme.surface,
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                ) {
+                                    OutlinedTextField(
+                                        value = localJob.maritalStatus.value,
+                                        onValueChange = {
+                                            viewModel.updateMaritalStatus(it)
+                                        },
+                                        readOnly = true,
+                                        label = { Text("Martial Status") },
+                                        trailingIcon = {
+                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = salaryExpanded)
+                                        },
+                                        modifier = Modifier
+                                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                                            .fillMaxWidth()
+                                    )
+
+                                    ExposedDropdownMenu(
+                                        expanded = maritalStatusExpanded,
+                                        onDismissRequest = { maritalStatusExpanded = false }
+                                    ) {
+                                        maritalStatusUnits.forEach {
+                                            DropdownMenuItem(
+                                                text = { Text(text = it.value) },
+                                                onClick = {
+                                                    viewModel.updateMaritalStatus(it.value)
+                                                    maritalStatusExpanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+
+
+                                errors.maritalStatus?.let {
+                                    ErrorText(it)
+                                }
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
 
-                                OutlinedTextField(
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    value = price,
-                                    onValueChange = {
-                                        viewModel.updatePrice(it)
-                                    },
-                                    label = { Text("Price") },
+                                Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    minLines = 1,
-                                    isError = priceError != null
-                                )
-
-                                priceError?.let {
-                                    Text(
-                                        text = it,
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(
-                                            horizontal = 16.dp,
-                                            vertical = 4.dp
-                                        )
-                                    )
-                                }
-
-
-                            }
-
-                        }
-
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-
-                            ExposedDropdownMenuBox(
-                                expanded = expanded,
-                                onExpandedChange = { expanded = !expanded },
-                                modifier = Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.surface,
-                                        shape = RoundedCornerShape(4.dp)
-                                    )
-                            ) {
-                                OutlinedTextField(
-                                    value = selectedPriceUnit,
-                                    onValueChange = {
-
-                                    },
-                                    readOnly = true,
-                                    label = { Text("Currency") },
-                                    trailingIcon = {
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                                    },
-                                    modifier = Modifier
-                                        .menuAnchor(
-                                            ExposedDropdownMenuAnchorType.PrimaryNotEditable
-                                        )
-                                        .fillMaxWidth()
-                                )
-
-                                ExposedDropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false }
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    priceUnits.forEach { unit ->
-                                        DropdownMenuItem(
-                                            text = { Text(text = unit) },
-                                            onClick = {
-                                                viewModel.updatePriceUnit(unit)
-                                                expanded = false
-                                            }
+                                    ExposedDropdownMenuBox(
+                                        expanded = salaryExpanded,
+                                        onExpandedChange = { salaryExpanded = !salaryExpanded },
+                                        modifier = Modifier
+                                            .background(
+                                                MaterialTheme.colorScheme.surface,
+                                                shape = RoundedCornerShape(4.dp)
+                                            )
+                                            .weight(1f)
+                                    ) {
+                                        OutlinedTextField(
+                                            value = localJob.salaryUnit,
+                                            onValueChange = {},
+                                            readOnly = true,
+                                            label = { Text("Salary") },
+                                            trailingIcon = {
+                                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = salaryExpanded)
+                                            },
+                                            modifier = Modifier
+                                                .menuAnchor(
+                                                    ExposedDropdownMenuAnchorType.PrimaryNotEditable
+                                                )
+                                                .fillMaxWidth()
                                         )
+
+                                        ExposedDropdownMenu(
+                                            expanded = salaryExpanded,
+                                            onDismissRequest = { salaryExpanded = false }
+                                        ) {
+                                            salaryUnits.forEach {
+                                                DropdownMenuItem(
+                                                    text = { Text(text = it) },
+                                                    onClick = {
+                                                        viewModel.updateSalaryUnit(it)
+                                                        salaryExpanded = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    errors.salaryUnit?.let {
+                                        ErrorText(it)
+                                    }
+
+                                    OutlinedTextField(
+                                        value = if (localJob.salaryMin == -1) "" else localJob.salaryMin.toString(),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        onValueChange = {
+                                            viewModel.updateSalaryMin(it.toIntOrNull() ?: -1)
+                                        },
+                                        label = { Text("Salary Min") },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .weight(1f),
+                                        minLines = 1,
+                                        isError = errors.salaryMin != null
+                                    )
+
+                                    errors.salaryMin?.let {
+                                        ErrorText(it)
+                                    }
+
+                                    OutlinedTextField(
+                                        value = if (localJob.salaryMax == -1) "" else localJob.salaryMax.toString(),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        onValueChange = {
+                                            viewModel.updateSalaryMax(it.toIntOrNull() ?: -1)
+                                        },
+                                        label = { Text("Salary Max") },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .weight(1f),
+                                        minLines = 1,
+                                        isError = errors.salaryMax != null
+                                    )
+
+                                    errors.salaryMax?.let {
+                                        ErrorText(it)
                                     }
                                 }
-                            }
 
-                            // Display error message if there's an error
-                            priceUnitError?.let {
-                                ErrorText(it)
                             }
 
                         }
 
-                        if (imageContainers.isNotEmpty()) {
-                            itemsIndexed(imageContainers) { index, bitmapContainer ->
+                        if (localJob.imageContainers.isNotEmpty()) {
+                            itemsIndexed(localJob.imageContainers) { index, bitmapContainer ->
 
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Box(
                                         modifier = Modifier
-                                            .size(140.dp) // Container size
-                                            .clip(RoundedCornerShape(4.dp)) // Clips to rounded corners
+                                            .size(140.dp)
+                                            .clip(RoundedCornerShape(4.dp))
                                     ) {
-                                        // Image
 
                                         AsyncImage(
                                             bitmapContainer.path,
-                                            contentDescription = "UsedProductListing image",
+                                            contentDescription = "Local job image",
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier
                                                 .fillMaxSize()
@@ -605,13 +656,11 @@ fun CreateUsedProductListingScreen(
                             }
                         }
 
-                        item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
+                        item(span = { GridItemSpan(maxLineSpan) }) {
 
-                            // Upload Images Section
-                            Spacer(modifier = Modifier.height(8.dp))
 
-                            UploadServiceImagesContainer(imageContainersError) {
-                                if (imageContainers.size == MAX_IMAGES) {
+                            UploadServiceImagesContainer(errors.imageContainers) {
+                                if (localJob.imageContainers.size == MAX_IMAGES) {
                                     ShortToast(
                                         context,
                                         "You already selected maximum $MAX_IMAGES images"
@@ -626,10 +675,10 @@ fun CreateUsedProductListingScreen(
                         item(span = { GridItemSpan(maxLineSpan) }) {
 
                             ExposedDropdownCountry(
-                                selectedCountry,
-                                selectedState,
-                                selectedCountryError,
-                                selectedStateError,
+                                localJob.country,
+                                localJob.state,
+                                errors.country,
+                                errors.state,
                                 {
                                     viewModel.updateCountry(it.value)
                                 }
@@ -637,18 +686,17 @@ fun CreateUsedProductListingScreen(
                                 viewModel.updateState(it.name)
                             }
 
-
                         }
 
 
                         item(span = { GridItemSpan(maxLineSpan) }) {
 
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                // Location TextField
+
                                 OutlinedTextField(
                                     readOnly = true,
-                                    value = selectedLocation?.geo ?: "",
-                                    onValueChange = { /* Handle location change */ },
+                                    value = localJob.selectedLocation?.geo ?: "",
+                                    onValueChange = { },
                                     label = { Text("Location") },
                                     trailingIcon = {
 
@@ -665,11 +713,9 @@ fun CreateUsedProductListingScreen(
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-
                                 )
 
-                                selectedLocationError?.let {
+                                errors.selectedLocation?.let {
                                     ErrorText(it)
                                 }
                             }
@@ -678,127 +724,112 @@ fun CreateUsedProductListingScreen(
 
 
                         item(span = { GridItemSpan(maxLineSpan) }) {
+                            Button(
+                                shape = RoundedCornerShape(8.dp),
+                                onClick = {
+                                    if (viewModel.validateAll()) {
 
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                // Action Buttons
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp)
-                                ) {
+                                        val localJobId = (-1).toString()
+                                            .toRequestBody("text/plain".toMediaTypeOrNull())
 
+                                        val bodyTitle =
+                                            localJob.title.toRequestBody("text/plain".toMediaTypeOrNull())
+                                        val bodyDescription =
+                                            localJob.description.toRequestBody("text/plain".toMediaTypeOrNull())
+                                        val bodyCompany =
+                                            localJob.company.toRequestBody("text/plain".toMediaTypeOrNull())
 
-                                    Button(
-                                        shape = RoundedCornerShape(8.dp),
-                                        onClick = {
-                                            if (viewModel.validateAll()) {
+                                        val bodyAgeMin = localJob.ageMin.let {
+                                            Gson().toJson(it)
+                                                .toRequestBody("text/plain".toMediaTypeOrNull())
+                                        }
 
-                                                val productId = (-1).toString()
-                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
+                                        val bodyAgeMax = localJob.ageMax.let {
+                                            Gson().toJson(it)
+                                                .toRequestBody("text/plain".toMediaTypeOrNull())
+                                        }
 
-                                                val bodyTitle =
-                                                    name.toRequestBody("text/plain".toMediaTypeOrNull())
-                                                val bodyShortDescription =
-                                                    description.toRequestBody("text/plain".toMediaTypeOrNull())
+                                        val bodyMaritalStatus = localJob.maritalStatus.key.toRequestBody("text/plain".toMediaTypeOrNull())
 
+                                        val bodySalaryUnit = localJob.salaryUnit
+                                            .toRequestBody("text/plain".toMediaTypeOrNull())
 
-                                                val bodyCountry = selectedCountry.toString()
-                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
+                                        val bodySalaryMin = localJob.salaryMin.let {
+                                            Gson().toJson(it)
+                                                .toRequestBody("text/plain".toMediaType())
+                                        }
 
-                                                val bodyState = selectedState.toString()
-                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
+                                        val bodySalaryMax = localJob.salaryMin.let {
+                                            Gson().toJson(it)
+                                                .toRequestBody("text/plain".toMediaType())
+                                        }
 
+                                        val bodyKeepImageIds =
+                                            "[]".toRequestBody("application/json".toMediaTypeOrNull())
 
-                                                val bodyKeepImageIds =
-                                                    "[]".toRequestBody("application/json".toMediaTypeOrNull())
-
-
-                                                val bodyPrice = price.toDouble().let {
-                                                    Gson().toJson(it)  // Convert the float to a JSON representation
-                                                        .toRequestBody("text/plain".toMediaType())  // Convert the JSON string to RequestBody
-                                                }
-
-
-                                                val bodyPriceUnit = priceUnit
-                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
-
-
-                                                val bodyLocation = selectedLocation?.let {
-                                                    Gson().toJson(it)
-                                                        .toRequestBody("application/json".toMediaType())
-                                                }
-
-                                                val bodyImages =
-                                                    imageContainers.mapIndexed { index, bitmapContainer ->
-                                                        createImagePartForUri(
-                                                            context,
-                                                            bitmapContainer.path.toUri(),
-                                                            "IMAGE_${index}_${
-                                                                getFileExtensionFromImageFormat(
-                                                                    bitmapContainer.format
-                                                                )
-                                                            }",
-                                                            bitmapContainer.format,
-                                                            "images[]"
+                                        val bodyImages =
+                                            localJob.imageContainers.mapIndexed { index, bitmapContainer ->
+                                                createImagePartForUri(
+                                                    context,
+                                                    bitmapContainer.path.toUri(),
+                                                    "IMAGE_${index}_${
+                                                        getFileExtensionFromImageFormat(
+                                                            bitmapContainer.format
                                                         )
-                                                    }.filterNotNull()
+                                                    }",
+                                                    bitmapContainer.format,
+                                                    "images[]"
+                                                )
+                                            }.filterNotNull()
 
+                                        val bodyCountry = localJob.country.toString()
+                                            .toRequestBody("text/plain".toMediaTypeOrNull())
 
+                                        val bodyState = localJob.state.toString()
+                                            .toRequestBody("text/plain".toMediaTypeOrNull())
 
+                                        val bodyLocation = localJob.selectedLocation?.let {
+                                            Gson().toJson(it)
+                                                .toRequestBody("application/json".toMediaType())
+                                        }
 
-                                                viewModel.onCreateUsedProductListing(
-                                                    productId,
-                                                    bodyTitle,
-                                                    bodyShortDescription,
-                                                    bodyPrice,
-                                                    bodyPriceUnit,
-                                                    bodyState,
-                                                    bodyCountry,
-                                                    bodyImages,
-                                                    bodyLocation,
-                                                    bodyKeepImageIds,
-                                                    {
-                                                        onUsedProductListingCreated()
-                                                        Toast.makeText(
-                                                            context,
-                                                            it,
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
+                                        viewModel.onCreateLocalJob(
+                                            localJobId,
+                                            bodyTitle,
+                                            bodyDescription,
+                                            bodyCompany,
+                                            bodyAgeMin,
+                                            bodyAgeMax,
+                                            bodyMaritalStatus,
+                                            bodySalaryUnit,
+                                            bodySalaryMin,
+                                            bodySalaryMax,
+                                            bodyImages,
+                                            bodyKeepImageIds,
+                                            bodyCountry,
+                                            bodyState,
+                                            bodyLocation,
+                                            {
+                                                onLocalJobCreated()
+                                                ShortToast(context, it)
+                                            }) {
+                                            ShortToast(context, it)
+                                        }
 
-                                                    }) {
-
-                                                    Toast.makeText(
-                                                        context,
-                                                        it,
-                                                        Toast.LENGTH_SHORT
-                                                    )
-                                                        .show()
-                                                }
-
-                                            }
-                                        },
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text("Publish")
                                     }
-                                }
-
-
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Publish")
                             }
-
                         }
-
                     }
 
                 }
 
-
             }
-
-
         }
     }
-
 
 
     TakePictureSheet(pickerSheetState, onGallerySelected = {
@@ -814,7 +845,7 @@ fun CreateUsedProductListingScreen(
     }, onCameraSelected = {
         createImageFileDCIMExternalStorage(
             context = context,
-            "Lts360/Seconds"
+            "Lts360/Local Jobs"
         )?.let {
             requestedData = it
             cameraPickerLauncher.launch(
@@ -826,14 +857,47 @@ fun CreateUsedProductListingScreen(
         pickerSheetState = false
     }
 
-
     if (isPublishing) {
         LoadingDialog()
     }
 
-
 }
 
+
+
+@Composable
+fun AgeRangeSelector(
+    value: ClosedFloatingPointRange<Float>,
+    ageRange: ClosedFloatingPointRange<Float> = 18f..60f,
+    error: String?,
+    onUpdateAgeMin:(Int)-> Unit,
+    onUpdateAgeMax: (Int)-> Unit
+) {
+    var sliderPosition by remember {
+        mutableStateOf(value)
+    }
+
+    Column {
+        Text("Age Range: ${sliderPosition.start.toInt()} - ${sliderPosition.endInclusive.toInt()}")
+
+        RangeSlider(
+            value = value,
+            onValueChange = { newRange ->
+                sliderPosition = newRange
+                onUpdateAgeMin(sliderPosition.start.toInt())
+                onUpdateAgeMax(sliderPosition.endInclusive.toInt())
+            },
+            onValueChangeFinished = {},
+            valueRange = ageRange,
+            steps = (ageRange.endInclusive - ageRange.start).toInt() - 1,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        error?.let {
+            ErrorText(it)
+        }
+    }
+}
 
 
 

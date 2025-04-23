@@ -1091,18 +1091,15 @@ fun ExposedDropdownCountry(
     onStateSelected: (DraftState) -> Unit,
 ) {
 
-    // Get access to context and resources
     val context = LocalContext.current
     val resources = context.resources
 
-    // Define country data
     val countryNames: Array<String> = resources.getStringArray(R.array.country_items)
     val countryValues: Array<String> = resources.getStringArray(R.array.country_values)
     val countries = countryNames.zip(countryValues) { name, value ->
         DraftCountry(name = name, value = value)
     }
 
-    // Define states data (this is simplified; you can modify based on actual data)
     val statesMap = mapOf(
         "IN" to listOf(
             "Andaman and Nicobar Islands",
@@ -1144,7 +1141,6 @@ fun ExposedDropdownCountry(
         )
     )
 
-    // State management
     var expandedCountry by remember { mutableStateOf(false) }
     var expandedState by remember { mutableStateOf(false) }
 
@@ -1163,7 +1159,6 @@ fun ExposedDropdownCountry(
 
     Column(modifier = Modifier.fillMaxWidth()) {
 
-        // Country dropdown
         ExposedDropdownMenuBox(
             expanded = expandedCountry,
             onExpandedChange = { expandedCountry = !expandedCountry }
@@ -1192,7 +1187,7 @@ fun ExposedDropdownCountry(
                         text = { Text(country.name) },
                         onClick = {
                             selectedCountry = country
-                            selectedState = null // Reset selected state when country changes
+                            selectedState = null
                             onCountrySelected(country)
                             expandedCountry = false
                         }
@@ -1206,10 +1201,10 @@ fun ExposedDropdownCountry(
             ErrorText(it)
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // State dropdown (only shown after selecting a country)
         selectedCountry?.let {
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             ExposedDropdownMenuBox(
                 expanded = expandedState,
                 onExpandedChange = { expandedState = !expandedState }) {
@@ -1273,13 +1268,13 @@ fun BoxScope.ReloadImageIconButton(onClick: () -> Unit) {
             .align(Alignment.TopEnd)
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(50))
             .border(1.dp, Color.Gray, RoundedCornerShape(50))
-            .size(24.dp) // Ensure button size
-            .zIndex(1f) // Ensure button is above the image
+            .size(24.dp)
+            .zIndex(1f)
     ) {
         Icon(
-            imageVector = Icons.Default.Refresh, // Replace with your actual drawable
+            imageVector = Icons.Default.Refresh,
             contentDescription = "Reload",
-            modifier = Modifier.padding(4.dp) // Size of the icon within the button
+            modifier = Modifier.padding(4.dp)
         )
     }
 
@@ -1294,15 +1289,15 @@ fun BoxScope.RemoveImageIconButton(onClick: () -> Unit) {
         },
         modifier = Modifier
             .align(Alignment.TopStart)
-            .size(24.dp)// Size of the icon within the button
+            .size(24.dp)
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(50))
             .border(1.dp, Color.Gray, RoundedCornerShape(50))
             .zIndex(1f)
     ) {
         Icon(
-            imageVector = Icons.Default.Remove, // Replace with your actual drawable
+            imageVector = Icons.Default.Remove,
             contentDescription = "Remove",
-            modifier = Modifier.padding(4.dp) // Size of the icon within the button
+            modifier = Modifier.padding(4.dp)
         )
     }
 

@@ -64,7 +64,7 @@ class CombinedContainerFactory {
                 width=width,
                 height=height,
                 format = format,
-                containerId = generateId(), // Generate a unique ID for each new container
+                containerId = generateId(),
                 errorMessage = errorMessage
             ),
             ContainerType.BITMAP
@@ -79,7 +79,7 @@ class CombinedContainerFactory {
 data class CombinedContainer(
     val container: Container?,
     val bitmapContainer: BitmapContainer?,
-    val type: ContainerType // Using the enum
+    val type: ContainerType
 )
 
 

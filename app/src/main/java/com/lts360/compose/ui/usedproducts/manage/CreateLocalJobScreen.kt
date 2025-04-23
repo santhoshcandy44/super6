@@ -10,12 +10,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -28,7 +28,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,17 +37,14 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,12 +56,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.google.gson.Gson
 import com.lts360.api.models.service.EditableLocation
@@ -74,16 +70,14 @@ import com.lts360.compose.ui.chat.MAX_IMAGES
 import com.lts360.compose.ui.chat.createImagePartForUri
 import com.lts360.compose.ui.chat.getFileExtensionFromImageFormat
 import com.lts360.compose.ui.chat.isValidImageDimensions
-import com.lts360.compose.ui.main.ManagePublishedUsedProductListingLocationBottomSheetScreen
+import com.lts360.compose.ui.main.CreateUsedProductListingLocationBottomSheetScreen
 import com.lts360.compose.ui.profile.TakePictureSheet
-import com.lts360.compose.ui.services.manage.DeleteInfoBottomSheet
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.ui.services.manage.ExposedDropdownCountry
 import com.lts360.compose.ui.services.manage.ReloadImageIconButton
 import com.lts360.compose.ui.services.manage.RemoveImageIconButton
 import com.lts360.compose.ui.services.manage.UploadServiceImagesContainer
-import com.lts360.compose.ui.services.manage.models.ContainerType
-import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
+import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
 import com.lts360.libs.ui.ShortToast
 import com.lts360.libs.utils.createImageFileDCIMExternalStorage
@@ -91,34 +85,22 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
-import androidx.core.net.toUri
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ManagePublishedUsedProductListingScreen(
+fun CreateUsedProductListingScreen(
+    onUsedProductListingCreated: () -> Unit,
     onPopBackStack: () -> Unit,
-    viewModel: PublishedUsedProductsListingViewModel
-
+    viewModel: UsedProductsListingWorkflowViewModel
 ) {
 
 
-    val userId = viewModel.userId
-
-
-    val serviceTitleError by viewModel.titleError.collectAsState()
-    val shortDescriptionError by viewModel.shortDescriptionError.collectAsState()
-    val selectedCountryError by viewModel.selectedCountryError.collectAsState()
-    val selectedStateError by viewModel.selectedStateError.collectAsState()
-    val priceError by viewModel.priceError.collectAsState()
-    val priceUnitError by viewModel.priceUnitError.collectAsState()
-    val imageContainersError by viewModel.imageContainersError.collectAsState()
-    val selectedLocationError by viewModel.selectedLocationError.collectAsState()
-
-
-    val serviceTitle by viewModel.title.collectAsState()
-    val serviceShortDescription by viewModel.shortDescription.collectAsState()
+    val name by viewModel.title.collectAsState()
+    val description by viewModel.shortDescription.collectAsState()
     val selectedCountry by viewModel.selectedCountry.collectAsState()
     val selectedState by viewModel.selectedState.collectAsState()
+
     val price by viewModel.price.collectAsState()
     val priceUnit by viewModel.priceUnit.collectAsState()
 
@@ -128,12 +110,23 @@ fun ManagePublishedUsedProductListingScreen(
     val imageContainers by viewModel.imageContainers.collectAsState()
 
 
-    val isLoading by viewModel.isLoading.collectAsState()
+    val serviceTitleError by viewModel.titleError.collectAsState()
+    val shortDescriptionError by viewModel.shortDescriptionError.collectAsState()
+    val priceError by viewModel.priceError.collectAsState()
+    val priceUnitError by viewModel.priceUnitError.collectAsState()
+    val selectedCountryError by viewModel.selectedCountryError.collectAsState()
+    val selectedStateError by viewModel.selectedStateError.collectAsState()
 
-    val editableService by viewModel.selectedUsedProductListing.collectAsState()
+    val imageContainersError by viewModel.imageContainersError.collectAsState()
+    val selectedLocationError by viewModel.selectedLocationError.collectAsState()
 
-    val isUpdating by viewModel.isUpdating.collectAsState()
-    val isDeleting by viewModel.isDeleting.collectAsState()
+
+    /*
+        val isLoading by viewModel.isDraftLoading.collectAsState()
+    */
+    val isLoading = false
+
+    val isPublishing by viewModel.isPublishing.collectAsState()
 
 
     // Mutable state for isPickerLaunch and refreshImageIndex
@@ -142,44 +135,51 @@ fun ManagePublishedUsedProductListingScreen(
 
     val context = LocalContext.current
 
+
     val slots by viewModel.slots.collectAsState()
-
-    // Create a launcher for picking multiple images
-    val pickImagesLauncher =   if (slots > 0) {
-
+    val pickImagesLauncher = if (slots > 0) {
+        // Create a launcher for picking multiple images
         rememberLauncherForActivityResult(
-    GalleryPagerActivityResultContracts.PickMultipleImages(slots, allowSingleItemChoose = true)
-    ) { uris ->
+            GalleryPagerActivityResultContracts.PickMultipleImages(
+                slots,
+                allowSingleItemChoose = true
+            )
+        ) { uris ->
+            // Check if the number of selected images is less than 12
+            if (imageContainers.size < MAX_IMAGES) {
+                // Proceed if there are URIs to handle
+                if (uris.isNotEmpty()) {
 
-        if (imageContainers.size < MAX_IMAGES) {
-            // Proceed if there are URIs to handle
-            if (uris.isNotEmpty()) {
+                    uris.take(MAX_IMAGES - imageContainers.size).forEach { uri ->
+                        val result = isValidImageDimensions(context, uri)
+                        val errorMessage =
+                            if (result.isValidDimension) null else "Invalid Dimension"
+                        viewModel.addContainer(
+                            uri.toString(),
+                            result.width,
+                            result.height,
+                            result.format.toString(),
+                            errorMessage = errorMessage
+                        )
+                    }
 
-                uris.take(MAX_IMAGES-imageContainers.size).forEach { uri ->
-                    val result = isValidImageDimensions(context, uri)
-                    val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
-                    viewModel.addContainer(
-                        uri.toString(),
-                        result.width,
-                        result.height,
-                        result.format.toString(),
-                        errorMessage = errorMessage
-                    )
                 }
 
+            } else {
+                // Show a toast message if the image limit is reached
+                Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
+                    .show()
             }
-        } else {
-            // Show a toast message if the image limit is reached
-            Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
-                .show()
+
+            viewModel.setPickerLaunch(false)
+
         }
 
-        // Reset picker launch flag
-        viewModel.setPickerLaunch(false)
-    }}
-    else {
+    } else {
+
         null
     }
+
 
     // Create a launcher for picking multiple images
     val pickSingleImageLauncher = rememberLauncherForActivityResult(
@@ -190,7 +190,6 @@ fun ManagePublishedUsedProductListingScreen(
             uri?.let {
                 val result = isValidImageDimensions(context, uri)
                 val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
-
                 viewModel.updateContainer(
                     refreshImageIndex,
                     uri.toString(),
@@ -201,7 +200,7 @@ fun ManagePublishedUsedProductListingScreen(
                 )
             }
         }
-        // Reset picker launch flag
+
         viewModel.setPickerLaunch(false)
 
     }
@@ -210,6 +209,7 @@ fun ManagePublishedUsedProductListingScreen(
     var pickerSheetState by rememberSaveable { mutableStateOf(false) }
     var cameraData: Uri? by rememberSaveable { mutableStateOf(null) }
     var requestedData: Uri? by rememberSaveable { mutableStateOf(null) }
+
 
     val cameraPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -229,14 +229,14 @@ fun ManagePublishedUsedProductListingScreen(
                     errorMessage = errorMessage
                 )
             }
-        }else{
-            // Check if the number of selected images is less than 12
+        } else {
             if (imageContainers.size < MAX_IMAGES) {
                 if (isSuccess) {
                     requestedData?.let {
                         cameraData = it
                         val result = isValidImageDimensions(context, it)
-                        val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
+                        val errorMessage =
+                            if (result.isValidDimension) null else "Invalid Dimension"
                         viewModel.addContainer(
                             requestedData.toString(),
                             result.width,
@@ -263,6 +263,7 @@ fun ManagePublishedUsedProductListingScreen(
         }
 
         viewModel.setPickerLaunch(false)
+
     }
 
 
@@ -275,102 +276,71 @@ fun ManagePublishedUsedProductListingScreen(
         )
     )
 
-
     BackHandler {
-
         if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
             coroutineScope.launch {
                 bottomSheetScaffoldState.bottomSheetState.hide()
             }
         } else {
-//        viewModel.inValidateSelectedService()
             onPopBackStack()
-        }
-
-    }
-
-
-    val sheetState = rememberModalBottomSheetState()
-
-    var bottomSheetState by rememberSaveable { mutableStateOf(false) }
-
-    LaunchedEffect(bottomSheetState) {
-
-        if (bottomSheetState) {
-            sheetState.expand()
-        } else {
-            sheetState.hide()
         }
     }
 
 
     var expanded by remember { mutableStateOf(false) }
+
     val priceUnits = viewModel.priceUnits
 
     val selectedPriceUnit by viewModel.priceUnit.collectAsState()
 
     BottomSheetScaffold(
+        sheetDragHandle = null,
         scaffoldState = bottomSheetScaffoldState,
-        sheetShape = RectangleShape,
         sheetContent = {
 
             if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
-
-                ManagePublishedUsedProductListingLocationBottomSheetScreen(
+                CreateUsedProductListingLocationBottomSheetScreen(
                     bottomSheetScaffoldState.bottomSheetState.currentValue, {
-
-                        editableService?.let { nonNullableEditableService ->
-                            viewModel.updateLocation(
-                                EditableLocation(
-                                    serviceId = nonNullableEditableService.productId,
-                                    latitude = it.latitude,
-                                    longitude = it.longitude,
-                                    locationType = it.locationType,
-                                    geo = it.geo
-                                )
+                        viewModel.updateLocation(
+                            EditableLocation(
+                                serviceId = -1,
+                                latitude = it.latitude,
+                                longitude = it.longitude,
+                                locationType = it.locationType,
+                                geo = it.geo
                             )
+                        )
 
-                            coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.hide()
-                            }
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
+                        }
+                    }, {
+
+                        viewModel.updateLocation(
+                            EditableLocation(
+                                serviceId = -1,
+                                latitude = it.latitude,
+                                longitude = it.longitude,
+                                locationType = it.locationType,
+                                geo = it.geo
+                            )
+                        )
+
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.hide()
                         }
 
-                    }, { recentLocation ->
+                    }, { district ->
 
-                        editableService?.let { nonNullableEditableService ->
-
-                            viewModel.updateLocation(
-                                EditableLocation(
-                                    serviceId = nonNullableEditableService.productId,
-                                    latitude = recentLocation.latitude,
-                                    longitude = recentLocation.longitude,
-                                    locationType = recentLocation.locationType,
-                                    geo = recentLocation.geo
-                                )
+                        viewModel.updateLocation(
+                            EditableLocation(
+                                serviceId = -1,
+                                latitude = district.coordinates.latitude,
+                                longitude = district.coordinates.longitude,
+                                locationType = district.district,
+                                geo = district.district
                             )
-
-                            coroutineScope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.hide()
-                            }
-                        }
-
-                    }, { district->
-
-
-                        editableService?.let { nonNullableEditableService ->
-
-                            viewModel.updateLocation(
-                                EditableLocation(
-                                    serviceId = nonNullableEditableService.productId,
-                                    latitude = district.coordinates.latitude,
-                                    longitude = district.coordinates.longitude,
-                                    locationType = district.district,
-                                    geo = district.district
-                                )
-                            )
-
-                        }
-
+                        )
 
                     },
                     {
@@ -386,7 +356,6 @@ fun ManagePublishedUsedProductListingScreen(
 
 
         },
-        sheetDragHandle = null,
         sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
         sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -407,7 +376,7 @@ fun ManagePublishedUsedProductListingScreen(
                     },
                     title = {
                         Text(
-                            text = "Manage Published Seconds",
+                            text = "Create Seconds",
                             style = MaterialTheme.typography.titleMedium
                         )
                     },
@@ -416,7 +385,6 @@ fun ManagePublishedUsedProductListingScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) { contentPadding ->
-
 
             Box(
                 modifier = Modifier
@@ -441,7 +409,7 @@ fun ManagePublishedUsedProductListingScreen(
 
                         item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
                             Text(
-                                text = "Update Product",
+                                text = "Add New Product",
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
@@ -453,16 +421,16 @@ fun ManagePublishedUsedProductListingScreen(
 
                                 // Text Field for UsedProductListing Title
                                 OutlinedTextField(
-                                    value = serviceTitle,
+                                    value = name,
                                     onValueChange = { viewModel.updateTitle(it) },
                                     label = { Text("Name") },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                 )
 
-                                if (serviceTitle.length > 100) {
+                                if (name.length > 100) {
                                     Text(
-                                        text = "Limit: ${serviceTitle.length}/${100}",
+                                        text = "Limit: ${name.length}/${100}",
                                         color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.padding(
                                             horizontal = 16.dp,
@@ -480,7 +448,7 @@ fun ManagePublishedUsedProductListingScreen(
 
                                 // Text Field for Short Description
                                 OutlinedTextField(
-                                    value = serviceShortDescription,
+                                    value = description,
                                     onValueChange = { viewModel.updateShortDescription(it) },
                                     label = { Text("Description") },
                                     modifier = Modifier
@@ -489,9 +457,9 @@ fun ManagePublishedUsedProductListingScreen(
                                 )
 
 
-                                if (serviceShortDescription.length > 250) {
+                                if (description.length > 250) {
                                     Text(
-                                        text = "Limit: ${serviceShortDescription.length}/${250}",
+                                        text = "Limit: ${description.length}/${250}",
                                         color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.padding(
                                             horizontal = 16.dp,
@@ -503,6 +471,7 @@ fun ManagePublishedUsedProductListingScreen(
                                 shortDescriptionError?.let {
                                     ErrorText(it)
                                 }
+
 
 
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -531,11 +500,10 @@ fun ManagePublishedUsedProductListingScreen(
                                     )
                                 }
 
+
                             }
 
                         }
-
-
 
                         item(span = { GridItemSpan(maxLineSpan) }) {
 
@@ -550,7 +518,9 @@ fun ManagePublishedUsedProductListingScreen(
                             ) {
                                 OutlinedTextField(
                                     value = selectedPriceUnit,
-                                    onValueChange = {},
+                                    onValueChange = {
+
+                                    },
                                     readOnly = true,
                                     label = { Text("Currency") },
                                     trailingIcon = {
@@ -586,7 +556,6 @@ fun ManagePublishedUsedProductListingScreen(
 
                         }
 
-
                         if (imageContainers.isNotEmpty()) {
                             itemsIndexed(imageContainers) { index, bitmapContainer ->
 
@@ -596,15 +565,10 @@ fun ManagePublishedUsedProductListingScreen(
                                             .size(140.dp) // Container size
                                             .clip(RoundedCornerShape(4.dp)) // Clips to rounded corners
                                     ) {
+                                        // Image
 
                                         AsyncImage(
-                                            if (bitmapContainer.type == ContainerType.BITMAP) {
-                                                bitmapContainer.bitmapContainer?.path
-
-                                            } else {
-                                                bitmapContainer.container?.image?.imageUrl
-
-                                            },
+                                            bitmapContainer.path,
                                             contentDescription = "UsedProductListing image",
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier
@@ -628,29 +592,30 @@ fun ManagePublishedUsedProductListingScreen(
 
                                     }
 
-                                    bitmapContainer.bitmapContainer?.errorMessage?.let {
+                                    bitmapContainer.errorMessage?.let {
                                         Text(
                                             text = it,
                                             textAlign = TextAlign.Center,
                                             color = Color.Red
                                         )
                                     }
-
-
                                 }
 
                             }
                         }
 
-                        item(span = { GridItemSpan(maxLineSpan) }) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
 
                             // Upload Images Section
                             Spacer(modifier = Modifier.height(8.dp))
 
                             UploadServiceImagesContainer(imageContainersError) {
-                                if(imageContainers.size == MAX_IMAGES){
-                                    ShortToast(context, "You already selected maximum $MAX_IMAGES images")
-                                }else{
+                                if (imageContainers.size == MAX_IMAGES) {
+                                    ShortToast(
+                                        context,
+                                        "You already selected maximum $MAX_IMAGES images"
+                                    )
+                                } else {
                                     pickerSheetState = true
                                 }
                             }
@@ -670,8 +635,9 @@ fun ManagePublishedUsedProductListingScreen(
                             ) {
                                 viewModel.updateState(it.name)
                             }
-                        }
 
+
+                        }
 
 
                         item(span = { GridItemSpan(maxLineSpan) }) {
@@ -685,24 +651,20 @@ fun ManagePublishedUsedProductListingScreen(
                                     label = { Text("Location") },
                                     trailingIcon = {
 
-                                        IconButton(
-                                            onClick = {
-                                                coroutineScope.launch {
-                                                    bottomSheetScaffoldState.bottomSheetState.expand()
-                                                }
+                                        IconButton({
+                                            coroutineScope.launch {
+                                                bottomSheetScaffoldState.bottomSheetState.expand()
                                             }
-                                        ) {
-
+                                        }) {
                                             Icon(
                                                 Icons.AutoMirrored.Filled.RotateLeft,
                                                 contentDescription = null
                                             )
-
                                         }
-
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
 
                                 )
 
@@ -711,36 +673,33 @@ fun ManagePublishedUsedProductListingScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(8.dp))
                         }
 
 
                         item(span = { GridItemSpan(maxLineSpan) }) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
+
+                            Column(modifier = Modifier.fillMaxWidth()) {
                                 // Action Buttons
-                                Button(
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp)
+                                ) {
 
-                                    onClick = {
 
-                                        editableService?.let { nonNullSelectedUsedProductListing ->
+                                    Button(
+                                        shape = RoundedCornerShape(8.dp),
+                                        onClick = {
                                             if (viewModel.validateAll()) {
 
-
-                                                val bodyProductId =
-                                                    nonNullSelectedUsedProductListing.productId.toString()
-                                                        .toRequestBody("text/plain".toMediaTypeOrNull())
+                                                val productId = (-1).toString()
+                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
 
                                                 val bodyTitle =
-                                                    serviceTitle.toRequestBody("text/plain".toMediaTypeOrNull())
+                                                    name.toRequestBody("text/plain".toMediaTypeOrNull())
                                                 val bodyShortDescription =
-                                                    serviceShortDescription.toRequestBody("text/plain".toMediaTypeOrNull())
+                                                    description.toRequestBody("text/plain".toMediaTypeOrNull())
 
-
-                                                val bodyPriceUnit =
-                                                    priceUnit.toRequestBody("text/plain".toMediaTypeOrNull())
 
                                                 val bodyCountry = selectedCountry.toString()
                                                     .toRequestBody("text/plain".toMediaTypeOrNull())
@@ -749,17 +708,18 @@ fun ManagePublishedUsedProductListingScreen(
                                                     .toRequestBody("text/plain".toMediaTypeOrNull())
 
 
+                                                val bodyKeepImageIds =
+                                                    "[]".toRequestBody("application/json".toMediaTypeOrNull())
+
 
                                                 val bodyPrice = price.toDouble().let {
-                                                    Gson().toJson(it)
-                                                        .toRequestBody("text/plain".toMediaType())
+                                                    Gson().toJson(it)  // Convert the float to a JSON representation
+                                                        .toRequestBody("text/plain".toMediaType())  // Convert the JSON string to RequestBody
                                                 }
 
 
-                                                val bodyKeepImageIds =   imageContainers.mapNotNull { it.container }
-                                                    .mapNotNull { it.image }
-                                                    .map { it.imageId }.toString()
-                                                    .toRequestBody("application/json".toMediaTypeOrNull())
+                                                val bodyPriceUnit = priceUnit
+                                                    .toRequestBody("text/plain".toMediaTypeOrNull())
 
 
                                                 val bodyLocation = selectedLocation?.let {
@@ -767,26 +727,26 @@ fun ManagePublishedUsedProductListingScreen(
                                                         .toRequestBody("application/json".toMediaType())
                                                 }
 
-
                                                 val bodyImages =
-                                                    imageContainers.mapNotNull { it.bitmapContainer }
-                                                        .mapIndexed { index, bitmapContainer ->
-                                                            createImagePartForUri(
-                                                                context,
-                                                                bitmapContainer.path.toUri(),
-                                                                "IMAGE_${index}_${
-                                                                    getFileExtensionFromImageFormat(
-                                                                        bitmapContainer.format
-                                                                    )
-                                                                }",
-                                                                bitmapContainer.format,
-                                                                "images[]"
-                                                            )
-                                                        }.filterNotNull()
+                                                    imageContainers.mapIndexed { index, bitmapContainer ->
+                                                        createImagePartForUri(
+                                                            context,
+                                                            bitmapContainer.path.toUri(),
+                                                            "IMAGE_${index}_${
+                                                                getFileExtensionFromImageFormat(
+                                                                    bitmapContainer.format
+                                                                )
+                                                            }",
+                                                            bitmapContainer.format,
+                                                            "images[]"
+                                                        )
+                                                    }.filterNotNull()
 
 
-                                                viewModel.onUpdateUsedProductListing(
-                                                    bodyProductId,
+
+
+                                                viewModel.onCreateUsedProductListing(
+                                                    productId,
                                                     bodyTitle,
                                                     bodyShortDescription,
                                                     bodyPrice,
@@ -797,6 +757,7 @@ fun ManagePublishedUsedProductListingScreen(
                                                     bodyLocation,
                                                     bodyKeepImageIds,
                                                     {
+                                                        onUsedProductListingCreated()
                                                         Toast.makeText(
                                                             context,
                                                             it,
@@ -814,35 +775,16 @@ fun ManagePublishedUsedProductListingScreen(
                                                 }
 
                                             }
-
-                                        }
-
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(
-                                            0xFF57D457
-                                        )
-                                    ),
-                                    shape = RoundedCornerShape(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
-
-                                ) {
-                                    Text("Update")
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text("Publish")
+                                    }
                                 }
 
-                                Button(
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.Red
-                                    ),
-                                    shape = RoundedCornerShape(8.dp),
-                                    onClick = {
-                                        bottomSheetState = true
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Delete")
-                                }
+
                             }
+
                         }
 
                     }
@@ -852,44 +794,6 @@ fun ManagePublishedUsedProductListingScreen(
 
             }
 
-        }
-    }
-
-
-    if (bottomSheetState) {
-
-        ModalBottomSheet(
-            modifier = Modifier
-                .padding(16.dp)
-                .safeDrawingPadding(),
-            dragHandle = null,
-            onDismissRequest = {
-                bottomSheetState = false
-            },
-            sheetState = sheetState,
-            shape = RoundedCornerShape(16.dp)
-        ) {
-
-
-            DeleteInfoBottomSheet("Are you sure you want to delete this product? This action cannot be undone.",
-                {
-
-                    editableService?.let { editableServiceNonNull ->
-                        viewModel.onDeleteSeconds(userId, editableService!!.productId, {
-                            viewModel.removeSelectedSeconds(editableServiceNonNull.productId)
-                            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                            onPopBackStack()
-
-                        }) {
-                            Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    }
-                    bottomSheetState = false
-
-                }) {
-                bottomSheetState = false
-            }
 
         }
     }
@@ -900,9 +804,9 @@ fun ManagePublishedUsedProductListingScreen(
         if (isPickerLaunch)
             return@TakePictureSheet
         viewModel.setPickerLaunch(true)
-        if(refreshImageIndex!=-1){
+        if (refreshImageIndex != -1) {
             pickSingleImageLauncher.launch(Unit)
-        }else{
+        } else {
             pickImagesLauncher?.launch(Unit)
         }
         pickerSheetState = false
@@ -922,9 +826,16 @@ fun ManagePublishedUsedProductListingScreen(
     }
 
 
-    if (isUpdating || isDeleting) {
+    if (isPublishing) {
         LoadingDialog()
     }
 
 
 }
+
+
+
+
+
+
+

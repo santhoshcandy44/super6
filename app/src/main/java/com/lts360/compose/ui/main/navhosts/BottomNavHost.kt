@@ -20,6 +20,7 @@ import com.lts360.compose.ui.auth.navhost.noTransitionComposable
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.chat.ChatUsersScreen
 import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
+import com.lts360.compose.ui.localjobs.manage.LocalJobsActivity
 import com.lts360.compose.ui.main.HomeScreen
 import com.lts360.compose.ui.main.MoreScreen
 import com.lts360.compose.ui.main.NotificationScreen
@@ -564,6 +565,14 @@ fun BottomNavHost(
                         Intent(
                             context,
                             UsedProductListingActivity::class.java
+                        ).apply {
+                            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        })
+                },
+                onManageLocalJobNavigateUp ={
+                    context.startActivity(
+                        Intent(
+                            context, LocalJobsActivity::class.java
                         ).apply {
                             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                         })

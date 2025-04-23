@@ -167,7 +167,11 @@
         <activity
             android:name=".compose.ui.usedproducts.manage.UsedProductListingActivity"
             android:windowSoftInputMode="adjustResize"
+            />
 
+        <activity
+            android:name=".compose.ui.localjobs.manage.LocalJobsActivity"
+            android:windowSoftInputMode="adjustResize"
             />
 
         <activity android:name=".compose.ui.settings.SettingsActivity" />

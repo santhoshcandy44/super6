@@ -2,8 +2,6 @@ package com.lts360.compose.ui.main
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -58,10 +56,11 @@ import com.lts360.compose.ui.shimmerLoadingAnimation
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.viewmodels.MoreViewModel
 import androidx.core.net.toUri
+import com.lts360.libs.ui.ShortToast
 
 
 @Composable
-fun   MoreScreen(
+fun MoreScreen(
     navController: NavHostController,
     boardItems: List<Board>,
     onProfileNavigateUp: () -> Unit,
@@ -70,6 +69,7 @@ fun   MoreScreen(
     onSetupBoardsSettingsNavigateUp: () -> Unit,
     onManageServiceNavigateUp: () -> Unit,
     onManageSecondsNavigateUp: () -> Unit,
+    onManageLocalJobNavigateUp: () -> Unit,
     onNavigateUpBookmarks: () -> Unit,
     onNavigateUpThemeModeSettings: () -> Unit,
     onNavigateUpWelcomeScreenSheet: () -> Unit,
@@ -89,7 +89,6 @@ fun   MoreScreen(
 
         if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
 
-            // Navigate back to A and preserve its state
             navController.navigate(BottomBar.Home()) {
                 launchSingleTop = true
                 restoreState = true
@@ -98,7 +97,6 @@ fun   MoreScreen(
                 }
             }
         } else {
-            // Let the default back behavior occur
             navController.popBackStack()
         }
 
@@ -111,8 +109,6 @@ fun   MoreScreen(
 
     val userProfile by viewModel.userProfile.collectAsState()
 
-
-    // Define a gradient brush
     val purpleGradientBrush = Brush.linearGradient(
         colors = listOf(
             Color(0xFF6200EE),
@@ -132,9 +128,8 @@ fun   MoreScreen(
     Surface(modifier = Modifier.fillMaxSize()){
         Box(
             modifier = Modifier
-                .fillMaxSize() // This makes the Box take up the entire available space
+                .fillMaxSize()
         ) {
-
 
             Column(
                 modifier = Modifier
@@ -145,7 +140,7 @@ fun   MoreScreen(
                 Spacer(Modifier.height(32.dp))
 
                 if (isLoading) {
-                    // Profile Section
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -156,19 +151,14 @@ fun   MoreScreen(
                                 .fillMaxWidth()
                                 .padding(16.dp)
                         ) {
-                            // Profile Image
-                            Box {
-
-                                Box(
-                                    modifier = Modifier
-                                        .size(60.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.customColorScheme.shimmerContainer)
-                                        .shimmerLoadingAnimation(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                }
-                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.customColorScheme.shimmerContainer)
+                                    .shimmerLoadingAnimation(),
+                                contentAlignment = Alignment.Center
+                            ) {}
 
                             Spacer(modifier = Modifier.width(8.dp))
 
@@ -302,7 +292,7 @@ fun   MoreScreen(
                                 )
                                 .clip(RoundedCornerShape(8.dp))
                         ) {
-                            // Settings Item
+
                             MoreSectionItem(
                                 color = Color(
                                     0xFF007cf9
@@ -350,13 +340,12 @@ fun   MoreScreen(
                                 iconRes = R.drawable.ic_light_interest,
                                 text = "Manage Service Industries"
                             ) {
-
                                 onNavigateUpGuestManageIndustriesAndInterests()
                             }
                         }
 
                     } else {
-                        // Account Management Section
+
                         Text(
                             "Account Management",
                             style = MaterialTheme.typography.titleMedium
@@ -371,7 +360,7 @@ fun   MoreScreen(
                                 )
                                 .clip(RoundedCornerShape(8.dp))
                         ) {
-                            // Settings Item
+
                             MoreSectionItem(
                                 color = Color(
                                     0xFF007cf9
@@ -404,12 +393,11 @@ fun   MoreScreen(
                         userProfile?.let {
 
                             if (it.accountType == AccountType.Business.name) {
+
                                 Spacer(modifier = Modifier.height(8.dp))
-                                // Actions Section
-                                Text(
-                                    "Business Tools & Settings",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
+
+                                Text("Business Tools & Settings", style = MaterialTheme.typography.titleMedium)
+
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 Column(
@@ -453,6 +441,26 @@ fun   MoreScreen(
                                     }
                                 }
 
+
+                             /*   Spacer(modifier = Modifier.height(8.dp))
+
+                                Column(
+                                    modifier = Modifier
+                                        .background(
+                                            MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .clip(RoundedCornerShape(8.dp))
+                                ) {
+                                    MoreSectionItem(
+                                        color = Color(0xFF7E57C2),
+                                        iconRes = R.drawable.ic_light_manage_local_job,
+                                        text = "Manage Local Jobs"
+                                    ) {
+                                        onManageLocalJobNavigateUp()
+                                    }
+                                }*/
+
                             }
 
                         }
@@ -494,7 +502,6 @@ fun   MoreScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Actions Section
                     Text("Actions", style = MaterialTheme.typography.titleMedium)
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -553,7 +560,9 @@ fun   MoreScreen(
                                     )
                                 )
                             } catch (e: Exception) {
-                                Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+                                e.message?.let{
+                                    ShortToast(context, it)
+                                }
                             }
                         }
 
@@ -580,35 +589,22 @@ fun   MoreScreen(
                                         "Send mail..."
                                     )
                                 )
-                            } catch (e: ActivityNotFoundException) {
-                                Toast.makeText(
-                                    context,
-                                    "No email app installed",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                            } catch (_: ActivityNotFoundException) {
+                                ShortToast(context, "No email app installed")
                             }
                         }
 
                         MoreSectionItem(
-                            color = Color(
-                                0xFFc14581
-                            ),
+                            color = Color(0xFFc14581),
                             iconRes = R.drawable.ic_light_privacy_policy,
                             text = "Privacy Policy"
                         ) {
-
                             openUrlInCustomTab(context, context.getString(R.string.privacy_policy))
                         }
 
-
                     }
-
                 }
-
-
             }
-
-
         }
     }
 

@@ -25,7 +25,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lts360.R
+import com.lts360.compose.ui.account.AccountAndProfileSettingsScreen
 import com.lts360.compose.ui.auth.AuthActivity
+import com.lts360.compose.ui.main.MoreScreen
+import com.lts360.compose.ui.settings.SettingsActivity
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint

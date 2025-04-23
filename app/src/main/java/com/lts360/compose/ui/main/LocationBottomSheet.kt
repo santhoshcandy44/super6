@@ -57,6 +57,8 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.components.findActivity
+import com.lts360.compose.ui.localjobs.manage.viewmodels.LocalJobWorkFlowViewModel
+import com.lts360.compose.ui.localjobs.manage.viewmodels.PublishedLocalJobViewModel
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
@@ -181,6 +183,31 @@ fun CreateServiceLocationBottomSheet(
 }
 
 
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateLocalJobLocationBottomSheet(
+    bottomSheetValue: SheetValue? = null,
+    onCloseClick: () -> Unit,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onStateClick: (String) -> Unit = {},
+    viewModel: LocalJobWorkFlowViewModel,
+) {
+
+    val localJob by viewModel.localJob.collectAsState()
+    val selectedLocation = localJob.selectedLocation
+
+    LocationBottomSheetContent(
+        bottomSheetValue,
+        onCloseClick,
+        selectedLocation?.geo,
+        onCurrentLocationSelected,
+        onRecentLocationSelected,
+        onStateClick)
+}
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateUsedProductListingLocationBottomSheet(
@@ -220,6 +247,29 @@ fun EditPublishedUsedProductListingLocationBottomSheet(
         bottomSheetValue,
         onCloseClick,
         selectedLocationGeo?.geo,
+        onCurrentLocationSelected,
+        onRecentLocationSelected,
+        onStateClick)
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditPublishedLocalJobLocationBottomSheet(
+    bottomSheetValue: SheetValue? = null,
+    onCloseClick: () -> Unit,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onStateClick: (String) -> Unit = {},
+    viewModel: PublishedLocalJobViewModel
+) {
+
+    val localJob by viewModel.localJob.collectAsState()
+    val selectedLocation = localJob.selectedLocation
+    LocationBottomSheetContent(
+        bottomSheetValue,
+        onCloseClick,
+        selectedLocation?.geo,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onStateClick)
@@ -309,7 +359,6 @@ private fun LocationBottomSheetContent(
         val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
         if (fineLocationGranted || coarseLocationGranted) {
-            // Permissions granted, request location updates
             locationViewModel.enableLoc(context, resolutionLauncher)
         } else {
             locationViewModel.onLocationPermissionDenied()

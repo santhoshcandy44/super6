@@ -145,7 +145,6 @@ fun AccountAndProfileSettingsScreen(
                         dragHandle = null,
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        // Sheet content
 
                         Column(
                             modifier = Modifier
@@ -153,15 +152,6 @@ fun AccountAndProfileSettingsScreen(
                                 .padding(24.dp)
                         ) {
 
-                            Text(
-                                text = "Log out",
-                                style = LocalTextStyle.current.copy(
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
 
                             Box(
                                 modifier = Modifier.
@@ -183,8 +173,7 @@ fun AccountAndProfileSettingsScreen(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             Text(
-                                text = "Are you sure would like to log out your account " +
-                                        "from moment?"
+                                text = "Are you sure want to log out your account ?"
                             )
 
                             Spacer(modifier = Modifier.height(32.dp))

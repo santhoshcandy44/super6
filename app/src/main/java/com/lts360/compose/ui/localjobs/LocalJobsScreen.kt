@@ -1,10 +1,9 @@
-package com.lts360.compose.ui.usedproducts
+package com.lts360.compose.ui.localjobs
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,23 +64,23 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.lts360.R
-import com.lts360.api.models.service.UsedProductListing
 import com.lts360.compose.ui.NoRippleInteractionSource
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
+import com.lts360.compose.ui.localjobs.models.LocalJob
 import com.lts360.compose.ui.main.common.NoInternetScreen
-import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.theme.icons
-import com.lts360.compose.ui.utils.FormatterUtils
+import com.lts360.libs.ui.ShortToast
 import kotlinx.coroutines.launch
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SecondsScreen(isTopBarShowing:Boolean,
-    onNavigateUpSecondsDetailedScreen: (UsedProductListing) -> Unit,
-    viewModel: SecondsViewmodel) {
+fun LocalJobsScreen(
+    isTopBarShowing: Boolean,
+    onNavigateUpSecondsDetailedScreen: (LocalJob) -> Unit,
+    viewModel: LocalJobsViewmodel
+) {
 
 
     val searchQuery = viewModel.submittedQuery
@@ -156,8 +155,8 @@ fun SecondsScreen(isTopBarShowing:Boolean,
             NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_ON_COMPLETED_JOB -> {
                 viewModel.pageSource.setNetWorkError(true)
                 viewModel.pageSource.setRefreshingItems(false)
-                Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT)
-                    .show()
+                ShortToast(context, "No internet connection")
+
             }
         }
     }
@@ -233,7 +232,7 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                 }
 
             } else {
-                // Handle no internet case
+
                 if (hasNetworkError) {
                     Box(
                         modifier = Modifier
@@ -246,12 +245,11 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                     }
                 }
 
-                // Handle empty state after loading
                 else if (!isLoadingItems && !hasAppendError && items.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .verticalScroll(rememberScrollState()) // Enables nested scrolling
+                            .verticalScroll(rememberScrollState())
 
                     ) {
                         Column(
@@ -271,7 +269,7 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                         }
                     }
                 }
-                // Handle loaded items
+
                 else {
                     LazyVerticalGrid(
                         GridCells.Adaptive(120.dp),
@@ -283,96 +281,74 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                             .fillMaxSize()
                     ) {
 
-                        items(items,
-                            key = { "grid_items_${it.productId}" }) { usedProductListing ->
+                        items(
+                            items,
+                            key = { "grid_items_${it.localJobId}" }) { item ->
 
-                            UsedProductListingCard(
+                            LocalJobCard(
                                 isGuest,
-                                usedProductListing,
+                                item,
                                 {
-                                    onNavigateUpSecondsDetailedScreen(usedProductListing)
+                                    onNavigateUpSecondsDetailedScreen(item)
                                 },
                                 {
-                                    if (usedProductListing.isBookmarked) {
+                                    if (item.isBookmarked) {
 
-                                        viewModel.directUpdateServiceIsBookMarked(
-                                            usedProductListing.productId,
+                                        viewModel.directUpdateLocalJobIsBookMarked(
+                                            item.localJobId,
                                             false
                                         )
 
                                         viewModel.onRemoveBookmark(
                                             viewModel.userId,
-                                            usedProductListing, onSuccess = {
+                                            item, onSuccess = {
 
-                                                viewModel.directUpdateServiceIsBookMarked(
-                                                    usedProductListing.productId,
+                                                viewModel.directUpdateLocalJobIsBookMarked(
+                                                    item.localJobId,
                                                     false
                                                 )
+                                                ShortToast(context, "Bookmark removed")
 
-                                                Toast.makeText(
-                                                    context,
-                                                    "Bookmark removed",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
 
                                             }, onError = {
 
-                                                viewModel.directUpdateServiceIsBookMarked(
-                                                    usedProductListing.productId,
+                                                viewModel.directUpdateLocalJobIsBookMarked(
+                                                    item.localJobId,
                                                     true
                                                 )
 
-                                                Toast.makeText(
-                                                    context,
-                                                    "Something wrong",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-
+                                                ShortToast(context, "Something wrong")
 
                                             })
 
 
                                     } else {
 
-                                        viewModel.directUpdateServiceIsBookMarked(
-                                            usedProductListing.productId,
+                                        viewModel.directUpdateLocalJobIsBookMarked(
+                                            item.localJobId,
                                             true
                                         )
 
                                         viewModel.onBookmark(
                                             viewModel.userId,
-                                            usedProductListing,
+                                            item,
                                             onSuccess = {
 
+                                                viewModel.directUpdateLocalJobIsBookMarked(
+                                                    item.localJobId,
+                                                    true)
 
-                                                viewModel.directUpdateServiceIsBookMarked(
-                                                    usedProductListing.productId,
-                                                    true
-                                                )
-
-
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        "Bookmarked",
-                                                        Toast.LENGTH_SHORT
-                                                    )
-                                                    .show()
+                                                ShortToast(context, "Bookmarked")
 
                                             },
                                             onError = {
 
-                                                viewModel.directUpdateServiceIsBookMarked(
-                                                    usedProductListing.productId,
+                                                viewModel.directUpdateLocalJobIsBookMarked(
+                                                    item.localJobId,
                                                     false
                                                 )
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        "Something wrong",
-                                                        Toast.LENGTH_SHORT
-                                                    )
-                                                    .show()
+
+                                                ShortToast(context, "Something wrong")
 
                                             })
                                     }
@@ -381,7 +357,6 @@ fun SecondsScreen(isTopBarShowing:Boolean,
 
                         }
 
-                        // Loading indicator for appending more items
                         if (isLoadingItems) {
                             item(span = { GridItemSpan(maxLineSpan) }) {
                                 Row(
@@ -521,26 +496,18 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                                                 putExtra(
                                                     Intent.EXTRA_TEXT,
                                                     it.shortCode
-                                                )  // Text you want to share
-                                                type =
-                                                    "text/plain"  // MIME type for text
+                                                )
+                                                type = "text/plain"
                                             }
-                                            // Start the share intent
+
                                             context.startActivity(
                                                 Intent.createChooser(
                                                     shareIntent,
                                                     "Share via"
                                                 )
                                             )
-                                        } catch (e: ActivityNotFoundException) {
-
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "No app to open",
-                                                    Toast.LENGTH_SHORT
-                                                )
-                                                .show()
+                                        } catch (_: ActivityNotFoundException) {
+                                            ShortToast(context, "No app to open")
                                         }
 
                                     }
@@ -579,9 +546,9 @@ fun SecondsScreen(isTopBarShowing:Boolean,
 
 
 @Composable
-private fun UsedProductListingCard(
+private fun LocalJobCard(
     isGuest: Boolean,
-    usedProductListing: UsedProductListing,
+    item: LocalJob,
     onItemClicked: () -> Unit,
     onFavouriteClicked: () -> Unit
 ) {
@@ -602,9 +569,9 @@ private fun UsedProductListingCard(
                     .aspectRatio(1f)
             ) {
 
-                if (usedProductListing.images.isNotEmpty()) {
+                if(item.images.isNotEmpty()){
                     AsyncImage(
-                        usedProductListing.images[0].imageUrl,
+                        item.images[0].imageUrl,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -636,7 +603,7 @@ private fun UsedProductListingCard(
                             imageVector = Icons.Default.FavoriteBorder,
                             contentDescription = null,
                             colorFilter = ColorFilter.tint(
-                                if (usedProductListing.isBookmarked) {
+                                if (item.isBookmarked) {
                                     Color.Red
                                 } else {
                                     Color.White
@@ -654,13 +621,13 @@ private fun UsedProductListingCard(
             Column(modifier = Modifier.padding(8.dp)) {
 
                 Text(
-                    usedProductListing.name,
+                    item.title,
                     maxLines = 1,
                     style = MaterialTheme.typography.titleMedium,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                usedProductListing.location?.geo?.let {
+                item.location?.geo?.let {
                     Text(
                         it,
                         style = MaterialTheme.typography.bodySmall,
@@ -670,22 +637,6 @@ private fun UsedProductListingCard(
                         color =
                             MaterialTheme.customColorScheme.textVariant1
 
-                    )
-                }
-
-
-                // 🔹 Aligns the price to the END
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        FormatterUtils.formatCurrency(
-                            usedProductListing.price,
-                            usedProductListing.priceUnit
-                        ),
-                        style = MaterialTheme.typography.titleLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
 

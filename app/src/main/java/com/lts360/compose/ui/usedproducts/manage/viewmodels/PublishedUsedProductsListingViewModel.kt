@@ -43,7 +43,6 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
 ) : ViewModel() {
 
 
-    // Retrieve the argument from the navigation
     val userId: Long = UserSharedPreferencesManager.userId
 
     private val _isLoading = MutableStateFlow(false)
@@ -61,13 +60,11 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     val shortDescription = _shortDescription.asStateFlow()
 
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _price = MutableStateFlow("")
     val price = _price.asStateFlow()
 
     val priceUnits = listOf("INR", "USD")
 
-    // Get user's default currency from device locale
     private val userCurrency = Currency.getInstance(Locale.getDefault()).currencyCode
 
     private val _priceUnit = MutableStateFlow<String>(if (userCurrency in priceUnits) userCurrency else "INR")
@@ -80,19 +77,15 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     private val _selectedLocation = MutableStateFlow<EditableLocation?>(null)
     val selectedLocation = _selectedLocation.asStateFlow()
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _country = MutableStateFlow<String?>(null)
     val selectedCountry = _country.asStateFlow()
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _state = MutableStateFlow<String?>(null)
     val selectedState = _state.asStateFlow()
 
-    // Define a MutableStateFlow for the containers list
     private val _imageContainers = MutableStateFlow<List<CombinedContainer>>(emptyList())
     val imageContainers = _imageContainers.asStateFlow()
 
-    // Error messages
     private val _titleError = MutableStateFlow<String?>(null)
     val titleError = _titleError.asStateFlow()
 
@@ -106,11 +99,9 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
     private val _selectedLocationError = MutableStateFlow<String?>(null)
     val selectedLocationError = _selectedLocationError.asStateFlow()
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _countryError = MutableStateFlow<String?>(null)
     val selectedCountryError = _countryError.asStateFlow()
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _stateError = MutableStateFlow<String?>(null)
     val selectedStateError = _stateError.asStateFlow()
 
@@ -374,18 +365,16 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
 
     fun updateLocation(newLocation: EditableLocation?) {
         _selectedLocation.value = newLocation
-        _selectedLocationError.value = null // Clear error
+        _selectedLocationError.value = null
 
     }
 
 
-    // Function to update a specific container
     private fun loadImageContainers(bitmapContainers: List<CombinedContainer>) {
         _imageContainers.value = bitmapContainers
     }
 
 
-    // Function to add a new BitmapContainer
     fun addContainer(
         path: String,
         width: Int,
@@ -393,7 +382,6 @@ class PublishedUsedProductsListingViewModel @Inject constructor(
         format: String,
         errorMessage: String? = null
     ) {
-        // Create a mutable copy of the current list, add the new container, and update the state
         _imageContainers.value = _imageContainers.value.toMutableList().apply {
             add(
                 containerFactory.createCombinedContainerForBitmap(

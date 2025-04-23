@@ -174,10 +174,12 @@ fun SettingsCard(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
+                    color = Color.Black
                 )
                 Text(
                     text = description,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black
                 )
             }
 

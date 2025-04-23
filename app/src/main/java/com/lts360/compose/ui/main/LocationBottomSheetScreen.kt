@@ -15,13 +15,15 @@ import androidx.navigation.compose.rememberNavController
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.auth.navhost.noTransitionComposable
+import com.lts360.compose.ui.localjobs.manage.viewmodels.LocalJobWorkFlowViewModel
+import com.lts360.compose.ui.localjobs.manage.viewmodels.PublishedLocalJobViewModel
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.navhosts.routes.LocationSetUpRoutes
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
-import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
+import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,8 +97,6 @@ fun CreateServiceLocationBottomSheetScreen(
     locationStatesEnabled: Boolean = true,
     isLoading: Boolean = false,
 ) {
-
-
     CreateServiceLocationBottomSheetContent(
         bottomSheetValue,
         onCurrentLocationSelected,
@@ -107,11 +107,31 @@ fun CreateServiceLocationBottomSheetScreen(
         isLoading,
         createServiceViewModel
     )
-
 }
 
-
-
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateLocalJobLocationBottomSheetScreen(
+    bottomSheetValue: SheetValue? = null,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onDistrictSelected: (District) -> Unit,
+    onPopUpLocationBottomSheet: () -> Unit,
+    viewModel: LocalJobWorkFlowViewModel,
+    locationStatesEnabled: Boolean = true,
+    isLoading: Boolean = false,
+) {
+    CreateLocalJobBottomSheetContent(
+        bottomSheetValue,
+        onCurrentLocationSelected,
+        onRecentLocationSelected,
+        onDistrictSelected,
+        onPopUpLocationBottomSheet,
+        locationStatesEnabled,
+        isLoading,
+        viewModel
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,6 +163,32 @@ fun CreateUsedProductListingLocationBottomSheetScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun ManagePublishedLocalJobLocationBottomSheetScreen(
+    bottomSheetValue: SheetValue? = null,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onDistrictSelected: (District) -> Unit,
+    onPopUpLocationBottomSheet: () -> Unit,
+    viewModel: PublishedLocalJobViewModel,
+    locationStatesEnabled: Boolean = true,
+    isLoading: Boolean = false,
+) {
+    PublishedLocalJobBottomSheetContent(
+        bottomSheetValue,
+        onCurrentLocationSelected,
+        onRecentLocationSelected,
+        onDistrictSelected,
+        onPopUpLocationBottomSheet,
+        locationStatesEnabled,
+        isLoading,
+        viewModel
+    )
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun ManagePublishedUsedProductListingLocationBottomSheetScreen(
     bottomSheetValue: SheetValue? = null,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
@@ -153,8 +199,6 @@ fun ManagePublishedUsedProductListingLocationBottomSheetScreen(
     locationStatesEnabled: Boolean = true,
     isLoading: Boolean = false,
 ) {
-
-
     PublishedUsedProductListingBottomSheetContent(
         bottomSheetValue,
         onCurrentLocationSelected,
@@ -165,8 +209,8 @@ fun ManagePublishedUsedProductListingLocationBottomSheetScreen(
         isLoading,
         usedProductsListingWorkflowViewModel
     )
-
 }
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -262,6 +306,73 @@ fun UserLocationBottomSheetContent(
 
 }
 
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PublishedLocalJobBottomSheetContent(
+    bottomSheetValue: SheetValue? = null,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onDistrictSelected: (District) -> Unit,
+    onPopUpLocationBottomSheet: () -> Unit,
+    locationStatesEnabled: Boolean = true,
+    isLoading: Boolean = false,
+    viewModel: PublishedLocalJobViewModel,
+) {
+    val bottomSheetNavController = rememberNavController()
+
+    Box {
+        Scaffold { contentPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+            ) {
+
+                NavHost(
+                    navController = bottomSheetNavController,
+                    startDestination = if (locationStatesEnabled)
+                        LocationSetUpRoutes.LocationChooser()
+                    else LocationSetUpRoutes.LocationChooser(
+                        false
+                    ),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
+
+                        EditPublishedLocalJobLocationBottomSheet(
+                            bottomSheetValue,
+                            onCloseClick = {
+                                onPopUpLocationBottomSheet()
+                            },
+                            onCurrentLocationSelected = onCurrentLocationSelected,
+                            onRecentLocationSelected = onRecentLocationSelected,
+                            onStateClick = {
+                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
+                            },
+                            viewModel)
+                    }
+
+                    noTransitionComposable<LocationSetUpRoutes.Districts> {
+                        DistrictsScreen(bottomSheetNavController,
+                            isLoading,
+                            onDistrictSelected,{
+                                bottomSheetNavController.popBackStack()
+                            })
+                    }
+                }
+
+            }
+        }
+
+        if (isLoading) {
+            LoadingDialog()
+        }
+    }
+
+
+}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -376,6 +487,73 @@ fun CreateUsedProductListingBottomSheetContent(
                                 bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
                             },
                             usedProductsListingWorkflowViewModel)
+                    }
+
+                    noTransitionComposable<LocationSetUpRoutes.Districts> {
+                        DistrictsScreen(bottomSheetNavController,
+                            isLoading,
+                            onDistrictSelected,{
+                                bottomSheetNavController.popBackStack()
+                            })
+                    }
+                }
+
+            }
+        }
+
+        if (isLoading) {
+            LoadingDialog()
+        }
+    }
+
+
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateLocalJobBottomSheetContent(
+    bottomSheetValue: SheetValue? = null,
+    onCurrentLocationSelected: (CurrentLocation) -> Unit,
+    onRecentLocationSelected: (RecentLocation) -> Unit,
+    onDistrictSelected: (District) -> Unit,
+    onPopUpLocationBottomSheet: () -> Unit,
+    locationStatesEnabled: Boolean = true,
+    isLoading: Boolean = false,
+    viewModel: LocalJobWorkFlowViewModel,
+) {
+    val bottomSheetNavController = rememberNavController()
+
+    Box {
+        Scaffold { contentPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+            ) {
+
+                NavHost(
+                    navController = bottomSheetNavController,
+                    startDestination = if (locationStatesEnabled)
+                        LocationSetUpRoutes.LocationChooser()
+                    else LocationSetUpRoutes.LocationChooser(
+                        false
+                    ),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
+
+                        CreateLocalJobLocationBottomSheet(
+                            bottomSheetValue,
+                            onCloseClick = {
+                                onPopUpLocationBottomSheet()
+                            },
+                            onCurrentLocationSelected = onCurrentLocationSelected,
+                            onRecentLocationSelected = onRecentLocationSelected,
+                            onStateClick = {
+                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
+                            },
+                            viewModel)
                     }
 
                     noTransitionComposable<LocationSetUpRoutes.Districts> {
