@@ -26,6 +26,13 @@ sealed class BottomBar{
         val onlySearchBar: Boolean = false,
     ) : BottomBar()
 
+    @Serializable
+    data class NestedLocalJobs(
+        val key: Int = 0,
+        val submittedQuery: String? = null,
+        val onlySearchBar: Boolean = false,
+    ) : BottomBar()
+
 
     @Serializable
     data object Chats : BottomBar()

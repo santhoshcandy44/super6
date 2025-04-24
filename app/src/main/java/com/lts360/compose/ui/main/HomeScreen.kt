@@ -57,8 +57,11 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.lts360.app.database.models.app.Board
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
+import com.lts360.compose.ui.localjobs.LocalJobsScreen
+import com.lts360.compose.ui.localjobs.LocalJobsViewmodel
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
+import com.lts360.compose.ui.main.prefs.BoardsSetupActivity
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.services.ServicesScreen
@@ -74,11 +77,13 @@ fun HomeScreen(
     boardItems: List<Board>,
     onNavigateUpServiceDetailedScreen: () -> Unit,
     onNavigateUpUsedProductListingDetailedScreen: () -> Unit,
+    onNavigateUpLocalJobDetailedScreen: () -> Unit,
     onNavigateUpServiceOwnerProfile: (Long) -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: HomeViewModel,
     servicesViewModel: ServicesViewModel,
     secondsViewModel: SecondsViewmodel,
+    localJobsViewModel: LocalJobsViewmodel,
     onDockedFabAddNewSecondsVisibility: (Boolean) -> Unit,
     onlySearchBar: Boolean = false,
     nestedType: String? = null
@@ -151,8 +156,8 @@ fun HomeScreen(
 
             AnimatedVisibility(
                 visible = showTopBar,
-                enter = fadeIn(),  // Optional fade-in for showing
-                exit = fadeOut()   // Optional fade-out for hiding
+                enter = fadeIn(),
+                exit = fadeOut()
             ) {
 
                 Column(
@@ -202,6 +207,9 @@ fun HomeScreen(
                             when (currentLabel) {
                                 "services" -> viewModel.onGetServiceSearchQuerySuggestions(userId, query)
                                 "second_hands" -> viewModel.onGetUsedProductListingSearchQuerySuggestions(userId, query)
+                                "local_jobs" -> {
+
+                                }
                             }
                         }
                     } else if (viewModel.searchQuery.value.text != query && viewModel.isSearching.value) {
@@ -218,6 +226,7 @@ fun HomeScreen(
                         val destination = when (currentLabel) {
                             "services" -> BottomBar.NestedServices(servicesViewModel.getKey() + 1, searchQuery.text, true)
                             "second_hands" -> BottomBar.NestedSeconds(secondsViewModel.getKey() + 1, searchQuery.text, true)
+                            "local_jobs" ->  BottomBar.NestedLocalJobs(secondsViewModel.getKey() + 1, searchQuery.text, true)
                             else -> return
                         }
 
@@ -250,7 +259,7 @@ fun HomeScreen(
                         viewModel.setSearchQuery("")
                         viewModel.setSearching(false)
                     },
-                    isBackButtonEnabled = onlySearchBar // disable back button only for full screen
+                    isBackButtonEnabled = onlySearchBar
                 )
             }
 
@@ -288,12 +297,28 @@ fun HomeScreen(
                     )
                 }
 
+
+                val localJobsContent: @Composable () -> Unit = {
+                    LocalJobsScreen(
+                        showTopBar,
+                        {
+/*
+                            viewModel.setSelectedUsedProductListingItem(it)
+*/
+                            localJobsViewModel.setSelectedItem(it)
+                            onNavigateUpLocalJobDetailedScreen()
+                        },
+                        localJobsViewModel
+                    )
+                }
+
                 if (!onlySearchBar) {
                     Boards(
                         boards = boardItems,
                         pagerState = pagerState,
                         servicesContent = servicesContent,
                         secondsContent = secondsContent,
+                        localJobsContent = localJobsContent,
                         onPageChanged = {
                             onDockedFabAddNewSecondsVisibility(it == "second_hands")
                         }
@@ -302,6 +327,7 @@ fun HomeScreen(
                     when (nestedType) {
                         "services" -> servicesContent()
                         "second_hands" -> secondsContent()
+                        "local_jobs" -> localJobsContent()
                     }
                 }
 

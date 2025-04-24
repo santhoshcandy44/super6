@@ -23,11 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -106,19 +103,19 @@ fun LocalJobsScreen(
 
     val connectivityManager = viewModel.connectivityManager
 
-    val lazyGridState = rememberLazyGridState()
+    val lazyListState = rememberLazyListState()
     val lastLoadedItemPosition by viewModel.lastLoadedItemPosition.collectAsState()
 
     val serviceInfoBottomSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
 
-    LaunchedEffect(lazyGridState) {
-        snapshotFlow { lazyGridState.layoutInfo }
+    LaunchedEffect(lazyListState) {
+        snapshotFlow { lazyListState.layoutInfo }
             .collect { layoutInfo ->
-                // Check if the last item is visible
+
                 val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull {
-                    (it.key as? String)?.startsWith("grid_items_") == true
+                    (it.key as? String)?.startsWith("list_items_") == true
                 }?.index
 
 
@@ -271,19 +268,17 @@ fun LocalJobsScreen(
                 }
 
                 else {
-                    LazyVerticalGrid(
-                        GridCells.Adaptive(120.dp),
-                        state = lazyGridState,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    LazyColumn(
+                        state = lazyListState,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(horizontal = 8.dp),
                         modifier = Modifier
                             .fillMaxSize()
                     ) {
 
-                        items(
+                        items (
                             items,
-                            key = { "grid_items_${it.localJobId}" }) { item ->
+                            key = { "list_items_${it.localJobId}" }) { item ->
 
                             LocalJobCard(
                                 isGuest,
@@ -322,7 +317,8 @@ fun LocalJobsScreen(
                                             })
 
 
-                                    } else {
+                                    }
+                                    else {
 
                                         viewModel.directUpdateLocalJobIsBookMarked(
                                             item.localJobId,
@@ -358,7 +354,7 @@ fun LocalJobsScreen(
                         }
 
                         if (isLoadingItems) {
-                            item(span = { GridItemSpan(maxLineSpan) }) {
+                            item {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.Center,
@@ -376,9 +372,8 @@ fun LocalJobsScreen(
                             }
                         }
 
-                        // Handle errors for appending items
                         if (hasAppendError) {
-                            item(span = { GridItemSpan(maxLineSpan) }) {
+                            item {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.Center,
@@ -404,7 +399,7 @@ fun LocalJobsScreen(
                         }
 
                         if (!hasMoreItems) {
-                            item(span = { GridItemSpan(maxLineSpan) }) {
+                            item {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.Center,
@@ -609,7 +604,7 @@ private fun LocalJobCard(
                                     Color.White
                                 }
                             ),
-                            modifier = Modifier.size(24.dp) // 🔹 Set proper size (without extra padding)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
 

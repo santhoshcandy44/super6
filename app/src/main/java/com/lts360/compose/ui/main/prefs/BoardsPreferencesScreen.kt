@@ -730,13 +730,14 @@ private fun BoardItem(
                             )
                         }
 
-                        else -> {
+                        "local_jobs" ->{
                             Image(
-                                painterResource(R.drawable.ic_board_services),
+                                painterResource(R.drawable.ic_board_local_job),
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(32.dp),
                             )
                         }
+
                     }
                 }
 

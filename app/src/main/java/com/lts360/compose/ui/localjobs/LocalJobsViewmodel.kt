@@ -212,7 +212,7 @@ class LocalJobsViewmodel @Inject constructor(
                         onError(error)
                     }
                 }
-            } catch (t: Exception) {
+            } catch (_: Exception) {
                 error = "Something Went Wrong"
                 onError(error)
 
@@ -281,7 +281,7 @@ class LocalJobsViewmodel @Inject constructor(
                         onError(error)
                     }
                 }
-            } catch (t: Exception) {
+            } catch (_: Exception) {
                 error = "Something Went Wrong"
                 onError(error)
             }
@@ -309,13 +309,11 @@ class LocalJobsViewmodel @Inject constructor(
                             Result.Error(Exception(errorMessage))
                         }
                     } else {
-                        val errorBody = it.errorBody()?.string()
-                        val errorMessage = try {
-                            Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                        } catch (e: Exception) {
+                        Result.Error(Exception(try {
+                            Gson().fromJson(it.errorBody()?.string(), ErrorResponse::class.java).message
+                        } catch (_: Exception) {
                             "An unknown error occurred"
-                        }
-                        Result.Error(Exception(errorMessage))
+                        }))
                     }
                 }
 

@@ -49,6 +49,7 @@ sealed class BottomNavRoutes {
     @Serializable
     data class DetailedSeconds(val key: Int) : BottomNavRoutes()
 
+
     @Serializable
     data class SecondsOwnerProfile(val serviceOwnerId: Long, val key: Int = -1) : BottomNavRoutes()
 
@@ -60,6 +61,9 @@ sealed class BottomNavRoutes {
 
     @Serializable
     data class DetailedSecondsFeedUserImagesSlider(val selectedImagePosition: Int) : BottomNavRoutes()
+
+    @Serializable
+    data class DetailedLocalJob(val key: Int) : BottomNavRoutes()
 
 }
 

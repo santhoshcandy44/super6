@@ -69,14 +69,13 @@ import coil3.request.placeholder
 import com.lts360.R
 import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.api.models.service.Image
-import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
-import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
+import com.lts360.compose.ui.localjobs.models.LocalJob
 import com.lts360.compose.ui.services.SendMessageButton
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.utils.ExpandableText
@@ -88,8 +87,7 @@ fun DetailedLocalJobScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long) -> Unit,
-    onUsedProductListingOwnerProfileClicked: (Long) -> Unit,
-    viewModel: SecondsViewmodel
+    viewModel: LocalJobsViewmodel
 ) {
 
     val userId = viewModel.userId
@@ -104,11 +102,6 @@ fun DetailedLocalJobScreen(
         userId,
         selectedItem,
         onNavigateUpSlider,
-        {
-            selectedItem?.let {
-                onUsedProductListingOwnerProfileClicked(it.user.userId)
-            }
-        },
         {
             selectedItem?.let {
                 OutlinedButton(
@@ -157,7 +150,6 @@ fun BookmarkedDetailedLocalJobInfoScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
-    onNavigateUpSecondsOwnerProfile: (Long) -> Unit,
     viewModel: BookmarksViewModel,
 ) {
 
@@ -168,7 +160,7 @@ fun BookmarkedDetailedLocalJobInfoScreen(
 
     val item = selectedItem // Store in a local variable
 
-    if (item !is UsedProductListing) return // Smart cast now works
+    if (item !is LocalJob) return // Smart cast now works
 
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
@@ -177,9 +169,6 @@ fun BookmarkedDetailedLocalJobInfoScreen(
         userId,
         item,
         onNavigateUpSlider,
-        {
-            onNavigateUpSecondsOwnerProfile(item.user.userId)
-        },
         {
 
             item.let {
@@ -224,9 +213,8 @@ fun BookmarkedDetailedLocalJobInfoScreen(
 @Composable
 private fun DetailedLocalJobContent(
     userId: Long,
-    selectedSeconds: UsedProductListing?,
+    item: LocalJob?,
     onNavigateUpSlider: (Int) -> Unit,
-    onUsedProductListingOwnerProfileClicked: () -> Unit,
     onChatButtonClicked: @Composable (() -> Unit) -> Unit,
     onPopBackStack: () -> Unit
 ) {
@@ -307,12 +295,11 @@ private fun DetailedLocalJobContent(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            selectedSeconds?.let {
-                DetailedUsedProductListingInfo(
+            item?.let {
+                DetailedLocalJobInfo(
                     userId,
                     it,
-                    onNavigateUpSlider,
-                    onUsedProductListingOwnerProfileClicked
+                    onNavigateUpSlider
                 ) {
                     onChatButtonClicked {
                         coroutineScope.launch {
@@ -329,11 +316,10 @@ private fun DetailedLocalJobContent(
 }
 
 @Composable
-private fun DetailedUsedProductListingInfo(
+private fun DetailedLocalJobInfo(
     userId: Long,
-    seconds: UsedProductListing,
+    item: LocalJob,
     onNavigateUpSlider: (Int) -> Unit,
-    onUsedProductListingOwnerProfileClicked: () -> Unit,
     chatButtonClicked: @Composable () -> Unit
 ) {
 
@@ -347,27 +333,26 @@ private fun DetailedUsedProductListingInfo(
         ) {
 
 
-            item(key = "secondsImages-${seconds.productId}") {
-                SecondsImagesSliderDetailedSecondsInfo(seconds.images, onNavigateUpSlider)
+            item(key = "secondsImages-${item.localJobId}") {
+                SecondsImagesSliderDetailedSecondsInfo(item.images, onNavigateUpSlider)
             }
 
-            item(key = "secondsOwner-${seconds.user.userId}") {
-                SecondsOwner(
-                    "${seconds.user.firstName} ${seconds.user.lastName ?: ""}",
-                    seconds.user.profilePicUrl,
-                    "${seconds.country}/${seconds.state}",
-                    seconds.user.isOnline,
-                    onUsedProductListingOwnerProfileClicked
+            item(key = "secondsOwner-${item.user.userId}") {
+                LocalJobOwner(
+                    "${item.user.firstName} ${item.user.lastName ?: ""}",
+                    item.user.profilePicUrl,
+                    "${item.country}/${item.state}",
+                    item.user.isOnline
                 )
             }
 
-            item(key = "secondsDescription-${seconds.productId}") {
-                SecondsDescription(
-                    seconds.name,
-                    seconds.description,
+            item(key = "secondsDescription-${item.localJobId}") {
+                LocalJobDescription(
+                    item.title,
+                    item.description,
                     formatCurrency(
-                        seconds.price,
-                        seconds.priceUnit
+                        item.salaryMin.toDouble(),
+                        item.salaryUnit
                     )
                 )
             }
@@ -377,7 +362,7 @@ private fun DetailedUsedProductListingInfo(
 
         Box(modifier = Modifier.fillMaxWidth()){
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                if (userId != seconds.user.userId) {
+                if (userId != item.user.userId) {
                     SendMessageButton(chatButtonClicked)
                 }
             }
@@ -491,12 +476,11 @@ private fun LoadingDetailedSecondsInfo() {
 }
 
 @Composable
-private fun SecondsOwner(
+private fun LocalJobOwner(
     secondsOwner: String,
     urlImage: String?,
     secondsFrom: String,
-    isOnline: Boolean,
-    onUsedProductListingClicked: () -> Unit
+    isOnline: Boolean
 ) {
 
     val context = LocalContext.current
@@ -504,8 +488,7 @@ private fun SecondsOwner(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clickable { onUsedProductListingClicked() },
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.size(40.dp)) {
@@ -523,7 +506,7 @@ private fun SecondsOwner(
             )
 
             if (isOnline) {
-                // Online status dot
+
                 Box(
                     modifier = Modifier
                         .size(10.dp)
@@ -567,7 +550,7 @@ private fun SecondsOwner(
 }
 
 @Composable
-private fun SecondsDescription(
+private fun LocalJobDescription(
     name: String,
     description: String,
     price: String

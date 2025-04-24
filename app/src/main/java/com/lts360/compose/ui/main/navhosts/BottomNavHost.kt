@@ -20,6 +20,8 @@ import com.lts360.compose.ui.auth.navhost.noTransitionComposable
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.chat.ChatUsersScreen
 import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
+import com.lts360.compose.ui.localjobs.DetailedLocalJobScreen
+import com.lts360.compose.ui.localjobs.LocalJobsViewmodel
 import com.lts360.compose.ui.localjobs.manage.LocalJobsActivity
 import com.lts360.compose.ui.main.HomeScreen
 import com.lts360.compose.ui.main.MoreScreen
@@ -85,6 +87,7 @@ fun BottomNavHost(
             val args = backstackEntry.toRoute<BottomBar.Home>()
             val servicesViewModel: ServicesViewModel = hiltViewModel(key = args.key.toString())
             val secondsViewmodel: SecondsViewmodel = hiltViewModel(key = "seconds_${args.key}")
+            val localJobViewmodel: LocalJobsViewmodel = hiltViewModel(key = "local_jobs_${args.key}")
 
             LaunchedEffect(backstackEntry) {
                 homeViewModel.setSearchQuery(args.submittedQuery ?: "")
@@ -101,6 +104,9 @@ fun BottomNavHost(
                 {
                     navController.navigate(BottomNavRoutes.DetailedSeconds(args.key))
                 },
+                {
+                    navController.navigate(BottomNavRoutes.DetailedLocalJob(args.key))
+                },
                 { serviceOwnerId ->
                     navController.navigate(
                         BottomNavRoutes.ServiceOwnerProfile(serviceOwnerId, args.key),
@@ -111,6 +117,7 @@ fun BottomNavHost(
                 homeViewModel,
                 servicesViewModel,
                 secondsViewmodel,
+                localJobViewmodel,
                 onDockedFabAddNewSecondsChanged
 
             )
@@ -128,6 +135,8 @@ fun BottomNavHost(
 
             val servicesViewModel: ServicesViewModel = hiltViewModel(key = args.key.toString())
             val secondsViewmodel: SecondsViewmodel = hiltViewModel(key = "seconds_${args.key}")
+            val localJobViewmodel: LocalJobsViewmodel = hiltViewModel(key = "local_jobs_${args.key}")
+
             HomeScreen(
                 navController,
                 boards,
@@ -136,6 +145,9 @@ fun BottomNavHost(
                 },
                 {
                     navController.navigate(BottomNavRoutes.DetailedSeconds(args.key))
+                },
+                {
+                    navController.navigate(BottomNavRoutes.DetailedLocalJob(args.key))
                 },
                 { serviceOwnerId ->
                     navController.navigate(
@@ -147,6 +159,7 @@ fun BottomNavHost(
                 homeViewModel,
                 servicesViewModel,
                 secondsViewmodel,
+                localJobViewmodel,
                 onDockedFabAddNewSecondsChanged,
                 args.onlySearchBar,
                 "services"
@@ -317,6 +330,7 @@ fun BottomNavHost(
 
             val servicesViewModel: ServicesViewModel = hiltViewModel(key = args.key.toString())
             val secondsViewmodel: SecondsViewmodel = hiltViewModel(key = "seconds_${args.key}")
+            val localJobViewmodel: LocalJobsViewmodel = hiltViewModel(key = "local_jobs_${args.key}")
 
             LaunchedEffect(backstackEntry) {
                 homeViewModel.setSearchQuery(args.submittedQuery ?: "")
@@ -332,6 +346,9 @@ fun BottomNavHost(
                 {
                     navController.navigate(BottomNavRoutes.DetailedSeconds(args.key))
                 },
+                {
+                    navController.navigate(BottomNavRoutes.DetailedLocalJob(args.key))
+                },
                 { serviceOwnerId ->
                     navController.navigate(
                         BottomNavRoutes.ServiceOwnerProfile(serviceOwnerId, args.key),
@@ -342,6 +359,7 @@ fun BottomNavHost(
                 homeViewModel,
                 servicesViewModel,
                 secondsViewmodel,
+                localJobViewmodel,
                 onDockedFabAddNewSecondsChanged,
                 args.onlySearchBar,
                 "second_hands"
@@ -386,6 +404,41 @@ fun BottomNavHost(
                             NavOptions.Builder().setLaunchSingleTop(true).build()
                         )
                     },
+                    viewModel
+                )
+            }
+        }
+
+        noTransitionComposable<BottomNavRoutes.DetailedLocalJob> { backStackEntry ->
+
+
+            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedLocalJob>()
+            val key = args.key
+
+            val parentBackStackEntry = remember {
+                if (key == 0) navController.getBackStackEntry<BottomBar.Home>()
+                 else navController.getBackStackEntry<BottomBar.NestedLocalJobs>()
+            }
+
+
+            val viewModel: LocalJobsViewmodel = hiltViewModel(parentBackStackEntry,
+                key = "local_jobs_${key}")
+
+            val selectedItem by viewModel.selectedItem.collectAsState()
+
+            selectedItem?.let {
+                DetailedLocalJobScreen(
+                    navController,
+                    onNavigateUpSlider = {
+                        navController.navigate(BottomNavRoutes.DetailedSecondsImagesSlider(key, it))
+                    }, navigateUpChat = { chatUser, chatId, recipientId ->
+                        onNavigateUpChatScreen(
+                            chatUser,
+                            chatId,
+                            recipientId
+                        )
+                    },
+
                     viewModel
                 )
             }

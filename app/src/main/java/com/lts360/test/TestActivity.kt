@@ -30,6 +30,7 @@ import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.main.MoreScreen
 import com.lts360.compose.ui.settings.SettingsActivity
 import com.lts360.compose.ui.theme.AppTheme
+import com.lts360.compose.ui.usedproducts.SecondsScreen
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
 import kotlin.math.PI

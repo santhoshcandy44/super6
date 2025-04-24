@@ -68,7 +68,7 @@ interface ManageLocalJobService{
     @POST("api/app/serve/local-jobs/bookmark-local-job")
     suspend fun bookmarkLocalJob(
         @Field("user_id") userId: Long,
-        @Field("product_id") serviceId: Long,
+        @Field("local_job_id") serviceId: Long,
     ): Response<ResponseReply>
 
 
@@ -76,7 +76,7 @@ interface ManageLocalJobService{
     @POST("api/app/serve/local-jobs/remove-bookmark-local-job")
     suspend fun removeBookmarkLocalJob(
         @Field("user_id") userId: Long,
-        @Field("product_id") serviceId: Long,
+        @Field("local_job_id") serviceId: Long,
     ): Response<ResponseReply>
 
 

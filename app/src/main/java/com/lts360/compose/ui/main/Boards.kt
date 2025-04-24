@@ -51,6 +51,7 @@ fun Boards(
     pagerState: PagerState,
     servicesContent: @Composable () -> Unit,
     secondsContent: @Composable () -> Unit,
+    localJobsContent: @Composable () -> Unit,
     onPageChanged: (String) -> Unit
 ) {
 
@@ -156,9 +157,11 @@ fun Boards(
                 1 -> {
                     servicesContent()
                 }
-
                 2 -> {
                     secondsContent()
+                }
+                3 ->{
+                    localJobsContent()
                 }
             }
 
