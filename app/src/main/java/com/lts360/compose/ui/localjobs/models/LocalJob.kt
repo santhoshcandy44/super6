@@ -23,7 +23,7 @@ data class LocalJob(
     @SerializedName("created_by")
     val createdBy: Long,
 
-    @SerializedName("name")
+    @SerializedName("title")
     val title: String,
 
     @SerializedName("description")
@@ -65,7 +65,7 @@ data class LocalJob(
     @SerializedName("is_bookmarked")
     var isBookmarked: Boolean,
 
-    @SerializedName("image")
+    @SerializedName("images")
     var images: List<Image>,
 
     @SerializedName("location")

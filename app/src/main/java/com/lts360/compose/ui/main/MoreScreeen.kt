@@ -442,7 +442,7 @@ fun MoreScreen(
                                 }
 
 
-                             /*   Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
 
                                 Column(
                                     modifier = Modifier
@@ -459,7 +459,7 @@ fun MoreScreen(
                                     ) {
                                         onManageLocalJobNavigateUp()
                                     }
-                                }*/
+                                }
 
                             }
 

@@ -21,14 +21,13 @@ data class Image(
 
 fun Image.toEditableImage(): EditableImage {
     return EditableImage(
-        imageId = imageId, // Assuming id maps to imageId in the network model
-        width = width, // Set default or appropriate value
-        height = height, // Set default or appropriate value
-        size = size, // Set default or appropriate value
-        format = format, // Set default or appropriate value
+        imageId = imageId,
+        width = width,
+        height = height,
+        size = size,
+        format = format,
         imageUrl = imageUrl,
         imageData = null
-
     )
 }
 

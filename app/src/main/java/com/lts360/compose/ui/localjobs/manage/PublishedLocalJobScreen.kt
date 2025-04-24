@@ -86,8 +86,8 @@ fun PublishedLocalJobScreen(
                                 title = item.title,
                                 shortDescription = item.description,
                                 status = item.status,
-                                onClick = { _, serviceId ->
-                                    viewModel.setSelectedSeconds(serviceId)
+                                onClick = { _, itemId ->
+                                    viewModel.setSelectedItem(itemId)
                                     onNavigateUp(item)
                                 },
                                 type = item.status,

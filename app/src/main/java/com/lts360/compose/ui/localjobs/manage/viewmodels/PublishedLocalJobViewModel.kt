@@ -15,9 +15,9 @@ import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.EditableLocation
 import com.lts360.compose.ui.chat.MAX_IMAGES
 import com.lts360.compose.ui.localjobs.manage.LocalJobsRepository
+import com.lts360.compose.ui.localjobs.manage.MaritalStatus
 import com.lts360.compose.ui.localjobs.models.EditableLocalJob
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import com.lts360.compose.ui.services.BitmapContainerFactory
 import com.lts360.compose.ui.services.manage.models.CombinedContainer
 import com.lts360.compose.ui.services.manage.models.CombinedContainerFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,6 +47,7 @@ class PublishedLocalJobViewModel @Inject constructor(
 
 
     data class LocalJobState(
+        val localJobId: Long =-1,
         val title: String = "",
         val description: String = "",
         val company: String = "",
@@ -83,9 +84,6 @@ class PublishedLocalJobViewModel @Inject constructor(
     val isLoading = _isLoading.asStateFlow()
 
 
-    enum class MaritalStatus(val key: String, val value: String) {
-        MARRIED("MARRIED", "Married"), UNMARRIED("UNMARRIED", "Un Married")
-    }
 
     val maritalStatusUnits = listOf(MaritalStatus.MARRIED, MaritalStatus.UNMARRIED)
 
@@ -187,29 +185,31 @@ class PublishedLocalJobViewModel @Inject constructor(
         return selectedLocalJob.value == null
     }
 
-    fun setSelectedSeconds(secondsId: Long) {
-        repository.setSelectedItem(secondsId)
+    fun setSelectedItem(itemId: Long) {
+        repository.setSelectedItem(itemId)
         selectedLocalJob.value?.let {
             loadItemDetails(it)
         }
     }
 
-    fun removeSelectedSeconds(secondsId: Long) {
-        repository.removeSelectedLocalJob(secondsId)
+    fun removeSelectedItem(itemId: Long) {
+        repository.removeSelectedItem(itemId)
     }
 
 
     private fun loadItemDetails(item: EditableLocalJob) {
 
         _errors.value = LocalJobErrorsState()
-
+        _localJob.value = _localJob.value.copy(localJobId = item.localJobId)
         updateTitle(item.title)
         updateDescription(item.description)
         updateCompany(item.company)
         updateAgeMin(item.ageMin)
         updateAgeMax(item.ageMax)
-        updateMaritalStatus(item.maritalStatus)
-        updateSalaryUnit(item.company)
+        updateMaritalStatus(maritalStatusUnits.find {
+            it.key == item.maritalStatus
+        }?: MaritalStatus.UNMARRIED)
+        updateSalaryUnit(item.salaryUnit)
         updateSalaryMin(item.salaryMin)
         updateSalaryMax(item.salaryMax)
 
@@ -222,9 +222,9 @@ class PublishedLocalJobViewModel @Inject constructor(
         })
     }
 
-    fun onDeleteSeconds(
+    fun onDeleteItem(
         userId: Long,
-        secondsId: Long,
+        itemId: Long,
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit,
     ) {
@@ -232,7 +232,7 @@ class PublishedLocalJobViewModel @Inject constructor(
         viewModelScope.launch {
             _isDeleting.value = true
             try {
-                when (val result = deleteLocalJob(userId, secondsId)) {
+                when (val result = deleteLocalJob(userId, itemId)) {
                     is Result.Success -> {
                         onSuccess(result.data.message)
                     }
@@ -323,11 +323,9 @@ class PublishedLocalJobViewModel @Inject constructor(
         _errors.value = _errors.value.copy(age = null)
     }
 
-    fun updateMaritalStatus(maritalStatus: String) {
+    fun updateMaritalStatus(maritalStatus: MaritalStatus) {
         _localJob.value = _localJob.value.copy(
-            maritalStatus =
-                MaritalStatus.entries.find { it.value == maritalStatus }
-                    ?: MaritalStatus.UNMARRIED)
+            maritalStatus = maritalStatus)
         _errors.value = _errors.value.copy(maritalStatus = null)
     }
 

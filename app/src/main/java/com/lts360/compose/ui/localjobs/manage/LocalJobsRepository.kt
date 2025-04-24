@@ -16,6 +16,11 @@ import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 
+enum class MaritalStatus(val key: String, val value: String) {
+    MARRIED("MARRIED", "Married"), UNMARRIED("UNMARRIED", "Un Married")
+}
+
+
 class LocalJobsRepository @Inject constructor() {
 
     private val _publishedLocalJobs = MutableStateFlow<List<EditableLocalJob>>(emptyList())
@@ -63,7 +68,7 @@ class LocalJobsRepository @Inject constructor() {
         }
     }
 
-    fun removeSelectedLocalJob(localJobId: Long) {
+    fun removeSelectedItem(localJobId: Long) {
         val index = _publishedLocalJobs.value.indexOfFirst {
             it.localJobId == localJobId
         }

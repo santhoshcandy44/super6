@@ -14,6 +14,7 @@ import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.EditableLocation
 import com.lts360.compose.ui.chat.MAX_IMAGES
+import com.lts360.compose.ui.localjobs.manage.MaritalStatus
 import com.lts360.compose.ui.services.BitmapContainer
 import com.lts360.compose.ui.services.BitmapContainerFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -75,11 +76,6 @@ class LocalJobWorkFlowViewModel @Inject constructor(
     val isLoading = _isLoading.asStateFlow()
 
     private val bitmapContainerFactory = BitmapContainerFactory()
-
-
-    enum class MaritalStatus(val key: String, val value: String) {
-        MARRIED("MARRIED", "Married"), UNMARRIED("UNMARRIED", "Un Married")
-    }
 
     val maritalStatusUnits = listOf(MaritalStatus.MARRIED, MaritalStatus.UNMARRIED)
 
