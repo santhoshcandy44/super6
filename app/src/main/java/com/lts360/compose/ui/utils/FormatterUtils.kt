@@ -33,15 +33,13 @@ object FormatterUtils {
 
     fun formatCurrency(amount: Double, currencyCode: String): String {
         val locale = when (currencyCode) {
-            "INR" -> Locale("en", "IN")  // India Locale for INR
-            "USD" -> Locale("en", "US")  // US Locale for USD
-            else -> Locale.getDefault()  // Default locale if currency code is unknown
+            "INR" -> Locale("en", "IN")
+            "USD" -> Locale("en", "US")
+            else -> Locale.getDefault()
         }
 
         return NumberFormat.getCurrencyInstance(locale)
-            .apply {
-                this.currency = Currency.getInstance(currencyCode)
-            }.format(amount)
+            .apply { this.currency = Currency.getInstance(currencyCode) }.format(amount)
     }
 
 

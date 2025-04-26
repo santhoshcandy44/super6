@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lts360.R
+import com.lts360.compose.ui.bookmarks.BookmarksScreen
 import com.lts360.compose.ui.localjobs.DetailedLocalJobScreen
 import com.lts360.compose.ui.localjobs.manage.ManagePublishedLocalJobScreen
 import com.lts360.compose.ui.localjobs.manage.PublishedLocalJobScreen

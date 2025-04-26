@@ -98,7 +98,7 @@ fun DetailedLocalJobScreen(
 
 
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     DetailedLocalJobContent(
         userId,
@@ -352,12 +352,7 @@ private fun DetailedLocalJobInfo(
                 LocalJobDescription(
                     title = item.title,
                     description = item.description,
-                    salary = "${
-                        formatCurrency(
-                            item.salaryMin.toDouble(),
-                            item.salaryUnit
-                        )
-                    } - ${formatCurrency(item.salaryMax.toDouble(), item.salaryUnit)}"
+                    salary = "${formatCurrency(item.salaryMin.toDouble(), item.salaryUnit)} - ${formatCurrency(item.salaryMax.toDouble(), item.salaryUnit)}"
                 )
             }
 

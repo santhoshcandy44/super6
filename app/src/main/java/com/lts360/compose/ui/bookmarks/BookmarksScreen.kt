@@ -402,7 +402,7 @@ fun BookmarksScreen(
 
 
 @Composable
-fun BookmarkedUsedProductListingCard(
+private fun BookmarkedUsedProductListingCard(
     signInMethod: String,
     usedProductListing: UsedProductListing,
     onItemClicked: () -> Unit,
@@ -497,7 +497,7 @@ fun BookmarkedUsedProductListingCard(
 
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        usedProductListing.price.toString() + getCurrencySymbol(usedProductListing.priceUnit),
+                        formatCurrency(usedProductListing.price, usedProductListing.priceUnit),
                         style = MaterialTheme.typography.headlineSmall,
                         color = greenColor
                     )
@@ -510,7 +510,7 @@ fun BookmarkedUsedProductListingCard(
 
 
 @Composable
-fun BookmarkedLocalJobCard(
+private fun BookmarkedLocalJobCard(
     signInMethod: String,
     localJob: LocalJob,
     onItemClicked: () -> Unit,
@@ -572,10 +572,7 @@ fun BookmarkedLocalJobCard(
                         .background(Color(0xFF7E57C2))
                         .align(Alignment.BottomStart)
                 ) {
-                    Text(
-                        "Local Job", color = Color.White, modifier = Modifier
-                            .padding(4.dp), style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("Local Job", color = Color.White, modifier = Modifier.padding(4.dp), style = MaterialTheme.typography.bodySmall)
                 }
             }
 
@@ -602,8 +599,7 @@ fun BookmarkedLocalJobCard(
                 }
 
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        "${getCurrencySymbol(localJob.salaryUnit)}${localJob.salaryMin} - ${getCurrencySymbol(localJob.salaryUnit)}${localJob.salaryMax}",
+                    Text("${formatCurrency(localJob.salaryMin.toDouble(), localJob.salaryUnit)} - ${formatCurrency(localJob.salaryMax.toDouble(), localJob.salaryUnit)}",
                         style = MaterialTheme.typography.headlineSmall,
                         color = greenColor
                     )
