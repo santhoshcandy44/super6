@@ -9,6 +9,7 @@ import com.lts360.api.models.service.Image
 import com.lts360.api.models.service.Location
 import com.lts360.api.models.service.toEditableImage
 import com.lts360.api.models.service.toEditableLocation
+import com.lts360.compose.ui.localjobs.manage.MaritalStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -38,8 +39,8 @@ data class LocalJob(
     @SerializedName("age_max")
     val ageMax: Int,
 
-    @SerializedName("marital_status")
-    val maritalStatus: String,
+    @SerializedName("marital_statuses")
+    val maritalStatuses: List<String>,
 
     @SerializedName("salary_unit")
     val salaryUnit: String,
@@ -82,6 +83,11 @@ data class LocalJob(
 ) : BookMarkedItem("local_job")
 
 
+fun LocalJob.getMaritalStatusLabel(key: String): String {
+    return MaritalStatus.entries.find { it.key == key }?.value ?: key
+}
+
+
 fun LocalJob.toEditableLocalJob(): EditableLocalJob {
 
     return EditableLocalJob(
@@ -91,7 +97,7 @@ fun LocalJob.toEditableLocalJob(): EditableLocalJob {
         company = company,
         ageMin = ageMin,
         ageMax = ageMax,
-        maritalStatus = maritalStatus,
+        maritalStatuses = maritalStatuses,
         salaryUnit = salaryUnit,
         salaryMin = salaryMin,
         salaryMax = salaryMax,
@@ -129,8 +135,8 @@ data class EditableLocalJob(
     @SerializedName("age_max")
     val ageMax: Int,
 
-    @SerializedName("marital_status")
-    val maritalStatus: String,
+    @SerializedName("marital_statuses")
+    val maritalStatuses: List<String>,
 
     @SerializedName("salary_unit")
     val salaryUnit: String,

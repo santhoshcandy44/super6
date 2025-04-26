@@ -91,8 +91,7 @@ fun HomeScreen(
 
     val boardLabels by remember { mutableStateOf(boardItems.map { it.boardLabel }) }
 
-    val initialPageIndex =
-        if (nestedType.isNullOrEmpty()) 0 else boardLabels.indexOf(nestedType).coerceAtLeast(0)
+    val initialPageIndex = if (nestedType.isNullOrEmpty()) 0 else boardLabels.indexOf(nestedType).coerceAtLeast(0)
 
     val pagerState = rememberPagerState(initialPageIndex, pageCount = { boardItems.size })
 
@@ -113,7 +112,6 @@ fun HomeScreen(
     if (isSearching) {
         BackHandler {
             viewModel.collapseSearchAction(true)
-
             if (onlySearchBar) {
                 scope.launch {
                     delay(100)
@@ -153,12 +151,10 @@ fun HomeScreen(
                     }
                 })
         ) {
-
             AnimatedVisibility(
                 visible = showTopBar,
                 enter = fadeIn(),
-                exit = fadeOut()
-            ) {
+                exit = fadeOut()) {
 
                 Column(
                     modifier = Modifier
@@ -184,17 +180,12 @@ fun HomeScreen(
                         }
                     }
                 }
-
-
             }
 
             Spacer(Modifier.height(8.dp))
 
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shadowElevation = 0.dp
-            ) {
-
+            Surface(modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 0.dp) {
 
                 fun handleQueryChange(query: String) {
                     val currentLabel = boardLabels[pagerState.currentPage.coerceIn(0, boardItems.lastIndex)]
@@ -207,9 +198,7 @@ fun HomeScreen(
                             when (currentLabel) {
                                 "services" -> viewModel.onGetServiceSearchQuerySuggestions(userId, query)
                                 "second_hands" -> viewModel.onGetUsedProductListingSearchQuerySuggestions(userId, query)
-                                "local_jobs" -> {
-
-                                }
+                                "local_jobs" -> { viewModel.onGetLocalJobSearchQuerySuggestions(userId, query) }
                             }
                         }
                     } else if (viewModel.searchQuery.value.text != query && viewModel.isSearching.value) {
@@ -226,7 +215,7 @@ fun HomeScreen(
                         val destination = when (currentLabel) {
                             "services" -> BottomBar.NestedServices(servicesViewModel.getKey() + 1, searchQuery.text, true)
                             "second_hands" -> BottomBar.NestedSeconds(secondsViewModel.getKey() + 1, searchQuery.text, true)
-                            "local_jobs" ->  BottomBar.NestedLocalJobs(secondsViewModel.getKey() + 1, searchQuery.text, true)
+                            "local_jobs" ->  BottomBar.NestedLocalJobs(localJobsViewModel.getKey() + 1, searchQuery.text, true)
                             else -> return
                         }
 
@@ -349,7 +338,6 @@ fun HomeScreen(
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
 
                                 items(suggestions) {
-                                    // Content inside the card with padding
                                     Column {
 
                                         Row(
@@ -460,6 +448,10 @@ fun HomeScreen(
                         if (boardLabels[pagerState.currentPage] == "second_hands") {
                             secondsViewModel.updateLastLoadedItemPosition(-1)
                             secondsViewModel.refresh(userId, searchQuery.text)
+                        }
+                        if(boardLabels[pagerState.currentPage] == "local_jobs"){
+                            localJobsViewModel.updateLastLoadedItemPosition(-1)
+                            localJobsViewModel.refresh(userId, searchQuery.text)
                         }
                         coroutineScope.launch {
                             modalBottomSheetState.hide()

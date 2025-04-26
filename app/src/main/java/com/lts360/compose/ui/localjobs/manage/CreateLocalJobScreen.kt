@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -86,6 +88,7 @@ import com.lts360.libs.utils.createImageFileDCIMExternalStorage
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
 
@@ -469,26 +472,24 @@ fun CreateLocalJobScreen(
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
+
                                 ExposedDropdownMenuBox(
                                     expanded = maritalStatusExpanded,
                                     onExpandedChange = {
                                         maritalStatusExpanded = !maritalStatusExpanded
                                     },
                                     modifier = Modifier
-                                        .background(
-                                            MaterialTheme.colorScheme.surface,
-                                            shape = RoundedCornerShape(4.dp)
-                                        )
+                                        .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(4.dp))
                                 ) {
                                     OutlinedTextField(
-                                        value = localJob.maritalStatus.value,
-                                        onValueChange = {
-                                            viewModel.updateMaritalStatus(it)
-                                        },
+                                        value = localJob.maritalStatuses
+                                            .filter { it.isSelected }
+                                            .joinToString(", ") { it.status.value },
+                                        onValueChange = {},
                                         readOnly = true,
-                                        label = { Text("Martial Status") },
+                                        label = { Text("Marital Status") },
                                         trailingIcon = {
-                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = salaryExpanded)
+                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = maritalStatusExpanded)
                                         },
                                         modifier = Modifier
                                             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
@@ -499,12 +500,20 @@ fun CreateLocalJobScreen(
                                         expanded = maritalStatusExpanded,
                                         onDismissRequest = { maritalStatusExpanded = false }
                                     ) {
-                                        maritalStatusUnits.forEach {
+                                        localJob.maritalStatuses.forEachIndexed { index, item ->
                                             DropdownMenuItem(
-                                                text = { Text(text = it.value) },
+                                                text = {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Checkbox(
+                                                            checked = item.isSelected,
+                                                            onCheckedChange = null
+                                                        )
+                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                        Text(text = item.status.value)
+                                                    }
+                                                },
                                                 onClick = {
-                                                    viewModel.updateMaritalStatus(it.value)
-                                                    maritalStatusExpanded = false
+                                                    viewModel.toggleMaritalStatus(index)
                                                 }
                                             )
                                         }
@@ -512,7 +521,8 @@ fun CreateLocalJobScreen(
                                 }
 
 
-                                errors.maritalStatus?.let {
+
+                                errors.maritalStatuses?.let {
                                     ErrorText(it)
                                 }
 
@@ -749,7 +759,11 @@ fun CreateLocalJobScreen(
                                                 .toRequestBody("text/plain".toMediaTypeOrNull())
                                         }
 
-                                        val bodyMaritalStatus = localJob.maritalStatus.key.toRequestBody("text/plain".toMediaTypeOrNull())
+                                        val bodyMaritalStatusList = localJob.maritalStatuses.filter {
+                                            it.isSelected
+                                        }.map { it.status.key }.map {
+                                            it.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+                                        }
 
                                         val bodySalaryUnit = localJob.salaryUnit
                                             .toRequestBody("text/plain".toMediaTypeOrNull())
@@ -764,8 +778,7 @@ fun CreateLocalJobScreen(
                                                 .toRequestBody("text/plain".toMediaType())
                                         }
 
-                                        val bodyKeepImageIds =
-                                            "[]".toRequestBody("application/json".toMediaTypeOrNull())
+                                        val bodyKeepImageIds = emptyList<RequestBody>()
 
                                         val bodyImages =
                                             localJob.imageContainers.mapIndexed { index, bitmapContainer ->
@@ -800,7 +813,7 @@ fun CreateLocalJobScreen(
                                             bodyCompany,
                                             bodyAgeMin,
                                             bodyAgeMax,
-                                            bodyMaritalStatus,
+                                            bodyMaritalStatusList,
                                             bodySalaryUnit,
                                             bodySalaryMin,
                                             bodySalaryMax,

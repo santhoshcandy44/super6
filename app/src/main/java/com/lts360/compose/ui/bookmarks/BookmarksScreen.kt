@@ -64,10 +64,12 @@ import com.lts360.api.utils.ResultError
 import com.lts360.api.models.service.Service
 import com.lts360.api.models.service.UsedProductListing
 import com.lts360.compose.ui.getCurrencySymbol
+import com.lts360.compose.ui.localjobs.models.LocalJob
 import com.lts360.compose.ui.main.common.NoInternetScreen
 import com.lts360.compose.ui.services.ServiceCard
 import com.lts360.compose.ui.services.ShimmerServiceCard
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
+import com.lts360.libs.ui.ShortToast
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,6 +78,7 @@ fun BookmarksScreen(
     onNavigateUpDetailedService: () -> Unit,
     onNavigateUpServiceOwnerProfile: (Long) -> Unit,
     onNavigateUpDetailedUsedProductListing: () -> Unit,
+    onNavigateUpDetailedLocalJob: () -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: BookmarksViewModel
 ) {
@@ -96,7 +99,6 @@ fun BookmarksScreen(
 
     val sheetState = rememberModalBottomSheetState()
 
-    // Observe the state from ViewModel
     var bottomSheetState by rememberSaveable { mutableStateOf(false) }
 
     val selectedItem by viewModel.selectedItem.collectAsState()
@@ -140,16 +142,11 @@ fun BookmarksScreen(
             )
         },
     ) { contentPadding ->
-        // Toolbar
 
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = { onRefresh() },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-        ) {
-
+            modifier = Modifier.fillMaxSize().padding(contentPadding)) {
 
             if (isLoading) {
                 Box(
@@ -166,12 +163,7 @@ fun BookmarksScreen(
             } else {
 
 
-                // Main content
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp) // Adjust the space between items
-
-                ) {
+                LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
 
 
                     if (error is ResultError.NoInternet) {
@@ -189,14 +181,11 @@ fun BookmarksScreen(
                                 modifier = Modifier
                                     .fillParentMaxSize()
                                     .verticalScroll(refreshStateEmptyItemsState),
-                                contentAlignment = Alignment.Center // Center content within the Box
+                                contentAlignment = Alignment.Center
 
                             ) {
 
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
-
-                                ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
                                     Image(
                                         painter = painterResource(R.drawable.something_went_wrong),
@@ -217,20 +206,11 @@ fun BookmarksScreen(
                         }
                     } else if (items.isEmpty()) {
 
-
                         item {
-                            Box(
-                                modifier = Modifier
-                                    .fillParentMaxSize()
-                                    .verticalScroll(refreshStateEmptyItemsState),
-                                contentAlignment = Alignment.Center // Center content within the Box
+                            Box(modifier = Modifier.fillParentMaxSize().verticalScroll(refreshStateEmptyItemsState),
+                                contentAlignment = Alignment.Center) {
 
-                            ) {
-
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
-
-                                ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
                                     Image(
                                         painter = painterResource(R.drawable.all_caught_up),
@@ -252,12 +232,9 @@ fun BookmarksScreen(
 
                     } else {
                         items(items) { bookmarkItem ->
-
                             when (bookmarkItem.type) {
                                 "service" -> {
-
                                     val item = bookmarkItem as Service
-
                                     ServiceCard(
                                         onItemClick = {
                                             viewModel.setSelectedItem(item)
@@ -306,7 +283,6 @@ fun BookmarksScreen(
                                         enableBookmarkedServiceIcon = true
                                     )
                                 }
-
                                 "used_product_listing" -> {
                                     val item = bookmarkItem as UsedProductListing
                                     BookmarkedUsedProductListingCard(viewModel.signInMethod, item, {
@@ -318,101 +294,91 @@ fun BookmarksScreen(
 
                                         viewModel.onRemoveUsedProductListingBookmark(userId, item, {
                                             viewModel.removeUsedProductListingItem(item)
-                                            Toast.makeText(
-                                                context,
-                                                "Bookmark removed",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                                            ShortToast(context, "Bookmark removed")
                                         }) {
                                             viewModel.updateUsedProductItem(item, true)
-                                            Toast.makeText(
-                                                context,
-                                                "Failed to remove bookmark",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                                            ShortToast(context, "Failed to remove bookmark")
                                         }
 
                                     })
                                 }
+                                "local_job" -> {
+                                    val item = bookmarkItem as LocalJob
+                                    BookmarkedLocalJobCard(viewModel.signInMethod, item, {
+                                        viewModel.setSelectedItem(item)
+                                        onNavigateUpDetailedLocalJob()
+                                    }, {
+
+                                        viewModel.updateLocalJob(item, false)
+
+                                        viewModel.onRemoveLocalJobBookmark(userId, item, {
+                                            viewModel.removeLocalJobItem(item)
+                                            ShortToast(context, "Bookmark removed")
+                                        }) {
+                                            viewModel.updateLocalJob(item, true)
+                                            ShortToast(context, "Failed to remove bookmark")
+                                        }
+                                    })
+                                }
+
                             }
-
                         }
-
                     }
-
 
                 }
 
             }
-
-
         }
-
-
 
         if (bottomSheetState) {
             ModalBottomSheet(
-                modifier = Modifier
-                    .safeDrawingPadding(),
+                modifier = Modifier.safeDrawingPadding(),
                 onDismissRequest = {
                     bottomSheetState = false
                 },
-                shape = RectangleShape, // Set shape to square (rectangle)
+                shape = RectangleShape,
                 sheetState = sheetState,
-                dragHandle = null // Remove the drag handle
-
+                dragHandle = null
             ) {
 
-                // Sheet content
                 selectedItem?.let { nonNullSelectedItem ->
 
-                    if(nonNullSelectedItem is Service){
+                    if (nonNullSelectedItem is Service) {
                         Column(modifier = Modifier.fillMaxWidth()) {
 
-                            Row(modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    try {
-
-                                        val shareIntent = Intent().apply {
-                                            action = Intent.ACTION_SEND
-                                            putExtra(
-                                                Intent.EXTRA_TEXT,
-                                                nonNullSelectedItem.shortCode
-                                            )  // Text you want to share
-                                            type = "text/plain"  // MIME type for text
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        try {
+                                            val shareIntent = Intent().apply {
+                                                action = Intent.ACTION_SEND
+                                                putExtra(
+                                                    Intent.EXTRA_TEXT,
+                                                    nonNullSelectedItem.shortCode
+                                                )
+                                                type = "text/plain"
+                                            }
+                                            context.startActivity(
+                                                Intent.createChooser(
+                                                    shareIntent,
+                                                    "Share via"
+                                                )
+                                            )
+                                        } catch (_: ActivityNotFoundException) {
+                                            ShortToast(context,  "No app to open")
                                         }
-                                        // Start the share intent
-                                        context.startActivity(
-                                            Intent.createChooser(
-                                                shareIntent,
-                                                "Share via"
-                                            )
-                                        )
-                                    } catch (e: ActivityNotFoundException) {
 
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                "No app to open",
-                                                Toast.LENGTH_SHORT
-                                            )
-                                            .show()
                                     }
-
-                                }
-                                .padding(16.dp),
+                                    .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
 
-
-                                // Bookmark Icon
                                 Icon(
                                     Icons.Default.Share,
                                     contentDescription = "Share",
-                                    modifier = Modifier.size(24.dp),
+                                    modifier = Modifier.size(24.dp)
                                 )
 
-                                // Text
                                 Text(
                                     text = "Share",
                                     modifier = Modifier.padding(horizontal = 4.dp),
@@ -428,35 +394,33 @@ fun BookmarksScreen(
 
 
             }
-
         }
 
-
     }
-
 
 }
 
 
-
-
 @Composable
-fun BookmarkedUsedProductListingCard(signInMethod:String, usedProductListing:UsedProductListing, onItemClicked:()-> Unit, onFavouriteClicked:()->Unit){
+fun BookmarkedUsedProductListingCard(
+    signInMethod: String,
+    usedProductListing: UsedProductListing,
+    onItemClicked: () -> Unit,
+    onFavouriteClicked: () -> Unit
+) {
 
     val greenColor = Color(0xFF1BB24B)
 
 
-    OutlinedCard(onClick =onItemClicked
-
-    ){
-        Row(modifier = Modifier.wrapContentSize()){
+    OutlinedCard(onClick = onItemClicked) {
+        Row(modifier = Modifier.wrapContentSize()) {
             Box(
                 modifier = Modifier
                     .size(120.dp)
                     .aspectRatio(1f)
             ) {
 
-                if(usedProductListing.images.isNotEmpty()){
+                if (usedProductListing.images.isNotEmpty()) {
                     AsyncImage(
                         usedProductListing.images[0].imageUrl,
                         contentDescription = null,
@@ -465,57 +429,57 @@ fun BookmarkedUsedProductListingCard(signInMethod:String, usedProductListing:Use
                     )
                 }
 
-
-                if(signInMethod!="guest"){
-
-                    // 🔹 Favorite Icon Background Box
+                if (signInMethod != "guest") {
                     Box(
                         modifier = Modifier
-                            .align(Alignment.TopEnd) // 🔹 Positions it at the top-right
-                            .padding(8.dp) // 🔹 Adds spacing from edges
-                            .size(32.dp) // 🔹 Fixed size
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .size(32.dp)
                             .background(
                                 Color.LightGray.copy(alpha = 0.4f),
                                 shape = CircleShape
-                            ).clickable {
-
+                            )
+                            .clickable {
                                 onFavouriteClicked()
-
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        // 🔹 Favorite Icon
                         Image(
                             imageVector = Icons.Default.FavoriteBorder,
                             contentDescription = null,
-                            colorFilter = ColorFilter.tint(if(usedProductListing.isBookmarked){
-                                Color.Red
-                            }else{
-                                Color.White
-                            }),
-                            modifier = Modifier.size(24.dp) // 🔹 Set proper size (without extra padding)
+                            colorFilter = ColorFilter.tint(
+                                if (usedProductListing.isBookmarked) {
+                                    Color.Red
+                                } else {
+                                    Color.White
+                                }
+                            ),
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-
                 }
 
                 Box(
-                    modifier = Modifier.background(Color(0xFFFFA500))
+                    modifier = Modifier
+                        .background(Color(0xFFFFA500))
                         .align(Alignment.BottomStart)
-                ){
-                    Text("Seconds", color = Color.White, modifier = Modifier
-                        .padding(4.dp), style = MaterialTheme.typography.bodySmall)
+                ) {
+                    Text(
+                        "Seconds", color = Color.White, modifier = Modifier
+                            .padding(4.dp), style = MaterialTheme.typography.bodySmall
+                    )
                 }
-
-
             }
 
-            Column(modifier = Modifier.fillMaxWidth()
-                .padding(8.dp)
-                .weight(1f)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .weight(1f)
             ) {
 
-                Text(usedProductListing.name,
+                Text(
+                    usedProductListing.name,
                     maxLines = 1,
                     style = MaterialTheme.typography.titleMedium,
                     overflow = TextOverflow.Ellipsis
@@ -531,23 +495,124 @@ fun BookmarkedUsedProductListingCard(signInMethod:String, usedProductListing:Use
                     )
                 }
 
-                // 🔹 Aligns the price to the END
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
+                Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        usedProductListing.price.toString()+ getCurrencySymbol(usedProductListing.priceUnit),
+                        usedProductListing.price.toString() + getCurrencySymbol(usedProductListing.priceUnit),
                         style = MaterialTheme.typography.headlineSmall,
                         color = greenColor
                     )
                 }
-
-
-
             }
         }
     }
 }
+
+
+
+@Composable
+fun BookmarkedLocalJobCard(
+    signInMethod: String,
+    localJob: LocalJob,
+    onItemClicked: () -> Unit,
+    onFavouriteClicked: () -> Unit
+) {
+
+    val greenColor = Color(0xFF1BB24B)
+
+
+    OutlinedCard(onClick = onItemClicked) {
+        Row(modifier = Modifier.wrapContentSize()) {
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .aspectRatio(1f)
+            ) {
+
+                if (localJob.images.isNotEmpty()) {
+                    AsyncImage(
+                        localJob.images[0].imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                if (signInMethod != "guest") {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .size(32.dp)
+                            .background(
+                                Color.LightGray.copy(alpha = 0.4f),
+                                shape = CircleShape
+                            )
+                            .clickable {
+                                onFavouriteClicked()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            imageVector = Icons.Default.FavoriteBorder,
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(
+                                if (localJob.isBookmarked) {
+                                    Color.Red
+                                } else {
+                                    Color.White
+                                }
+                            ),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFF7E57C2))
+                        .align(Alignment.BottomStart)
+                ) {
+                    Text(
+                        "Local Job", color = Color.White, modifier = Modifier
+                            .padding(4.dp), style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .weight(1f)) {
+
+                Text(
+                    localJob.title,
+                    maxLines = 1,
+                    style = MaterialTheme.typography.titleMedium,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                localJob.location?.geo?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 3,
+                        minLines = 3,
+                        overflow = TextOverflow.Clip
+                    )
+                }
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "${getCurrencySymbol(localJob.salaryUnit)}${localJob.salaryMin} - ${getCurrencySymbol(localJob.salaryUnit)}${localJob.salaryMax}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = greenColor
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 
 

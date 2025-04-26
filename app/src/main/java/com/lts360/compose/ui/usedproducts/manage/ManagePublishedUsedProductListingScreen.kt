@@ -756,10 +756,15 @@ fun ManagePublishedUsedProductListingScreen(
                                                 }
 
 
-                                                val bodyKeepImageIds =   imageContainers.mapNotNull { it.container }
+
+                                                val bodyKeepImageIdsList = imageContainers
+                                                    .mapNotNull { it.container }
                                                     .mapNotNull { it.image }
-                                                    .map { it.imageId }.toString()
-                                                    .toRequestBody("application/json".toMediaTypeOrNull())
+                                                    .map { it.imageId }
+                                                    .map { imageId ->
+                                                        imageId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+                                                    }
+
 
 
                                                 val bodyLocation = selectedLocation?.let {
@@ -795,7 +800,7 @@ fun ManagePublishedUsedProductListingScreen(
                                                     bodyCountry,
                                                     bodyImages,
                                                     bodyLocation,
-                                                    bodyKeepImageIds,
+                                                    bodyKeepImageIdsList,
                                                     {
                                                         Toast.makeText(
                                                             context,

@@ -85,11 +85,7 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GuestBoardsPreferencesScreen(
-    viewModel: GuestBoardPreferencesViewModel = hiltViewModel(),
-    onBackGo: () -> Unit
-) {
-
+fun GuestBoardsPreferencesScreen(viewModel: GuestBoardPreferencesViewModel = hiltViewModel(), onBackGo: () -> Unit) {
 
     val context = LocalContext.current
 
@@ -97,7 +93,6 @@ fun GuestBoardsPreferencesScreen(
     val selectedBoards = allBoards
         .filter { it.isSelected }
         .sortedBy { it.displayOrder }
-
 
     val isLoading by viewModel.isLoading.collectAsState()
     val isUpdating by viewModel.isUpdating.collectAsState()
@@ -108,17 +103,13 @@ fun GuestBoardsPreferencesScreen(
 
     val connectivityManager = viewModel.connectivityManager
 
-
     val onRetry = {
-
         if (connectivityManager.isConnectedInternet) {
-
             viewModel.onGetBoards(
                 viewModel.userId
             ) {
                 ShortToast(context, it)
             }
-
         } else {
             ShortToast(context, "No internet connection")
         }
@@ -152,11 +143,8 @@ fun GuestBoardsPreferencesScreen(
 
     val pullToRefreshState = rememberPullToRefreshState()
 
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
+    Box(modifier = Modifier
+            .fillMaxSize()) {
 
         Scaffold(
             topBar = {
@@ -187,8 +175,7 @@ fun GuestBoardsPreferencesScreen(
                     CircularProgressIndicatorLegacy(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
-                            .align(Alignment.Center)
-                    )
+                            .align(Alignment.Center))
                 } else {
 
                     if (error is ResultError.NoInternet) {
@@ -268,13 +255,12 @@ fun GuestBoardsPreferencesScreen(
                     }
 
                 }
+
                 Indicator(
                     modifier = Modifier.align(Alignment.TopCenter),
                     isRefreshing = isRefreshing,
                     state = pullToRefreshState
                 )
-
-
             }
         }
 
@@ -510,7 +496,6 @@ private fun BoardsPreferencesSelectionScreen(
             .fillMaxSize()
     ) {
 
-        // Combined Grid for both selected and available boards
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = gridSize),
             contentPadding = PaddingValues(16.dp),
@@ -519,7 +504,6 @@ private fun BoardsPreferencesSelectionScreen(
             modifier = Modifier.weight(1f)
         ) {
 
-            // Available Boards Section
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     text = "Customize Your Boards",
@@ -528,7 +512,6 @@ private fun BoardsPreferencesSelectionScreen(
                 )
             }
 
-            // Selected Boards Section
             if (selectedBoards.isNotEmpty()) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Text(
@@ -561,7 +544,6 @@ private fun BoardsPreferencesSelectionScreen(
                 }
             }
 
-            // Available Boards Section
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     text = "Available Boards",
@@ -635,7 +617,7 @@ private fun DraggableBoardItem(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .zIndex(if (isDragging) 1f else 0f) // Bring dragged item to the front
+            .zIndex(if (isDragging) 1f else 0f)
             .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
             .pointerInput(board) {
                 detectDragGestures(

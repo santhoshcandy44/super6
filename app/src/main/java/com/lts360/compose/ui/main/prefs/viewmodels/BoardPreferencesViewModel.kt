@@ -1,5 +1,6 @@
 package com.lts360.compose.ui.main.prefs.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -14,6 +15,9 @@ import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.prefs.BoardPreferenceApiService
 import com.lts360.app.database.daos.prefs.BoardDao
 import com.lts360.app.database.models.app.Board
+import com.lts360.app.database.models.app.toBoardPref
+import com.lts360.components.utils.LogUtils.TAG
+import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -173,7 +177,6 @@ class BoardPreferencesViewModel @Inject constructor(
 
     fun validateSelectedBoards() = _allBoards.value.any { it.isSelected }
 
-
     fun setRefreshing(isRefreshing: Boolean) {
         _isRefreshing.value = isRefreshing
     }
@@ -183,8 +186,6 @@ class BoardPreferencesViewModel @Inject constructor(
             mapExceptionToError(it)
         }
     }
-
-
 
 
     fun onGetBoards(
@@ -207,7 +208,7 @@ class BoardPreferencesViewModel @Inject constructor(
 
                 }
 
-                when (val result = repository.getBoards(userId)) { // Call the network function
+                when (val result = repository.getBoards(userId)) {
                     is Result.Success -> {
 
                         _allBoards.value = Gson().fromJson(
@@ -284,7 +285,7 @@ class BoardPreferencesViewModel @Inject constructor(
                         updateError(result.error)
                         errorMessage = mapExceptionToError(result.error).errorMessage
                         onError(errorMessage)
-                        // Handle the error and update the UI accordingly
+
                     }
 
                 }
@@ -293,7 +294,7 @@ class BoardPreferencesViewModel @Inject constructor(
                 onError(errorMessage)
                 t.printStackTrace()
             } finally {
-                _isUpdating.value = false // Reset loading state
+                _isUpdating.value = false
             }
 
         }
@@ -340,7 +341,8 @@ class GuestBoardPreferencesViewModel @Inject constructor(
 
     fun updateBoardSelectionStatus(boardId: Int) {
         _allBoards.update {
-            val updatedBoards = _allBoards.value.map {
+
+            val updatedBoards = it.map {
                 if (it.boardId == boardId) {
                     it.copy(isSelected = !it.isSelected)
                 } else {
@@ -366,6 +368,7 @@ class GuestBoardPreferencesViewModel @Inject constructor(
                         updatedBoards[boardIndex] = board.copy(displayOrder = -1)
                     }
                 }
+
 
             updatedBoards
         }
@@ -428,6 +431,7 @@ class GuestBoardPreferencesViewModel @Inject constructor(
                     }
                 }
 
+
             updatedBoards
         }
 
@@ -442,7 +446,6 @@ class GuestBoardPreferencesViewModel @Inject constructor(
             mapExceptionToError(it)
         }
     }
-
 
     fun validateSelectedBoards() = _allBoards.value.any { it.isSelected }
 
@@ -466,27 +469,33 @@ class GuestBoardPreferencesViewModel @Inject constructor(
                     _isRefreshing.value = true
                 }
 
-                when (val result = repository.guestGetBoards(userId)) { // Call the network function
+                when (val result = repository.guestGetBoards(userId)) {
                     is Result.Success -> {
+
 
                         withContext(Dispatchers.IO) {
                             val allBoards = boardDao.getAllBoards()
-                            _allBoards.value = (Gson().fromJson(
+
+                            val boardPrefList = Gson().fromJson(
                                 result.data.data,
                                 object : TypeToken<List<BoardPref>>() {}.type
-                            ) as List<BoardPref>)
-                                .map { boardItem ->
+                            ) as List<BoardPref>
 
-                                    if (allBoards.find { it.boardId == boardItem.boardId } == null) {
-                                        boardItem
-                                    } else {
-                                        boardItem.copy(isSelected = true) // Mark as selected
+                            val allBoardsMap = allBoards.associateBy { it.boardId }
+
+                            _allBoards.update { boards ->
+                                boardPrefList.map { boardItem ->
+                                    allBoardsMap[boardItem.boardId]?.toBoardPref(
+                                        true
+                                    ) ?: run {
+                                        boardItem.copy(isSelected = false)
                                     }
                                 }
-
+                            }
 
                             boardDao.clearAndInsertSelectedBoards(_allBoards.value)
                         }
+
 
                         onSuccess()
                         updateError(null)
@@ -500,7 +509,6 @@ class GuestBoardPreferencesViewModel @Inject constructor(
                         errorMessage = error.errorMessage
                         onError(errorMessage)
                         updateError(result.error)
-                        // Handle the error and update the UI accordingly
                     }
 
                 }
@@ -524,56 +532,31 @@ class GuestBoardPreferencesViewModel @Inject constructor(
 
 
     fun onUpdateBoards(
-        selectedItems: List<BoardPref>,
+        items: List<BoardPref>,
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit,
     ) {
         viewModelScope.launch {
-
-
             try {
-
                 _isUpdating.value = true
 
+                val allBoardsFromDb = withContext(Dispatchers.IO) {
+                    boardDao.clearAndInsertSelectedBoards(items)
+                    boardDao.getAllBoards()
+                }
 
-                val itemsToInsert = selectedItems.filter { it.isSelected }
-                val itemsToDelete = selectedItems.filterNot { it.isSelected }
+                val allBoardsMap = allBoardsFromDb.associateBy { it.boardId }
 
+                _allBoards.update { boards ->
+                    boards.map { board ->
+                        val boardFromDb = allBoardsMap[board.boardId]
 
-                withContext(Dispatchers.IO) {
-
-                    if (itemsToInsert.isNotEmpty()) {
-                        boardDao.insertAllBoards(itemsToInsert.map {
-                            Board(
-                                boardId = it.boardId,
-                                boardName = it.boardName,
-                                boardLabel = it.boardLabel,
-                                displayOrder = it.displayOrder
-                            )
-                        })
-                    }
-
-                    if (itemsToDelete.isNotEmpty()) {
-                        boardDao.deleteBoards(itemsToDelete.map { it.boardId })
-                    }
-
-                    _allBoards.value = _allBoards.value
-                        .also { boards ->
-
-                            val allBoards = boardDao.getAllBoards()
-
-                            boards.map { board ->
-                                val boardFromDb = allBoards.find { board.boardId == it.boardId }
-
-                                if (boardFromDb == null) {
-                                    board
-                                } else {
-                                    board.copy(isSelected = true)
-                                }
-                            }
+                        if (boardFromDb == null) {
+                            board
+                        } else {
+                            board.copy(isSelected = true)
                         }
-
-                    boardDao.clearAndInsertSelectedBoards(_allBoards.value)
+                    }
                 }
 
                 onSuccess("Boards Updated")
@@ -583,7 +566,7 @@ class GuestBoardPreferencesViewModel @Inject constructor(
                 onError(errorMessage)
                 t.printStackTrace()
             } finally {
-                _isUpdating.value = false // Reset loading state
+                _isUpdating.value = false
             }
 
         }

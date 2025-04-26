@@ -323,7 +323,6 @@ fun BottomNavHost(
             ) { navController.popBackStack() }
         }
 
-
         noTransitionComposable<BottomBar.NestedSeconds> { backstackEntry ->
 
             val args = backstackEntry.toRoute<BottomBar.NestedSeconds>()
@@ -404,41 +403,6 @@ fun BottomNavHost(
                             NavOptions.Builder().setLaunchSingleTop(true).build()
                         )
                     },
-                    viewModel
-                )
-            }
-        }
-
-        noTransitionComposable<BottomNavRoutes.DetailedLocalJob> { backStackEntry ->
-
-
-            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedLocalJob>()
-            val key = args.key
-
-            val parentBackStackEntry = remember {
-                if (key == 0) navController.getBackStackEntry<BottomBar.Home>()
-                 else navController.getBackStackEntry<BottomBar.NestedLocalJobs>()
-            }
-
-
-            val viewModel: LocalJobsViewmodel = hiltViewModel(parentBackStackEntry,
-                key = "local_jobs_${key}")
-
-            val selectedItem by viewModel.selectedItem.collectAsState()
-
-            selectedItem?.let {
-                DetailedLocalJobScreen(
-                    navController,
-                    onNavigateUpSlider = {
-                        navController.navigate(BottomNavRoutes.DetailedSecondsImagesSlider(key, it))
-                    }, navigateUpChat = { chatUser, chatId, recipientId ->
-                        onNavigateUpChatScreen(
-                            chatUser,
-                            chatId,
-                            recipientId
-                        )
-                    },
-
                     viewModel
                 )
             }
@@ -570,6 +534,80 @@ fun BottomNavHost(
             ) { navController.popBackStack() }
         }
 
+        noTransitionComposable<BottomBar.NestedLocalJobs> { backstackEntry ->
+
+            val args = backstackEntry.toRoute<BottomBar.NestedLocalJobs>()
+
+            val servicesViewModel: ServicesViewModel = hiltViewModel(key = args.key.toString())
+            val secondsViewmodel: SecondsViewmodel = hiltViewModel(key = "seconds_${args.key}")
+            val localJobViewmodel: LocalJobsViewmodel = hiltViewModel(key = "local_jobs_${args.key}")
+
+            LaunchedEffect(backstackEntry) {
+                homeViewModel.setSearchQuery(args.submittedQuery ?: "")
+                homeViewModel.collapseSearchAction()
+            }
+
+            HomeScreen(
+                navController,
+                boards,
+                {
+                    navController.navigate(BottomNavRoutes.DetailedService(args.key))
+                },
+                {
+                    navController.navigate(BottomNavRoutes.DetailedSeconds(args.key))
+                },
+                {
+                    navController.navigate(BottomNavRoutes.DetailedLocalJob(args.key))
+                },
+                { serviceOwnerId ->
+                    navController.navigate(BottomNavRoutes.ServiceOwnerProfile(serviceOwnerId, args.key), NavOptions.Builder().setLaunchSingleTop(true).build())
+                },
+                { dropUnlessResumedV2(backstackEntry) { navController.popBackStack() } },
+                homeViewModel,
+                servicesViewModel,
+                secondsViewmodel,
+                localJobViewmodel,
+                onDockedFabAddNewSecondsChanged,
+                args.onlySearchBar,
+                "local_jobs"
+            )
+
+        }
+
+        noTransitionComposable<BottomNavRoutes.DetailedLocalJob> { backStackEntry ->
+
+
+            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedLocalJob>()
+            val key = args.key
+
+            val parentBackStackEntry = remember {
+                if (key == 0) navController.getBackStackEntry<BottomBar.Home>()
+                else navController.getBackStackEntry<BottomBar.NestedLocalJobs>()
+            }
+
+
+            val viewModel: LocalJobsViewmodel = hiltViewModel(parentBackStackEntry,
+                key = "local_jobs_${key}")
+
+            val selectedItem by viewModel.selectedItem.collectAsState()
+
+            selectedItem?.let {
+                DetailedLocalJobScreen(
+                    navController,
+                    onNavigateUpSlider = {
+                        navController.navigate(BottomNavRoutes.DetailedSecondsImagesSlider(key, it))
+                    }, navigateUpChat = { chatUser, chatId, recipientId ->
+                        onNavigateUpChatScreen(
+                            chatUser,
+                            chatId,
+                            recipientId
+                        )
+                    },
+
+                    viewModel
+                )
+            }
+        }
 
         noTransitionComposable<BottomBar.Chats> {
             ChatUsersScreen(
@@ -583,8 +621,6 @@ fun BottomNavHost(
                 chatListViewModel
             )
         }
-
-
 
         noTransitionComposable<BottomBar.Notifications> {
             NotificationScreen(

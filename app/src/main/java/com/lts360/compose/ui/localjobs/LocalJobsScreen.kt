@@ -128,11 +128,10 @@ fun LocalJobsScreen(
                 ) {
 
                     viewModel.updateLastLoadedItemPosition(if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex)
-                    // Call nextPage if last item is visible and not currently loading
                     viewModel.nextPage(
                         userId,
                         searchQuery
-                    ) // Make sure to pass necessary parameters
+                    )
                 }
             }
     }

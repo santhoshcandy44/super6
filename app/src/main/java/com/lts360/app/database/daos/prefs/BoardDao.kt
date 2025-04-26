@@ -27,13 +27,9 @@ interface BoardDao {
     @Query("SELECT * FROM boards ORDER BY display_order ASC")
     fun getAllBoards(): List<Board>
 
-    // A transaction to clear and insert selected boards
     @Transaction
     suspend fun clearAndInsertSelectedBoards(allBoards: List<BoardPref>) {
-        // 1. Delete all boards
         deleteAllBoards()
-
-        // 2. Insert selected boards
         insertAllBoards(
             allBoards.filter { it.isSelected }.map {
                 Board(

@@ -55,7 +55,7 @@ interface ManageUsedProductListingService{
         @Part("country") country: RequestBody,
         @Part("state") state: RequestBody,
         @Part images: List<MultipartBody.Part>,
-        @Part("keepImageIds[]") keepImageIds: RequestBody,
+        @Part("keep_image_ids[]") keepImageIds: List<@JvmSuppressWildcards RequestBody>,
         @Part("location") location: RequestBody? = null
     ): Response<ResponseReply>
 

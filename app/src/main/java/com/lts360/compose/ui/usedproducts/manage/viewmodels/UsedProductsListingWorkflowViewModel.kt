@@ -409,7 +409,7 @@ class UsedProductsListingWorkflowViewModel @Inject constructor(
         country: RequestBody,
         images: List<MultipartBody.Part>,
         location: RequestBody?,
-        keepImageIds:RequestBody,
+        keepImageIds:List<RequestBody>,
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit,
     ) {
@@ -452,7 +452,7 @@ class UsedProductsListingWorkflowViewModel @Inject constructor(
         country: RequestBody,
         images: List<MultipartBody.Part>,
         location: RequestBody? = null,
-        keepImageIds: RequestBody,
+        keepImageIds: List<RequestBody>,
 
         ): Result<ResponseReply> {
 

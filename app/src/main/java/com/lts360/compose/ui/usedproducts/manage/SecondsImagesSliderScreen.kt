@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.api.models.service.UsedProductListing
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
+import com.lts360.compose.ui.localjobs.models.LocalJob
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.services.ImageSlider
 import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
@@ -70,6 +71,22 @@ fun BookmarkedSecondsSliderScreen(
     if(item !is UsedProductListing) return
 
     SecondsImagesSliderScreenContent(item, selectedImagePosition, onPopBackStack)
+}
+
+
+@Composable
+fun BookmarkedLocalJobsSliderScreen(
+    selectedImagePosition: Int,
+    viewModel: BookmarksViewModel,
+    onPopBackStack:()-> Unit
+
+) {
+    val selectedService by viewModel.selectedItem.collectAsState()
+    val item = selectedService
+
+    if(item !is LocalJob) return
+
+    LocalJobsImagesSliderScreenContent(item, selectedImagePosition, onPopBackStack)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,3 +140,53 @@ private fun SecondsImagesSliderScreenContent(selectedService: UsedProductListing
 }
 
 
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LocalJobsImagesSliderScreenContent(selectedService: LocalJob?, selectedImagePosition: Int,
+                                             onPopBackStack:()-> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                modifier = Modifier.shadow(2.dp),
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = dropUnlessResumed {
+                            onPopBackStack()
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back Icon"
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Viewer",
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Black,
+                    scrolledContainerColor = Color.Gray.copy(alpha = 0.5f),
+                    navigationIconContentColor = Color.White,
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
+            )
+        },
+        content = { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .background(Color.Black)
+                    .fillMaxSize()) {
+
+                ImageSlider(selectedImagePosition, selectedService?.images?.map {
+                    it.imageUrl
+                } ?: emptyList())
+
+            }
+        })
+}

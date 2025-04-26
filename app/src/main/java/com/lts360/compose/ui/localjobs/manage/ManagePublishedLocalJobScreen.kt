@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -516,26 +518,17 @@ fun ManagePublishedLocalJobScreen(
                                         maritalStatusExpanded = !maritalStatusExpanded
                                     },
                                     modifier = Modifier
-                                        .background(
-                                            MaterialTheme.colorScheme.surface,
-                                            shape = RoundedCornerShape(4.dp)
-                                        )
+                                        .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(4.dp))
                                 ) {
                                     OutlinedTextField(
-                                        value = localJob.maritalStatus.value,
-                                        onValueChange = { value ->
-                                            viewModel.updateMaritalStatus(
-                                                maritalStatusUnits.find {
-                                                    it.value == value
-                                                } ?: MaritalStatus.UNMARRIED
-                                            )
-                                        },
+                                        value = localJob.maritalStatuses
+                                            .filter { it.isSelected }
+                                            .joinToString(", ") { it.status.value },
+                                        onValueChange = {},
                                         readOnly = true,
-                                        label = { Text("Martial Status") },
+                                        label = { Text("Marital Status") },
                                         trailingIcon = {
-                                            ExposedDropdownMenuDefaults.TrailingIcon(
-                                                expanded = salaryExpanded
-                                            )
+                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = maritalStatusExpanded)
                                         },
                                         modifier = Modifier
                                             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
@@ -546,20 +539,27 @@ fun ManagePublishedLocalJobScreen(
                                         expanded = maritalStatusExpanded,
                                         onDismissRequest = { maritalStatusExpanded = false }
                                     ) {
-                                        maritalStatusUnits.forEach {
+                                        localJob.maritalStatuses.forEachIndexed { index, item ->
                                             DropdownMenuItem(
-                                                text = { Text(text = it.value) },
+                                                text = {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Checkbox(
+                                                            checked = item.isSelected,
+                                                            onCheckedChange = null
+                                                        )
+                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                        Text(text = item.status.value)
+                                                    }
+                                                },
                                                 onClick = {
-                                                    viewModel.updateMaritalStatus(it)
-                                                    maritalStatusExpanded = false
+                                                    viewModel.toggleMaritalStatus(index)
                                                 }
                                             )
                                         }
                                     }
                                 }
 
-
-                                errors.maritalStatus?.let {
+                                errors.maritalStatuses?.let {
                                     ErrorText(it)
                                 }
 
@@ -816,8 +816,13 @@ fun ManagePublishedLocalJobScreen(
                                                     .toRequestBody("text/plain".toMediaTypeOrNull())
                                             }
 
-                                            val bodyMaritalStatus =
-                                                localJob.maritalStatus.key.toRequestBody("text/plain".toMediaTypeOrNull())
+
+                                            val bodyMaritalStatusList = localJob.maritalStatuses.filter {
+                                                it.isSelected
+                                            }.map { it.status.key }.map {
+                                                it.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+                                            }
+
 
                                             val bodySalaryUnit = localJob.salaryUnit
                                                 .toRequestBody("text/plain".toMediaTypeOrNull())
@@ -827,19 +832,21 @@ fun ManagePublishedLocalJobScreen(
                                                     .toRequestBody("text/plain".toMediaType())
                                             }
 
-                                            val bodySalaryMax = localJob.salaryMin.let {
+                                            val bodySalaryMax = localJob.salaryMax.let {
                                                 Gson().toJson(it)
                                                     .toRequestBody("text/plain".toMediaType())
                                             }
 
 
+                                            val bodyKeepImageIds = localJob.imageContainers
+                                                .mapNotNull { it.container }
+                                                .mapNotNull { it.image }
+                                                .map { it.imageId }
+                                                .map { imageId ->
+                                                    imageId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+                                                }
 
-                                            val bodyKeepImageIds =
-                                                localJob.imageContainers.mapNotNull { it.container }
-                                                    .mapNotNull { it.image }
-                                                    .map { it.imageId }
-                                                    .toString()
-                                                    .toRequestBody("application/json".toMediaTypeOrNull())
+
 
 
                                             val bodyImages =
@@ -876,7 +883,7 @@ fun ManagePublishedLocalJobScreen(
                                                 bodyCompany,
                                                 bodyAgeMin,
                                                 bodyAgeMax,
-                                                bodyMaritalStatus,
+                                                bodyMaritalStatusList,
                                                 bodySalaryUnit,
                                                 bodySalaryMin,
                                                 bodySalaryMax,

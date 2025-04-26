@@ -76,10 +76,8 @@ data class Service(
     ) : BookMarkedItem("service")
 
 fun Service.toEditableService(): EditableService {
-
-
     return EditableService(
-        serviceId = serviceId, // Map to the network's serviceId
+        serviceId = serviceId,
         title = title,
         shortDescription = shortDescription,
         longDescription = longDescription,
@@ -91,9 +89,8 @@ fun Service.toEditableService(): EditableService {
         thumbnail = thumbnail?.toEditableThumbnail(),
         images = images.map { it.toEditableImage() },
         plans = plans.map { it.toEditablePlan() },
-        location = location?.toEditableLocation(),
-
-        )
+        location = location?.toEditableLocation()
+    )
 }
 
 
@@ -131,7 +128,6 @@ data class UsedProductListing(
 
     @SerializedName("is_bookmarked")
     var isBookmarked: Boolean,
-
 
     @SerializedName("images")
     var images: List<Image>,

@@ -15,6 +15,7 @@ import com.lts360.api.utils.ResultError
 import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.ApiService
 import com.lts360.api.app.AppClient
+import com.lts360.api.app.ManageLocalJobService
 import com.lts360.api.app.ManageServicesApiService
 import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.auth.managers.TokenManager
@@ -27,6 +28,7 @@ import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
+import com.lts360.compose.ui.localjobs.models.LocalJob
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -50,11 +52,8 @@ class BookMarkedItemTypeAdapter : JsonDeserializer<BookMarkedItem?> {
         val type = jsonObject?.get("type")?.asString
         return when (type) {
             "service" -> context?.deserialize<Service>(json, Service::class.java)
-            "used_product_listing" -> context?.deserialize<UsedProductListing>(
-                json,
-                UsedProductListing::class.java
-            )
-
+            "used_product_listing" -> context?.deserialize<UsedProductListing>(json, UsedProductListing::class.java)
+            "local_job" -> context?.deserialize<LocalJob>(json, LocalJob::class.java)
             else -> throw JsonParseException("Unknown type: $type")
         }
     }
@@ -97,9 +96,7 @@ class BookmarksViewModel @Inject constructor(
 
 
     init {
-
-        onFetchUserBookmarks(userId, onSuccess = {}) {}
-
+        onFetchUserBookmarks(userId)
     }
 
 
@@ -131,6 +128,11 @@ class BookmarksViewModel @Inject constructor(
         }
     }
 
+    fun removeLocalJobItem(item: LocalJob) {
+        _bookmarks.value = _bookmarks.value.filter {
+            !(it is LocalJob && it.type == "local_job" && it.localJobId == item.localJobId)
+        }
+    }
 
     fun updateServiceItem(updateService: Service, isBookmarked: Boolean) {
         _bookmarks.value = _bookmarks.value.map {
@@ -144,6 +146,17 @@ class BookmarksViewModel @Inject constructor(
     fun updateUsedProductItem(usedProductListing: UsedProductListing, isBookmarked: Boolean) {
         _bookmarks.value = _bookmarks.value.map {
             if (it is UsedProductListing && it.type == "used_product_listing" && it.productId == usedProductListing.productId) {
+                it.copy(isBookmarked = isBookmarked)
+            } else {
+                it
+            }
+        }
+    }
+
+
+    fun updateLocalJob(item: LocalJob, isBookmarked: Boolean) {
+        _bookmarks.value = _bookmarks.value.map {
+            if (it is LocalJob && it.type == "local_job" && it.localJobId == item.localJobId) {
                 it.copy(isBookmarked = isBookmarked)
             } else {
                 it
@@ -179,8 +192,8 @@ class BookmarksViewModel @Inject constructor(
         userId: Long,
         isLoading: Boolean = true,
         isRefreshing: Boolean = false,
-        onSuccess: (String) -> Unit,
-        onError: (String) -> Unit,
+        onSuccess: (String) -> Unit={},
+        onError: (String) -> Unit={},
     ) {
 
         viewModelScope.launch {
@@ -188,7 +201,6 @@ class BookmarksViewModel @Inject constructor(
             try {
                 if (isLoading) {
                     _isLoading.value = true
-
                 }
                 if (isRefreshing) {
                     _isRefreshing.value = true
@@ -201,7 +213,7 @@ class BookmarksViewModel @Inject constructor(
                             .registerTypeAdapter(
                                 BookMarkedItem::class.java,
                                 BookMarkedItemTypeAdapter()
-                            ) // Register the custom TypeAdapter
+                            )
                             .create()
 
                         val itemListType = object : TypeToken<List<BookMarkedItem>>() {}.type
@@ -274,18 +286,15 @@ class BookmarksViewModel @Inject constructor(
             try {
                 when (val result = removeUsedProductListingBookmark(userId, service)) {
                     is Result.Success -> {
-                        // Deserialize the search terms and set suggestions
                         onSuccess()
                     }
 
                     is Result.Error -> {
-                        // Handle error
                         errorMessage = mapExceptionToError(result.error).errorMessage
                         onError(errorMessage)
-                        // Optionally log the error message
                     }
                 }
-            } catch (t: Exception) {
+            } catch (_: Exception) {
                 errorMessage = "Something Went Wrong"
                 onError(errorMessage)
 
@@ -293,6 +302,73 @@ class BookmarksViewModel @Inject constructor(
         }
     }
 
+
+
+    fun onRemoveLocalJobBookmark(
+        userId: Long,
+        item: LocalJob,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        viewModelScope.launch {
+            try {
+                when (val result = removeLocalJobBookmark(userId, item)) {
+                    is Result.Success -> {
+                        onSuccess()
+                    }
+
+                    is Result.Error -> {
+                        errorMessage = mapExceptionToError(result.error).errorMessage
+                        onError(errorMessage)
+                    }
+                }
+            } catch (_: Exception) {
+                errorMessage = "Something Went Wrong"
+                onError(errorMessage)
+
+            }
+        }
+    }
+
+
+    private suspend fun removeLocalJobBookmark(
+        userId: Long,
+        item: LocalJob,
+    ): Result<ResponseReply> {
+
+
+        return try {
+            val response = AppClient.instance.create(ManageLocalJobService::class.java)
+                .removeBookmarkLocalJob(
+                    userId,
+                    item.localJobId
+                )
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.isSuccessful) {
+                    Result.Success(body)
+
+                } else {
+                    val errorMessage = "Failed, try again later..."
+                    Result.Error(Exception(errorMessage))
+                }
+
+
+            } else {
+
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = try {
+                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                } catch (e: Exception) {
+                    "An unknown error occurred"
+                }
+                Result.Error(Exception(errorMessage))
+            }
+
+        } catch (t: Exception) {
+            Result.Error(t)
+        }
+    }
 
     private suspend fun removeUsedProductListingBookmark(
         userId: Long,

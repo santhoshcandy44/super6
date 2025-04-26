@@ -45,7 +45,7 @@ class LocalJobWorkFlowViewModel @Inject constructor(
         val company: String = "",
         val ageMin: Int = 18,
         val ageMax: Int = 40,
-        val maritalStatus: MaritalStatus = MaritalStatus.UNMARRIED,
+        val maritalStatuses: List<SelectableMaritalStatus> = emptyList(),
         val imageContainers: List<BitmapContainer> = emptyList(),
         val salaryUnit: String = "",
         val salaryMin: Int = -1,
@@ -61,7 +61,7 @@ class LocalJobWorkFlowViewModel @Inject constructor(
         val description: String? = null,
         val company: String? = null,
         val age: String? = null,
-        val maritalStatus: String? = null,
+        val maritalStatuses: String? = null,
         val imageContainers: String? = null,
         val salaryUnit: String? = null,
         val salaryMin: String? = null,
@@ -69,6 +69,11 @@ class LocalJobWorkFlowViewModel @Inject constructor(
         val country: String? = null,
         val state: String? = null,
         val selectedLocation: String? = null
+    )
+
+    data class SelectableMaritalStatus(
+        val status: MaritalStatus,
+        var isSelected: Boolean = false
     )
 
 
@@ -84,7 +89,15 @@ class LocalJobWorkFlowViewModel @Inject constructor(
 
     private val _localJob = MutableStateFlow<LocalJobState>(
         LocalJobState(
-            maritalStatus = maritalStatusUnits[1],
+            maritalStatuses =
+                listOf(
+                    SelectableMaritalStatus(
+                        MaritalStatus.MARRIED
+                    ),
+                    SelectableMaritalStatus(
+                        MaritalStatus.UNMARRIED
+                    )
+                ),
             salaryUnit = if (userCurrency in salaryUnits) userCurrency else "INR"
         )
     )
@@ -149,12 +162,13 @@ class LocalJobWorkFlowViewModel @Inject constructor(
         _errors.value = _errors.value.copy(age = null)
     }
 
-    fun updateMaritalStatus(maritalStatus: String) {
-        _localJob.value = _localJob.value.copy(
-            maritalStatus =
-            MaritalStatus.entries.find { it.value == maritalStatus } ?: MaritalStatus.UNMARRIED)
-        _errors.value = _errors.value.copy(maritalStatus = null)
+    fun toggleMaritalStatus(index: Int) {
+        val updatedStatuses = _localJob.value.maritalStatuses.toMutableList()
+        val currentStatus = updatedStatuses[index]
+        updatedStatuses[index] = currentStatus.copy(isSelected = !currentStatus.isSelected)
+        _localJob.value = _localJob.value.copy(maritalStatuses = updatedStatuses)
     }
+
 
     fun updateSalaryUnit(salaryUnit: String) {
         _localJob.value = _localJob.value.copy(salaryUnit = salaryUnit)
@@ -299,11 +313,39 @@ class LocalJobWorkFlowViewModel @Inject constructor(
         }
 
 
-        if (_localJob.value.maritalStatus !in maritalStatusUnits) {
-            _errors.value = _errors.value.copy(maritalStatus = "Marital Status must be selected")
+        if (_localJob.value.ageMin < 18) {
+            _errors.value = _errors.value.copy(age = "Minimum age must be at least 18")
+            isValid = false
+        } else if (_localJob.value.ageMin > _localJob.value.ageMax) {
+            _errors.value = _errors.value.copy(age = "Minimum age cannot be greater than maximum age")
             isValid = false
         } else {
-            _errors.value = _errors.value.copy(maritalStatus = null)
+            _errors.value = _errors.value.copy(age = null)
+        }
+
+        if (_localJob.value.ageMax < _localJob.value.ageMin) {
+            _errors.value = _errors.value.copy(age = "Maximum age must be greater than or equal to minimum age")
+            isValid = false
+        } else if (_localJob.value.ageMax > 99) {
+            _errors.value = _errors.value.copy(age = "Maximum age cannot exceed 99")
+            isValid = false
+        } else {
+            _errors.value = _errors.value.copy(age = null)
+        }
+
+
+        val selectedStatuses = _localJob.value.maritalStatuses
+            .filter { it.isSelected }
+            .map { it.status }
+
+        if (selectedStatuses.isEmpty()) {
+            _errors.value = _errors.value.copy(maritalStatuses = "At least 1 marital status must be selected")
+            isValid = false
+        } else if (!selectedStatuses.all { it in maritalStatusUnits }) {
+            _errors.value = _errors.value.copy(maritalStatuses = "Invalid marital status selected")
+            isValid = false
+        } else {
+            _errors.value = _errors.value.copy(maritalStatuses = null)
         }
 
         if (_localJob.value.salaryUnit.isEmpty()) {
@@ -356,12 +398,12 @@ class LocalJobWorkFlowViewModel @Inject constructor(
         company: RequestBody,
         ageMin: RequestBody,
         ageMax: RequestBody,
-        maritalStatus:RequestBody,
+        maritalStatus: List<RequestBody>,
         salaryUnit: RequestBody,
         salaryMin: RequestBody,
         salaryMax: RequestBody,
         images: List<MultipartBody.Part>,
-        keepImageIds: RequestBody,
+        keepImageIds: List<RequestBody>,
         country: RequestBody,
         state: RequestBody,
         location: RequestBody? = null,
@@ -409,12 +451,12 @@ class LocalJobWorkFlowViewModel @Inject constructor(
         company: RequestBody,
         ageMin: RequestBody,
         ageMax: RequestBody,
-        maritalStatus: RequestBody,
+        maritalStatus: List<RequestBody>,
         salaryUnit: RequestBody,
         salaryMin: RequestBody,
         salaryMax: RequestBody,
         images: List<MultipartBody.Part>,
-        keepImageIds: RequestBody,
+        keepImageIds: List<RequestBody>,
         country: RequestBody,
         state: RequestBody,
         location: RequestBody? = null
@@ -474,7 +516,14 @@ class LocalJobWorkFlowViewModel @Inject constructor(
     fun clearSelectedDraft() {
         onCreateOrUpdateJob?.cancel()
         _localJob.value = LocalJobState(
-            maritalStatus = maritalStatusUnits[0],
+            maritalStatuses = listOf(
+                SelectableMaritalStatus(
+                    MaritalStatus.MARRIED
+                ),
+                SelectableMaritalStatus(
+                    MaritalStatus.UNMARRIED
+                )
+            ),
             salaryUnit = if (userCurrency in salaryUnits) userCurrency else "INR"
         )
         _errors.value = LocalJobErrorsState()

@@ -74,8 +74,10 @@ import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
+import com.lts360.compose.ui.bookmarks.BookmarksActivity
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.localjobs.models.LocalJob
+import com.lts360.compose.ui.localjobs.models.getMaritalStatusLabel
 import com.lts360.compose.ui.services.SendMessageButton
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.utils.ExpandableText
@@ -144,7 +146,6 @@ fun DetailedLocalJobScreen(
 }
 
 
-
 @Composable
 fun BookmarkedDetailedLocalJobInfoScreen(
     navHostController: NavHostController,
@@ -158,12 +159,12 @@ fun BookmarkedDetailedLocalJobInfoScreen(
 
     val selectedItem by viewModel.selectedItem.collectAsState()
 
-    val item = selectedItem // Store in a local variable
+    val item = selectedItem
 
-    if (item !is LocalJob) return // Smart cast now works
+    if (item !is LocalJob) return
 
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     DetailedLocalJobContent(
         userId,
@@ -249,7 +250,8 @@ private fun DetailedLocalJobContent(
                     context.startActivity(
                         Intent(context, AuthActivity::class.java)
                             .apply {
-                               flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                flags =
+                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                                 putExtra("force_type", "force_login")
                             })
                 }, onSelectAccountNavigate = {
@@ -282,7 +284,7 @@ private fun DetailedLocalJobContent(
                 },
                 title = {
                     Text(
-                        text = "Seconds Info",
+                        text = "Local Job Info",
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
@@ -308,12 +310,13 @@ private fun DetailedLocalJobContent(
                     }
                 }
             } ?: run {
-                LoadingDetailedSecondsInfo()
+                LoadingDetailedLocalJobInfo()
             }
         }
 
     }
 }
+
 
 @Composable
 private fun DetailedLocalJobInfo(
@@ -322,8 +325,8 @@ private fun DetailedLocalJobInfo(
     onNavigateUpSlider: (Int) -> Unit,
     chatButtonClicked: @Composable () -> Unit
 ) {
-
     Column(modifier = Modifier.fillMaxSize()) {
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -332,49 +335,73 @@ private fun DetailedLocalJobInfo(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
 
-
-            item(key = "secondsImages-${item.localJobId}") {
+            item(key = "images-${item.localJobId}") {
                 SecondsImagesSliderDetailedSecondsInfo(item.images, onNavigateUpSlider)
             }
 
-            item(key = "secondsOwner-${item.user.userId}") {
+            item(key = "owner-${item.user.userId}") {
                 LocalJobOwner(
                     "${item.user.firstName} ${item.user.lastName ?: ""}",
                     item.user.profilePicUrl,
-                    "${item.country}/${item.state}",
+                    "${item.country ?: ""}/${item.state ?: ""}",
                     item.user.isOnline
                 )
             }
 
-            item(key = "secondsDescription-${item.localJobId}") {
+            item(key = "description-${item.localJobId}") {
                 LocalJobDescription(
-                    item.title,
-                    item.description,
-                    formatCurrency(
-                        item.salaryMin.toDouble(),
-                        item.salaryUnit
-                    )
+                    title = item.title,
+                    description = item.description,
+                    salary = "${
+                        formatCurrency(
+                            item.salaryMin.toDouble(),
+                            item.salaryUnit
+                        )
+                    } - ${formatCurrency(item.salaryMax.toDouble(), item.salaryUnit)}"
                 )
             }
 
-
-        }
-
-        Box(modifier = Modifier.fillMaxWidth()){
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                if (userId != item.user.userId) {
-                    SendMessageButton(chatButtonClicked)
-                }
+            item {
+                InfoRow(label = "Company", value = item.company)
+                InfoRow(label = "Age Range", value = "${item.ageMin} - ${item.ageMax}")
+                InfoRow(
+                    label = "Marital Status", value =
+                        item.maritalStatuses.joinToString(", ") {
+                            item.getMaritalStatusLabel(
+                                it
+                            )
+                        }
+                )
             }
         }
 
+        if (userId != item.user.userId) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                SendMessageButton(chatButtonClicked)
+            }
+        }
     }
-
-
 }
 
 @Composable
-private fun LoadingDetailedSecondsInfo() {
+fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, style = MaterialTheme.typography.labelMedium)
+        Text(value, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun LoadingDetailedLocalJobInfo() {
 
     LazyColumn(
         modifier = Modifier
@@ -383,8 +410,7 @@ private fun LoadingDetailedSecondsInfo() {
         contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp)
     ) {
 
-        item(key = "secondsOwner-${0}") {
-
+        item(key = "localJobOwner-${0}") {
 
             Row(
                 modifier = Modifier
@@ -409,7 +435,7 @@ private fun LoadingDetailedSecondsInfo() {
                     ShimmerBox {
                         Text(
                             color = Color.Transparent,
-                            text = "Seconds owner name", // Replace with your data
+                            text = "Seconds owner name",
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.bodyMedium
@@ -433,15 +459,14 @@ private fun LoadingDetailedSecondsInfo() {
             }
         }
 
-        // Image Slider
-        item(key = "SecondsImages-${0}") {
+        item(key = "LocalJobImages-${0}") {
 
             ShimmerBox {
                 Spacer(modifier = Modifier.aspectRatio(16 / 9f))
             }
         }
 
-        item(key = "secondsDescription-${0}") {
+        item(key = "LocalJobDescription-${0}") {
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -450,7 +475,7 @@ private fun LoadingDetailedSecondsInfo() {
                     Text(
                         color = Color.Transparent,
                         modifier = Modifier.fillMaxWidth(),
-                        text = "Short description", // Replace with your data
+                        text = "Short description",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -462,7 +487,7 @@ private fun LoadingDetailedSecondsInfo() {
                     Text(
                         color = Color.Transparent,
                         modifier = Modifier.fillMaxWidth(0.6f),
-                        text = "Long description", // Replace with your data
+                        text = "Long description",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -551,9 +576,9 @@ private fun LocalJobOwner(
 
 @Composable
 private fun LocalJobDescription(
-    name: String,
+    title: String,
     description: String,
-    price: String
+    salary: String
 ) {
 
 
@@ -566,15 +591,13 @@ private fun LocalJobDescription(
 
 
         Text(
-            text = name, // Replace with your data
+            text = title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-
-        // Expandable long description
 
         ExpandableText(
             description,
@@ -585,18 +608,16 @@ private fun LocalJobDescription(
         )
 
 
-
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Starting from price
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Price", modifier = Modifier.padding(vertical = 8.dp))
+            Text(text = "Salary", modifier = Modifier.padding(vertical = 8.dp))
             Text(
-                text = price,
+                text = salary,
                 fontSize = 24.sp,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )

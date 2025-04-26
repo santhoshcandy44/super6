@@ -76,10 +76,17 @@ sealed class  BookMarkRoutes{
     data object BookmarkedDetailedUsedProductListing : BookMarkRoutes()
 
     @Serializable
+    data object BookmarkedDetailedLocalJob : BookMarkRoutes()
+
+    @Serializable
     data class BookmarkedDetailedServiceImagesSlider(val selectedImagePosition: Int) : BookMarkRoutes()
 
     @Serializable
     data class BookmarkedDetailedUsedProductListingImagesSlider(val selectedImagePosition: Int) : BookMarkRoutes()
+
+
+    @Serializable
+    data class BookmarkedDetailedLocalJobImagesSlider(val selectedImagePosition: Int) : BookMarkRoutes()
 
     @Serializable
     data object BookmarkedServices : BookMarkRoutes()

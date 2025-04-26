@@ -20,6 +20,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.toRoute
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.chat.IsolatedChatActivity
+import com.lts360.compose.ui.localjobs.BookmarkedDetailedLocalJobInfoScreen
 import com.lts360.compose.ui.main.navhosts.routes.BookMarkRoutes
 import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.main.profile.BookmarkedServiceOwnerProfileScreen
@@ -32,6 +33,7 @@ import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.usedproducts.BookmarkedDetailedUsedProductListingInfoScreen
 import com.lts360.compose.ui.usedproducts.BookmarkedFeedUserDetailedUsedProductListingInfoScreen
 import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
+import com.lts360.compose.ui.usedproducts.manage.BookmarkedLocalJobsSliderScreen
 import com.lts360.compose.ui.usedproducts.manage.BookmarkedSecondsOwnerProfileScreen
 import com.lts360.compose.ui.usedproducts.manage.BookmarkedSecondsSliderScreen
 import com.lts360.compose.ui.usedproducts.manage.FeedUserSecondsImagesSliderScreen
@@ -80,14 +82,14 @@ class BookmarksActivity : ComponentActivity() {
                                         navController.navigate(BookMarkRoutes.BookmarkedDetailedService)
                                     },
                                     {
-                                        navController.navigate(
-                                            BookMarkRoutes.ServiceOwnerProfile(it),
-                                            NavOptions.Builder().setLaunchSingleTop(true).build()
-                                        )
+                                        navController.navigate(BookMarkRoutes.ServiceOwnerProfile(it),
+                                            NavOptions.Builder().setLaunchSingleTop(true).build())
                                     },
                                     {
                                         navController.navigate(BookMarkRoutes.BookmarkedDetailedUsedProductListing)
-
+                                    },
+                                    {
+                                        navController.navigate(BookMarkRoutes.BookmarkedDetailedLocalJob)
                                     },
                                     {
                                         this@BookmarksActivity.finish()
@@ -350,6 +352,52 @@ class BookmarksActivity : ComponentActivity() {
                                     ) { navController.popBackStack() }
                                 }
 
+                            }
+
+
+                            slideComposable<BookMarkRoutes.BookmarkedDetailedLocalJob> {
+
+                                BookmarkedDetailedLocalJobInfoScreen(
+                                    navController,
+                                    onNavigateUpSlider = {
+                                        navController.navigate(
+                                            BookMarkRoutes.BookmarkedDetailedLocalJobImagesSlider(
+                                                it
+                                            )
+                                        )
+                                    },
+                                    navigateUpChat = { chatId, recipientId, feedUserProfile ->
+                                        context.startActivity(
+                                            Intent(context, IsolatedChatActivity::class.java)
+                                                .apply {
+                                                    putExtra(
+                                                        "feed_user_profile",
+                                                        UserProfileSerializer.serializeFeedUserProfileInfo(
+                                                            feedUserProfile
+                                                        )
+                                                    )
+                                                    putExtra("chat_id", chatId)
+                                                    putExtra("recipient_id", recipientId)
+
+                                                })
+                                    },
+
+                                    bookmarksViewModel
+                                )
+                            }
+
+                            slideComposable<BookMarkRoutes.BookmarkedDetailedLocalJobImagesSlider> {
+                                val selectedImagePosition =
+                                    it.toRoute<BookMarkRoutes.BookmarkedDetailedUsedProductListingImagesSlider>().selectedImagePosition
+
+                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
+
+                                selectedItem?.let {
+                                    BookmarkedLocalJobsSliderScreen(
+                                        selectedImagePosition,
+                                        bookmarksViewModel
+                                    ) { navController.popBackStack() }
+                                }
                             }
 
                         }

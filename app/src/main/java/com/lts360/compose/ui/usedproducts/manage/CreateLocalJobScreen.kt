@@ -1,7 +1,6 @@
 package com.lts360.compose.ui.usedproducts.manage
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -56,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
@@ -84,6 +84,7 @@ import com.lts360.libs.utils.createImageFileDCIMExternalStorage
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
 
@@ -106,7 +107,6 @@ fun CreateUsedProductListingScreen(
 
 
     val selectedLocation by viewModel.selectedLocation.collectAsState()
-    // Ensure containers reflect the latest state of imageContainers
     val imageContainers by viewModel.imageContainers.collectAsState()
 
 
@@ -138,16 +138,13 @@ fun CreateUsedProductListingScreen(
 
     val slots by viewModel.slots.collectAsState()
     val pickImagesLauncher = if (slots > 0) {
-        // Create a launcher for picking multiple images
         rememberLauncherForActivityResult(
             GalleryPagerActivityResultContracts.PickMultipleImages(
                 slots,
                 allowSingleItemChoose = true
             )
         ) { uris ->
-            // Check if the number of selected images is less than 12
             if (imageContainers.size < MAX_IMAGES) {
-                // Proceed if there are URIs to handle
                 if (uris.isNotEmpty()) {
 
                     uris.take(MAX_IMAGES - imageContainers.size).forEach { uri ->
@@ -166,9 +163,7 @@ fun CreateUsedProductListingScreen(
                 }
 
             } else {
-                // Show a toast message if the image limit is reached
-                Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
-                    .show()
+                ShortToast(context, "Only $MAX_IMAGES images are allowed")
             }
 
             viewModel.setPickerLaunch(false)
@@ -181,7 +176,6 @@ fun CreateUsedProductListingScreen(
     }
 
 
-    // Create a launcher for picking multiple images
     val pickSingleImageLauncher = rememberLauncherForActivityResult(
         GalleryPagerActivityResultContracts.PickSingleImage()
     ) { uri ->
@@ -248,7 +242,6 @@ fun CreateUsedProductListingScreen(
                     }
 
                 } else {
-                    // Get the ContentResolver
                     requestedData?.let {
                         context.contentResolver.delete(it, null, null)
                     }
@@ -256,9 +249,7 @@ fun CreateUsedProductListingScreen(
                 }
 
             } else {
-                // Show a toast message if the image limit is reached
-                Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
-                    .show()
+                ShortToast(context, "Only $MAX_IMAGES images are allowed")
             }
         }
 
@@ -356,8 +347,9 @@ fun CreateUsedProductListingScreen(
 
 
         },
-        sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
+        sheetShape = RectangleShape,
+        sheetPeekHeight = 0.dp,
+        sheetSwipeEnabled = false,
 //            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     ) { _ ->
 
@@ -435,11 +427,10 @@ fun CreateUsedProductListingScreen(
                                         modifier = Modifier.padding(
                                             horizontal = 16.dp,
                                             vertical = 4.dp
-                                        ) // Adjust padding as needed
+                                        )
                                     )
                                 }
 
-                                // Display error message if there's an error
                                 serviceTitleError?.let {
                                     ErrorText(it)
                                 }
@@ -708,13 +699,11 @@ fun CreateUsedProductListingScreen(
                                                     .toRequestBody("text/plain".toMediaTypeOrNull())
 
 
-                                                val bodyKeepImageIds =
-                                                    "[]".toRequestBody("application/json".toMediaTypeOrNull())
-
+                                                val bodyKeepImageIdsList = emptyList<RequestBody>()
 
                                                 val bodyPrice = price.toDouble().let {
-                                                    Gson().toJson(it)  // Convert the float to a JSON representation
-                                                        .toRequestBody("text/plain".toMediaType())  // Convert the JSON string to RequestBody
+                                                    Gson().toJson(it)
+                                                        .toRequestBody("text/plain".toMediaType())
                                                 }
 
 
@@ -755,23 +744,13 @@ fun CreateUsedProductListingScreen(
                                                     bodyCountry,
                                                     bodyImages,
                                                     bodyLocation,
-                                                    bodyKeepImageIds,
+                                                    bodyKeepImageIdsList,
                                                     {
                                                         onUsedProductListingCreated()
-                                                        Toast.makeText(
-                                                            context,
-                                                            it,
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
+                                                        ShortToast(context, it)
 
                                                     }) {
-
-                                                    Toast.makeText(
-                                                        context,
-                                                        it,
-                                                        Toast.LENGTH_SHORT
-                                                    )
-                                                        .show()
+                                                    ShortToast(context, it)
                                                 }
 
                                             }

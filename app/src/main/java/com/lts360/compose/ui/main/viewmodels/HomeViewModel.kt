@@ -13,6 +13,7 @@ import com.google.gson.reflect.TypeToken
 import com.lts360.api.utils.Result
 import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.AppClient
+import com.lts360.api.app.ManageLocalJobService
 import com.lts360.api.app.ManageServicesApiService
 import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.auth.managers.TokenManager
@@ -336,7 +337,6 @@ class HomeViewModel @Inject constructor(
                 try {
                     when (val result = getGuestServiceSearchQuerySuggestions(userId, query)) {
                         is Result.Success -> {
-                            // Deserialize the search terms and set suggestions
                             val searchTerms = Gson().fromJson(
                                 result.data.data,
                                 object : TypeToken<List<SearchTerm>>() {}.type
@@ -345,7 +345,6 @@ class HomeViewModel @Inject constructor(
                         }
 
                         is Result.Error -> {
-                            // Handle error
                             setSuggestions(emptyList())
 //                            val errorMsg = mapExceptionToError(result.error).errorMessage
                             // Optionally log the error message
@@ -356,7 +355,6 @@ class HomeViewModel @Inject constructor(
                     if (t is CancellationException) {
                         return@launch // Early return on cancellation
                     }
-                    // Handle other exceptions
                     setSuggestions(emptyList())
                     // Optionally log the error
                 }
@@ -367,7 +365,6 @@ class HomeViewModel @Inject constructor(
                 try {
                     when (val result = getServiceSearchQuerySuggestions(userId, query)) {
                         is Result.Success -> {
-                            // Deserialize the search terms and set suggestions
                             val searchTerms = Gson().fromJson(
                                 result.data.data,
                                 object : TypeToken<List<SearchTerm>>() {}.type
@@ -376,7 +373,6 @@ class HomeViewModel @Inject constructor(
                         }
 
                         is Result.Error -> {
-                            // Handle error
                             setSuggestions(emptyList())
 //                            val errorMsg = mapExceptionToError(result.error).errorMessage
                             // Optionally log the error message
@@ -398,7 +394,6 @@ class HomeViewModel @Inject constructor(
     }
 
     fun onGetUsedProductListingSearchQuerySuggestions(userId: Long, query: String) {
-
 
         if (isGuest) {
 
@@ -437,7 +432,6 @@ class HomeViewModel @Inject constructor(
                 try {
                     when (val result = getUsedProductListingSearchQuerySuggestions(userId, query)) {
                         is Result.Success -> {
-                            // Deserialize the search terms and set suggestions
                             val searchTerms = Gson().fromJson(
                                 result.data.data,
                                 object : TypeToken<List<SearchTerm>>() {}.type
@@ -446,25 +440,79 @@ class HomeViewModel @Inject constructor(
                         }
 
                         is Result.Error -> {
-                            // Handle error
                             setSuggestions(emptyList())
 //                            val errorMsg = mapExceptionToError(result.error).errorMessage
-                            // Optionally log the error message
                         }
                     }
                 } catch (t: Exception) {
                     t.printStackTrace()
                     if (t is CancellationException) {
-                        return@launch // Early return on cancellation
+                        return@launch
                     }
-                    // Handle other exceptions
                     setSuggestions(emptyList())
-                    // Optionally log the error
                 }
             }
 
         }
 
+    }
+
+    fun onGetLocalJobSearchQuerySuggestions(userId: Long, query: String) {
+
+        if (isGuest) {
+
+            searchJob = viewModelScope.launch {
+                try {
+                    when (val result = getGuestLocalJobSearchQuerySuggestions(userId, query)) {
+                        is Result.Success -> {
+                            val searchTerms = Gson().fromJson(
+                                result.data.data,
+                                object : TypeToken<List<SearchTerm>>() {}.type
+                            ) as List<SearchTerm>
+                            setSuggestions(searchTerms.map { it.searchTerm })
+                        }
+
+                        is Result.Error -> {
+                            setSuggestions(emptyList())
+//                            val errorMsg = mapExceptionToError(result.error).errorMessage
+                        }
+                    }
+                } catch (t: Exception) {
+                    t.printStackTrace()
+                    if (t is CancellationException) {
+                        return@launch
+                    }
+                    setSuggestions(emptyList())
+                }
+            }
+
+        } else {
+            searchJob = viewModelScope.launch {
+                try {
+                    when (val result = getLocalJobSearchQuerySuggestions(userId, query)) {
+                        is Result.Success -> {
+                            val searchTerms = Gson().fromJson(
+                                result.data.data,
+                                object : TypeToken<List<SearchTerm>>() {}.type
+                            ) as List<SearchTerm>
+                            setSuggestions(searchTerms.map { it.searchTerm })
+                        }
+
+                        is Result.Error -> {
+                            setSuggestions(emptyList())
+//                            val errorMsg = mapExceptionToError(result.error).errorMessage
+                        }
+                    }
+                } catch (t: Exception) {
+                    t.printStackTrace()
+                    if (t is CancellationException) {
+                        return@launch
+                    }
+                    setSuggestions(emptyList())
+                }
+            }
+
+        }
     }
 
 
@@ -546,6 +594,83 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+
+
+    private suspend fun getGuestLocalJobSearchQuerySuggestions(
+        userId: Long,
+        query: String,
+    ): Result<ResponseReply> {
+
+
+        return try {
+            val response =
+                AppClient.instance.create(ManageLocalJobService::class.java)
+                    .guestSearchFilterLocalJob(userId, query)
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.isSuccessful) {
+
+                    Result.Success(body)
+                } else {
+                    setSuggestions(emptyList())
+                    val errorBody = response.errorBody()?.string()
+                    val errorMessage = try {
+                        Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                    } catch (e: Exception) {
+                        "An unknown error occurred"
+                    }
+                    Result.Error(Exception(errorMessage))
+                }
+            } else {
+                Result.Error(Exception("Failed to retrieve suggestions"))
+            }
+        } catch (e: Exception) {
+            if (e is CancellationException) {
+                throw e
+            }
+            Result.Error(e)
+        }
+    }
+
+    private suspend fun getLocalJobSearchQuerySuggestions(
+        userId: Long,
+        query: String,
+    ): Result<ResponseReply> {
+        return try {
+            val response =
+                AppClient.instance.create(ManageLocalJobService::class.java)
+                    .searchFilterLocalJob(userId, query)
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.isSuccessful) {
+
+                    Result.Success(body)
+                } else {
+                    // Handle unsuccessful response
+                    setSuggestions(emptyList())
+                    val errorBody = response.errorBody()?.string()
+                    val errorMessage = try {
+                        Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                    } catch (e: Exception) {
+                        "An unknown error occurred"
+                    }
+                    Result.Error(Exception(errorMessage))
+                }
+            } else {
+                // Handle unsuccessful HTTP response
+                Result.Error(Exception("Failed to retrieve suggestions"))
+            }
+        } catch (e: Exception) {
+            if (e is CancellationException) {
+                throw e
+            }
+            Result.Error(e)
+        }
+    }
+
+
     private suspend fun getGuestServiceSearchQuerySuggestions(
         userId: Long,
         query: String,
@@ -602,7 +727,6 @@ class HomeViewModel @Inject constructor(
 
                     Result.Success(body)
                 } else {
-                    // Handle unsuccessful response
                     setSuggestions(emptyList())
                     val errorBody = response.errorBody()?.string()
                     val errorMessage = try {

@@ -17,7 +17,7 @@ import javax.inject.Inject
 
 
 enum class MaritalStatus(val key: String, val value: String) {
-    MARRIED("MARRIED", "Married"), UNMARRIED("UNMARRIED", "Un Married")
+    MARRIED("MARRIED", "Married",), UNMARRIED("UNMARRIED", "Un Married")
 }
 
 
