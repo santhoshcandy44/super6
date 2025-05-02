@@ -72,7 +72,7 @@ fun BottomNavHost(
     onNavigateUpLogInSheet: () -> Unit,
     onNavigateUpChatScreen: (ChatUser, Int, Long) -> Unit,
     onDockedFabAddNewSecondsChanged: (Boolean) -> Unit,
-    onNavigateUpGuestManageIndustriesAndInterests: () -> Unit = {}
+    onNavigateUpGuestManageIndustriesAndInterests: () -> Unit
 ) {
 
 
