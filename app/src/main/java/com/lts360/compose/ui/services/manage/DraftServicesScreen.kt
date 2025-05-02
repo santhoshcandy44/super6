@@ -72,7 +72,6 @@ fun DraftServicesScreen(
 
         if (!isLoading) {
 
-            // Display the list of services if available
             if (draftServices.isNotEmpty()) {
                 LazyColumn(
                     modifier = Modifier

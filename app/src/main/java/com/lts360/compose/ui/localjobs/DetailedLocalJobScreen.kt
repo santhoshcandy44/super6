@@ -29,6 +29,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -357,9 +359,9 @@ private fun DetailedLocalJobInfo(
             }
 
             item {
-                InfoRow(label = "Company", value = item.company)
-                InfoRow(label = "Age Range", value = "${item.ageMin} - ${item.ageMax}")
-                InfoRow(
+                InfoCard(label = "Company", value = item.company)
+                InfoCard(label = "Age Range", value = "${item.ageMin} - ${item.ageMax}")
+                InfoCard(
                     label = "Marital Status", value =
                         item.maritalStatuses.joinToString(", ") {
                             item.getMaritalStatusLabel(
@@ -383,15 +385,33 @@ private fun DetailedLocalJobInfo(
 }
 
 @Composable
-fun InfoRow(label: String, value: String) {
-    Row(
+fun InfoCard(label: String, value: String) {
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Text(label, style = MaterialTheme.typography.labelMedium)
-        Text(value, style = MaterialTheme.typography.bodyMedium)
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 

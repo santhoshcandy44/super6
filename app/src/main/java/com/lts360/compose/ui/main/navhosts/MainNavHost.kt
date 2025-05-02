@@ -25,7 +25,6 @@ import com.lts360.compose.ui.chat.viewmodels.ChatViewModel
 import com.lts360.compose.ui.main.MainScreen
 import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
-import com.lts360.compose.ui.main.profile.ProfileScreen
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.onboarding.ChooseIndustryScreen
 import com.lts360.compose.ui.onboarding.EditProfileAboutScreen
@@ -74,7 +73,7 @@ fun MainNavHost() {
                 moreViewModel,
                 homeActivityViewModel,
                 onProfileNavigateUp = {
-                    navController.navigate(AccountAndProfileSettingsRoutes.Profile)
+                    navController.navigate(AccountAndProfileSettingsRoutes.PersonalSettings)
                 }, onAccountAndProfileSettingsNavigateUp = { accountType ->
                     navController.navigate(
                         AccountAndProfileSettingsRoutes.AccountAndProfileSettings(
@@ -145,16 +144,10 @@ fun MainNavHost() {
             ChooseIndustryScreen { navController.popBackStack() }
         }
 
-        slideComposable<AccountAndProfileSettingsRoutes.Profile> {
-
-            ProfileScreen({ navController.popBackStack() })
-        }
 
         slideComposable<AccountAndProfileSettingsRoutes.AccountAndProfileSettings> {
             AccountAndProfileSettingsScreen({
-                navController.navigate(AccountAndProfileSettingsRoutes.PersonalSettings)
-            }, {
-                navController.navigate(AccountAndProfileSettingsRoutes.ChangeProfilePassword)
+                navController.navigate(AccountAndProfileSettingsRoutes.ChangeAccountPassword)
             }, { accountType ->
                 navController.navigate(AccountAndProfileSettingsRoutes.SwitchAccountType(accountType))
             }, {
@@ -206,7 +199,7 @@ fun MainNavHost() {
             }, { navController.popBackStack() })
         }
 
-        slideComposable<AccountAndProfileSettingsRoutes.ChangeProfilePassword> {
+        slideComposable<AccountAndProfileSettingsRoutes.ChangeAccountPassword> {
             ChangePasswordScreen(onForgotPasswordNavigateUp = {
                 navController.navigate(AuthScreen.ForgotPassword)
             }, {

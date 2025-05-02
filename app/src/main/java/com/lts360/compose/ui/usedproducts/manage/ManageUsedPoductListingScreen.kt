@@ -55,7 +55,7 @@ fun ManageUsedProductListingScreen(
                 },
                 title = {
                     Text(
-                        text = "Manage Seconds",
+                        text = "Manage Second Hands",
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
@@ -69,13 +69,10 @@ fun ManageUsedProductListingScreen(
                     .padding(horizontal = 16.dp)
                     .padding(top = 8.dp)
             ) {
-                // Header View
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
+                Column(modifier = Modifier
+                        .fillMaxWidth()) {
                     Text(
-                        text = "Create Seconds",
+                        text = "Create Second Hands",
                         style = MaterialTheme.typography.titleMedium
                     )
 

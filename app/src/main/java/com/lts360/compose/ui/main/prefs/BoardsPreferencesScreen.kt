@@ -649,7 +649,8 @@ private fun DraggableBoardItem(
                     color = if (isDragging) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
                     else MaterialTheme.colorScheme.surface,
                     shape = MaterialTheme.shapes.medium
-                )
+                ),
+            enableBoarderHighlight = true
         )
     }
 }
@@ -674,7 +675,6 @@ private fun BoardItem(
             else MaterialTheme.colorScheme.outlineVariant
         ),
     ) {
-
 
         Box(
             modifier = Modifier

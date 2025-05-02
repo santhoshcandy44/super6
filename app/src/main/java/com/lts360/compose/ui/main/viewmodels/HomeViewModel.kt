@@ -24,6 +24,7 @@ import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.app.database.models.profile.UserLocation
+import com.lts360.compose.ui.localjobs.models.LocalJob
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.models.LocationRepository
 import com.lts360.compose.ui.main.models.SearchTerm
@@ -99,6 +100,7 @@ class HomeViewModel @Inject constructor(
     private var selectedUsedProductListingItem: UsedProductListing? = null
 
     private var selectedServiceOwnerUsedProductListingItem: UsedProductListing? = null
+    private var selectedLocalJobItem: LocalJob? = null
 
     init {
 
@@ -123,6 +125,9 @@ class HomeViewModel @Inject constructor(
 
     fun isSelectedServiceOwnerUsedProductListingItemNull() = selectedServiceOwnerUsedProductListingItem == null
 
+    fun isSelectedLocalJobItemNull() = selectedLocalJobItem ==null
+
+
     fun setSelectedServiceItem(item: Service?) {
         selectedServiceItem = item
     }
@@ -137,6 +142,10 @@ class HomeViewModel @Inject constructor(
 
     fun setSelectedSecondsOwnerUsedProductListingIItem(item: UsedProductListing?) {
         selectedServiceOwnerUsedProductListingItem = item
+    }
+
+    fun setSelectedLocalJobItem(item: LocalJob?) {
+        selectedLocalJobItem = item
     }
 
     private fun setLocationType(locationType: String?) {

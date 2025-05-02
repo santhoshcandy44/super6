@@ -12,10 +12,16 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -23,6 +29,8 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -113,9 +121,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusEventModifierNode
 import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
@@ -170,6 +181,7 @@ import com.lts360.App
 import com.lts360.R
 import com.lts360.api.auth.managers.socket.SocketManager
 import com.lts360.api.models.service.FeedUserProfileInfo
+import com.lts360.api.models.service.UserProfileInfo
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.daos.chat.MessageDao
 import com.lts360.app.database.daos.chat.MessageMediaMetaDataDao
@@ -179,6 +191,7 @@ import com.lts360.app.database.models.chat.Message
 import com.lts360.app.database.models.chat.MessageMediaMetadata
 import com.lts360.app.database.models.chat.MessageWithReply
 import com.lts360.app.database.models.chat.ThumbnailLoader.getThumbnailBitmap
+import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.app.workers.chat.utils.getFileExtension
 import com.lts360.components.findActivity
 import com.lts360.components.utils.compressImageAsByteArray
@@ -190,6 +203,7 @@ import com.lts360.compose.ui.chat.viewmodels.ChatActivityViewModel
 import com.lts360.compose.ui.chat.viewmodels.ChatViewModel
 import com.lts360.compose.ui.chat.viewmodels.FileUploadState
 import com.lts360.compose.ui.chat.viewmodels.MediaDownloadState
+import com.lts360.compose.ui.chat.viewmodels.UserState
 import com.lts360.compose.ui.chat.viewmodels.deserializeFileUploadState
 import com.lts360.compose.ui.chat.viewmodels.factories.ChatActivityViewModelFactory
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
@@ -209,6 +223,7 @@ import com.lts360.compose.utils.SafeDrawingBox
 import com.lts360.compose.utils.ScrollBarConfig
 import com.lts360.compose.utils.verticalScrollWithScrollbar
 import com.lts360.libs.visualpicker.GalleryVisualPagerActivityResultContracts
+import com.lts360.test.toPx
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -358,7 +373,7 @@ fun openImageSliderActivity(context: Context, uri: Uri, imageWidth: Int, imageHe
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun ChatPanel(
     chatUsersProfileImageLoader: ImageLoader,
@@ -859,21 +874,19 @@ fun ChatPanel(
             .collect { visibleItems ->
                 val firstVisibleItemIndex = visibleItems.firstOrNull()?.index ?: -1
 
-                // Flatten all messages from groupedMessages
                 val allMessages = groupedMessages.values.flatten()
 
                 highlightedMessageId?.let { nonNullHighlightedMessageId ->
 
 
                     val isVisible = visibleItems
-                        .mapNotNull { it.key as? Long } // Convert visible items to their IDs
+                        .mapNotNull { it.key as? Long }
                         .firstOrNull { id -> id == nonNullHighlightedMessageId } != null
 
 
                     if (isVisible) {
-                        // Highlight the item if it's within the visible range
-                        delay(1500) // Delay to keep the highlight
-                        highlightedMessageId = null // Remove the highlight after 1 second
+                        delay(1500)
+                        highlightedMessageId = null
                     }
                 }
 
@@ -1008,1122 +1021,1191 @@ fun ChatPanel(
     }
 
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                modifier = Modifier.shadow(2.dp),
-                navigationIcon = {
-                    IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                title = {
+    Column(modifier = Modifier.fillMaxSize()) {
+        SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
+            var isExpanded by remember { mutableStateOf(false) }
 
-                    val headerProfileImageRequest = ImageRequest.Builder(context)
-                        .data(userProfileInfo.profilePicUrl96By96)
-                        .placeholder(R.drawable.user_placeholder) // Your placeholder image
-                        .error(R.drawable.user_placeholder)
-                        .crossfade(true)
-                        .build()
+            BackHandler(isExpanded) {
+                isExpanded = false
+            }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        // Profile Image Container
-                        Column(
-                            modifier = Modifier
-                                .wrapContentWidth()
-                                .padding(end = 8.dp)
-                        ) {
-
-                            AsyncImage(
-                                headerProfileImageRequest,
-                                imageLoader = chatUsersProfileImageLoader,
-                                contentDescription = "User Profile Image",
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
+            AnimatedContent(
+                targetState = isExpanded, label = "",
+                transitionSpec = {
+                    ContentTransform(
+                        targetContentEnter = fadeIn(),
+                        initialContentExit = fadeOut(),
+                        sizeTransform = SizeTransform { _, _ ->
+                            tween(durationMillis = 0)
                         }
+                    )
+                }) { target ->
 
-                        // User Name and Status Container
-                        Column(
-                            modifier = Modifier.wrapContentWidth()
-                        ) {
-                            Text(
-                                text = "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}", // Replace with actual user name
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                if (!target) {
 
-                            if (onlineStatus.isNotEmpty()) {
-                                Text(
-                                    text = onlineStatus, // Replace with actual status
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
+                    Column(modifier = Modifier.fillMaxSize()) {
 
-                        }
-                    }
-                }
-            )
-        },
-    ) { contentPadding ->
+                        Surface(shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
 
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-
-        ) {
-
-            if (!isMessagesLoaded) {
-
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-
-            } else {
-
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-
-                ) {
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    ) {
-
-                        LazyColumn(
-                            state = lazyListState,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
+                            Row(Modifier.fillMaxWidth()
                                 .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
                                     pass = PointerEventPass.Initial,
                                     onDown = {
                                         hideMediaLibrary()
                                     }
-                                ) else Modifier),
-                            reverseLayout = true
-                        ) {
-
-
-                            groupedMessages.forEach { (day, messages) ->
-
-                                // Add each message for the grouped day (reverse messages inside each group if needed)
-                                items(messages, key = { it.receivedMessage.id }) { message ->
-                                    if (message.receivedMessage.senderId == userId) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .then(
-
-                                                    // Apply background color only if highlightedMessageId is equal to message.receivedMessage.id
-                                                    if (highlightedMessageId == message.receivedMessage.id) {
-                                                        Modifier.background(
-                                                            highlightedMessageBackgroundColor
-                                                        )
-                                                    } else {
-                                                        Modifier // No background if the condition is false
-                                                    }
-                                                )
-                                                .padding(horizontal = 16.dp)
-                                        ) {
-
-
-                                            when (message.receivedMessage.type) {
-                                                ChatMessageType.TEXT -> {
-
-                                                    OverAllMeRepliedMessageItem(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        val findMessageIndex =
-                                                            viewModel.findMessageIndex(
-                                                                groupedMessages,
-                                                                it.id
-                                                            )
-
-                                                        if (findMessageIndex != -1) {
-
-                                                            highlightedMessageId = it.id
-                                                            coroutineScope.launch {
-                                                                val viewportHeight =
-                                                                    lazyListState.layoutInfo.viewportSize.height
-                                                                val offset =
-                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                lazyListState.animateScrollToItem(
-                                                                    findMessageIndex,
-                                                                    -offset
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-
-                                                    ChatMeMessageItem(
-                                                        "You",
-                                                        message.receivedMessage.content,
-                                                        viewModel.formatMessageReceived(message.receivedMessage.timestamp),
-                                                        message.receivedMessage.status
-                                                    )
-
-                                                }
-
-                                                ChatMessageType.IMAGE -> {
-
-                                                    OverAllMeRepliedMessageItem(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        val findMessageIndex =
-                                                            viewModel.findMessageIndex(
-                                                                groupedMessages,
-                                                                it.id
-                                                            )
-
-                                                        if (findMessageIndex != -1) {
-
-                                                            highlightedMessageId = it.id
-                                                            coroutineScope.launch {
-                                                                val viewportHeight =
-                                                                    lazyListState.layoutInfo.viewportSize.height
-                                                                val offset =
-                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                lazyListState.animateScrollToItem(
-                                                                    findMessageIndex,
-                                                                    -offset
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                    ChatMeImageMessageItem(
-                                                        message.receivedMessage,
-                                                        message.repliedToMessage,
-                                                        message.receivedMessageFileMeta,
-                                                        "You",
-                                                        onNavigateImageSlider,
-                                                        viewModel
-                                                    )
-
-
-                                                }
-
-                                                ChatMessageType.GIF -> {
-
-                                                    OverAllMeRepliedMessageItem(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        val findMessageIndex =
-                                                            viewModel.findMessageIndex(
-                                                                groupedMessages,
-                                                                it.id
-                                                            )
-
-                                                        if (findMessageIndex != -1) {
-
-                                                            highlightedMessageId = it.id
-                                                            coroutineScope.launch {
-                                                                val viewportHeight =
-                                                                    lazyListState.layoutInfo.viewportSize.height
-                                                                val offset =
-                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                lazyListState.animateScrollToItem(
-                                                                    findMessageIndex,
-                                                                    -offset
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                    ChatMeImageMessageItem(
-                                                        message.receivedMessage,
-                                                        message.repliedToMessage,
-                                                        message.receivedMessageFileMeta,
-                                                        "You",
-                                                        onNavigateImageSlider,
-                                                        viewModel
-                                                    )
-
-
-                                                }
-
-                                                ChatMessageType.VIDEO -> {
-
-                                                    OverAllMeRepliedMessageItem(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        val findMessageIndex =
-                                                            viewModel.findMessageIndex(
-                                                                groupedMessages,
-                                                                it.id
-                                                            )
-
-
-                                                        if (findMessageIndex != -1) {
-
-                                                            highlightedMessageId = it.id
-                                                            coroutineScope.launch {
-                                                                val viewportHeight =
-                                                                    lazyListState.layoutInfo.viewportSize.height
-                                                                val offset =
-                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                lazyListState.animateScrollToItem(
-                                                                    findMessageIndex,
-                                                                    -offset
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-
-                                                    ChatMeVideoMessageItem(
-                                                        message.receivedMessage,
-                                                        message.repliedToMessage,
-                                                        message.receivedMessageFileMeta,
-                                                        "You",
-                                                        onNavigateVideoPlayer,
-                                                        viewModel
-                                                    )
-
-                                                }
-
-                                                ChatMessageType.AUDIO -> {
-
-                                                    OverAllMeRepliedMessageItem(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        val findMessageIndex =
-                                                            viewModel.findMessageIndex(
-                                                                groupedMessages,
-                                                                it.id
-                                                            )
-
-                                                        if (findMessageIndex != -1) {
-
-                                                            highlightedMessageId = it.id
-                                                            coroutineScope.launch {
-                                                                val viewportHeight =
-                                                                    lazyListState.layoutInfo.viewportSize.height
-                                                                val offset =
-                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                lazyListState.animateScrollToItem(
-                                                                    findMessageIndex,
-                                                                    -offset
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                    ChatMeAudioMessageItem(
-                                                        message.receivedMessage,
-                                                        message.repliedToMessage,
-                                                        message.receivedMessageFileMeta,
-                                                        "You",
-                                                        viewModel
-                                                    )
-                                                }
-
-                                                ChatMessageType.FILE -> {
-
-                                                    OverAllMeRepliedMessageItem(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        val findMessageIndex =
-                                                            viewModel.findMessageIndex(
-                                                                groupedMessages,
-                                                                it.id
-                                                            )
-
-                                                        if (findMessageIndex != -1) {
-
-                                                            highlightedMessageId = it.id
-                                                            coroutineScope.launch {
-                                                                val viewportHeight =
-                                                                    lazyListState.layoutInfo.viewportSize.height
-                                                                val offset =
-                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                lazyListState.animateScrollToItem(
-                                                                    findMessageIndex,
-                                                                    -offset
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                    ChatMeFileMessageItem(
-                                                        message.receivedMessage,
-                                                        message.repliedToMessage,
-                                                        message.receivedMessageFileMeta,
-                                                        "You",
-                                                        viewModel
-                                                    )
-                                                }
-
-                                            }
-
-                                        }
-                                    } else {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .then(
-                                                    // Apply background color only if highlightedMessageId is equal to message.receivedMessage.id
-                                                    if (highlightedMessageId == message.receivedMessage.id) {
-                                                        Modifier.background(
-                                                            highlightedMessageBackgroundColor
-                                                        )  // Apply Yellow background if the condition is true
-                                                    } else {
-                                                        Modifier // No background if the condition is false
-                                                    }
-                                                )
-                                                .pointerInput(message) {
-
-                                                    detectTapGestures(
-                                                        onLongPress = {
-                                                            viewModel.setSelectedMessage(message.receivedMessage)
-                                                            replyMessageBottomSheet = true
-                                                        }
-                                                    )
-
-                                                }
-                                                .padding(horizontal = 16.dp)
-
-                                        ) {
-
-
-                                            when (message.receivedMessage.type) {
-                                                ChatMessageType.TEXT -> {
-
-                                                    DecryptionSafeGuard(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        OverAllOtherRepliedMessageItem(
-                                                            message,
-                                                            userProfileInfo,
-                                                            viewModel
-                                                        ) {
-                                                            val findMessageIndex =
-                                                                viewModel.findMessageIndex(
-                                                                    groupedMessages,
-                                                                    it.id
-                                                                )
-
-
-                                                            if (findMessageIndex != -1) {
-
-                                                                highlightedMessageId = it.id
-                                                                coroutineScope.launch {
-                                                                    val viewportHeight =
-                                                                        lazyListState.layoutInfo.viewportSize.height
-                                                                    val offset =
-                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                    lazyListState.animateScrollToItem(
-                                                                        findMessageIndex,
-                                                                        -offset
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-
-                                                        ChatOtherMessageItem(
-                                                            viewModel,
-                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                                            userProfileInfo.profilePicUrl96By96,
-                                                            message.receivedMessage.content,
-                                                            viewModel.formatMessageReceived(
-                                                                message.receivedMessage.timestamp
-                                                            )
-                                                        )
-                                                    }
-
-                                                }
-
-                                                ChatMessageType.IMAGE -> {
-
-                                                    DecryptionSafeGuard(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        OverAllOtherRepliedMessageItem(
-                                                            message,
-                                                            userProfileInfo,
-                                                            viewModel
-                                                        ) {
-                                                            val findMessageIndex =
-                                                                viewModel.findMessageIndex(
-                                                                    groupedMessages,
-                                                                    it.id
-                                                                )
-
-
-                                                            if (findMessageIndex != -1) {
-
-                                                                highlightedMessageId = it.id
-                                                                coroutineScope.launch {
-                                                                    val viewportHeight =
-                                                                        lazyListState.layoutInfo.viewportSize.height
-                                                                    val offset =
-                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                    lazyListState.animateScrollToItem(
-                                                                        findMessageIndex,
-                                                                        -offset
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-
-                                                        ChatOtherImageMessageItem(
-                                                            message.receivedMessage,
-                                                            message.receivedMessageFileMeta,
-                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                                            userProfileInfo.profilePicUrl96By96,
-                                                            onNavigateImageSlider,
-                                                            viewModel,
-                                                        )
-                                                    }
-
-
-                                                }
-
-
-                                                ChatMessageType.GIF -> {
-
-                                                    DecryptionSafeGuard(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        OverAllOtherRepliedMessageItem(
-                                                            message,
-                                                            userProfileInfo,
-                                                            viewModel
-                                                        ) {
-                                                            val findMessageIndex =
-                                                                viewModel.findMessageIndex(
-                                                                    groupedMessages,
-                                                                    it.id
-                                                                )
-
-
-                                                            if (findMessageIndex != -1) {
-
-                                                                highlightedMessageId = it.id
-                                                                coroutineScope.launch {
-                                                                    val viewportHeight =
-                                                                        lazyListState.layoutInfo.viewportSize.height
-                                                                    val offset =
-                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                    lazyListState.animateScrollToItem(
-                                                                        findMessageIndex,
-                                                                        -offset
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-
-                                                        ChatOtherImageMessageItem(
-                                                            message.receivedMessage,
-                                                            message.receivedMessageFileMeta,
-                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                                            userProfileInfo.profilePicUrl96By96,
-                                                            onNavigateImageSlider,
-                                                            viewModel,
-                                                        )
-                                                    }
-
-
-                                                }
-
-
-                                                ChatMessageType.VIDEO -> {
-                                                    DecryptionSafeGuard(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        OverAllOtherRepliedMessageItem(
-                                                            message,
-                                                            userProfileInfo,
-                                                            viewModel
-                                                        ) {
-                                                            val findMessageIndex =
-                                                                viewModel.findMessageIndex(
-                                                                    groupedMessages,
-                                                                    it.id
-                                                                )
-
-                                                            if (findMessageIndex != -1) {
-
-                                                                highlightedMessageId = it.id
-                                                                coroutineScope.launch {
-                                                                    val viewportHeight =
-                                                                        lazyListState.layoutInfo.viewportSize.height
-                                                                    val offset =
-                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                    lazyListState.animateScrollToItem(
-                                                                        findMessageIndex,
-                                                                        -offset
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-
-                                                        ChatOtherVideoMessageItem(
-                                                            message.receivedMessage,
-                                                            message.receivedMessageFileMeta,
-                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                                            userProfileInfo.profilePicUrl96By96,
-                                                            viewModel,
-                                                            onNavigateVideoPlayer
-                                                        )
-                                                    }
-
-                                                }
-
-                                                ChatMessageType.AUDIO -> {
-                                                    DecryptionSafeGuard(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        OverAllOtherRepliedMessageItem(
-                                                            message,
-                                                            userProfileInfo,
-                                                            viewModel
-                                                        ) {
-                                                            val findMessageIndex =
-                                                                viewModel.findMessageIndex(
-                                                                    groupedMessages,
-                                                                    it.id
-                                                                )
-
-                                                            if (findMessageIndex != -1) {
-
-                                                                highlightedMessageId = it.id
-                                                                coroutineScope.launch {
-                                                                    val viewportHeight =
-                                                                        lazyListState.layoutInfo.viewportSize.height
-                                                                    val offset =
-                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                    lazyListState.animateScrollToItem(
-                                                                        findMessageIndex,
-                                                                        -offset
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-                                                        ChatOtherAudioMessageItem(
-                                                            message.receivedMessage,
-                                                            message.receivedMessageFileMeta,
-                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                                            userProfileInfo.profilePicUrl96By96,
-                                                            viewModel
-                                                        )
-                                                    }
-                                                }
-
-                                                ChatMessageType.FILE -> {
-                                                    DecryptionSafeGuard(
-                                                        message,
-                                                        userProfileInfo,
-                                                        viewModel
-                                                    ) {
-                                                        OverAllOtherRepliedMessageItem(
-                                                            message,
-                                                            userProfileInfo,
-                                                            viewModel
-                                                        ) {
-                                                            val findMessageIndex =
-                                                                viewModel.findMessageIndex(
-                                                                    groupedMessages,
-                                                                    it.id
-                                                                )
-
-
-                                                            if (findMessageIndex != -1) {
-
-                                                                highlightedMessageId = it.id
-                                                                coroutineScope.launch {
-                                                                    val viewportHeight =
-                                                                        lazyListState.layoutInfo.viewportSize.height
-                                                                    val offset =
-                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
-                                                                    lazyListState.animateScrollToItem(
-                                                                        findMessageIndex,
-                                                                        -offset
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-
-                                                        ChatOtherFileMessageItem(
-                                                            message.receivedMessage,
-                                                            message.receivedMessageFileMeta,
-                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                                            userProfileInfo.profilePicUrl96By96,
-                                                            viewModel
-                                                        )
-                                                    }
-                                                }
-                                            }
-
-
-                                        }
-                                    }
+                                ) else Modifier)
+                                .clickable{
+                                    isExpanded = !isExpanded
+                                },
+                                verticalAlignment = Alignment.CenterVertically){
+
+                                IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Back"
+                                    )
                                 }
 
-                                // Add a header for the date
-                                item(key = "header-${day}") {
-                                    MessageDateHeader(day)
-                                }
-
-                            }
-
-                            item(key = "profile-header") {
-                                ProfileHeader(
-                                    chatUsersProfileImageLoader,
-                                    userProfileInfo
-                                )
-                            }
-
-                            item(key = "e2ee-message") {
-                                E2EEEMessageHeader()
-                            }
-                        }
-
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
-                        ) {
-
-                            Box(
-                                modifier = Modifier
+                                Row(modifier = Modifier
                                     .fillMaxWidth()
-                                    .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
-                                        pass = PointerEventPass.Initial,
-                                        onDown = {
-                                            hideMediaLibrary()
-                                        }
-                                    ) else Modifier)
-                            ) {
+                                    .padding(vertical = 8.dp)
+                                    .weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Start) {
 
-                                if (isTyping) {
-                                    CustomWavyTypingIndicator()
-                                }
+                                    Column(modifier = Modifier
+                                        .wrapContentWidth()
+                                        .padding(end = 8.dp)) {
 
-                                if (isGoToBottom) {
-                                    Box(
-                                        modifier = Modifier
-                                            .wrapContentSize()
-                                            .align(Alignment.BottomEnd)
-                                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                                        AsyncImage(
+                                            ImageRequest.Builder(context)
+                                                .data(userProfileInfo.profilePicUrl96By96)
+                                                .placeholder(R.drawable.user_placeholder)
+                                                .error(R.drawable.user_placeholder)
+                                                .crossfade(true)
+                                                .build(),
+                                            imageLoader = chatUsersProfileImageLoader,
+                                            contentDescription = "User Profile Image",
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .sharedBounds(rememberSharedContentState(key = "profile-pic-${userProfileInfo.userId}"),
+                                                    animatedVisibilityScope = this@AnimatedContent).clip(CircleShape),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
 
+                                    Column(modifier = Modifier.wrapContentWidth()) {
 
-                                    ) {
-                                        FloatingActionButton(
-                                            onClick = {
-                                                coroutineScope.launch {
-                                                    lazyListState.animateScrollToItem(0)
-                                                }
-                                            },
-                                            modifier = Modifier.size(32.dp)
+                                        Text(text = "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                            style = MaterialTheme.typography.bodyMedium)
 
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Filled.KeyboardDoubleArrowDown,
-                                                contentDescription = "Scroll to Bottom",
-                                                tint = Color.White
+                                        if (onlineStatus.isNotEmpty()) {
+                                            Text(
+                                                text = onlineStatus,
+                                                style = MaterialTheme.typography.bodyMedium
                                             )
                                         }
 
                                     }
                                 }
-
-                            }
-
-                            AnimatedChooseMediaLibrary(
-                                isVisibleMediaLibrary,
-                                onChooseCamera = {
-                                    cameraLauncher.launch(Unit)
-                                    hideMediaLibrary()
-                                },
-                                onChooseLibrary = {
-                                    documentTreeLauncher.launch(arrayOf("*/*"))
-                                    hideMediaLibrary()
-                                }, onChooseGallery = {
-                                    galleryVisualLauncher.launch(Unit)
-                                    hideMediaLibrary()
-                                })
-
-                        }
-
-
-                    }
-
-
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
-                                pass = PointerEventPass.Initial,
-                                onDown = {
-                                    hideMediaLibrary()
-                                }
-                            ) else Modifier),
-                    ) {
-                        selectedMessage?.let {
-                            if (showReplyContent) {
-
-                                when (it.type) {
-                                    ChatMessageType.TEXT -> {
-                                        ReplyMessageContent(
-                                            it.content,
-                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                            viewModel.formatMessageReceived(it.timestamp)
-                                        ) {
-                                            showReplyContent = false
-                                            viewModel.setSelectedMessage(null)
-                                        }
-                                    }
-
-                                    ChatMessageType.IMAGE -> {
-
-                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
-                                            ReplyMessageVisualMediaContent(
-                                                it.content,
-                                                selectedMessageMessageMediaMetadata.fileAbsolutePath
-                                                    ?: selectedMessageMessageMediaMetadata.fileThumbPath,
-                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                                viewModel.formatMessageReceived(it.timestamp)
-                                            ) {
-                                                showReplyContent = false
-                                                viewModel.setSelectedMessage(null)
-                                            }
-                                        }
-                                    }
-
-                                    ChatMessageType.GIF -> {
-
-                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
-                                            ReplyMessageVisualMediaContent(
-                                                it.content,
-                                                selectedMessageMessageMediaMetadata.fileAbsolutePath
-                                                    ?: selectedMessageMessageMediaMetadata.fileThumbPath,
-                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                                viewModel.formatMessageReceived(it.timestamp)
-                                            ) {
-                                                showReplyContent = false
-                                                viewModel.setSelectedMessage(null)
-                                            }
-                                        }
-                                    }
-
-                                    ChatMessageType.AUDIO -> {
-
-                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
-
-                                            ReplyMessageContent(
-                                                "${it.content} ${
-                                                    formatTimeSeconds(
-                                                        selectedMessageMessageMediaMetadata.totalDuration / 1000f
-                                                    )
-
-                                                }",
-                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                                viewModel.formatMessageReceived(it.timestamp)
-                                            ) {
-                                                showReplyContent = false
-                                                viewModel.setSelectedMessage(null)
-                                            }
-                                        }
-                                    }
-
-                                    ChatMessageType.VIDEO -> {
-
-                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
-                                            ReplyMessageVideoMediaContent(
-                                                it.content,
-                                                getThumbnailBitmap(
-                                                    selectedMessageMessageMediaMetadata.thumbData
-                                                ),
-                                                selectedMessageMessageMediaMetadata.fileAbsolutePath,
-                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                                viewModel.formatMessageReceived(it.timestamp)
-                                            ) {
-                                                showReplyContent = false
-                                                viewModel.setSelectedMessage(null)
-                                            }
-                                        }
-
-                                    }
-
-                                    ChatMessageType.FILE -> {
-                                        ReplyMessageContent(
-                                            it.content,
-                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
-                                            viewModel.formatMessageReceived(it.timestamp)
-                                        ) {
-                                            showReplyContent = false
-                                            viewModel.setSelectedMessage(null)
-                                        }
-                                    }
-                                }
-
                             }
                         }
 
+                        Box(modifier = Modifier.fillMaxSize()) {
 
+                            if (!isMessagesLoaded) {
 
-                        if (isLinkPreviewAvailable) {
-                            linkPreviewData?.let {
-                                ChatMessageLinkPreviewHeader(it)
-                            } ?: run {
-                                ChatMessageLinkPreviewHeaderLoading()
-                            }
-                        }
-                    }
-
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(8.dp)
-                            .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
-                                pass = PointerEventPass.Initial,
-                                onDown = {
-                                    hideMediaLibrary()
-                                }
-                            ) else Modifier),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-
-                        StringTextField(
-                            value,
-                            textFieldState,
-                            {
-                                hideMediaLibrary()
-
-                                value = it
-                                viewModel.onUserTyping(
-                                    userId,
-                                    userProfileInfo.userId
-                                ) // Handle typing event
-
-                            }, Modifier
-                                .heightIn(min = 48.dp)
-                                .weight(1f)
-                        ) {
-
-                            isVisibleMediaLibrary = !isVisibleMediaLibrary
-                        }
-
-
-                        if (value.trim().isNotEmpty()) {
-                            // Send Button
-                            IconButton(
-                                onClick = {
-
-
-                                    if (value.trim().isEmpty()) {
-                                        return@IconButton
-                                    }
-
-                                    selectedMessage?.let { nonNullSelectedMessage ->
-                                        viewModel.sendMessage(
-                                            value.trim(),
-                                            nonNullSelectedMessage.senderMessageId,
-                                            nonNullSelectedMessage.id
-                                        ) {
-                                        }
-                                    } ?: run {
-                                        viewModel.sendMessage(value.trim()) {
-
-                                        }
-                                    }
-
-                                    textFieldState.clearText()
-                                    showReplyContent = false
-                                    viewModel.setSelectedMessage(null)
-                                    if (isLinkPreviewAvailable) {
-                                        isLinkPreviewAvailable = false
-                                        linkPreviewData = null
-                                    }
-                                },
-
-                                ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_send), // Replace with actual drawable
-                                    contentDescription = "Send",
-                                    modifier = Modifier.size(24.dp),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        }
-
-                    }
-
-                }
-
-
-
-                if (groupedMessages.isNotEmpty() && isGoToBottom) {
-                    Box(
-                        modifier = Modifier
-                            .wrapContentSize()
-                            .wrapContentSize()
-                            .padding(8.dp)
-                            .background(
-                                Color(0xFFF1F3F4),
-                                shape = RoundedCornerShape(8.dp)
-                            ) // Set background color and shape
-                            .clip(RoundedCornerShape(8.dp)) // Clip the Box to have rounded corners
-                            .align(Alignment.TopEnd)
-                    ) {
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(8.dp),
-
-                            ) {
-
-                            if (updatedHeader.first == "up") {
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowUpward, // Use a Material icon
-                                    contentDescription = "Direction Icon", // Description for accessibility
-                                    modifier = Modifier.size(18.dp), // Set size of the icon
-                                    tint = Color.Black
-                                )
+                                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
                             } else {
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowDownward, // Use a Material icon
-                                    contentDescription = "Direction Icon", // Description for accessibility
-                                    modifier = Modifier.size(18.dp), // Set size of the icon
-                                    tint = Color.Black
-                                )
-                            }
-                            Text(
-                                text = updatedHeader.second,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Black
-                            )
-                        }
-                    }
-                }
+
+                                Column(modifier = Modifier.fillMaxSize()) {
+
+                                    Box(modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f)) {
+
+                                        LazyColumn(
+                                            state = lazyListState,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.BottomCenter)
+                                                .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
+                                                    pass = PointerEventPass.Initial,
+                                                    onDown = {
+                                                        hideMediaLibrary()
+                                                    }
+                                                ) else Modifier),
+                                            reverseLayout = true
+                                        ) {
 
 
-            }
-        }
+                                            groupedMessages.forEach { (day, messages) ->
+
+                                                items(messages, key = { it.receivedMessage.id }) { message ->
+                                                    if (message.receivedMessage.senderId == userId) {
+                                                        Column(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .then(if (highlightedMessageId == message.receivedMessage.id) {
+                                                                    Modifier.background(
+                                                                        highlightedMessageBackgroundColor
+                                                                    )
+                                                                } else {
+                                                                    Modifier
+                                                                }
+                                                                )
+                                                                .padding(horizontal = 16.dp)
+                                                        ) {
 
 
-        if (replyMessageBottomSheet) {
-            // Modal Bottom Sheet Layout
-            ModalBottomSheet(
-                modifier = Modifier
-                    .safeDrawingPadding(),
-                onDismissRequest = {
-                    replyMessageBottomSheet = false
-                },
-                shape = RectangleShape, // Set shape to square (rectangle)
-                sheetState = replyMessageBottomSheetState,
-                dragHandle = null // Remove the drag handle
-            ) {
+                                                            when (message.receivedMessage.type) {
+                                                                ChatMessageType.TEXT -> {
+
+                                                                    OverAllMeRepliedMessageItem(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        val findMessageIndex =
+                                                                            viewModel.findMessageIndex(
+                                                                                groupedMessages,
+                                                                                it.id
+                                                                            )
+
+                                                                        if (findMessageIndex != -1) {
+
+                                                                            highlightedMessageId = it.id
+                                                                            coroutineScope.launch {
+                                                                                val viewportHeight =
+                                                                                    lazyListState.layoutInfo.viewportSize.height
+                                                                                val offset =
+                                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                lazyListState.animateScrollToItem(
+                                                                                    findMessageIndex,
+                                                                                    -offset
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+
+                                                                    ChatMeMessageItem(
+                                                                        "You",
+                                                                        message.receivedMessage.content,
+                                                                        viewModel.formatMessageReceived(message.receivedMessage.timestamp),
+                                                                        message.receivedMessage.status
+                                                                    )
+
+                                                                }
+
+                                                                ChatMessageType.IMAGE -> {
+
+                                                                    OverAllMeRepliedMessageItem(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        val findMessageIndex =
+                                                                            viewModel.findMessageIndex(
+                                                                                groupedMessages,
+                                                                                it.id
+                                                                            )
+
+                                                                        if (findMessageIndex != -1) {
+
+                                                                            highlightedMessageId = it.id
+                                                                            coroutineScope.launch {
+                                                                                val viewportHeight =
+                                                                                    lazyListState.layoutInfo.viewportSize.height
+                                                                                val offset =
+                                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                lazyListState.animateScrollToItem(
+                                                                                    findMessageIndex,
+                                                                                    -offset
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    ChatMeImageMessageItem(
+                                                                        message.receivedMessage,
+                                                                        message.repliedToMessage,
+                                                                        message.receivedMessageFileMeta,
+                                                                        "You",
+                                                                        onNavigateImageSlider,
+                                                                        viewModel
+                                                                    )
 
 
-                selectedMessage?.let {
+                                                                }
+
+                                                                ChatMessageType.GIF -> {
+
+                                                                    OverAllMeRepliedMessageItem(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        val findMessageIndex =
+                                                                            viewModel.findMessageIndex(
+                                                                                groupedMessages,
+                                                                                it.id
+                                                                            )
+
+                                                                        if (findMessageIndex != -1) {
+
+                                                                            highlightedMessageId = it.id
+                                                                            coroutineScope.launch {
+                                                                                val viewportHeight =
+                                                                                    lazyListState.layoutInfo.viewportSize.height
+                                                                                val offset =
+                                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                lazyListState.animateScrollToItem(
+                                                                                    findMessageIndex,
+                                                                                    -offset
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    ChatMeImageMessageItem(
+                                                                        message.receivedMessage,
+                                                                        message.repliedToMessage,
+                                                                        message.receivedMessageFileMeta,
+                                                                        "You",
+                                                                        onNavigateImageSlider,
+                                                                        viewModel
+                                                                    )
 
 
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                                                                }
+
+                                                                ChatMessageType.VIDEO -> {
+
+                                                                    OverAllMeRepliedMessageItem(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        val findMessageIndex =
+                                                                            viewModel.findMessageIndex(
+                                                                                groupedMessages,
+                                                                                it.id
+                                                                            )
 
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    showReplyContent = true
-                                    replyMessageBottomSheet = false
-                                }
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                                                                        if (findMessageIndex != -1) {
+
+                                                                            highlightedMessageId = it.id
+                                                                            coroutineScope.launch {
+                                                                                val viewportHeight =
+                                                                                    lazyListState.layoutInfo.viewportSize.height
+                                                                                val offset =
+                                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                lazyListState.animateScrollToItem(
+                                                                                    findMessageIndex,
+                                                                                    -offset
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+
+                                                                    ChatMeVideoMessageItem(
+                                                                        message.receivedMessage,
+                                                                        message.repliedToMessage,
+                                                                        message.receivedMessageFileMeta,
+                                                                        "You",
+                                                                        onNavigateVideoPlayer,
+                                                                        viewModel
+                                                                    )
+
+                                                                }
+
+                                                                ChatMessageType.AUDIO -> {
+
+                                                                    OverAllMeRepliedMessageItem(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        val findMessageIndex =
+                                                                            viewModel.findMessageIndex(
+                                                                                groupedMessages,
+                                                                                it.id
+                                                                            )
+
+                                                                        if (findMessageIndex != -1) {
+
+                                                                            highlightedMessageId = it.id
+                                                                            coroutineScope.launch {
+                                                                                val viewportHeight =
+                                                                                    lazyListState.layoutInfo.viewportSize.height
+                                                                                val offset =
+                                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                lazyListState.animateScrollToItem(
+                                                                                    findMessageIndex,
+                                                                                    -offset
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    ChatMeAudioMessageItem(
+                                                                        message.receivedMessage,
+                                                                        message.repliedToMessage,
+                                                                        message.receivedMessageFileMeta,
+                                                                        "You",
+                                                                        viewModel
+                                                                    )
+                                                                }
+
+                                                                ChatMessageType.FILE -> {
+
+                                                                    OverAllMeRepliedMessageItem(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        val findMessageIndex =
+                                                                            viewModel.findMessageIndex(
+                                                                                groupedMessages,
+                                                                                it.id
+                                                                            )
+
+                                                                        if (findMessageIndex != -1) {
+
+                                                                            highlightedMessageId = it.id
+                                                                            coroutineScope.launch {
+                                                                                val viewportHeight =
+                                                                                    lazyListState.layoutInfo.viewportSize.height
+                                                                                val offset =
+                                                                                    (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                lazyListState.animateScrollToItem(
+                                                                                    findMessageIndex,
+                                                                                    -offset
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    ChatMeFileMessageItem(
+                                                                        message.receivedMessage,
+                                                                        message.repliedToMessage,
+                                                                        message.receivedMessageFileMeta,
+                                                                        "You",
+                                                                        viewModel
+                                                                    )
+                                                                }
+
+                                                            }
+
+                                                        }
+                                                    } else {
+                                                        Column(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .then(
+                                                                    // Apply background color only if highlightedMessageId is equal to message.receivedMessage.id
+                                                                    if (highlightedMessageId == message.receivedMessage.id) {
+                                                                        Modifier.background(
+                                                                            highlightedMessageBackgroundColor
+                                                                        )  // Apply Yellow background if the condition is true
+                                                                    } else {
+                                                                        Modifier // No background if the condition is false
+                                                                    }
+                                                                )
+                                                                .pointerInput(message) {
+
+                                                                    detectTapGestures(
+                                                                        onLongPress = {
+                                                                            viewModel.setSelectedMessage(message.receivedMessage)
+                                                                            replyMessageBottomSheet = true
+                                                                        }
+                                                                    )
+
+                                                                }
+                                                                .padding(horizontal = 16.dp)
+
+                                                        ) {
 
 
-                            // Bookmark Icon
-                            Icon(
-                                Icons.AutoMirrored.Filled.Reply,
-                                contentDescription = "Reply",
-                                modifier = Modifier.size(24.dp),
-                            )
+                                                            when (message.receivedMessage.type) {
+                                                                ChatMessageType.TEXT -> {
 
-                            // Text
-                            Text(
-                                text = "Reply",
-                                modifier = Modifier.padding(horizontal = 4.dp),
-                            )
-                        }
+                                                                    DecryptionSafeGuard(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        OverAllOtherRepliedMessageItem(
+                                                                            message,
+                                                                            userProfileInfo,
+                                                                            viewModel
+                                                                        ) {
+                                                                            val findMessageIndex =
+                                                                                viewModel.findMessageIndex(
+                                                                                    groupedMessages,
+                                                                                    it.id
+                                                                                )
 
-                        if (it.type == ChatMessageType.TEXT) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        clipboardManager.setText(AnnotatedString(it.content))
-                                        replyMessageBottomSheet = false
+
+                                                                            if (findMessageIndex != -1) {
+
+                                                                                highlightedMessageId = it.id
+                                                                                coroutineScope.launch {
+                                                                                    val viewportHeight =
+                                                                                        lazyListState.layoutInfo.viewportSize.height
+                                                                                    val offset =
+                                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                    lazyListState.animateScrollToItem(
+                                                                                        findMessageIndex,
+                                                                                        -offset
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                        }
+
+                                                                        ChatOtherMessageItem(
+                                                                            viewModel,
+                                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                                            userProfileInfo.profilePicUrl96By96,
+                                                                            message.receivedMessage.content,
+                                                                            viewModel.formatMessageReceived(
+                                                                                message.receivedMessage.timestamp
+                                                                            )
+                                                                        )
+                                                                    }
+
+                                                                }
+
+                                                                ChatMessageType.IMAGE -> {
+
+                                                                    DecryptionSafeGuard(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        OverAllOtherRepliedMessageItem(
+                                                                            message,
+                                                                            userProfileInfo,
+                                                                            viewModel
+                                                                        ) {
+                                                                            val findMessageIndex =
+                                                                                viewModel.findMessageIndex(
+                                                                                    groupedMessages,
+                                                                                    it.id
+                                                                                )
+
+
+                                                                            if (findMessageIndex != -1) {
+
+                                                                                highlightedMessageId = it.id
+                                                                                coroutineScope.launch {
+                                                                                    val viewportHeight =
+                                                                                        lazyListState.layoutInfo.viewportSize.height
+                                                                                    val offset =
+                                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                    lazyListState.animateScrollToItem(
+                                                                                        findMessageIndex,
+                                                                                        -offset
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                        }
+
+                                                                        ChatOtherImageMessageItem(
+                                                                            message.receivedMessage,
+                                                                            message.receivedMessageFileMeta,
+                                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                                            userProfileInfo.profilePicUrl96By96,
+                                                                            onNavigateImageSlider,
+                                                                            viewModel,
+                                                                        )
+                                                                    }
+
+
+                                                                }
+
+
+                                                                ChatMessageType.GIF -> {
+
+                                                                    DecryptionSafeGuard(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        OverAllOtherRepliedMessageItem(
+                                                                            message,
+                                                                            userProfileInfo,
+                                                                            viewModel
+                                                                        ) {
+                                                                            val findMessageIndex =
+                                                                                viewModel.findMessageIndex(
+                                                                                    groupedMessages,
+                                                                                    it.id
+                                                                                )
+
+
+                                                                            if (findMessageIndex != -1) {
+
+                                                                                highlightedMessageId = it.id
+                                                                                coroutineScope.launch {
+                                                                                    val viewportHeight =
+                                                                                        lazyListState.layoutInfo.viewportSize.height
+                                                                                    val offset =
+                                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                    lazyListState.animateScrollToItem(
+                                                                                        findMessageIndex,
+                                                                                        -offset
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                        }
+
+                                                                        ChatOtherImageMessageItem(
+                                                                            message.receivedMessage,
+                                                                            message.receivedMessageFileMeta,
+                                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                                            userProfileInfo.profilePicUrl96By96,
+                                                                            onNavigateImageSlider,
+                                                                            viewModel,
+                                                                        )
+                                                                    }
+
+
+                                                                }
+
+
+                                                                ChatMessageType.VIDEO -> {
+                                                                    DecryptionSafeGuard(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        OverAllOtherRepliedMessageItem(
+                                                                            message,
+                                                                            userProfileInfo,
+                                                                            viewModel
+                                                                        ) {
+                                                                            val findMessageIndex =
+                                                                                viewModel.findMessageIndex(
+                                                                                    groupedMessages,
+                                                                                    it.id
+                                                                                )
+
+                                                                            if (findMessageIndex != -1) {
+
+                                                                                highlightedMessageId = it.id
+                                                                                coroutineScope.launch {
+                                                                                    val viewportHeight =
+                                                                                        lazyListState.layoutInfo.viewportSize.height
+                                                                                    val offset =
+                                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                    lazyListState.animateScrollToItem(
+                                                                                        findMessageIndex,
+                                                                                        -offset
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                        }
+
+                                                                        ChatOtherVideoMessageItem(
+                                                                            message.receivedMessage,
+                                                                            message.receivedMessageFileMeta,
+                                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                                            userProfileInfo.profilePicUrl96By96,
+                                                                            viewModel,
+                                                                            onNavigateVideoPlayer
+                                                                        )
+                                                                    }
+
+                                                                }
+
+                                                                ChatMessageType.AUDIO -> {
+                                                                    DecryptionSafeGuard(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        OverAllOtherRepliedMessageItem(
+                                                                            message,
+                                                                            userProfileInfo,
+                                                                            viewModel
+                                                                        ) {
+                                                                            val findMessageIndex =
+                                                                                viewModel.findMessageIndex(
+                                                                                    groupedMessages,
+                                                                                    it.id
+                                                                                )
+
+                                                                            if (findMessageIndex != -1) {
+
+                                                                                highlightedMessageId = it.id
+                                                                                coroutineScope.launch {
+                                                                                    val viewportHeight =
+                                                                                        lazyListState.layoutInfo.viewportSize.height
+                                                                                    val offset =
+                                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                    lazyListState.animateScrollToItem(
+                                                                                        findMessageIndex,
+                                                                                        -offset
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                        ChatOtherAudioMessageItem(
+                                                                            message.receivedMessage,
+                                                                            message.receivedMessageFileMeta,
+                                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                                            userProfileInfo.profilePicUrl96By96,
+                                                                            viewModel
+                                                                        )
+                                                                    }
+                                                                }
+
+                                                                ChatMessageType.FILE -> {
+                                                                    DecryptionSafeGuard(
+                                                                        message,
+                                                                        userProfileInfo,
+                                                                        viewModel
+                                                                    ) {
+                                                                        OverAllOtherRepliedMessageItem(
+                                                                            message,
+                                                                            userProfileInfo,
+                                                                            viewModel
+                                                                        ) {
+                                                                            val findMessageIndex =
+                                                                                viewModel.findMessageIndex(
+                                                                                    groupedMessages,
+                                                                                    it.id
+                                                                                )
+
+
+                                                                            if (findMessageIndex != -1) {
+
+                                                                                highlightedMessageId = it.id
+                                                                                coroutineScope.launch {
+                                                                                    val viewportHeight =
+                                                                                        lazyListState.layoutInfo.viewportSize.height
+                                                                                    val offset =
+                                                                                        (viewportHeight * 0.7).toInt()  // 70% of the viewport height
+                                                                                    lazyListState.animateScrollToItem(
+                                                                                        findMessageIndex,
+                                                                                        -offset
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                        }
+
+                                                                        ChatOtherFileMessageItem(
+                                                                            message.receivedMessage,
+                                                                            message.receivedMessageFileMeta,
+                                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                                            userProfileInfo.profilePicUrl96By96,
+                                                                            viewModel
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+
+
+                                                        }
+                                                    }
+                                                }
+
+                                                // Add a header for the date
+                                                item(key = "header-${day}") {
+                                                    MessageDateHeader(day)
+                                                }
+
+                                            }
+
+                                            item(key = "profile-header") {
+                                                ProfileHeader(
+                                                    chatUsersProfileImageLoader,
+                                                    userProfileInfo
+                                                )
+                                            }
+
+                                            item(key = "e2ee-message") {
+                                                E2EEEMessageHeader()
+                                            }
+                                        }
+
+
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.BottomCenter)
+                                        ) {
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
+                                                        pass = PointerEventPass.Initial,
+                                                        onDown = {
+                                                            hideMediaLibrary()
+                                                        }
+                                                    ) else Modifier)
+                                            ) {
+
+                                                if (isTyping) {
+                                                    CustomWavyTypingIndicator()
+                                                }
+
+                                                if (isGoToBottom) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .wrapContentSize()
+                                                            .align(Alignment.BottomEnd)
+                                                            .padding(horizontal = 16.dp, vertical = 8.dp)
+
+
+                                                    ) {
+                                                        FloatingActionButton(
+                                                            onClick = {
+                                                                coroutineScope.launch {
+                                                                    lazyListState.animateScrollToItem(0)
+                                                                }
+                                                            },
+                                                            modifier = Modifier.size(32.dp)
+
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Filled.KeyboardDoubleArrowDown,
+                                                                contentDescription = "Scroll to Bottom",
+                                                                tint = Color.White
+                                                            )
+                                                        }
+
+                                                    }
+                                                }
+
+                                            }
+
+                                            AnimatedChooseMediaLibrary(
+                                                isVisibleMediaLibrary,
+                                                onChooseCamera = {
+                                                    cameraLauncher.launch(Unit)
+                                                    hideMediaLibrary()
+                                                },
+                                                onChooseLibrary = {
+                                                    documentTreeLauncher.launch(arrayOf("*/*"))
+                                                    hideMediaLibrary()
+                                                }, onChooseGallery = {
+                                                    galleryVisualLauncher.launch(Unit)
+                                                    hideMediaLibrary()
+                                                })
+
+                                        }
+
+
                                     }
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+
+
+
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
+                                                pass = PointerEventPass.Initial,
+                                                onDown = {
+                                                    hideMediaLibrary()
+                                                }
+                                            ) else Modifier),
+                                    ) {
+                                        selectedMessage?.let {
+                                            if (showReplyContent) {
+
+                                                when (it.type) {
+                                                    ChatMessageType.TEXT -> {
+                                                        ReplyMessageContent(
+                                                            it.content,
+                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                            viewModel.formatMessageReceived(it.timestamp)
+                                                        ) {
+                                                            showReplyContent = false
+                                                            viewModel.setSelectedMessage(null)
+                                                        }
+                                                    }
+
+                                                    ChatMessageType.IMAGE -> {
+
+                                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
+                                                            ReplyMessageVisualMediaContent(
+                                                                it.content,
+                                                                selectedMessageMessageMediaMetadata.fileAbsolutePath
+                                                                    ?: selectedMessageMessageMediaMetadata.fileThumbPath,
+                                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                                viewModel.formatMessageReceived(it.timestamp)
+                                                            ) {
+                                                                showReplyContent = false
+                                                                viewModel.setSelectedMessage(null)
+                                                            }
+                                                        }
+                                                    }
+
+                                                    ChatMessageType.GIF -> {
+
+                                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
+                                                            ReplyMessageVisualMediaContent(
+                                                                it.content,
+                                                                selectedMessageMessageMediaMetadata.fileAbsolutePath
+                                                                    ?: selectedMessageMessageMediaMetadata.fileThumbPath,
+                                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                                viewModel.formatMessageReceived(it.timestamp)
+                                                            ) {
+                                                                showReplyContent = false
+                                                                viewModel.setSelectedMessage(null)
+                                                            }
+                                                        }
+                                                    }
+
+                                                    ChatMessageType.AUDIO -> {
+
+                                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
+
+                                                            ReplyMessageContent(
+                                                                "${it.content} ${
+                                                                    formatTimeSeconds(
+                                                                        selectedMessageMessageMediaMetadata.totalDuration / 1000f
+                                                                    )
+
+                                                                }",
+                                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                                viewModel.formatMessageReceived(it.timestamp)
+                                                            ) {
+                                                                showReplyContent = false
+                                                                viewModel.setSelectedMessage(null)
+                                                            }
+                                                        }
+                                                    }
+
+                                                    ChatMessageType.VIDEO -> {
+
+                                                        selectedMessageMessageMediaMetadata?.let { selectedMessageMessageMediaMetadata ->
+                                                            ReplyMessageVideoMediaContent(
+                                                                it.content,
+                                                                getThumbnailBitmap(
+                                                                    selectedMessageMessageMediaMetadata.thumbData
+                                                                ),
+                                                                selectedMessageMessageMediaMetadata.fileAbsolutePath,
+                                                                "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                                viewModel.formatMessageReceived(it.timestamp)
+                                                            ) {
+                                                                showReplyContent = false
+                                                                viewModel.setSelectedMessage(null)
+                                                            }
+                                                        }
+
+                                                    }
+
+                                                    ChatMessageType.FILE -> {
+                                                        ReplyMessageContent(
+                                                            it.content,
+                                                            "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                                            viewModel.formatMessageReceived(it.timestamp)
+                                                        ) {
+                                                            showReplyContent = false
+                                                            viewModel.setSelectedMessage(null)
+                                                        }
+                                                    }
+                                                }
+
+                                            }
+                                        }
+
+
+
+                                        if (isLinkPreviewAvailable) {
+                                            linkPreviewData?.let {
+                                                ChatMessageLinkPreviewHeader(it)
+                                            } ?: run {
+                                                ChatMessageLinkPreviewHeaderLoading()
+                                            }
+                                        }
+                                    }
+
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .wrapContentHeight()
+                                            .padding(8.dp)
+                                            .then(if (isVisibleMediaLibrary) Modifier.touchConsumer(
+                                                pass = PointerEventPass.Initial,
+                                                onDown = {
+                                                    hideMediaLibrary()
+                                                }
+                                            ) else Modifier),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+
+                                        StringTextField(
+                                            value,
+                                            textFieldState,
+                                            {
+                                                hideMediaLibrary()
+
+                                                value = it
+                                                viewModel.onUserTyping(
+                                                    userId,
+                                                    userProfileInfo.userId
+                                                ) // Handle typing event
+
+                                            }, Modifier
+                                                .heightIn(min = 48.dp)
+                                                .weight(1f)
+                                        ) {
+
+                                            isVisibleMediaLibrary = !isVisibleMediaLibrary
+                                        }
+
+
+                                        if (value.trim().isNotEmpty()) {
+                                            // Send Button
+                                            IconButton(
+                                                onClick = {
+
+
+                                                    if (value.trim().isEmpty()) {
+                                                        return@IconButton
+                                                    }
+
+                                                    selectedMessage?.let { nonNullSelectedMessage ->
+                                                        viewModel.sendMessage(
+                                                            value.trim(),
+                                                            nonNullSelectedMessage.senderMessageId,
+                                                            nonNullSelectedMessage.id
+                                                        ) {
+                                                        }
+                                                    } ?: run {
+                                                        viewModel.sendMessage(value.trim()) {
+
+                                                        }
+                                                    }
+
+                                                    textFieldState.clearText()
+                                                    showReplyContent = false
+                                                    viewModel.setSelectedMessage(null)
+                                                    if (isLinkPreviewAvailable) {
+                                                        isLinkPreviewAvailable = false
+                                                        linkPreviewData = null
+                                                    }
+                                                },
+
+                                                ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.ic_send), // Replace with actual drawable
+                                                    contentDescription = "Send",
+                                                    modifier = Modifier.size(24.dp),
+                                                    tint = Color.Unspecified
+                                                )
+                                            }
+                                        }
+
+                                    }
+
+                                }
+
+                                if (groupedMessages.isNotEmpty() && isGoToBottom) {
+                                    Box(
+                                        modifier = Modifier
+                                            .wrapContentSize()
+                                            .wrapContentSize()
+                                            .padding(8.dp)
+                                            .background(Color(0xFFF1F3F4), shape = RoundedCornerShape(8.dp))
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .align(Alignment.TopEnd)
+                                    ) {
+
+                                        Row(verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(8.dp)) {
+
+                                            if (updatedHeader.first == "up") {
+                                                Icon(
+                                                    imageVector = Icons.Filled.ArrowUpward,
+                                                    contentDescription = "Direction Icon",
+                                                    modifier = Modifier.size(18.dp),
+                                                    tint = Color.Black
+                                                )
+
+                                            } else {
+                                                Icon(
+                                                    imageVector = Icons.Filled.ArrowDownward,
+                                                    contentDescription = "Direction Icon",
+                                                    modifier = Modifier.size(18.dp),
+                                                    tint = Color.Black
+                                                )
+                                            }
+                                            Text(
+                                                text = updatedHeader.second,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = Color.Black
+                                            )
+                                        }
+                                    }
+                                }
+
+
+                            }
+                        }
+
+                        if (replyMessageBottomSheet) {
+                            ModalBottomSheet(
+                                modifier = Modifier
+                                    .safeDrawingPadding(),
+                                onDismissRequest = {
+                                    replyMessageBottomSheet = false
+                                },
+                                shape = RectangleShape,
+                                sheetState = replyMessageBottomSheetState,
+                                dragHandle = null
                             ) {
 
 
-                                // Bookmark Icon
-                                Icon(
-                                    Icons.Filled.ContentCopy,
-                                    contentDescription = "Copy",
-                                    modifier = Modifier.size(24.dp),
-                                )
+                                selectedMessage?.let {
 
-                                // Text
-                                Text(
-                                    text = "Copy",
-                                    modifier = Modifier.padding(horizontal = 4.dp),
-                                )
+                                    Column(modifier = Modifier.fillMaxWidth()) {
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    showReplyContent = true
+                                                    replyMessageBottomSheet = false
+                                                }
+                                                .padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.Reply,
+                                                contentDescription = "Reply",
+                                                modifier = Modifier.size(24.dp),
+                                            )
+
+                                            Text(
+                                                text = "Reply",
+                                                modifier = Modifier.padding(horizontal = 4.dp),
+                                            )
+                                        }
+
+                                        if (it.type == ChatMessageType.TEXT) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        clipboardManager.setText(AnnotatedString(it.content))
+                                                        replyMessageBottomSheet = false
+                                                    }
+                                                    .padding(16.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+
+
+                                                Icon(
+                                                    Icons.Filled.ContentCopy,
+                                                    contentDescription = "Copy",
+                                                    modifier = Modifier.size(24.dp),
+                                                )
+
+                                                Text(
+                                                    text = "Copy",
+                                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                }
+
                             }
                         }
+
+
                     }
 
-                }
+                }else{
 
+                    Column(modifier = Modifier.fillMaxSize()){
+
+                        Surface(shadowElevation = 4.dp,
+                            modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically){
+
+                                IconButton(onClick = dropUnlessResumed { isExpanded = !isExpanded }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Back"
+                                    )
+                                }
+
+                                Row(modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp)
+                                    .weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Start) {
+                                    Text(text = "Chat Info")
+                                }
+                            }
+                        }
+
+
+                       Row(modifier = Modifier.fillMaxWidth()
+                           .padding(horizontal = 8.dp, vertical = 16.dp),
+                           horizontalArrangement = Arrangement.spacedBy(16.dp)){
+                           AsyncImage(
+                               ImageRequest.Builder(context)
+                                   .data(userProfileInfo.profilePicUrl96By96)
+                                   .placeholder(R.drawable.user_placeholder)
+                                   .error(R.drawable.user_placeholder)
+                                   .crossfade(true)
+                                   .build(),
+                               imageLoader = chatUsersProfileImageLoader,
+                               contentDescription = "User Profile Image",
+                               modifier = Modifier
+                                   .size(120.dp)
+                                   .sharedBounds(rememberSharedContentState(key = "profile-pic-${userProfileInfo.userId}"),
+                                       animatedVisibilityScope = this@AnimatedContent).clip(CircleShape),
+                               contentScale = ContentScale.Crop
+                           )
+                           Column(
+                               modifier = Modifier
+                                   .fillMaxWidth()
+                                   .weight(1f),
+                               verticalArrangement = Arrangement.spacedBy(8.dp),
+                           ) {
+                               Text(
+                                   text = "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
+                                   style = MaterialTheme.typography.titleMedium,
+                                   fontWeight = FontWeight.Bold,
+                                   fontSize = 20.sp,
+                                   color = MaterialTheme.colorScheme.onBackground
+                               )
+
+                               userProfileInfo.about?.let {
+                                   Text(
+                                       text = userProfileInfo.about,
+                                       style = MaterialTheme.typography.bodyMedium,
+                                       fontSize = 16.sp,
+                                       color = Color.Gray
+                                   )
+                               }
+
+                               Text(
+                                   text = "Joined at ${userProfileInfo.createdAt}",
+                                   style = MaterialTheme.typography.labelSmall,
+                                   fontSize = 14.sp,
+                                   color = Color.DarkGray
+                               )
+                           }
+                       }
+
+                    }
+                }
             }
         }
-
-
     }
-
 
 }
 
@@ -2159,7 +2241,6 @@ fun ProfileHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
-            // Profile Image Container
             Column(
                 modifier = Modifier
                     .wrapContentWidth()
@@ -2183,12 +2264,12 @@ fun ProfileHeader(
                 modifier = Modifier.wrapContentWidth()
             ) {
                 Text(
-                    text = "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}", // Replace with actual user name
+                    text = "${userProfileInfo.firstName} ${userProfileInfo.lastName ?: ""}",
                     style = MaterialTheme.typography.bodyMedium
                 )
 
                 Text(
-                    text = "Joined at ${userProfileInfo.createdAt}", // Replace with actual user name
+                    text = "Joined at ${userProfileInfo.createdAt}",
                     style = MaterialTheme.typography.bodyMedium
                 )
 

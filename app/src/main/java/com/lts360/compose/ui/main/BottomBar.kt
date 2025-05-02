@@ -31,7 +31,6 @@ import kotlinx.serialization.Serializable
 fun BottomBar(
     navController: NavHostController,
     signInMethod: String?,
-//              scrollBehavior:BottomAppBarScrollBehavior,
     messageCount: Int,
     notificationCount: Int,
     selectedScreen: BottomBar?,
@@ -119,11 +118,10 @@ fun RowScope.AddItem(
     screen: BottomBar,
     isSelected: Boolean,
     navController: NavHostController,
-    badgeCount: Int = 0, // Add badgeCount as a parameter
+    badgeCount: Int = 0,
     onNavigateUpWelcomeScreenSheet: () -> Unit,
 ) {
 
-// Determine if this screen is currently selected
 
 
     val lifecycleOwner = LocalLifecycleOwner.current

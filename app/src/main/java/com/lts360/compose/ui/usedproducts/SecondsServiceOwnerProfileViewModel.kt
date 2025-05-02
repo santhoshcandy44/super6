@@ -1,14 +1,12 @@
 package com.lts360.compose.ui.usedproducts
 
-import android.content.Context
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.lts360.api.utils.Result
 import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.AppClient
-import com.lts360.api.app.ManageServicesApiService
+import com.lts360.api.app.ManageUsedProductListingService
 import com.lts360.api.auth.managers.TokenManager
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
@@ -17,10 +15,8 @@ import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
-import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,71 +29,50 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SecondsOwnerProfileViewModel @Inject constructor(
-    @ApplicationContext
-    context: Context,
-    val savedStateHandle: SavedStateHandle,
     private val chatUserDao: ChatUserDao,
     val chatUserRepository: ChatUserRepository,
     tokenManager: TokenManager,
 ) : ViewModel() {
 
-
-    val serviceOwnerId = savedStateHandle.get<Long>("serviceOwnerId") ?: -1
-
-
     val userId = UserSharedPreferencesManager.userId
     val signInMethod = tokenManager.getSignInMethod()
 
-
     private var error: String = ""
-
 
     private val _selectedItem = MutableStateFlow<UsedProductListing?>(null)
     val selectedItem: StateFlow<UsedProductListing?> = _selectedItem.asStateFlow()
 
-
-    var _selectedChatId = MutableStateFlow<Int>(-1)
-    var selectedChatId = _selectedChatId.asStateFlow()
+    fun isSelectedUsedProductListingNull()  = _selectedItem.value==null
 
 
-    var _selectedRecipientId = MutableStateFlow<Long>(-1)
-    var selectedRecipientId = _selectedRecipientId.asStateFlow()
-
-
-    var _userProfileInfo = MutableStateFlow<FeedUserProfileInfo?>(null)
-    var userProfileInfo = _userProfileInfo.asStateFlow()
-
-
-    init {
-
-        savedStateHandle.get<Int>("chatId")?.let {
-            _selectedChatId.value = it
-        }
-        savedStateHandle.get<Long>("selectedRecipientId")?.let {
-            _selectedRecipientId.value = it
-        }
-
-        savedStateHandle.get<String>("userProfileInfo")?.let {
-            _userProfileInfo.value = UserProfileSerializer.deserializeFeedUserProfile(it)
-        }
-
-        /*
-
-
-                val data = savedStateHandle.get<String>("selected_item")
-                    ?.let { ServicesSerializer.deserializeService(it) }
-
-                data?.let {
-                    _selectedItem.value = it
+    fun directUpdateServiceIsBookMarked(serviceId: Long, isBookMarked: Boolean) {
+        _selectedItem.update { currentItem ->
+            currentItem?.let {
+                val updatedServices = it.createdUsedProductListings?.map { service ->
+                    if (service.productId == serviceId) {
+                        if (service.isBookmarked == isBookMarked) {
+                            return@map service
+                        }
+                        return@map service.copy(isBookmarked = isBookMarked)
+                    } else {
+                        return@map service
+                    }
                 }
-        */
 
-
+                if (updatedServices != it.createdUsedProductListings) {
+                    it.copy(createdUsedProductListings = updatedServices)
+                } else {
+                    it
+                }
+            }
+        }
     }
 
 
-    fun isSelectedUsedProductListingNull()  = _selectedItem.value==null
 
+    fun setSelectedItem(service: UsedProductListing?) {
+        _selectedItem.value = service
+    }
 
     fun onRemoveBookmark(
         userId: Long,
@@ -109,18 +84,15 @@ class SecondsOwnerProfileViewModel @Inject constructor(
             try {
                 when (val result = removeBookmark(userId, service)) {
                     is Result.Success -> {
-                        // Deserialize the search terms and set suggestions
                         onSuccess()
                     }
 
                     is Result.Error -> {
-                        // Handle error
                         error = mapExceptionToError(result.error).errorMessage
                         onError(error)
-                        // Optionally log the error message
                     }
                 }
-            } catch (t: Exception) {
+            } catch (_: Exception) {
                 error = "Something Went Wrong"
                 onError(error)
 
@@ -128,36 +100,6 @@ class SecondsOwnerProfileViewModel @Inject constructor(
         }
     }
 
-
-    fun directUpdateServiceIsBookMarked(serviceId: Long, isBookMarked: Boolean) {
-        _selectedItem.update { currentItem ->
-            // Proceed only if currentItem is not null
-            currentItem?.let {
-                // Check if any change is needed
-                val updatedServices = it.createdUsedProductListings?.map { service ->
-                    if (service.productId == serviceId) {
-                        // If the isBookmarked value is already the same, return the service as is
-                        if (service.isBookmarked == isBookMarked) {
-                            return@map service // No change needed, return original
-                        }
-                        // Return the updated service with the new isBookmarked value
-                        return@map service.copy(isBookmarked = isBookMarked)
-                    } else {
-                        // Return the service as is if the IDs don't match
-                        return@map service
-                    }
-                }
-
-                // Only return updated currentItem if the services have changed
-                // If no services changed, return the currentItem as is
-                if (updatedServices != it.createdUsedProductListings) {
-                    it.copy(createdUsedProductListings = updatedServices)
-                } else {
-                    it // No change to createdServices, so return it as is
-                }
-            }
-        }
-    }
 
 
     private suspend fun removeBookmark(
@@ -167,8 +109,8 @@ class SecondsOwnerProfileViewModel @Inject constructor(
 
 
         return try {
-            val response = AppClient.instance.create(ManageServicesApiService::class.java)
-                .removeBookmarkService(
+            val response = AppClient.instance.create(ManageUsedProductListingService::class.java)
+                .removeBookmarkUsedProductListing(
                     userId,
                     item.productId
                 )
@@ -182,13 +124,12 @@ class SecondsOwnerProfileViewModel @Inject constructor(
                     Result.Error(Exception(errorMessage))
                 }
 
-
             } else {
 
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))
@@ -210,18 +151,15 @@ class SecondsOwnerProfileViewModel @Inject constructor(
             try {
                 when (val result = bookmark(userId, service)) {
                     is Result.Success -> {
-                        // Deserialize the search terms and set suggestions
                         onSuccess()
                     }
 
                     is Result.Error -> {
-                        // Handle error
                         error = mapExceptionToError(result.error).errorMessage
                         onError(error)
-                        // Optionally log the error message
                     }
                 }
-            } catch (t: Exception) {
+            } catch (_: Exception) {
                 error = "Something Went Wrong"
                 onError(error)
 
@@ -235,8 +173,8 @@ class SecondsOwnerProfileViewModel @Inject constructor(
         item: UsedProductListing,
     ): Result<ResponseReply> {
         return try {
-            val response = AppClient.instance.create(ManageServicesApiService::class.java)
-                .bookmarkService(
+            val response = AppClient.instance.create(ManageUsedProductListingService::class.java)
+                .bookmarkUsedProductListing(
                     userId,
                     item.productId
                 )
@@ -256,7 +194,7 @@ class SecondsOwnerProfileViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))
@@ -270,132 +208,18 @@ class SecondsOwnerProfileViewModel @Inject constructor(
     suspend fun getChatUser(userId: Long, userProfile: FeedUserProfileInfo): ChatUser {
 
         return withContext(Dispatchers.IO) {
-            // If chat user exists, update selected values
-            chatUserDao.getChatUserByRecipientId(userProfile.userId)?.let {
-                updateSavedState(it.chatId, userId, userProfile)
-                it
-            } ?: run {
-                // Insert new chat user and then update the state
+            chatUserDao.getChatUserByRecipientId(userProfile.userId) ?: run {
                 val newChatUser = ChatUser(
                     userId = userId,
                     recipientId = userProfile.userId,
                     timestamp = System.currentTimeMillis(),
                     userProfile = userProfile.copy(isOnline = false)
                 )
-                val chatId = chatUserDao.insertChatUser(newChatUser).toInt() // New chat ID
-                updateSavedState(chatId, userId, userProfile)
+                val chatId = chatUserDao.insertChatUser(newChatUser).toInt()
                 newChatUser.copy(chatId = chatId)
             }
         }
 
     }
-
-
-    // Helper function to update the saved state
-    private fun updateSavedState(chatId: Int, recipientId: Long, userProfile: FeedUserProfileInfo) {
-        _selectedChatId.value = chatId
-        _selectedRecipientId.value = recipientId
-        _userProfileInfo.value = userProfile
-
-        savedStateHandle["chatId"] = chatId
-        savedStateHandle["selectedRecipientId"] = recipientId
-        savedStateHandle["userProfileInfo"] =
-            UserProfileSerializer.serializeFeedUserProfileInfo(userProfile)
-    }
-
-
-    fun setSelectedItem(service: UsedProductListing?) {
-        _selectedItem.value = service
-        service?.let {
-            savedStateHandle["selected_item"] = service.productId
-        }
-
-    }
-
-
-    /*
-
-
-    private fun onGetPublishedServices(
-        signInMethod: String,
-        userId: Long,
-        onSuccess: () -> Unit,
-        onError: (Throwable) -> Unit,
-    ) {
-
-        viewModelScope.launch {
-
-            _isLoading.value = true
-            try {
-                when (val result =
-                    fetchPublishedServices(signInMethod, userId)) { // Call the network function
-                    is Result.Success -> {
-
-                        val data = Gson().fromJson(
-                            result.data.data,
-                            object : TypeToken<List<Service>>() {}.type
-                        )
-                                as List<Service>
-                        _services.value = data
-
-                        onSuccess()
-                    }
-
-                    is Result.Error -> {
-                        onError(result.error)
-                    }
-                }
-            } catch (t: Throwable) {
-                t.printStackTrace()
-                onError(Exception("Something Went Wrong"))
-            } finally {
-                _isLoading.value = false
-            }
-
-        }
-
-    }
-*/
-
-
-// Function to fetch services from the API
-    /*  private suspend fun fetchPublishedServices(
-      signInMethod: String,
-      userId: Long,
-  ): Result<ResponseReply> {
-
-
-      return try {
-          val response = if (signInMethod == "guest") {
-              AppClient.instance.create(ManageServicesApiService::class.java)
-                  .getServicesByFeedGuestUserId(userId)
-          } else {
-              AppClient.instance.create(ManageServicesApiService::class.java)
-                  .getServicesByFeedUserId(userId)
-          }
-
-          if (response.isSuccessful) {
-              val body = response.body()
-              if (body != null && body.isSuccessful) {
-                  Result.Success(body)
-              } else {
-                  val errorMessage = "Failed, try again later..."
-                  Result.Error(Exception(errorMessage))
-              }
-
-          } else {
-              val errorBody = response.errorBody()?.string()
-              val errorMessage = try {
-                  Gson().fromJson(errorBody, ErrorResponse::class.java).message
-              } catch (e: Exception) {
-                  "An unknown error occurred"
-              }
-              Result.Error(Exception(errorMessage))
-          }
-      } catch (t: Throwable) {
-          t.printStackTrace()
-          Result.Error(t)
-      }
-  }*/
 
 }

@@ -37,7 +37,6 @@ fun DistrictsScreen(
     onPopDown: () -> Unit,
 ) {
 
-
     val backStackEntry = remember {
         navHostController.getBackStackEntry<LocationSetUpRoutes.LocationChooser>()
     }
@@ -45,9 +44,6 @@ fun DistrictsScreen(
     val locationViewModel: LocationViewModel = hiltViewModel(backStackEntry)
 
     val districts by locationViewModel.districts.collectAsState()
-
-
-
 
 
     BackHandler {
@@ -78,7 +74,7 @@ fun DistrictsScreen(
             items(districts, key = { it.district }) { districtItem ->
 
                 CompositionLocalProvider(
-                    LocalMinimumInteractiveComponentSize provides 0.dp // Remove extra touch padding
+                    LocalMinimumInteractiveComponentSize provides 0.dp
                 ) {
                     NavigatorCard(
                         isLoading = isLoading,

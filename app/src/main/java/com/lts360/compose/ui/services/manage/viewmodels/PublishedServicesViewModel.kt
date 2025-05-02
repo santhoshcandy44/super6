@@ -198,11 +198,11 @@ class PublishedServicesViewModel @Inject constructor(
     fun refreshPublishedServices(userId: Long) {
         _resultError.value = null
         viewModelScope.launch {
-            _isLoading.value = true
+            _refreshing.value = true
             repository.getPublishedServices(userId, {
-                _isLoading.value = false
+                _refreshing.value = false
             }, {
-                _isLoading.value = false
+                _refreshing.value = false
                 val mappedException = mapExceptionToError(it)
                 _resultError.value = mappedException
                 errorMessage = mapExceptionToError(it).errorMessage

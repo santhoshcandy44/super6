@@ -368,7 +368,7 @@ fun CreateUsedProductListingScreen(
                     },
                     title = {
                         Text(
-                            text = "Create Seconds",
+                            text = "Create Second Hands",
                             style = MaterialTheme.typography.titleMedium
                         )
                     },
@@ -391,7 +391,6 @@ fun CreateUsedProductListingScreen(
                         strokeWidth = 4.dp
                     )
                 } else {
-                    // Main content
                     LazyVerticalGrid(
                         modifier = Modifier.fillMaxWidth(),
                         columns = GridCells.Adaptive(140.dp),
@@ -399,19 +398,17 @@ fun CreateUsedProductListingScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
 
-                        item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
+                        item(span = { GridItemSpan(maxLineSpan) }) {
                             Text(
                                 text = "Add New Product",
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
 
-
                         item(span = { GridItemSpan(maxLineSpan) }) {
 
                             Column(modifier = Modifier.fillMaxWidth()) {
 
-                                // Text Field for UsedProductListing Title
                                 OutlinedTextField(
                                     value = name,
                                     onValueChange = { viewModel.updateTitle(it) },

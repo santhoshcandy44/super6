@@ -38,7 +38,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -73,7 +72,6 @@ import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
 import com.lts360.R
-import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.app.database.models.chat.ChatMessageStatus
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.app.workers.chat.utils.lastMessageTimestamp
@@ -99,10 +97,14 @@ fun ChatUsersScreen(
         val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
         val hierarchy = navBackStackEntry?.destination?.hierarchy
 
-        if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
+        if (hierarchy?.any { nonNullDestination ->
+                allowedScreens.any {
+                    nonNullDestination.hasRoute(
+                        it::class
+                    )
+                }
+            } == true) {
 
-
-            // Navigate back to A and preserve its state
             navController.navigate(BottomBar.Home()) {
                 launchSingleTop = true
                 restoreState = true
@@ -111,7 +113,6 @@ fun ChatUsersScreen(
                 }
             }
         } else {
-            // Let the default back behavior occur
             navController.popBackStack()
         }
     }
@@ -131,7 +132,6 @@ fun ChatUsersScreen(
         snapshotFlow { lazyListState.firstVisibleItemIndex }
             .collect { _ ->
 
-
                 val lastVisibleItem = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()
 
                 if (lastVisibleItem != null) {
@@ -139,7 +139,6 @@ fun ChatUsersScreen(
                     val pageSize =
                         if (lastLoadedChatId != -1) viewModel.CHAT_LIST_SIZE_AFTER_INITIAL_LOAD else viewModel.CHAT_LIST_SIZE
 
-                    // Check if the user is within the last 10 items of the current list
                     val isNearEnd =
                         lastVisibleItem.index >= if (lastLoadedChatId != -1) userStates.size - viewModel.CHAT_LIST_SIZE_AFTER_INITIAL_LOAD else
                             userStates.size - pageSize
@@ -173,8 +172,9 @@ fun ChatUsersScreen(
 
     val context = LocalContext.current
 
-    Surface(modifier = Modifier.fillMaxSize()){
+    Surface(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
+
             TopAppBar(
                 title = {
                     Text(
@@ -183,12 +183,7 @@ fun ChatUsersScreen(
                     )
                 })
 
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize() // This makes the Box take up the entire available space
-            ) {
-
+            Box(modifier = Modifier.fillMaxSize()) {
 
                 if (isLoading) {
                     LinearProgressIndicator(
@@ -206,12 +201,12 @@ fun ChatUsersScreen(
                             isExpanded = false
                         }
 
-                        AnimatedContent(targetState = isExpanded, label = "",
+                        AnimatedContent(
+                            targetState = isExpanded, label = "",
                             transitionSpec = {
-                                // Disable layout animations by using ContentTransform with NoTransition
                                 ContentTransform(
                                     targetContentEnter = fadeIn(),
-                                    initialContentExit = fadeOut() ,
+                                    initialContentExit = fadeOut(),
                                     sizeTransform = SizeTransform { _, _ ->
                                         tween(durationMillis = 0)
                                     }
@@ -261,33 +256,23 @@ fun ChatUsersScreen(
                                             val lastMessage = userState.lastMessage
                                             val unreadCount = userState.unreadCount
 
-
                                             val isOnline = userState.onlineStatus
                                             val typingStatus = userState.typingStatus
-
-                                            val imageRequest =
-                                                ImageRequest.Builder(context)
-                                                    .data(profileImageUrl96By96)
-                                                    .placeholder(R.drawable.user_placeholder) // Your placeholder image
-                                                    .error(R.drawable.user_placeholder)
-                                                    .crossfade(true)
-                                                    .build()
 
 
                                             Card(
                                                 onClick = dropUnlessResumed {
-                                                    chatRecipientUser.apply {
-                                                        viewModel.updateSelectedChatId(userState)
-                                                        onNavigateUpChat(
-                                                            userState.chatUser,
-                                                            chatId,
-                                                            recipientId)
-                                                    }
+                                                    viewModel.updateSelectedChatId(userState)
+                                                    onNavigateUpChat(
+                                                        userState.chatUser,
+                                                        chatRecipientUser.chatId,
+                                                        chatRecipientUser.recipientId
+                                                    )
                                                 },
                                                 modifier = Modifier
                                                     .fillMaxWidth(),
                                                 elevation = CardDefaults.cardElevation(0.dp),
-                                                shape = RectangleShape, // Remove rounded corners
+                                                shape = RectangleShape,
                                             ) {
                                                 Row(
                                                     modifier = Modifier
@@ -298,11 +283,14 @@ fun ChatUsersScreen(
                                                         ),
                                                     verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    // Profile image with online status dot
                                                     Box(modifier = Modifier.wrapContentSize()) {
 
-                                                        AsyncImage(
-                                                            imageRequest, // The larger image URL
+                                                        AsyncImage(ImageRequest.Builder(context)
+                                                                .data(profileImageUrl96By96)
+                                                                .placeholder(R.drawable.user_placeholder)
+                                                                .error(R.drawable.user_placeholder)
+                                                                .crossfade(true)
+                                                                .build(),
                                                             imageLoader = viewModel.chatUsersProfileImageLoader,
                                                             contentDescription = "User Profile Image",
                                                             modifier = Modifier
@@ -337,13 +325,11 @@ fun ChatUsersScreen(
 
                                                     Spacer(modifier = Modifier.width(8.dp))
 
-                                                    // Name and message layout
                                                     Column(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
                                                             .padding(horizontal = 8.dp)
                                                     ) {
-                                                        // Row for user name and time
                                                         Row(
                                                             modifier = Modifier
                                                                 .fillMaxWidth()
@@ -357,24 +343,15 @@ fun ChatUsersScreen(
                                                                 modifier = Modifier.weight(1f)
                                                             )
 
-                                                            Text(
-                                                                text = lastMessage?.timestamp?.let {
-                                                                    lastMessageTimestamp(
-                                                                        it
-                                                                    )
-                                                                }
-                                                                    ?: "",
+                                                            Text(text = lastMessage?.timestamp?.let { lastMessageTimestamp(it) } ?: "",
                                                                 fontSize = 14.sp,
                                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                modifier = Modifier.align(
-                                                                    Alignment.CenterVertically
-                                                                )
+                                                                modifier = Modifier.align(Alignment.CenterVertically)
                                                             )
                                                         }
 
                                                         Spacer(modifier = Modifier.height(8.dp))
 
-                                                        // Row for last message and unread message count
                                                         Row(
                                                             modifier = Modifier
                                                                 .fillMaxWidth()
@@ -383,9 +360,7 @@ fun ChatUsersScreen(
                                                         ) {
 
                                                             Row(
-                                                                modifier = Modifier
-
-                                                                    .weight(1f),
+                                                                modifier = Modifier.weight(1f),
                                                                 verticalAlignment = Alignment.CenterVertically
                                                             ) {
 
@@ -396,89 +371,78 @@ fun ChatUsersScreen(
                                                                         color = Color(0xFF9747ff),
                                                                         maxLines = 1,
                                                                         overflow = TextOverflow.Ellipsis,
-                                                                        modifier = Modifier.weight(
-                                                                            1f
-                                                                        )
+                                                                        modifier = Modifier.weight(1f)
                                                                     )
                                                                 } else {
                                                                     lastMessage?.let { nonNullLastMessage ->
+                                                                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically){
+                                                                            Text(text = nonNullLastMessage.content,
+                                                                                fontSize = 14.sp,
+                                                                                maxLines = 1,
+                                                                                overflow = TextOverflow.Ellipsis,
+                                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                                modifier = Modifier.weight(1f, false))
 
+                                                                            if (nonNullLastMessage.senderId != chatRecipientUser.recipientId) {
 
-                                                                        Text(
-                                                                            text = nonNullLastMessage.content,
-                                                                            fontSize = 14.sp,
-                                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                            maxLines = 1,
-                                                                            overflow = TextOverflow.Ellipsis
-                                                                        )
-
-
-
-                                                                        if (nonNullLastMessage.senderId != chatRecipientUser.recipientId) {
-
-                                                                            when (nonNullLastMessage.status) {
-                                                                                ChatMessageStatus.SENDING,
-                                                                                ChatMessageStatus.QUEUED,
-                                                                                ChatMessageStatus.QUEUED_MEDIA,
-                                                                                ChatMessageStatus.QUEUED_MEDIA_RETRY,
-                                                                                    -> {
-                                                                                    Icon(
-                                                                                        painterResource(
-                                                                                            R.drawable.ic_message_pending
-                                                                                        ), // Using Material Icons
-                                                                                        contentDescription = "Sending",
-                                                                                        modifier = Modifier
-                                                                                            .size(
-                                                                                                16.dp
-                                                                                            )
-                                                                                    )
-                                                                                }
-
-                                                                                ChatMessageStatus.SENT -> {
-                                                                                    Icon(
-                                                                                        imageVector = Icons.Filled.Check,
-                                                                                        contentDescription = "Message Sent",
-                                                                                        modifier = Modifier
-                                                                                            .size(
-                                                                                                16.dp
-                                                                                            )
-                                                                                    )
-                                                                                }
-
-
-                                                                                ChatMessageStatus.DELIVERED -> {
-                                                                                    Box {
+                                                                                when (nonNullLastMessage.status) {
+                                                                                    ChatMessageStatus.SENDING,
+                                                                                    ChatMessageStatus.QUEUED,
+                                                                                    ChatMessageStatus.QUEUED_MEDIA,
+                                                                                    ChatMessageStatus.QUEUED_MEDIA_RETRY,
+                                                                                        -> {
                                                                                         Icon(
-                                                                                            imageVector = Icons.Filled.Check, // First check icon
-                                                                                            contentDescription = "Message Delivered",
-                                                                                            modifier = Modifier.size(
-                                                                                                16.dp
-                                                                                            )
+                                                                                            painterResource(R.drawable.ic_message_pending),
+                                                                                            contentDescription = "Sending",
+                                                                                            modifier = Modifier.size(16.dp)
                                                                                         )
+                                                                                    }
+
+                                                                                    ChatMessageStatus.SENT -> {
                                                                                         Icon(
-                                                                                            imageVector = Icons.Filled.Check, // Second check icon for double check
-                                                                                            contentDescription = "Message Delivered",
+                                                                                            imageVector = Icons.Filled.Check,
+                                                                                            contentDescription = "Message Sent",
                                                                                             modifier = Modifier
                                                                                                 .size(
                                                                                                     16.dp
-                                                                                                )
-                                                                                                .offset(
-                                                                                                    x = 8.dp
                                                                                                 )
                                                                                         )
                                                                                     }
 
 
+                                                                                    ChatMessageStatus.DELIVERED -> {
+                                                                                        Box {
+                                                                                            Icon(
+                                                                                                imageVector = Icons.Filled.Check, // First check icon
+                                                                                                contentDescription = "Message Delivered",
+                                                                                                modifier = Modifier.size(
+                                                                                                    16.dp
+                                                                                                )
+                                                                                            )
+                                                                                            Icon(
+                                                                                                imageVector = Icons.Filled.Check, // Second check icon for double check
+                                                                                                contentDescription = "Message Delivered",
+                                                                                                modifier = Modifier
+                                                                                                    .size(
+                                                                                                        16.dp
+                                                                                                    )
+                                                                                                    .offset(
+                                                                                                        x = 8.dp
+                                                                                                    )
+                                                                                            )
+                                                                                        }
+
+
+                                                                                    }
+
+                                                                                    ChatMessageStatus.READ -> {}
+                                                                                    ChatMessageStatus.FAILED -> {}
+                                                                                    ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED -> {}
+                                                                                    ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN -> {}
+
                                                                                 }
-
-                                                                                ChatMessageStatus.READ -> {}
-                                                                                ChatMessageStatus.FAILED -> {}
-                                                                                ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED -> {}
-                                                                                ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN -> {}
-
                                                                             }
                                                                         }
-
                                                                     } ?: run {
                                                                         Text(
                                                                             text = "",
@@ -551,7 +515,7 @@ fun ChatUsersScreen(
                                                 .build()
 
                                         SubcomposeAsyncImage(
-                                            profilePicUrlImageRequest, // The larger image URL
+                                            profilePicUrlImageRequest,
                                             contentDescription = "User Profile Image",
                                             modifier = Modifier
                                                 .fillMaxWidth()

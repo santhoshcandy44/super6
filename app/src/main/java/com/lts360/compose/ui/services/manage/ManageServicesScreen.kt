@@ -63,12 +63,9 @@ fun ManageServicesScreen(
 
 
     val pagerState = rememberPagerState(pageCount = { tabTitles.size }, initialPage = 0)
-    // Tab Layout and ViewPager Equivalent (Accompanist Pager)
     val scrollToPageCoroutinePage = rememberCoroutineScope()
-
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Parent Frame Layout
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(topBar = {
             TopAppBar(

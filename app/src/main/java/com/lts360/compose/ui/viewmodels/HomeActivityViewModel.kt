@@ -41,7 +41,6 @@ class HomeActivityViewModel @Inject constructor(
     tokenManager: TokenManager
 ) : ViewModel() {
 
-
     val userId = UserSharedPreferencesManager.userId
 
     val signInMethod = tokenManager.getSignInMethod()
@@ -61,7 +60,6 @@ class HomeActivityViewModel @Inject constructor(
     val boards = _boards.asStateFlow()
 
 
-
     init {
         UserSharedPreferencesManager.initialize(context)
         viewModelScope.launch(Dispatchers.IO){
@@ -72,32 +70,28 @@ class HomeActivityViewModel @Inject constructor(
 
     }
 
-
     init {
-
         UserSharedPreferencesManager.setFirstLaunchCompleted()
 
-
-        if(!UserSharedPreferencesManager.E2EEPublicTokenStatus &&  tokenManager.getSignInMethod() != "guest"){
-            sendE2EEEPublicTokenToServer()
-        }
-
-        if (!UserSharedPreferencesManager.fcmTokenStatus && tokenManager.getSignInMethod() != "guest") {
-
-            // After successful registration, get the FCM token
-            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val fcmToken = task.result
-                    // Send the FCM token to your server after registration is complete
-                    sendTokenToServer(fcmToken)
-                } else {
-                    Log.w(TAG, "Fetching FCM registration token failed", task.exception)
-                    // Handle the failure case
-                }
+        if (tokenManager.isVerifiedUser()) {
+            if (!UserSharedPreferencesManager.E2EEPublicTokenStatus) {
+                sendE2EEEPublicTokenToServer()
             }
 
+            if (!UserSharedPreferencesManager.fcmTokenStatus) {
+                fetchAndSendFcmToken()
+            }
         }
+    }
 
+    private fun fetchAndSendFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                sendTokenToServer(task.result)
+            } else {
+                Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+            }
+        }
     }
 
     fun updateBottomNavVisibility(value: Boolean){
@@ -105,8 +99,6 @@ class HomeActivityViewModel @Inject constructor(
             _bottomNavVisibility.value = value
         }
     }
-
-
 
     fun isNotificationPermissionDismissed(): Boolean {
         return UserSharedPreferencesManager.isNotificationPermissionDismissed()
@@ -116,17 +108,13 @@ class HomeActivityViewModel @Inject constructor(
         UserSharedPreferencesManager.setNotificationPermissionDismissed()
     }
 
-
     private fun sendTokenToServer(fcmToken: String) {
-        SendFcmTokenWorkerHelper.cancelSendFCMTokenToServerUniqueWork(application)
-        SendFcmTokenWorkerHelper.enqueueSendFCMTokenToServerWork(application, fcmToken)
+        SendFcmTokenWorkerHelper.forceEnqueueSendFCMTokenToServerUniqueWork(application, fcmToken)
     }
 
 
-
     private fun sendE2EEEPublicTokenToServer() {
-        E2EEPublicTokenToServerWorkerHelper.cancelSendE2EEPublicTokenToServerUniqueWork(application)
-        E2EEPublicTokenToServerWorkerHelper.enqueueSendE2EEPublicKey(application)
+        E2EEPublicTokenToServerWorkerHelper.forceEnqueueSendE2EEPublicTokenToServerUniqueWork(application)
     }
 
 

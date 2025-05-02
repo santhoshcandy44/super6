@@ -4,7 +4,6 @@ import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -23,8 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -33,16 +30,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -50,7 +45,6 @@ import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,7 +68,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
-import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.placeholder
@@ -90,8 +83,9 @@ import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
+import com.lts360.compose.ui.localjobs.DetailedLocalJobScreen
 import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
-import com.lts360.compose.ui.theme.customColorScheme
+import com.lts360.compose.ui.usedproducts.DetailedUsedProductListingScreen
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import com.lts360.compose.utils.ExpandableText
@@ -106,14 +100,12 @@ fun DetailedServiceScreen(
     navigateUpChat: (ChatUser, Int, Long) -> Unit,
     viewModel: ServicesViewModel
 ) {
-
     val userId = viewModel.userId
     val isGuest = viewModel.isGuest
     val selectedItem by viewModel.selectedItem.collectAsState()
 
-
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     DetailedServiceInfo(
         userId,
@@ -173,20 +165,17 @@ fun FeedUserDetailedServiceInfoScreen(
 
     val selectedItem by servicesViewModel.nestedServiceOwnerProfileSelectedItem.collectAsState()
 
-
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     DetailedServiceInfo(
         userId,
         selectedItem,
         onNavigateUpSlider,
         {
-
             selectedItem?.let {
                 Button(
                     onClick = dropUnlessResumed {
-
                         if (job?.isActive == true) {
                             return@dropUnlessResumed
                         }
@@ -205,16 +194,13 @@ fun FeedUserDetailedServiceInfoScreen(
                                 )
                             }
                         }
-
                     },
-
                     shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(text = "Send message", color = Color.White)
                 }
             }
-
         }
     ) {
         navHostController.popBackStack()
@@ -230,7 +216,6 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
     viewModel: ServiceOwnerProfileViewModel
 ) {
 
-
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
 
@@ -239,14 +224,13 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
     if (item !is Service) return
 
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     DetailedServiceInfo(
         userId,
         item,
         onNavigateUpSlider,
         {
-
             item.let {
                 Button(
                     onClick = dropUnlessResumed {
@@ -291,7 +275,7 @@ fun BookmarkedDetailedServiceInfoScreen(
     navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
-    viewModel: BookmarksViewModel,
+    viewModel: BookmarksViewModel
 ) {
 
     val userId = viewModel.userId
@@ -301,7 +285,7 @@ fun BookmarkedDetailedServiceInfoScreen(
 
 
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     val item = selectedItem
     if (item !is Service) return
@@ -311,7 +295,6 @@ fun BookmarkedDetailedServiceInfoScreen(
         item,
         onNavigateUpSlider,
         {
-
             item.let {
                 Button(
                     onClick = dropUnlessResumed {
@@ -334,7 +317,6 @@ fun BookmarkedDetailedServiceInfoScreen(
                         }
 
                     },
-
                     shape = RectangleShape,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -356,7 +338,6 @@ private fun DetailedServiceInfo(
     onNavigateUpSlider: (Int) -> Unit,
     onChatButtonClicked: @Composable (() -> Unit) -> Unit,
     onPopBackStack: () -> Unit
-
 ) {
 
     val context = LocalContext.current
@@ -370,14 +351,11 @@ private fun DetailedServiceInfo(
 
     val coroutineScope = rememberCoroutineScope()
 
-
-
     BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
             bottomSheetScaffoldState.bottomSheetState.hide()
         }
     }
-
 
     BottomSheetScaffold(
         sheetDragHandle = null,
@@ -392,7 +370,8 @@ private fun DetailedServiceInfo(
                                     Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                                 putExtra("force_type", "force_login")
                             })
-                }, onSelectAccountNavigate = {
+                },
+                onSelectAccountNavigate = {
                     context.startActivity(
                         Intent(context, AuthActivity::class.java)
                             .apply {
@@ -401,7 +380,6 @@ private fun DetailedServiceInfo(
                                 putExtra("force_type", "force_register")
                             }
                     )
-
                 }) {
                 coroutineScope.launch {
                     bottomSheetScaffoldState.bottomSheetState.hide()
@@ -442,13 +420,10 @@ private fun DetailedServiceInfo(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
-                    // Image Slider
                     item(key = "serviceImages-${it.serviceId}") {
                         ServiceImagesSliderDetailedServiceInfo(it.images, onNavigateUpSlider)
                     }
 
-
-                    // Service Owner
                     item(key = "serviceOwner-${it.user.userId}") {
                         ServiceOwner(
                             "${it.user.firstName} ${it.user.lastName ?: ""}",
@@ -458,8 +433,6 @@ private fun DetailedServiceInfo(
                         )
                     }
 
-
-                    // Service Title and Description
                     item(key = "serviceDescription-${it.serviceId}") {
                         ServiceDescription(
                             it.title,
@@ -472,12 +445,10 @@ private fun DetailedServiceInfo(
                         )
                     }
 
-                    // Plan and Tabs
                     item(key = "planTabs-${it.serviceId}") {
                         PlanTabs(it.plans)
                     }
 
-                    // Send Message Button (if not the service owner)
                     if (userId != it.user.userId) {
                         item(key = "sendMessage-${it.serviceId}") {
 
@@ -516,6 +487,7 @@ private fun LoadingDetailedServiceInfo() {
     ) {
 
         item(key = "serviceOwner-${0}") {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -534,7 +506,7 @@ private fun LoadingDetailedServiceInfo() {
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Column {
+                Column(modifier = Modifier.fillMaxWidth()){
 
                     ShimmerBox {
                         Text(
@@ -550,7 +522,6 @@ private fun LoadingDetailedServiceInfo() {
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-
                         ShimmerBox {
                             Text(
                                 color = Color.Transparent,
@@ -629,7 +600,7 @@ private fun ServiceOwner(
                     .data(urlImage)
                     .placeholder(R.drawable.user_placeholder)
                     .error(R.drawable.user_placeholder)
-                    .build(), // Replace with your image resource
+                    .build(),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
@@ -638,7 +609,6 @@ private fun ServiceOwner(
             )
 
             if (isOnline) {
-                // Online status dot
                 Box(
                     modifier = Modifier
                         .size(10.dp)
@@ -646,7 +616,7 @@ private fun ServiceOwner(
                         .background(
                             Color.Green,
                             shape = CircleShape
-                        ) // Use your drawable resource if necessary
+                        )
                 )
             }
 
@@ -656,7 +626,7 @@ private fun ServiceOwner(
 
         Column {
             Text(
-                text = serviceOwner, // Replace with your data
+                text = serviceOwner,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium
@@ -669,7 +639,7 @@ private fun ServiceOwner(
 
                 )
                 Image(
-                    painter = painterResource(id = R.drawable.ic_verified_service), // Replace with your drawable
+                    painter = painterResource(id = R.drawable.ic_verified_service),
                     contentDescription = null,
                     modifier = Modifier
                         .size(16.dp)
@@ -696,7 +666,7 @@ private fun ServiceDescription(
     ) {
 
         Text(
-            text = serviceTitle, // Replace with your data
+            text = serviceTitle,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -704,14 +674,13 @@ private fun ServiceDescription(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = serviceShortDescription, // Replace with your data
+            text = serviceShortDescription,
             color = LocalContentColor.current.copy(alpha = 0.6f),
             style = MaterialTheme.typography.bodyMedium
 
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Expandable long description
 
         ExpandableText(
             serviceLongDescription,
@@ -725,7 +694,6 @@ private fun ServiceDescription(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Starting from price
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
@@ -754,7 +722,6 @@ private fun ServiceImagesSliderDetailedServiceInfo(
 
     if (images.isNotEmpty()) {
 
-        // Image Pager
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -784,7 +751,6 @@ private fun ServiceImagesSliderDetailedServiceInfo(
             }
         }
 
-        // Page indicators (optional)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -815,9 +781,6 @@ private fun PlanTabs(plans: List<Plan>) {
 
     val pagerState = rememberPagerState(pageCount = { plans.size })
 
-
-
-    // Horizontal Pager
     HorizontalPager(
         state = pagerState,
         modifier = Modifier
@@ -855,81 +818,75 @@ private fun ServicePlanDetails(
     priceUnit: String
 ) {
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-            .padding(8.dp)
-    ) {
+    Card(modifier = Modifier.fillMaxWidth().padding(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
 
-
-        Text(
-            text = planName,
-            style = MaterialTheme.typography.headlineSmall,
-        )
-
-        Text(
-            text = planDescription,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-
-        Text(
-            text = "Features :-",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-
-        Column(
-            modifier = Modifier
+        Column(modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 4.dp)
-        ) {
-            features.forEach { feature ->
-                FeatureItem(feature.featureName, feature.featureValue.toString())
-            }
-        }
+                .padding(16.dp)) {
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Text(text = planName, style = MaterialTheme.typography.headlineSmall)
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(),
-            contentAlignment = Alignment.CenterEnd
-        ) {
-            Row(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(text = planDescription,
+                style = MaterialTheme.typography.bodyMedium)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(text = "Features",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Column(modifier = Modifier
+                    .fillMaxWidth()
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_time), // Ensure you have this drawable
-                    contentDescription = "Delivery Time",
-                    modifier = Modifier.size(24.dp)
-                )
-
-                Text(
-                    text = "${deliveryTime}/${deliveryUnit}",
-                    modifier = Modifier.padding(start = 8.dp)
-                )
+                features.forEach { feature ->
+                    FeatureItem(feature.featureName, feature.featureValue.toString())
+                }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Row(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_time),
+                        contentDescription = "Delivery Time",
+                        modifier = Modifier.size(24.dp)
+                    )
+
+                    Text(
+                        text = "${deliveryTime}/${deliveryUnit}",
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(text = formatCurrency(price, priceUnit),
+                color = Color(0xFF55D7A9),
+                fontSize = 24.sp,
+                textAlign = TextAlign.End,
+                modifier = Modifier
+                    .fillMaxWidth()
+            )
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = formatCurrency(price, priceUnit),
-            color = Color(0xFF55D7A9),
-            fontSize = 24.sp,
-            textAlign = TextAlign.End,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp)
-        )
     }
+
 }
 
 

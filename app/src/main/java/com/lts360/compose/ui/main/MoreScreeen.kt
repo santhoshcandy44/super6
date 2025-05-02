@@ -392,16 +392,16 @@ fun MoreScreen(
 
                         userProfile?.let {
 
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text("Business Tools & Settings",
+                                style = MaterialTheme.typography.titleMedium)
+
                             if (it.accountType == AccountType.Business.name) {
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
-                                Text("Business Tools & Settings", style = MaterialTheme.typography.titleMedium)
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
                                 Column(
-
                                     modifier = Modifier
                                         .background(
                                             MaterialTheme.customColorScheme.moreActionsContainerColor,
@@ -420,27 +420,30 @@ fun MoreScreen(
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(8.dp))
+                            }
 
-                                Column(
-                                    modifier = Modifier
-                                        .background(
-                                            MaterialTheme.customColorScheme.moreActionsContainerColor,
-                                            RoundedCornerShape(8.dp)
-                                        )
-                                        .clip(RoundedCornerShape(8.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Column(
+                                modifier = Modifier
+                                    .background(
+                                        MaterialTheme.customColorScheme.moreActionsContainerColor,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .clip(RoundedCornerShape(8.dp))
+                            ) {
+                                MoreSectionItem(
+                                    color = Color(
+                                        0xFFfe9603
+                                    ),
+                                    iconRes = R.drawable.ic_light_manage_seconds,
+                                    text = "Manage Second Hands"
                                 ) {
-                                    MoreSectionItem(
-                                        color = Color(
-                                            0xFFfe9603
-                                        ),
-                                        iconRes = R.drawable.ic_light_manage_seconds,
-                                        text = "Manage Seconds"
-                                    ) {
-                                        onManageSecondsNavigateUp()
-                                    }
+                                    onManageSecondsNavigateUp()
                                 }
+                            }
 
+                            if (it.accountType == AccountType.Business.name) {
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -460,6 +463,7 @@ fun MoreScreen(
                                         onManageLocalJobNavigateUp()
                                     }
                                 }
+                            }
 
                             }
 
@@ -608,8 +612,6 @@ fun MoreScreen(
         }
     }
 
-
-}
 
 
 @Composable

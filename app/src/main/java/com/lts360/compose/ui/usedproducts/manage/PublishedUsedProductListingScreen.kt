@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import coil3.compose.AsyncImage
 import com.lts360.api.utils.ResultError
 import com.lts360.api.models.service.EditableUsedProductListing
+import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.services.manage.NoInternetText
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 
@@ -76,7 +77,7 @@ fun PublishedUsedProductListingScreen(
 
                         item{
                             Text(
-                                text = "All Published Seconds",
+                                text = "All Published Second Hands",
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
@@ -143,9 +144,8 @@ fun PublishedUsedProductListingScreen(
             }
         }
 
-        // Progress Bar
         if (isLoading) {
-            CircularProgressIndicator(
+            CircularProgressIndicatorLegacy(
                 modifier = Modifier.align(Alignment.Center),
                 strokeWidth = 4.dp
             )

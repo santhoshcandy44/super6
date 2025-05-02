@@ -2,7 +2,6 @@ package com.lts360.compose.ui.usedproducts.manage
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -66,6 +65,7 @@ import com.lts360.compose.ui.main.profile.ProfilePicUrlHeader
 import com.lts360.compose.ui.main.profile.ProfileSecondsSection
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
+import com.lts360.libs.ui.ShortToast
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -85,7 +85,7 @@ fun SecondsServiceOwnerProfileScreen(
 
 
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     SecondsOwnerProfileScreenContent(
         selectedParentService,
@@ -137,9 +137,9 @@ fun BookmarkedSecondsOwnerProfileScreen(
     var job by remember { mutableStateOf<Job?>(null) } // Track job reference
 
 
-    val item = selectedParentService // Store in a local variable
+    val item = selectedParentService
 
-    if (item !is UsedProductListing) return // Smart cast now works
+    if (item !is UsedProductListing) return
 
     SecondsOwnerProfileScreenContent(
         item, {
@@ -252,9 +252,8 @@ fun SecondsOwnerProfileScreenContent(
                 }
             }
         },
-        sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetSwipeEnabled = true, // Allow gestures to hide/show bottom sheet
-//            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        sheetPeekHeight = 0.dp,
+        sheetSwipeEnabled = true,
     ) { innerPadding ->
 
         Column (modifier = Modifier.padding(innerPadding)) {
@@ -313,21 +312,17 @@ fun SecondsOwnerProfileScreenContent(
                     onDismissRequest = {
                         bottomSheetState = false
                     },
-                    shape = RectangleShape, // Set shape to square (rectangle)
+                    shape = RectangleShape,
                     sheetState = sheetState,
-                    dragHandle = null // Remove the drag handle
+                    dragHandle = null
 
                 ) {
 
-                    // Sheet content
                     selectedItem?.let { nonNullSelectedItem ->
 
-                        viewModel.setSelectedItem(
-                            nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked)
-                        )
+                        viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked))
 
                         Column(modifier = Modifier.fillMaxWidth()) {
-
 
                             if (signInMethod != "guest") {
                                 Row(
@@ -335,11 +330,8 @@ fun SecondsOwnerProfileScreenContent(
                                         .fillMaxWidth()
                                         .clickable {
                                             if (nonNullSelectedItem.isBookmarked) {
-                                                viewModel.setSelectedItem(
-                                                    nonNullSelectedItem.copy(
-                                                        isBookmarked = false
-                                                    )
-                                                )
+
+                                                viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = false))
 
                                                 viewModel.onRemoveBookmark(
                                                     viewModel.userId,
@@ -353,82 +345,33 @@ fun SecondsOwnerProfileScreenContent(
                                                             nonNullSelectedItem.productId,
                                                             false
                                                         )
-
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Bookmark removed",
-                                                                Toast.LENGTH_SHORT
-                                                            )
-                                                            .show()
+                                                        ShortToast(context = context, message = "Bookmark removed")
 
                                                     }, onError = {
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Something wrong",
-                                                                Toast.LENGTH_SHORT
-                                                            )
-                                                            .show()
-
-                                                        viewModel.setSelectedItem(
-                                                            nonNullSelectedItem.copy(
-                                                                isBookmarked = true
-                                                            )
-                                                        )
-
+                                                        viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = true))
+                                                        ShortToast(context = context, message = "Something wrong")
                                                     })
 
 
                                             } else {
 
-                                                viewModel.setSelectedItem(
-                                                    selectedItem?.copy(
-                                                        isBookmarked = true
-                                                    )
-                                                )
+                                                viewModel.setSelectedItem(selectedItem?.copy(isBookmarked = true))
 
                                                 viewModel.onBookmark(
                                                     viewModel.userId,
                                                     nonNullSelectedItem,
                                                     onSuccess = {
 
+                                                        viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = true))
+                                                        viewModel.directUpdateServiceIsBookMarked(nonNullSelectedItem.productId, true)
 
-                                                        viewModel.setSelectedItem(
-                                                            nonNullSelectedItem.copy(
-                                                                isBookmarked = true
-                                                            )
-                                                        )
-
-                                                        viewModel.directUpdateServiceIsBookMarked(
-                                                            nonNullSelectedItem.productId,
-                                                            true
-                                                        )
-
-
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Bookmarked",
-                                                                Toast.LENGTH_SHORT
-                                                            )
-                                                            .show()
+                                                        ShortToast(context = context, message = "Bookmarked")
 
                                                     },
                                                     onError = {
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Something wrong",
-                                                                Toast.LENGTH_SHORT
-                                                            )
-                                                            .show()
+                                                        ShortToast(context = context, message = "Something wrong")
 
-                                                        viewModel.setSelectedItem(
-                                                            nonNullSelectedItem.copy(
-                                                                isBookmarked = false
-                                                            )
-                                                        )
+                                                        viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = false))
                                                     })
                                             }
 
@@ -470,25 +413,17 @@ fun SecondsOwnerProfileScreenContent(
                                                     putExtra(
                                                         Intent.EXTRA_TEXT,
                                                         it.shortCode
-                                                    )  // Text you want to share
-                                                    type = "text/plain"  // MIME type for text
+                                                    )
+                                                    type = "text/plain"
                                                 }
-                                                // Start the share intent
                                                 context.startActivity(
                                                     Intent.createChooser(
                                                         shareIntent,
                                                         "Share via"
                                                     )
                                                 )
-                                            } catch (e: ActivityNotFoundException) {
-
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        "No app to open",
-                                                        Toast.LENGTH_SHORT
-                                                    )
-                                                    .show()
+                                            } catch (_: ActivityNotFoundException) {
+                                                ShortToast(context = context, message = "No app to open")
                                             }
 
                                         }
@@ -497,18 +432,13 @@ fun SecondsOwnerProfileScreenContent(
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
 
-
-                                // Bookmark Icon
-                                Icon(
-                                    Icons.Default.Share,
+                                Icon(Icons.Default.Share,
                                     contentDescription = "Share",
-                                    modifier = Modifier.size(24.dp),
+                                    modifier = Modifier.size(24.dp)
                                 )
 
-                                // Text
-                                Text(
-                                    text = "Share",
-                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                Text(text = "Share",
+                                    modifier = Modifier.padding(horizontal = 4.dp)
                                 )
                             }
 

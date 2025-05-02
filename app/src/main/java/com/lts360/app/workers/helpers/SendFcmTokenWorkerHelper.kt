@@ -14,37 +14,31 @@ import java.util.concurrent.TimeUnit
 
 object SendFcmTokenWorkerHelper {
 
-    private val SEND_FCM_TOKEN_WORKER = "send_fcm_token"
+    private const val SEND_FCM_TOKEN_WORKER = "send_fcm_token"
 
     fun enqueueSendFCMTokenToServerWork(application: Application, fcmToken: String) {
-        // Create input data to pass the FCM token to the worker
-
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
-        val inputData = Data.Builder()
-            .putString("fcm_token", fcmToken)
-            .build()
-
-        // Create a work request to send the FCM token
-        val sendTokenWorkRequest = OneTimeWorkRequestBuilder<HandleFcmTokenWorker>()
-            .setInputData(inputData)
-            .setConstraints(constraints)
-            .setBackoffCriteria(
-                BackoffPolicy.LINEAR,   // Retry with a fixed backoff
-                10,
-                TimeUnit.SECONDS
-            ).build()
-
-        // Enqueue the work
-
 
         WorkManager.getInstance(application.applicationContext)
             .enqueueUniqueWork(
-                SEND_FCM_TOKEN_WORKER,          // Unique work name
-                ExistingWorkPolicy.REPLACE, // Replace existing work with the same name
-                sendTokenWorkRequest
+                SEND_FCM_TOKEN_WORKER,
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<HandleFcmTokenWorker>()
+                    .setInputData(
+                        Data.Builder()
+                            .putString("fcm_token", fcmToken)
+                            .build()
+
+                    )
+                    .setConstraints(
+                        Constraints.Builder()
+                            .setRequiredNetworkType(NetworkType.CONNECTED)
+                            .build()
+                    )
+                    .setBackoffCriteria(
+                        BackoffPolicy.LINEAR,
+                        10,
+                        TimeUnit.SECONDS
+                    ).build()
             )
 
     }
@@ -52,6 +46,11 @@ object SendFcmTokenWorkerHelper {
 
     fun cancelSendFCMTokenToServerUniqueWork(application: Application) {
         WorkManager.getInstance(application).cancelUniqueWork(SEND_FCM_TOKEN_WORKER)
+    }
+
+    fun forceEnqueueSendFCMTokenToServerUniqueWork(application: Application, fcmToken: String) {
+        WorkManager.getInstance(application).cancelUniqueWork(SEND_FCM_TOKEN_WORKER)
+        enqueueSendFCMTokenToServerWork(application, fcmToken)
     }
 
 }

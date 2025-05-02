@@ -25,7 +25,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -66,13 +65,10 @@ import com.lts360.compose.ui.theme.icons
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountAndProfileSettingsScreen(
-    onProfileSettingsNavigateUp: () -> Unit,
     onChangePasswordNavigateUp: () -> Unit,
     onSelectAccountType: (AccountType) -> Unit,
     onPopStack: () -> Unit,
-    viewModel: AccountAndProfileSettingsViewModel = hiltViewModel()
-
-) {
+    viewModel: AccountAndProfileSettingsViewModel = hiltViewModel()) {
 
     val accountType by viewModel.accountType.collectAsState()
 
@@ -87,13 +83,11 @@ fun AccountAndProfileSettingsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
 
     LaunchedEffect(bottomSheetState) {
-
         if (bottomSheetState) {
             sheetState.expand()
         } else {
             sheetState.hide()
         }
-
     }
 
 
@@ -125,12 +119,11 @@ fun AccountAndProfileSettingsScreen(
 
                 ProfileManagement(
                     accountType,
-                    onProfileSettingsNavigateUp,
                     onChangePasswordNavigateUp,
-                    onSelectAccountType,
-                    {
-                        bottomSheetState = true
-                    })
+                    onSelectAccountType
+                ) {
+                    bottomSheetState = true
+                }
 
                 if (bottomSheetState) {
                     ModalBottomSheet(
@@ -247,7 +240,6 @@ fun AccountAndProfileSettingsScreen(
 @Composable
 fun ProfileManagement(
     accountType: AccountType,
-    onProfileSettingsNavigateUp: () -> Unit,
     onChangePasswordNavigateUp: () -> Unit,
     onSelectAccountType: (AccountType) -> Unit,
     onClickLogOut: () -> Unit
@@ -262,27 +254,11 @@ fun ProfileManagement(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text(text = "Manage Profile", style = MaterialTheme.typography.titleMedium)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Personal Settings Card
-            ProfileCard(
-                iconRes = R.drawable.ic_user,
-                title = "Personal Settings",
-                description = "Manage Profile Picture, Name, Email and etc.",
-                cardBackgroundColor = MaterialTheme.colorScheme.secondary // Replace with your color
-            ) {
-                onProfileSettingsNavigateUp()
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
 
             Text(text = "Manage Account", style = MaterialTheme.typography.titleMedium)
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Password Card
             ProfileCard(
                 iconRes = R.drawable.ic_security,
                 title = "Password",

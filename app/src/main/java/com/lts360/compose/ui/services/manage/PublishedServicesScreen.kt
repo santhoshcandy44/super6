@@ -176,7 +176,6 @@ fun ServiceItem(
                 .padding(vertical = 4.dp)
                 .padding(16.dp)
         ) {
-            // Title text
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
@@ -184,7 +183,6 @@ fun ServiceItem(
                 overflow = TextOverflow.Ellipsis
             )
 
-            // Short description text
             Text(
                 text = shortDescription,
                 style = MaterialTheme.typography.bodyMedium,
@@ -192,7 +190,6 @@ fun ServiceItem(
                 overflow = TextOverflow.Ellipsis
             )
 
-            // Status text with dynamic color
             Text(
                 text = status,
                 style = MaterialTheme.typography.bodyMedium,

@@ -64,7 +64,8 @@ sealed class BottomNavRoutes {
 
     @Serializable
     data class DetailedLocalJob(val key: Int) : BottomNavRoutes()
-
+    @Serializable
+    data class DetailedLocalJobsImagesSlider(val key: Int, val selectedImagePosition: Int) : BottomNavRoutes()
 }
 
 @Serializable
@@ -115,9 +116,6 @@ sealed class  BookMarkRoutes{
 sealed class AccountAndProfileSettingsRoutes{
 
     @Serializable
-    data object Profile
-
-    @Serializable
     data class SwitchAccountType(val accountType: AccountType)
 
     @Serializable
@@ -127,7 +125,7 @@ sealed class AccountAndProfileSettingsRoutes{
     data object PersonalSettings : AccountAndProfileSettingsRoutes()
 
     @Serializable
-    data object ChangeProfilePassword : AccountAndProfileSettingsRoutes()
+    data object ChangeAccountPassword : AccountAndProfileSettingsRoutes()
 
     @Serializable
     data object EditProfileFirstName : AccountAndProfileSettingsRoutes()

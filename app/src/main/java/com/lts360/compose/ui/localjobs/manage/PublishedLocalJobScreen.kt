@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
 import coil3.compose.AsyncImage
 import com.lts360.api.utils.ResultError
+import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.localjobs.manage.viewmodels.PublishedLocalJobViewModel
 import com.lts360.compose.ui.localjobs.models.EditableLocalJob
 import com.lts360.compose.ui.services.manage.NoInternetText
@@ -144,7 +145,7 @@ fun PublishedLocalJobScreen(
         }
 
         if (isLoading) {
-            CircularProgressIndicator(
+            CircularProgressIndicatorLegacy(
                 modifier = Modifier.align(Alignment.Center),
                 strokeWidth = 4.dp
             )

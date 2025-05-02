@@ -407,7 +407,7 @@ fun ManagePublishedUsedProductListingScreen(
                     },
                     title = {
                         Text(
-                            text = "Manage Published Seconds",
+                            text = "Manage Published Second Hands",
                             style = MaterialTheme.typography.titleMedium
                         )
                     },

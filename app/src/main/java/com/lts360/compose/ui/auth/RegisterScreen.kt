@@ -93,7 +93,6 @@ fun RegisterScreen(
     val isTermsAccepted by viewModel.isTermsAccepted.collectAsState()
     val loading by viewModel.isLoading.collectAsState()
 
-    // Collecting error messages
     val firstNameError by viewModel.firstNameError.collectAsState()
     val lastNameError by viewModel.lastNameError.collectAsState()
     val emailError by viewModel.emailError.collectAsState()
@@ -122,7 +121,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // First Name Input
             TextFieldWithLabel(
                 value = firstName,
                 onValueChange = { viewModel.onFirstNameChanged(it) },
@@ -133,7 +131,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Last Name Input
             TextFieldWithLabel(
                 value = lastName,
                 onValueChange = { viewModel.onLastNameChanged(it)},
@@ -143,7 +140,6 @@ fun RegisterScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Email Input
             TextFieldWithLabel(
                 value = email,
                 onValueChange = { viewModel.onEmailChanged(it) },
@@ -157,7 +153,6 @@ fun RegisterScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Password Input
             PasswordFieldWithLabel(
                 value = password,
                 onValueChange = { viewModel.onPasswordChanged(it)  },
@@ -167,7 +162,6 @@ fun RegisterScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Confirm Password Input
             PasswordFieldWithLabel(
                 value = confirmPassword,
                 onValueChange = { viewModel.onConfirmPasswordChanged(it) },
@@ -178,7 +172,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Terms and Conditions Checkbox
 
             Column {
 
@@ -196,7 +189,6 @@ fun RegisterScreen(
                     )
                 }
 
-                // Display error message if there's an error
                 termsError?.let {
 
                     Text(
@@ -266,7 +258,7 @@ fun RegisterScreen(
             }, content = {
                 if (loading) {
                     CircularProgressIndicator(
-                        color = Color.White, // Change this to any color you prefer
+                        color = Color.White,
                         strokeWidth = 2.dp,
                         modifier = Modifier.size(ButtonDefaults.IconSize),
                     )
@@ -295,8 +287,6 @@ fun RegisterScreen(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Google Sign Up Button
-
 
                 GoogleButton(
                     text = "Sign Up with Google",
@@ -344,27 +334,21 @@ fun RegisterScreen(
 
 @Composable
 fun LoadingDialog() {
-
-    // Overlay background to dim the content behind the dialog
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable(interactionSource = remember {
-                MutableInteractionSource()
-            }, indication = null) {} // Consume clicks
-            .background(Color.Black.copy(alpha = 0.5f)) // Semi-transparent background
-            .wrapContentSize(Alignment.Center) // Center the dialog
+            .background(Color.Black.copy(alpha = 0.5f))
+            .wrapContentSize(Alignment.Center)
     ) {
-        // Dialog content
         Box(
             modifier = Modifier
                 .wrapContentSize()
-                .background(Color.White, shape = RoundedCornerShape(8.dp)) // Rounded corners
-                .padding(16.dp) // Padding for the dialog
+                .background(Color.White, shape = RoundedCornerShape(8.dp))
+                .padding(16.dp)
         ) {
             CircularProgressIndicatorLegacy(
                 modifier = Modifier
-                    .padding(8.dp) // Padding around the indicator
+                    .padding(8.dp)
             )
         }
     }

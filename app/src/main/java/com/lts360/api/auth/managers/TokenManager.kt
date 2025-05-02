@@ -61,34 +61,28 @@ class TokenManager @Inject constructor(@ApplicationContext  context: Context) {
         return signInMethod=="google" || signInMethod=="legacy_email" || signInMethod== "guest"
     }
 
-    // Get access token
     fun getAccessToken(): String {
         return encryptedSharedPreferences.getString(ACCESS_TOKEN_KEY, "") ?: ""
     }
 
-    // Get refresh token
     fun getRefreshToken(): String {
         return encryptedSharedPreferences.getString(REFRESH_TOKEN_KEY, "") ?: ""
     }
 
-    // Save access token
     fun saveAccessToken(token: String?) {
         encryptedSharedPreferences.edit { putString(ACCESS_TOKEN_KEY, token) }
     }
 
-    // Save refresh token
     fun saveRefreshToken(token: String?) {
         encryptedSharedPreferences.edit { putString(REFRESH_TOKEN_KEY, token) }
     }
 
 
-    // Save refresh token
     fun saveSignInMethod(method: String) {
         encryptedSharedPreferences.edit { putString(SIGN_IN_METHOD, method) }
     }
 
 
-    // Clear tokens
     private fun cleaSignInTokens() {
         encryptedSharedPreferences.edit {
             remove(ACCESS_TOKEN_KEY)
@@ -98,7 +92,6 @@ class TokenManager @Inject constructor(@ApplicationContext  context: Context) {
     }
 
 
-    // Logout method to clear tokens
     fun logout(method: String) {
         when(method){
             "google"->{

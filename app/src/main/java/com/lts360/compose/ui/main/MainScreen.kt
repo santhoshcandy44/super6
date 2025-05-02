@@ -111,11 +111,9 @@ fun MainScreen(
     val notificationCount by viewModel.notificationCount.collectAsState(0)
 
 
-    // Remember the previous connection state with state preservation
     var wasConnected by rememberSaveable { mutableStateOf(false) }
-    var isDismissed by rememberSaveable { mutableStateOf(false) } // State to track if the user dismissed the floating view
+    var isDismissed by rememberSaveable { mutableStateOf(false) }
 
-    // Observe the connectivity status using observeAsState
     val isConnected by viewModel.isConnectedEvent.collectAsState(null)
 
 
@@ -123,11 +121,10 @@ fun MainScreen(
 
 
     val signInMethod = viewModel.signInMethod
-//    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
 
     val coroutineScope = rememberCoroutineScope()
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var showDialog by remember {
         mutableStateOf(
@@ -148,31 +145,10 @@ fun MainScreen(
         }
     }
 
-    // Custom Alert Dialog
-    if (showDialog) {
-        NotificationPermissionAlertDialog(
-            onDismiss = {
-                viewModel.setNotificationPermissionDismissed()
-                showDialog = false
-            },
-            onConfirm = {
-                // Handle confirm action here
-                showDialog = false
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
-            },
-            onCancel = {
-                viewModel.setNotificationPermissionDismissed()
-                // Handle cancel action here
-                showDialog = false
-            }
-        )
-    }
 
-    BackHandler(sheetState.currentValue == SheetValue.Expanded) {
+    BackHandler(modalBottomSheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
-            sheetState.hide()
+            modalBottomSheetState.hide()
         }
     }
 
@@ -183,7 +159,9 @@ fun MainScreen(
         homeViewModel.isSelectedServiceItemNull(),
         homeViewModel.isSelectedServiceOwnerServiceItemNull(),
         homeViewModel.isSelectedUsedProductListingItemNull(),
-        homeViewModel.isSelectedServiceOwnerUsedProductListingItemNull()
+        homeViewModel.isSelectedServiceOwnerUsedProductListingItemNull(),
+        homeViewModel.isSelectedLocalJobItemNull()
+
     )
 
     val allowedScreens: List<BottomBar> = listOf(
@@ -210,9 +188,7 @@ fun MainScreen(
     var currentScreen by remember { mutableStateOf<BottomBar?>(null) }
 
 
-    // Step 6: Use LaunchedEffect to update the visibility of the bottom bar based on the route
     LaunchedEffect(currentBackStackEntry) {
-        // Step 3: Get the current route and clean it (remove path and query parameters)
         val hierarchy = currentBackStackEntry?.destination?.hierarchy
 
         currentScreen = allowedScreens.find { screen ->
@@ -229,13 +205,11 @@ fun MainScreen(
 
     }
 
-    var dockedFloatingActionButtonVisibility by rememberSaveable { mutableStateOf(false) } // Initially hidden
-
+    var dockedFloatingActionButtonVisibility by rememberSaveable { mutableStateOf(false) }
 
 
     Scaffold(
         floatingActionButton = {
-
             if (isHomeScreen && dockedFloatingActionButtonVisibility) {
                 FloatingActionButton(
                     onNavigateUpUsedProductListing,
@@ -254,23 +228,20 @@ fun MainScreen(
                 }
             }
         },
-
         floatingActionButtonPosition = FabPosition.Center,
-
         bottomBar = {
 
             if (bottomNavVisibility) {
                 BottomBar(
                     navController,
                     signInMethod,
-//                    scrollBehavior,
                     messageCount,
                     notificationCount,
                     currentScreen
 
                 ) {
                     coroutineScope.launch {
-                        sheetState.expand()
+                        modalBottomSheetState.expand()
                     }
                 }
             }
@@ -303,7 +274,7 @@ fun MainScreen(
             onNavigateUpBookmarkedServices = onNavigateUpBookmarkedServices,
             {
                 coroutineScope.launch {
-                    sheetState.expand()
+                    modalBottomSheetState.expand()
                 }
             },
 
@@ -323,9 +294,8 @@ fun MainScreen(
         )
 
     }
-    // Check if isConnected has a value
-    isConnected?.let { connectionState ->
 
+    isConnected?.let { connectionState ->
 
         when {
             connectionState && !wasConnected -> {
@@ -334,34 +304,26 @@ fun MainScreen(
                     isDismissed = false
                 }
 
-                // If currently connected and previously was not connected
-
             }
 
             !connectionState && !isDismissed -> {
-                // If currently disconnected
-                ShowFloatingViewInternetDisconnected(
-                    onDismiss = { /* Handle dismiss logic here */
-                        isDismissed = true
-                    }
-                )
+                ShowFloatingViewInternetDisconnected(onDismiss = { isDismissed = true })
                 wasConnected = false
 
             }
-            // If already connected, do nothing
         }
     }
 
-    if (sheetState.currentValue == SheetValue.Expanded) {
+    if (modalBottomSheetState.isVisible) {
         ModalBottomSheet(
             {
                 coroutineScope.launch {
-                    sheetState.hide()
+                    modalBottomSheetState.hide()
                 }
             },
             dragHandle = null,
             shape = RectangleShape,
-            sheetState = sheetState
+            sheetState = modalBottomSheetState
         ) {
             ForceWelcomeScreen(
                 onLogInNavigate = {
@@ -384,12 +346,30 @@ fun MainScreen(
 
                 }) {
                 coroutineScope.launch {
-                    sheetState.hide()
+                    modalBottomSheetState.hide()
                 }
             }
         }
     }
 
+    if (showDialog) {
+        NotificationPermissionAlertDialog(
+            onDismiss = {
+                viewModel.setNotificationPermissionDismissed()
+                showDialog = false
+            },
+            onConfirm = {
+                showDialog = false
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            },
+            onCancel = {
+                viewModel.setNotificationPermissionDismissed()
+                showDialog = false
+            }
+        )
+    }
 
 }
 

@@ -81,10 +81,8 @@ fun ManagePublishedServicesScreen(
        /* editableService?.let {
             viewModel.inValidateSelectedService()
         }*/
-        // Navigate back manually (if needed)
         navHostController.popBackStack()
     }
-
 
     val context = LocalContext.current
 
@@ -95,7 +93,6 @@ fun ManagePublishedServicesScreen(
     var bottomSheetState by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(bottomSheetState) {
-
         if (bottomSheetState) {
             sheetState.expand()
         } else {
@@ -127,88 +124,86 @@ fun ManagePublishedServicesScreen(
         ) { contentPadding ->
 
 
-            Box(modifier = Modifier.padding(contentPadding)) {
-                ManagePublishedServicesOptions(
-                    onManageServiceInfoClick = {
+            ManagePublishedServicesOptions(
+                onManageServiceInfoClick = {
 
-                        editableService?.let {
-                            viewModel.loadManageServiceInfoDetails(it)
-                            onNavigateUpManageServiceInfo()
-                        }
-
-                    },
-                    onManageServiceThumbnailClick = {
-                        editableService?.let {
-                            onNavigateUpManageServiceThumbnail()
-                        }
-
-                    },
-                    onManageServiceImagesClick = {
-                        editableService?.let {
-                            viewModel.loadManageImages(it)
-                            onNavigateUpManageServiceImages()
-
-                        }
-
-                    },
-                    onManageServicePlansClick = {
-                        editableService?.let {
-                            viewModel.loadManageServicePlans(it)
-                            onNavigateUpManageServicePlans()
-                        }
-
-                    },
-                    onManageServiceLocationClick = {
-                        editableService?.let {
-                            viewModel.loadManageLocationDetails(it)
-                            onNavigateUpManageServiceLocation()
-                        }
-
-                    },
-                    onDeleteServiceClick = {
-                        bottomSheetState=true
+                    editableService?.let {
+                        viewModel.loadManageServiceInfoDetails(it)
+                        onNavigateUpManageServiceInfo()
                     }
-                )
 
-                if (bottomSheetState) {
+                },
+                onManageServiceThumbnailClick = {
+                    editableService?.let {
+                        onNavigateUpManageServiceThumbnail()
+                    }
 
-                    ModalBottomSheet(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .safeDrawingPadding(),
-                        dragHandle = null,
-                        onDismissRequest = {
-                            bottomSheetState=false
-                        },
-                        sheetState = sheetState,
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
+                },
+                onManageServiceImagesClick = {
+                    editableService?.let {
+                        viewModel.loadManageImages(it)
+                        onNavigateUpManageServiceImages()
+
+                    }
+
+                },
+                onManageServicePlansClick = {
+                    editableService?.let {
+                        viewModel.loadManageServicePlans(it)
+                        onNavigateUpManageServicePlans()
+                    }
+
+                },
+                onManageServiceLocationClick = {
+                    editableService?.let {
+                        viewModel.loadManageLocationDetails(it)
+                        onNavigateUpManageServiceLocation()
+                    }
+
+                },
+                onDeleteServiceClick = {
+                    bottomSheetState=true
+                },
+                modifier = Modifier.padding(contentPadding)
+            )
+
+            if (bottomSheetState) {
+
+                ModalBottomSheet(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .safeDrawingPadding(),
+                    dragHandle = null,
+                    onDismissRequest = {
+                        bottomSheetState=false
+                    },
+                    sheetState = sheetState,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
 
 
-                        DeleteInfoBottomSheet("Are you sure you want to delete this service? This action cannot be undone.",
-                            {
+                    DeleteInfoBottomSheet("Are you sure you want to delete this service? This action cannot be undone.",
+                        {
 
-                                editableService?.let { editableServiceNonNull ->
-                                    viewModel.onDeleteService(userId, editableService!!.serviceId, {
-                                        viewModel.removeSelectedService(editableServiceNonNull.serviceId)
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                                        onNavigatePop()
+                            editableService?.let { editableServiceNonNull ->
+                                viewModel.onDeleteService(userId, editableService!!.serviceId, {
+                                    viewModel.removeSelectedService(editableServiceNonNull.serviceId)
+                                    Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                    onNavigatePop()
 
-                                    }) {
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                            .show()
-                                    }
+                                }) {
+                                    Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                        .show()
                                 }
-                                bottomSheetState=false
-
-                            }) {
+                            }
                             bottomSheetState=false
-                        }
 
+                        }) {
+                        bottomSheetState=false
                     }
+
                 }
             }
-
         }
 
         if (isLoading) {
@@ -228,9 +223,10 @@ private fun ManagePublishedServicesOptions(
     onManageServicePlansClick: () -> Unit,
     onManageServiceLocationClick: () -> Unit,
     onDeleteServiceClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
@@ -238,7 +234,6 @@ private fun ManagePublishedServicesOptions(
     ) {
 
 
-        // Card items for service info, images, plans, and location
         ServiceOptionCard(
             title = "Service Info",
             description = "Title, Short Description, Long Description and more.",

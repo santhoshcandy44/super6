@@ -72,12 +72,10 @@ fun ManageUsedProductListingNavHost(
     }
 
 
-    // Define the AnimatedNavHost
     NavHost(
         navController = navController,
         startDestination = defaultValue
     ) {
-        // Entry Screen
 
         slideComposable<ManageUsedProductListingRoutes.ManageUsedProductListing> {
             ManageUsedProductListingScreen(

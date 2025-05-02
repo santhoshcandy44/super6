@@ -24,7 +24,7 @@ fun rememberCustomBottomNavController(
     isSelectedServiceOwnerServiceItemNull:Boolean,
     isSelectedUsedProductListingItemNull:Boolean,
     isSelectedServiceOwnerUsedProductListingItemNull:Boolean,
-
+    isSelectedLocalJobItemNull: Boolean,
     vararg navigators: Navigator<out NavDestination>,
 ): NavHostController {
     val context = LocalContext.current
@@ -32,7 +32,9 @@ fun rememberCustomBottomNavController(
         isSelectedServiceItemNull,
         isSelectedServiceOwnerServiceItemNull,
         isSelectedUsedProductListingItemNull,
-        isSelectedServiceOwnerUsedProductListingItemNull)) {
+        isSelectedServiceOwnerUsedProductListingItemNull,
+        isSelectedLocalJobItemNull
+        )) {
         createNavController(context)
     }
         .apply {
@@ -53,6 +55,7 @@ private fun navControllerSaver(context: Context, lasEntry:String?,
                                isSelectedServiceOwnerServiceItemNull:Boolean,
                                isSelectedUsedProductListingItemNull:Boolean,
                                isSelectedSecondsOwnerUsedProductListingItemNull:Boolean,
+                               isSelectedLocalJobItemNull : Boolean,
 
 ): Saver<NavHostController, *> =
     Saver(
@@ -60,11 +63,9 @@ private fun navControllerSaver(context: Context, lasEntry:String?,
         restore = {
             createNavController(context).apply {
 
-
-                // Clean the current route by removing path and query parameters
                 val cleanedRoute = lasEntry
-                    ?.replace(Regex("/\\{[^}]+\\}"), "") // Remove path parameters
-                    ?.replace(Regex("\\?.*"), "")?.trim() // Optionally trim whitespace
+                    ?.replace(Regex("/\\{[^}]+\\}"), "")
+                    ?.replace(Regex("\\?.*"), "")?.trim()
 
                 val navScreens  = listOf(
                     BottomBar.Home::class,
@@ -91,10 +92,13 @@ private fun navControllerSaver(context: Context, lasEntry:String?,
                     cleanedRoute == BottomNavRoutes.DetailedSeconds::class.qualifiedName.orEmpty() ||
                     cleanedRoute == BottomNavRoutes.DetailedSecondsImagesSlider::class.qualifiedName.orEmpty() ||
 
-
                     cleanedRoute == BottomNavRoutes.SecondsOwnerProfile::class.qualifiedName.orEmpty() ||
                     cleanedRoute == BottomNavRoutes.DetailedSecondsFeedUser::class.qualifiedName.orEmpty() ||
-                    cleanedRoute == BottomNavRoutes.DetailedSecondsFeedUserImagesSlider::class.qualifiedName.orEmpty()
+                    cleanedRoute == BottomNavRoutes.DetailedSecondsFeedUserImagesSlider::class.qualifiedName.orEmpty() ||
+
+                    cleanedRoute == BottomNavRoutes.DetailedLocalJob::class.qualifiedName.orEmpty() ||
+                    cleanedRoute == BottomNavRoutes.DetailedLocalJobsImagesSlider::class.qualifiedName.orEmpty()
+
                     ){
 
 
@@ -132,14 +136,22 @@ private fun navControllerSaver(context: Context, lasEntry:String?,
                                 add(BottomNavRoutes.DetailedSecondsFeedUserImagesSlider::class)
                             }
                     }
+
+                    if(!isSelectedLocalJobItemNull){
+                        allowedScreens = allowedScreens.toMutableList()
+                            .apply {
+                                add(BottomNavRoutes.DetailedLocalJob::class)
+                                add(BottomNavRoutes.DetailedLocalJobsImagesSlider::class)
+                            }
+                    }
                 }
 
                 val navRoutes =  navScreens.map { it.qualifiedName.orEmpty() }
-                // Step 2: Get the list of allowed screens' qualified names
+
                 val allowedRoutes = allowedScreens.map { it.qualifiedName.orEmpty() }
 
                 if (cleanedRoute in allowedRoutes || cleanedRoute in navRoutes) {
-                    restoreState(it) // Restore state
+                    restoreState(it)
                 }
 
 

@@ -57,6 +57,7 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.components.findActivity
+import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.localjobs.manage.viewmodels.LocalJobWorkFlowViewModel
 import com.lts360.compose.ui.localjobs.manage.viewmodels.PublishedLocalJobViewModel
 import com.lts360.compose.ui.main.models.CurrentLocation
@@ -680,11 +681,11 @@ private fun LocationBottomSheetContent(
                 .fillMaxSize()
                 .clickable(interactionSource = remember {
                     MutableInteractionSource()
-                }, indication = null) {} // Consume clicks
-                .background(Color.Black.copy(alpha = 0.5f)) // Semi-transparent background
+                }, indication = null) {}
+                .background(Color.Black.copy(alpha = 0.5f))
                 .wrapContentSize(Alignment.Center)) {
 
-                CircularProgressIndicator(modifier = Modifier.padding(8.dp))
+                CircularProgressIndicatorLegacy(modifier = Modifier.padding(8.dp))
             }
 
         }
