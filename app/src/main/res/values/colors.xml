@@ -5,11 +5,13 @@
     <color name="colorPrimary">#00BFFF</color>
     <color name="colorPrimaryDark">#1DA1F2</color>
     <color name="colorAccent">#00BFFF</color>
-    <color name="notification_color">#00BFFF</color> <!-- Replace with your preferred color -->
+    <color name="notification_color">#00BFFF</color>
 
 
     <color name="color_primary">#00BFFF</color>
     <color name="color_primary_dark">#1DA1F2</color>
     <color name="color_accent">#00BFFF</color>
+
+    <color name="text_indicator_blue">#0080FE</color>
 
 </resources>

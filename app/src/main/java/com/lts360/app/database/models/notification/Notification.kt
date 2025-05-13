@@ -12,4 +12,6 @@ data class Notification(
     @ColumnInfo(name = "message") val message: String,
     @ColumnInfo(name = "status") val status: String,
     @ColumnInfo(name = "type") val type: String,
-    @ColumnInfo(name = "timestamp") val timestamp: Long)
+    @ColumnInfo(name = "timestamp") val timestamp: Long,
+    @ColumnInfo(name = "data") val data: String?=null
+)

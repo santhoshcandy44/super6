@@ -47,11 +47,12 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ImagesSliderScreen(
+    key: Int,
     selectedImagePosition: Int, viewModel: ServicesViewModel,
     onPopBackStack: () -> Unit
 ) {
 
-    val selectedService by viewModel.selectedItem.collectAsState()
+    val selectedService by viewModel.getServiceRepository(key).selectedItem.collectAsState()
 
     ImagesSliderScreenContent(selectedService, selectedImagePosition, onPopBackStack)
 }
@@ -88,7 +89,7 @@ fun BookmarkedImagesSliderScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImagesSliderScreenContent(
+private fun ImagesSliderScreenContent(
     selectedService: Service?,
     selectedImagePosition: Int,
     onPopBackStack: () -> Unit
@@ -98,20 +99,15 @@ fun ImagesSliderScreenContent(
             TopAppBar(
                 modifier = Modifier.shadow(2.dp),
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = dropUnlessResumed {
-                            onPopBackStack()
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back Icon"
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Viewer",
-                            color = Color.White,
-                            style = MaterialTheme.typography.titleMedium
+                    Text(text = "Viewer", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                },
+                navigationIcon = {
+                    IconButton(onClick = dropUnlessResumed {
+                        onPopBackStack()
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back Icon"
                         )
                     }
                 },

@@ -70,19 +70,23 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.lts360.R
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.components.utils.PermissionsUtils.Companion.isNotificationPermissionGranted
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
 import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
+import com.lts360.compose.ui.localjobs.LocalJobsViewmodel
 import com.lts360.compose.ui.main.navhosts.BottomNavHost
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
+import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.services.manage.ManageServicesActivity
 import com.lts360.compose.ui.viewmodels.HomeActivityViewModel
 import com.lts360.compose.ui.viewmodels.MoreViewModel
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
+import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -90,18 +94,25 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
+    viewModel: HomeActivityViewModel,
     homeViewModel: HomeViewModel,
     chatListViewModel: ChatListViewModel,
     notificationViewModel: NotificationViewModel,
     moreViewModel: MoreViewModel,
-    viewModel: HomeActivityViewModel,
+    servicesViewModel: ServicesViewModel,
+    secondsViewModel: SecondsViewmodel,
+    localJobsViewModel: LocalJobsViewmodel,
     onProfileNavigateUp: () -> Unit,
     onAccountAndProfileSettingsNavigateUp: (String) -> Unit,
     onNavigateUpBookmarkedServices: () -> Unit,
     onManageIndustriesAndInterestsNavigateUp: () -> Unit,
     onNavigateUpGuestManageIndustriesAndInterests: () -> Unit,
     onNavigateUpChatWindow: (ChatUser, Int, Long) -> Unit,
-    onNavigateUpUsedProductListing: () -> Unit
+    onNavigateUpUsedProductListing: () -> Unit,
+    onNavigateUpDetailedService:(Int)-> Unit,
+    onNavigateUpServiceOwnerProfile: (Int, Long) -> Unit,
+    onNavigateUpDetailedSeconds:(Int)-> Unit,
+    onNavigateUpDetailedLocalJobs:(Int)-> Unit
 ) {
 
 
@@ -152,17 +163,6 @@ fun MainScreen(
         }
     }
 
-    var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
-
-    val navController = rememberCustomBottomNavController(
-        lastEntry,
-        homeViewModel.isSelectedServiceItemNull(),
-        homeViewModel.isSelectedServiceOwnerServiceItemNull(),
-        homeViewModel.isSelectedUsedProductListingItemNull(),
-        homeViewModel.isSelectedServiceOwnerUsedProductListingItemNull(),
-        homeViewModel.isSelectedLocalJobItemNull()
-
-    )
 
     val allowedScreens: List<BottomBar> = listOf(
         BottomBar.Home(),
@@ -173,14 +173,9 @@ fun MainScreen(
         BottomBar.More
     )
 
+    val navController = rememberNavController()
+
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
-
-    LaunchedEffect(currentBackStackEntry) {
-        lastEntry = navController.currentBackStackEntry?.destination?.route
-    }
-
-    val bottomNavVisibility by viewModel.bottomNavVisibility.collectAsState()
-
 
     var isHomeScreen by rememberSaveable { mutableStateOf(false) }
 
@@ -194,10 +189,6 @@ fun MainScreen(
         currentScreen = allowedScreens.find { screen ->
             hierarchy?.firstOrNull()?.hasRoute(screen::class) == true
         }
-
-        viewModel.updateBottomNavVisibility(hierarchy?.any { nonNullDestination ->
-            allowedScreens.any { nonNullDestination.hasRoute(it::class) }
-        } == true)
 
         isHomeScreen = hierarchy?.any { nonNullDestination ->
             nonNullDestination.hasRoute(BottomBar.Home::class)
@@ -231,18 +222,16 @@ fun MainScreen(
         floatingActionButtonPosition = FabPosition.Center,
         bottomBar = {
 
-            if (bottomNavVisibility) {
-                BottomBar(
-                    navController,
-                    signInMethod,
-                    messageCount,
-                    notificationCount,
-                    currentScreen
+            BottomBar(
+                navController,
+                signInMethod,
+                messageCount,
+                notificationCount,
+                currentScreen
 
-                ) {
-                    coroutineScope.launch {
-                        modalBottomSheetState.expand()
-                    }
+            ) {
+                coroutineScope.launch {
+                    modalBottomSheetState.expand()
                 }
             }
 
@@ -250,12 +239,15 @@ fun MainScreen(
         }) { contentPadding ->
 
         BottomNavHost(
+            navController,
             homeViewModel,
+            servicesViewModel,
+            secondsViewModel,
+            localJobsViewModel,
             chatListViewModel,
             notificationViewModel,
             moreViewModel,
             boards,
-            navController,
             modifier = Modifier.padding(contentPadding),
             onProfileNavigateUp = {
                 onProfileNavigateUp()
@@ -290,7 +282,11 @@ fun MainScreen(
             onNavigateUpChatWindow,
             {
                 dockedFloatingActionButtonVisibility = it
-            }, onNavigateUpGuestManageIndustriesAndInterests
+            }, onNavigateUpGuestManageIndustriesAndInterests,
+            onNavigateUpDetailedService,
+            onNavigateUpServiceOwnerProfile,
+            onNavigateUpDetailedSeconds,
+            onNavigateUpDetailedLocalJobs
         )
 
     }

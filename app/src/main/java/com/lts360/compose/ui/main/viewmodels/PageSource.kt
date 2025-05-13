@@ -1,6 +1,5 @@
 package com.lts360.compose.ui.main.viewmodels
 
-import androidx.lifecycle.SavedStateHandle
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
 import com.lts360.api.utils.ResultError
@@ -17,7 +16,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.cancellation.CancellationException
 
 class PageSource(
-    val savedStateHandle: SavedStateHandle,
     private val pageSize: Int = 1
 ) {
     private val _initialLoadState = MutableStateFlow(true)

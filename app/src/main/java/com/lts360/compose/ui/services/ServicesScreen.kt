@@ -83,17 +83,18 @@ import com.lts360.compose.ui.main.common.NoInternetScreen
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.onboarding.ChooseIndustryInfo
 import com.lts360.compose.ui.onboarding.GuestChooseIndustryInfo
-import com.lts360.compose.ui.services.navhosts.ServiceReviewsNavHost
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
+import com.lts360.libs.ui.ShortToast
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServicesScreen(
-    isTopBarVisible:Boolean,
+    key: Int,
+    isTopBarVisible: Boolean,
     onNavigateUpServiceDetailedScreen: (Service) -> Unit,
     onNavigateUpServiceOwnerProfile: (Service, Long) -> Unit,
     viewModel: ServicesViewModel
@@ -102,15 +103,17 @@ fun ServicesScreen(
 
     val userId = viewModel.userId
 
-    val searchQuery = viewModel.submittedQuery
-    val onlySearchBar = viewModel.onlySearchBar
+    val serviceRepository = viewModel.getServiceRepository(key)
+
+    val searchQuery = serviceRepository.submittedQuery
+    val onlySearchBar = serviceRepository.onlySearchBar
 
     val context = LocalContext.current
 
     val isGuest = viewModel.isGuest
 
 
-    val selectedItem by viewModel.selectedItem.collectAsState()
+    val selectedItem by serviceRepository.selectedItem.collectAsState()
 
 
     val scope = rememberCoroutineScope()
@@ -118,29 +121,28 @@ fun ServicesScreen(
     val commentsModalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
 
-    val initialLoadState by viewModel.pageSource.initialLoadState.collectAsState()
-    val isLoadingItems by viewModel.pageSource.isLoadingItems.collectAsState()
-    val isRefreshingItems by viewModel.pageSource.isRefreshingItems.collectAsState()
+    val initialLoadState by serviceRepository.pageSource.initialLoadState.collectAsState()
+    val isLoadingItems by serviceRepository.pageSource.isLoadingItems.collectAsState()
+    val isRefreshingItems by serviceRepository.pageSource.isRefreshingItems.collectAsState()
 
-    val items by viewModel.pageSource.items.collectAsState()
+    val items by serviceRepository.pageSource.items.collectAsState()
 
-    val hasNetworkError by viewModel.pageSource.hasNetworkError.collectAsState()
-    val hasAppendError by viewModel.pageSource.hasAppendError.collectAsState()
-    val hasMoreItems by viewModel.pageSource.hasMoreItems.collectAsState()
+    val hasNetworkError by serviceRepository.pageSource.hasNetworkError.collectAsState()
+    val hasAppendError by serviceRepository.pageSource.hasAppendError.collectAsState()
+    val hasMoreItems by serviceRepository.pageSource.hasMoreItems.collectAsState()
 
-    val industriesCount by viewModel.pageSource.industriesCount.collectAsState()
+    val industriesCount by serviceRepository.pageSource.industriesCount.collectAsState()
 
 
     val lazyListState = rememberLazyListState()
 
 
-    val lastLoadedItemPosition by viewModel.lastLoadedItemPosition.collectAsState()
+    val lastLoadedItemPosition by serviceRepository.lastLoadedItemPosition.collectAsState()
 
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.layoutInfo }
             .collect { layoutInfo ->
 
-                // Check if the last item is visible
                 val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull {
                     (it.key as? String)?.startsWith("lazy_items_") == true
                 }?.index
@@ -152,84 +154,81 @@ fun ServicesScreen(
                     && lastVisibleItemIndex == items.size - 10
                     && lastVisibleItemIndex >= lastLoadedItemPosition
                 ) {
-                    viewModel.updateLastLoadedItemPosition(if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex)
-                    // Call nextPage if last item is visible and not currently loading
+                    viewModel.updateLastLoadedItemPosition(
+                        key,
+                        if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex
+                    )
                     viewModel.nextPage(
+                        key,
                         userId,
                         searchQuery
-                    ) // Make sure to pass necessary parameters
+                    )
                 }
             }
     }
 
 
-    val connectivityManager = viewModel.connectivityManager
+    val connectivityManager = serviceRepository.connectivityManager
 
 
     val statusCallback: (NetworkConnectivityManager.STATUS) -> Unit = {
         when (it) {
             NetworkConnectivityManager.STATUS.STATUS_CONNECTED -> {
-                viewModel.updateLastLoadedItemPosition(-1)
-                viewModel.refresh(userId, searchQuery)
+                viewModel.updateLastLoadedItemPosition(key, -1)
+                viewModel.refresh(key, userId, searchQuery)
             }
 
             NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_INITIALLY -> {
-                viewModel.pageSource.setNetWorkError(true)
+                serviceRepository.pageSource.setNetWorkError(true)
             }
 
             NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_ON_COMPLETED_JOB -> {
-                viewModel.pageSource.setNetWorkError(true)
-                viewModel.pageSource.setRefreshingItems(false)
-                Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT)
-                    .show()
+                serviceRepository.pageSource.setNetWorkError(true)
+                serviceRepository.pageSource.setRefreshingItems(false)
+                ShortToast(context, "No internet connection")
             }
         }
     }
 
 
     val onRefresh: () -> Unit = {
-        viewModel.pageSource.setRefreshingItems(true)
+        serviceRepository.pageSource.setRefreshingItems(true)
         connectivityManager.checkForSeconds(
             Handler(Looper.getMainLooper()), statusCallback,
             4000
         )
     }
-
 
     val onRetry = {
-        viewModel.pageSource.setRefreshingItems(true)
+        serviceRepository.pageSource.setRefreshingItems(true)
         connectivityManager.checkForSeconds(
             Handler(Looper.getMainLooper()), statusCallback,
             4000
         )
     }
-
 
     val pullToRefreshState = rememberPullToRefreshState()
 
-
-
-    BackHandler(commentsModalBottomSheetState.currentValue == SheetValue.Expanded) {
+    BackHandler(commentsModalBottomSheetState.isVisible) {
         scope.launch {
             commentsModalBottomSheetState.hide()
         }
     }
 
-
-
-    Box(modifier = Modifier.pullToRefresh(isRefreshingItems, pullToRefreshState,
-        enabled = !(initialLoadState && items.isEmpty()) && isTopBarVisible,
-        threshold = 160.dp){ onRefresh() }) {
+    Box(modifier = Modifier.pullToRefresh(
+            isRefreshingItems, pullToRefreshState,
+            enabled = !(initialLoadState && items.isEmpty()) && isTopBarVisible,
+            threshold = 160.dp
+        ) { onRefresh() }) {
 
         LazyColumn(
             state = lazyListState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp) // Adjust the space between items
-
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
 
-            if(initialLoadState && items.isEmpty()){
+            if (initialLoadState && items.isEmpty()) {
                 if (onlySearchBar) {
                     item {
                         Box(modifier = Modifier.fillParentMaxSize()) {
@@ -247,9 +246,7 @@ fun ServicesScreen(
                         ShimmerServiceCard()
                     }
                 }
-            }
-
-            else if (hasNetworkError) {
+            } else if (hasNetworkError) {
                 item {
                     Box(modifier = Modifier.fillParentMaxSize()) {
                         NoInternetScreen(modifier = Modifier.align(Alignment.Center)) {
@@ -308,7 +305,7 @@ fun ServicesScreen(
                             onNavigateUpServiceDetailedScreen(item)
                         },
                         onItemOptionClick = {
-                            viewModel.setSelectedItem(item)
+                            viewModel.setSelectedItem(key, item)
                             scope.launch {
                                 serviceInfoBottomSheetState.expand()
                             }
@@ -317,13 +314,13 @@ fun ServicesScreen(
                             onNavigateUpServiceOwnerProfile(item, item.user.userId)
                         },
                         onReviewsClicked = {
-                            scope.launch {
+                           /* scope.launch {
                                 commentsModalBottomSheetState.expand()
                             }
                             if (selectedItem == item) {
                                 return@ServiceCard
                             }
-                            viewModel.loadReViewsSelectedItem(item)
+                            viewModel.loadReViewsSelectedItem(item)*/
                         },
                         location = item.location?.geo,
                         distance = item.distance?.let {
@@ -347,7 +344,6 @@ fun ServicesScreen(
                     )
                 }
 
-                // Loading indicator for appending more items
                 if (isLoadingItems) {
                     item {
                         Row(
@@ -368,7 +364,6 @@ fun ServicesScreen(
                     }
                 }
 
-                // Handle errors for appending items
                 if (hasAppendError) {
                     item {
                         Row(
@@ -385,6 +380,7 @@ fun ServicesScreen(
                                 modifier = Modifier
                                     .clickable {
                                         viewModel.retry(
+                                            key,
                                             userId,
                                             searchQuery
                                         )
@@ -432,20 +428,16 @@ fun ServicesScreen(
                     serviceInfoBottomSheetState.hide()
                 }
             },
-            shape = RectangleShape, // Set shape to square (rectangle)
+            shape = RectangleShape,
             sheetState = serviceInfoBottomSheetState,
-            dragHandle = null // Remove the drag handle
+            dragHandle = null
 
         ) {
 
 
-            // Sheet content
-            // Bookmark Section
             selectedItem?.let { nonNullSelectedItem ->
 
-                viewModel.setSelectedItem(
-                    nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked)
-                )
+                viewModel.setSelectedItem(key, nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked))
 
                 Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -456,20 +448,24 @@ fun ServicesScreen(
                             .clickable {
                                 if (nonNullSelectedItem.isBookmarked) {
                                     viewModel.setSelectedItem(
+                                        key,
                                         nonNullSelectedItem.copy(
                                             isBookmarked = false
                                         )
                                     )
 
                                     viewModel.onRemoveBookmark(
+                                        key,
                                         viewModel.userId,
                                         nonNullSelectedItem, onSuccess = {
                                             viewModel.setSelectedItem(
+                                                key,
                                                 nonNullSelectedItem.copy(
                                                     isBookmarked = false
                                                 )
                                             )
                                             viewModel.directUpdateServiceIsBookMarked(
+                                                key,
                                                 nonNullSelectedItem.serviceId,
                                                 false
                                             )
@@ -492,6 +488,7 @@ fun ServicesScreen(
                                                 .show()
 
                                             viewModel.setSelectedItem(
+                                                key,
                                                 nonNullSelectedItem.copy(
                                                     isBookmarked = true
                                                 )
@@ -503,24 +500,27 @@ fun ServicesScreen(
                                 } else {
 
                                     viewModel.setSelectedItem(
+                                        key,
                                         selectedItem?.copy(
                                             isBookmarked = true
                                         )
                                     )
 
                                     viewModel.onBookmark(
+                                        key,
                                         viewModel.userId,
                                         nonNullSelectedItem,
                                         onSuccess = {
 
-
                                             viewModel.setSelectedItem(
+                                                key,
                                                 nonNullSelectedItem.copy(
                                                     isBookmarked = true
                                                 )
                                             )
 
                                             viewModel.directUpdateServiceIsBookMarked(
+                                                key,
                                                 nonNullSelectedItem.serviceId,
                                                 true
                                             )
@@ -545,6 +545,7 @@ fun ServicesScreen(
                                                 .show()
 
                                             viewModel.setSelectedItem(
+                                                key,
                                                 nonNullSelectedItem.copy(
                                                     isBookmarked = false
                                                 )
@@ -641,7 +642,7 @@ fun ServicesScreen(
         }
     }
 
-    if (commentsModalBottomSheetState.currentValue == SheetValue.Expanded) {
+/*    if (commentsModalBottomSheetState.currentValue == SheetValue.Expanded) {
         ModalBottomSheet(
             {
                 scope.launch {
@@ -656,7 +657,7 @@ fun ServicesScreen(
             ServiceReviewsNavHost(userId, selectedItem, viewModel)
         }
 
-    }
+    }*/
 
 
 }
@@ -917,7 +918,7 @@ fun ServiceCard(
 
 
 @Composable
-fun ShimmerServiceCard(){
+fun ShimmerServiceCard() {
 
     Card(
         modifier = Modifier

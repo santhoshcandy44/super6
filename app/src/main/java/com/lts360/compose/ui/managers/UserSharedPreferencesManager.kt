@@ -3,6 +3,15 @@ package com.lts360.compose.ui.managers
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
+import com.lts360.compose.ui.managers.UserSharedPreferencesManager.sharedPreferences
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
 
 object UserSharedPreferencesManager {
@@ -58,7 +67,7 @@ object UserSharedPreferencesManager {
     }
 
     fun removeFcmToken() {
-        sharedPreferences.edit{ remove(KEY_FCM_TOKEN) }
+        sharedPreferences.edit { remove(KEY_FCM_TOKEN) }
     }
 
     fun setFirstLaunchCompleted() {
@@ -77,7 +86,7 @@ object UserSharedPreferencesManager {
         }
     }
 
-    fun isNotificationPermissionDismissed():Boolean {
+    fun isNotificationPermissionDismissed(): Boolean {
         return sharedPreferences.getBoolean(KEY_IS_NOTIFICATION_PERMISSION_DISMISSED, false)
 
     }
@@ -87,4 +96,30 @@ object UserSharedPreferencesManager {
     }
 
 
+}
+
+
+
+
+private val Context.userGeneralDataStore by preferencesDataStore(name = "user_general_preferences")
+
+@Singleton
+class UserGeneralPreferencesManager @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+
+    companion object {
+        private val KEY_LOCAL_JOB_ATTENTION_PROMPT_VISIBILITY = booleanPreferencesKey("local_job_attention_prompt_visibility")
+    }
+
+    val isDontAskAgainChecked: Flow<Boolean> = context.userGeneralDataStore.data
+        .map { preferences ->
+            preferences[KEY_LOCAL_JOB_ATTENTION_PROMPT_VISIBILITY] == true
+        }
+
+    suspend fun setLocalJobPersonalInfoPromptIsDontAskAgainChecked(value: Boolean) {
+        context.userGeneralDataStore.edit { preferences ->
+            preferences[KEY_LOCAL_JOB_ATTENTION_PROMPT_VISIBILITY] = value
+        }
+    }
 }

@@ -13,7 +13,7 @@ import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.DialogNavigator
 
 @Composable
-fun rememberManageLocalJobsCustomBottomNavController(
+fun rememberManageLocalJobsCustomNavController(
     lastEntry:String?,
     isSelectedUsedProductListingNull:Boolean,
     vararg navigators: Navigator<out NavDestination>,

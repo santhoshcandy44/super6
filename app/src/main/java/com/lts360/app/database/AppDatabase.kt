@@ -61,7 +61,7 @@ import java.io.IOException
         MessageMediaMetadata::class,
         MessageProcessingData::class,
         QRCodeEntity::class
-    ], version = 3,
+    ], version = 1,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

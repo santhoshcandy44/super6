@@ -14,5 +14,8 @@ sealed class ManageLocalJobRoutes  {
     @Serializable
     data object ManagePublishedLocalJob: ManageLocalJobRoutes()
 
+    @Serializable
+    data object ViewApplicantsPublishedLocalJob: ManageLocalJobRoutes()
+
 }
 

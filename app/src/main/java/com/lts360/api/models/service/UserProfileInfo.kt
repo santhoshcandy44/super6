@@ -32,6 +32,18 @@ data class UserProfileInfo(
     @SerializedName("email")
     val email: String,
 
+    @SerializedName("is_email_verified")
+    val isEmailVerified: Boolean,
+
+    @SerializedName("phone_country_code")
+    val phoneCountryCode: Boolean,
+
+    @SerializedName("phone_number")
+    val phoneNumber: Boolean,
+
+    @SerializedName("is_phone_verified")
+    val isPhoneVerified: Boolean,
+
     @SerializedName("profile_pic_url")
     val profilePicUrl: String?,
 
@@ -53,9 +65,8 @@ data class UserProfileInfo(
     @SerializedName("socket_id")
     val socketId: String,
 
-    @SerializedName("location") val location: UserLocationInfo?=null,
-
-    @SerializedName("is_email_verified") val isEmailVerified: Boolean)
+    @SerializedName("location") val location: UserLocationInfo?=null
+)
 
 
 
@@ -77,26 +88,38 @@ data class FeedUserProfileInfo(
     @SerializedName("email")
     val email: String,
 
+    @SerializedName("is_email_verified") val isEmailVerified: Boolean,
+
+    @SerializedName("phone_country_code")
+    val phoneCountryCode: String?,
+
+    @SerializedName("phone_number")
+    val phoneNumber: String?,
+
+    @SerializedName("is_phone_verified")
+    val isPhoneVerified: Boolean,
+
     @SerializedName("profile_pic_url")
     val profilePicUrl: String?,
 
     @SerializedName("profile_pic_url_96x96")
     val profilePicUrl96By96: String?,
 
+    @SerializedName("geo")
+    val geo: String?,
+
     @SerializedName("created_at")
     val createdAt: String,
 
     @SerializedName("online")
-    val isOnline: Boolean,
-
-    @SerializedName("is_email_verified") val isEmailVerified: Boolean):Parcelable
-
+    val isOnline: Boolean
+):Parcelable
 
 
 
 
-@kotlinx.serialization.Serializable
-// Model for the user's location
+
+@Serializable
 data class UserLocationInfo(
 
     @SerializedName("latitude") val latitude: Double,

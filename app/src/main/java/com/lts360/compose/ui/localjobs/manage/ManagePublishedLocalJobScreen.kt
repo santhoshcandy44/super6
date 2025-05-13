@@ -107,13 +107,12 @@ fun ManagePublishedLocalJobScreen(
     val userId = viewModel.userId
 
     val localJob by viewModel.localJob.collectAsState()
-    val maritalStatusUnits = viewModel.maritalStatusUnits
     val salaryUnits = viewModel.salaryUnits
     val errors by viewModel.errors.collectAsState()
 
     val isLoading by viewModel.isLoading.collectAsState()
 
-    val editableService by viewModel.selectedLocalJob.collectAsState()
+    val editableService by viewModel.selectedItem.collectAsState()
 
     val isUpdating by viewModel.isUpdating.collectAsState()
     val isDeleting by viewModel.isDeleting.collectAsState()
@@ -262,6 +261,7 @@ fun ManagePublishedLocalJobScreen(
                 bottomSheetScaffoldState.bottomSheetState.hide()
             }
         } else {
+            viewModel.isSelectedLocalJobNull()
             onPopBackStack()
         }
     }
@@ -381,7 +381,7 @@ fun ManagePublishedLocalJobScreen(
                     },
                     title = {
                         Text(
-                            text = "Manage Published Seconds",
+                            text = "Manage Published Local Jobs",
                             style = MaterialTheme.typography.titleMedium
                         )
                     },
@@ -570,94 +570,98 @@ fun ManagePublishedLocalJobScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    ExposedDropdownMenuBox(
-                                        expanded = salaryExpanded,
-                                        onExpandedChange = {
-                                            salaryExpanded = !salaryExpanded
-                                        },
-                                        modifier = Modifier
-                                            .background(
-                                                MaterialTheme.colorScheme.surface,
-                                                shape = RoundedCornerShape(4.dp)
-                                            )
-                                            .weight(1f)
-                                    ) {
-                                        OutlinedTextField(
-                                            value = localJob.salaryUnit,
-                                            onValueChange = {},
-                                            readOnly = true,
-                                            label = { Text("Salary") },
-                                            trailingIcon = {
-                                                ExposedDropdownMenuDefaults.TrailingIcon(
-                                                    expanded = salaryExpanded
-                                                )
-                                            },
-                                            modifier = Modifier
-                                                .menuAnchor(
-                                                    ExposedDropdownMenuAnchorType.PrimaryNotEditable
-                                                )
-                                                .fillMaxWidth()
-                                        )
 
-                                        ExposedDropdownMenu(
+                                    Column(modifier = Modifier.fillMaxWidth()
+                                        .weight(1f)){
+                                        ExposedDropdownMenuBox(
                                             expanded = salaryExpanded,
-                                            onDismissRequest = { salaryExpanded = false }
-                                        ) {
-                                            salaryUnits.forEach {
-                                                DropdownMenuItem(
-                                                    text = { Text(text = it) },
-                                                    onClick = {
-                                                        viewModel.updateSalaryUnit(it)
-                                                        salaryExpanded = false
-                                                    }
+                                            onExpandedChange = { salaryExpanded = !salaryExpanded },
+                                            modifier = Modifier
+                                                .background(
+                                                    MaterialTheme.colorScheme.surface,
+                                                    shape = RoundedCornerShape(4.dp)
                                                 )
+                                        ) {
+                                            OutlinedTextField(
+                                                value = localJob.salaryUnit,
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = { Text("Salary") },
+                                                trailingIcon = {
+                                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = salaryExpanded)
+                                                },
+                                                modifier = Modifier
+                                                    .menuAnchor(
+                                                        ExposedDropdownMenuAnchorType.PrimaryNotEditable
+                                                    )
+                                                    .fillMaxWidth()
+                                            )
+
+                                            ExposedDropdownMenu(
+                                                expanded = salaryExpanded,
+                                                onDismissRequest = { salaryExpanded = false }
+                                            ) {
+                                                salaryUnits.forEach {
+                                                    DropdownMenuItem(
+                                                        text = { Text(text = it) },
+                                                        onClick = {
+                                                            viewModel.updateSalaryUnit(it)
+                                                            salaryExpanded = false
+                                                        }
+                                                    )
+                                                }
                                             }
+                                        }
+
+                                        errors.salaryUnit?.let {
+                                            ErrorText(it)
                                         }
                                     }
 
-                                    errors.salaryUnit?.let {
-                                        ErrorText(it)
+                                    Column(modifier = Modifier.fillMaxWidth()
+                                        .weight(1f)){
+
+                                        OutlinedTextField(
+                                            value = if (localJob.salaryMin == -1) "" else localJob.salaryMin.toString(),
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            onValueChange = {
+                                                viewModel.updateSalaryMin(it.toIntOrNull() ?: -1)
+                                            },
+                                            label = { Text("Salary Min") },
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            minLines = 1,
+                                            isError = errors.salaryMin != null
+                                        )
+
+                                        errors.salaryMin?.let {
+                                            ErrorText(it)
+                                        }
+
                                     }
 
-                                    OutlinedTextField(
-                                        value = if (localJob.salaryMin == -1) "" else localJob.salaryMin.toString(),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        onValueChange = {
-                                            viewModel.updateSalaryMin(
-                                                it.toIntOrNull() ?: -1
-                                            )
-                                        },
-                                        label = { Text("Salary Min") },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f),
-                                        minLines = 1,
-                                        isError = errors.salaryMin != null
-                                    )
 
-                                    errors.salaryMin?.let {
-                                        ErrorText(it)
+                                    Column(modifier = Modifier.fillMaxWidth()
+                                        .weight(1f)){
+
+                                        OutlinedTextField(
+                                            value = if (localJob.salaryMax == -1) "" else localJob.salaryMax.toString(),
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            onValueChange = {
+                                                viewModel.updateSalaryMax(it.toIntOrNull() ?: -1)
+                                            },
+                                            label = { Text("Salary Max (Optional)") },
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            minLines = 1,
+                                            isError = errors.salaryMax != null
+                                        )
+
+                                        errors.salaryMax?.let {
+                                            ErrorText(it)
+                                        }
                                     }
 
-                                    OutlinedTextField(
-                                        value = if (localJob.salaryMax == -1) "" else localJob.salaryMax.toString(),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        onValueChange = {
-                                            viewModel.updateSalaryMax(
-                                                it.toIntOrNull() ?: -1
-                                            )
-                                        },
-                                        label = { Text("Salary Max") },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f),
-                                        minLines = 1,
-                                        isError = errors.salaryMax != null
-                                    )
-
-                                    errors.salaryMax?.let {
-                                        ErrorText(it)
-                                    }
                                 }
 
                             }
@@ -786,9 +790,10 @@ fun ManagePublishedLocalJobScreen(
 
                         item(span = { GridItemSpan(maxLineSpan) }) {
 
-                            Column(
+                            Row (
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
 
                                 Button(
@@ -906,8 +911,9 @@ fun ManagePublishedLocalJobScreen(
                                         )
                                     ),
                                     modifier = Modifier.fillMaxWidth()
+                                        .weight(1f)
                                 ) {
-                                    Text("Publish")
+                                    Text("Update")
                                 }
 
                                 Button(
@@ -919,6 +925,7 @@ fun ManagePublishedLocalJobScreen(
                                         bottomSheetState = true
                                     },
                                     modifier = Modifier.fillMaxWidth()
+                                        .weight(1f)
                                 ) {
                                     Text("Delete")
                                 }
@@ -955,7 +962,7 @@ fun ManagePublishedLocalJobScreen(
 
 
             DeleteInfoBottomSheet(
-                "Are you sure you want to delete this product? This action cannot be undone.",
+                "Are you sure you want to delete this local job? This action cannot be undone.",
                 {
 
                     editableService?.let { editableServiceNonNull ->

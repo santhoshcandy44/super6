@@ -74,37 +74,39 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocalJobsScreen(
+    key: Int,
     isTopBarShowing: Boolean,
     onNavigateUpSecondsDetailedScreen: (LocalJob) -> Unit,
     viewModel: LocalJobsViewmodel
 ) {
 
+    val repository = viewModel.getLocalJobsRepository(key)
 
-    val searchQuery = viewModel.submittedQuery
+    val searchQuery = repository.submittedQuery
 
     val userId = viewModel.userId
-    val onlySearchBar = viewModel.onlySearchBar
+    val onlySearchBar = repository.onlySearchBar
 
     val context = LocalContext.current
 
     val isGuest = viewModel.isGuest
 
-    val selectedItem by viewModel.selectedItem.collectAsState()
+    val selectedItem by repository.selectedItem.collectAsState()
 
-    val initialLoadState by viewModel.pageSource.initialLoadState.collectAsState()
-    val isLoadingItems by viewModel.pageSource.isLoadingItems.collectAsState()
-    val isRefreshingItems by viewModel.pageSource.isRefreshingItems.collectAsState()
+    val initialLoadState by repository.pageSource.initialLoadState.collectAsState()
+    val isLoadingItems by repository.pageSource.isLoadingItems.collectAsState()
+    val isRefreshingItems by repository.pageSource.isRefreshingItems.collectAsState()
 
-    val items by viewModel.pageSource.items.collectAsState()
+    val items by repository.pageSource.items.collectAsState()
 
-    val hasNetworkError by viewModel.pageSource.hasNetworkError.collectAsState()
-    val hasAppendError by viewModel.pageSource.hasAppendError.collectAsState()
-    val hasMoreItems by viewModel.pageSource.hasMoreItems.collectAsState()
+    val hasNetworkError by repository.pageSource.hasNetworkError.collectAsState()
+    val hasAppendError by repository.pageSource.hasAppendError.collectAsState()
+    val hasMoreItems by repository.pageSource.hasMoreItems.collectAsState()
 
-    val connectivityManager = viewModel.connectivityManager
+    val connectivityManager = repository.connectivityManager
 
     val lazyListState = rememberLazyListState()
-    val lastLoadedItemPosition by viewModel.lastLoadedItemPosition.collectAsState()
+    val lastLoadedItemPosition by repository.lastLoadedItemPosition.collectAsState()
 
     val serviceInfoBottomSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -127,8 +129,11 @@ fun LocalJobsScreen(
                     && lastVisibleItemIndex >= lastLoadedItemPosition
                 ) {
 
-                    viewModel.updateLastLoadedItemPosition(if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex)
+                    viewModel.updateLastLoadedItemPosition(
+                        key, if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex
+                    )
                     viewModel.nextPage(
+                        key,
                         userId,
                         searchQuery
                     )
@@ -139,18 +144,18 @@ fun LocalJobsScreen(
     val statusCallback: (NetworkConnectivityManager.STATUS) -> Unit = {
         when (it) {
             NetworkConnectivityManager.STATUS.STATUS_CONNECTED -> {
-                viewModel.updateLastLoadedItemPosition(-1)
-                viewModel.refresh(userId, searchQuery)
+                viewModel.updateLastLoadedItemPosition(key, -1)
+                viewModel.refresh(key, userId, searchQuery)
 
             }
 
             NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_INITIALLY -> {
-                viewModel.pageSource.setNetWorkError(true)
+                repository.pageSource.setNetWorkError(true)
             }
 
             NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_ON_COMPLETED_JOB -> {
-                viewModel.pageSource.setNetWorkError(true)
-                viewModel.pageSource.setRefreshingItems(false)
+                repository.pageSource.setNetWorkError(true)
+                repository.pageSource.setRefreshingItems(false)
                 ShortToast(context, "No internet connection")
 
             }
@@ -159,7 +164,7 @@ fun LocalJobsScreen(
 
 
     val onRefresh: () -> Unit = {
-        viewModel.pageSource.setRefreshingItems(true)
+        repository.pageSource.setRefreshingItems(true)
         connectivityManager.checkForSeconds(
             Handler(Looper.getMainLooper()), statusCallback,
             4000
@@ -167,7 +172,7 @@ fun LocalJobsScreen(
     }
 
     val onRetry = {
-        viewModel.pageSource.setRefreshingItems(true)
+        repository.pageSource.setRefreshingItems(true)
         connectivityManager.checkForSeconds(
             Handler(Looper.getMainLooper()), statusCallback,
             4000
@@ -239,9 +244,7 @@ fun LocalJobsScreen(
                             onRetry()
                         }
                     }
-                }
-
-                else if (!isLoadingItems && !hasAppendError && items.isEmpty()) {
+                } else if (!isLoadingItems && !hasAppendError && items.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -264,9 +267,7 @@ fun LocalJobsScreen(
                             Text(text = "Oops, nothing to catch")
                         }
                     }
-                }
-
-                else {
+                } else {
                     LazyColumn(
                         state = lazyListState,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -275,7 +276,7 @@ fun LocalJobsScreen(
                             .fillMaxSize()
                     ) {
 
-                        items (
+                        items(
                             items,
                             key = { "list_items_${it.localJobId}" }) { item ->
 
@@ -289,15 +290,18 @@ fun LocalJobsScreen(
                                     if (item.isBookmarked) {
 
                                         viewModel.directUpdateLocalJobIsBookMarked(
+                                            key,
                                             item.localJobId,
                                             false
                                         )
 
                                         viewModel.onRemoveBookmark(
+                                            key,
                                             viewModel.userId,
                                             item, onSuccess = {
 
                                                 viewModel.directUpdateLocalJobIsBookMarked(
+                                                    key,
                                                     item.localJobId,
                                                     false
                                                 )
@@ -307,6 +311,7 @@ fun LocalJobsScreen(
                                             }, onError = {
 
                                                 viewModel.directUpdateLocalJobIsBookMarked(
+                                                    key,
                                                     item.localJobId,
                                                     true
                                                 )
@@ -316,22 +321,25 @@ fun LocalJobsScreen(
                                             })
 
 
-                                    }
-                                    else {
+                                    } else {
 
                                         viewModel.directUpdateLocalJobIsBookMarked(
+                                            key,
                                             item.localJobId,
                                             true
                                         )
 
                                         viewModel.onBookmark(
+                                            key,
                                             viewModel.userId,
                                             item,
                                             onSuccess = {
 
                                                 viewModel.directUpdateLocalJobIsBookMarked(
+                                                    key,
                                                     item.localJobId,
-                                                    true)
+                                                    true
+                                                )
 
                                                 ShortToast(context, "Bookmarked")
 
@@ -339,6 +347,7 @@ fun LocalJobsScreen(
                                             onError = {
 
                                                 viewModel.directUpdateLocalJobIsBookMarked(
+                                                    key,
                                                     item.localJobId,
                                                     false
                                                 )
@@ -387,6 +396,7 @@ fun LocalJobsScreen(
                                         modifier = Modifier
                                             .clickable {
                                                 viewModel.retry(
+                                                    key,
                                                     userId,
                                                     searchQuery
                                                 )
@@ -433,15 +443,14 @@ fun LocalJobsScreen(
                         serviceInfoBottomSheetState.hide()
                     }
                 },
-                shape = RectangleShape, // Set shape to square (rectangle)
+                shape = RectangleShape,
                 sheetState = serviceInfoBottomSheetState,
-                dragHandle = null // Remove the drag handle
+                dragHandle = null
 
             ) {
-                // Sheet content
                 selectedItem?.let { nonNullSelectedItem ->
 
-                    viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked))
+                    viewModel.setSelectedItem(key, nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked))
 
                     Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -458,7 +467,6 @@ fun LocalJobsScreen(
                         ) {
 
 
-                            // Bookmark Icon
                             Icon(
                                 painter = if (nonNullSelectedItem.isBookmarked) painterResource(
                                     MaterialTheme.icons.bookmarkedRed
@@ -563,7 +571,7 @@ private fun LocalJobCard(
                     .aspectRatio(1f)
             ) {
 
-                if(item.images.isNotEmpty()){
+                if (item.images.isNotEmpty()) {
                     AsyncImage(
                         item.images[0].imageUrl,
                         contentDescription = null,

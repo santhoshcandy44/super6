@@ -6,8 +6,6 @@ import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Shader
-import android.os.Build
-import android.view.View
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.core.view.WindowInsetsCompat
@@ -16,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import java.util.Currency
 import java.util.concurrent.TimeUnit
+import androidx.core.graphics.createBitmap
 
 
 class NoRippleInteractionSource : MutableInteractionSource {
@@ -52,22 +51,15 @@ fun exitFullScreenMode(activity: Activity) {
 }
 
 fun getRoundedBitmap(bitmap: Bitmap): Bitmap {
-    // Ensure the bitmap is square
-    val size = Math.min(bitmap.width, bitmap.height)
+    val size = bitmap.width.coerceAtMost(bitmap.height)
     val radius = size / 2f
 
-    // Create a new bitmap with a size that can fit the rounded image
-    val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(output)
+    val output = createBitmap(size, size)
 
-    // Prepare the paint with a shader to render the image as a circle
-    val paint = Paint()
-    val shader = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-    paint.shader = shader
-    paint.isAntiAlias = true
-
-    // Draw a circle on the canvas with the bitmap shader
-    canvas.drawCircle(radius, radius, radius, paint)
+    Canvas(output).drawCircle(radius, radius, radius, Paint().apply {
+        shader = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        isAntiAlias = true
+    })
 
     return output
 }
@@ -96,8 +88,8 @@ fun serviceReviewsFormatTimestamp(timestamp: Long): String {
 fun getCurrencySymbol(priceUnit: String): String {
     return try {
         Currency.getInstance(priceUnit).symbol
-    } catch (e: IllegalArgumentException) {
-        priceUnit // Return the unit itself if invalid (fallback)
+    } catch (_: IllegalArgumentException) {
+        priceUnit
     }
 }
 

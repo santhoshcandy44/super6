@@ -33,12 +33,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.lts360.app.database.models.app.Board
+import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.localjobs.LocalJobsScreen
 import com.lts360.compose.ui.localjobs.LocalJobsViewmodel
@@ -76,22 +80,21 @@ fun HomeScreen(
     navController: NavController,
     boardItems: List<Board>,
     onNavigateUpServiceDetailedScreen: () -> Unit,
+    onNavigateUpServiceOwnerProfile: (Long) -> Unit,
     onNavigateUpUsedProductListingDetailedScreen: () -> Unit,
     onNavigateUpLocalJobDetailedScreen: () -> Unit,
-    onNavigateUpServiceOwnerProfile: (Long) -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: HomeViewModel,
     servicesViewModel: ServicesViewModel,
     secondsViewModel: SecondsViewmodel,
     localJobsViewModel: LocalJobsViewmodel,
     onDockedFabAddNewSecondsVisibility: (Boolean) -> Unit,
-    onlySearchBar: Boolean = false,
-    nestedType: String? = null
+    onlySearchBar: Boolean = false
 ) {
 
     val boardLabels by remember { mutableStateOf(boardItems.map { it.boardLabel }) }
 
-    val initialPageIndex = if (nestedType.isNullOrEmpty()) 0 else boardLabels.indexOf(nestedType).coerceAtLeast(0)
+    var initialPageIndex by rememberSaveable { mutableIntStateOf(0) }
 
     val pagerState = rememberPagerState(initialPageIndex, pageCount = { boardItems.size })
 
@@ -105,15 +108,13 @@ fun HomeScreen(
     val suggestions by viewModel.suggestions.collectAsState()
     val isLazyLoading by viewModel.isLazyLoading.collectAsState()
 
+    val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-
-    val scope = rememberCoroutineScope()
-
     if (isSearching) {
         BackHandler {
             viewModel.collapseSearchAction(true)
             if (onlySearchBar) {
-                scope.launch {
+                coroutineScope.launch {
                     delay(100)
                     focusManager.clearFocus()
                 }
@@ -121,16 +122,17 @@ fun HomeScreen(
         }
     }
 
-    val coroutineScope = rememberCoroutineScope()
 
     val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val context = LocalContext.current
 
-
     var topBarBarHeight by remember { mutableFloatStateOf(0f) }
     var topBarOffsetHeightPx by remember { mutableFloatStateOf(0f) }
     var showTopBar by remember { mutableStateOf(true) }
+    var initialServicesKey = 0
+    var initialSecondsKey = 0
+    var initialLocalJobsKey = 0
 
     Surface(modifier = Modifier.fillMaxSize()) {
 
@@ -213,19 +215,47 @@ fun HomeScreen(
                     val currentLabel = boardLabels[pagerState.currentPage.coerceIn(0, boardItems.lastIndex)]
                     if (searchQuery.text.isNotEmpty()) {
                         val destination = when (currentLabel) {
-                            "services" -> BottomBar.NestedServices(servicesViewModel.getKey() + 1, searchQuery.text, true)
-                            "second_hands" -> BottomBar.NestedSeconds(secondsViewModel.getKey() + 1, searchQuery.text, true)
-                            "local_jobs" ->  BottomBar.NestedLocalJobs(localJobsViewModel.getKey() + 1, searchQuery.text, true)
+                            "services" -> BottomBar.NestedServices(servicesViewModel.getKey(initialServicesKey) + 1, searchQuery.text, true)
+                            "second_hands" -> BottomBar.NestedSeconds(secondsViewModel.getKey(initialSecondsKey) + 1, searchQuery.text, true)
+                            "local_jobs" ->  BottomBar.NestedLocalJobs(localJobsViewModel.getKey(initialLocalJobsKey) + 1, searchQuery.text, true)
                             else -> return
                         }
 
-                        if (onlySearchBar) {
-                            viewModel.navigateToOverlay(navController, destination)
-                        } else {
-                            scope.launch {
-                                viewModel.navigateToOverlay(navController, destination)
+                        when (currentLabel) {
+                            "services" ->  {
+
+                                servicesViewModel.loadServiceRepository(
+                                    searchQuery.text,
+                                    true,
+                                    servicesViewModel.getKey(initialServicesKey) + 1
+                                )
+
+                                servicesViewModel.loadServices(servicesViewModel.getKey(initialServicesKey) + 1)
                             }
+                            "second_hands" ->{
+
+                                secondsViewModel.loadSecondsRepository(
+                                    searchQuery.text,
+                                    true,
+                                    secondsViewModel.getKey(initialServicesKey) + 1
+                                )
+
+                                secondsViewModel.loadSeconds(secondsViewModel.getKey(initialSecondsKey) + 1)
+                            }
+                            "local_jobs" ->  {
+                                localJobsViewModel.loadLocalJobsRepository(
+                                    searchQuery.text,
+                                    true,
+                                    localJobsViewModel.getKey(initialLocalJobsKey) + 1
+                                )
+
+                                localJobsViewModel.loadLocalJobs(localJobsViewModel.getKey(initialLocalJobsKey) + 1)
+                            }
+                            else -> return
                         }
+
+                        viewModel.navigateToOverlay(navController, destination)
+
                     }
                 }
 
@@ -259,15 +289,16 @@ fun HomeScreen(
 
                 val servicesContent: @Composable () -> Unit = {
                     ServicesScreen(
+                        initialServicesKey,
                         showTopBar,
                         {
                             viewModel.setSelectedServiceItem(it)
-                            servicesViewModel.setSelectedItem(it)
+                            servicesViewModel.setSelectedItem(initialServicesKey, it)
                             onNavigateUpServiceDetailedScreen()
                         },
                         { service, ownerId ->
                             viewModel.setSelectedServiceOwnerServiceItem(service)
-                            servicesViewModel.setSelectedItem(service)
+                            servicesViewModel.setSelectedItem(initialServicesKey, service)
                             onNavigateUpServiceOwnerProfile(ownerId)
                         },
                        servicesViewModel
@@ -276,10 +307,11 @@ fun HomeScreen(
 
                 val secondsContent: @Composable () -> Unit = {
                     SecondsScreen(
+                        initialSecondsKey,
                         showTopBar,
                         {
                             viewModel.setSelectedUsedProductListingItem(it)
-                            secondsViewModel.setSelectedItem(it)
+                            secondsViewModel.setSelectedItem(initialSecondsKey, it)
                             onNavigateUpUsedProductListingDetailedScreen()
                         },
                         secondsViewModel
@@ -289,35 +321,28 @@ fun HomeScreen(
 
                 val localJobsContent: @Composable () -> Unit = {
                     LocalJobsScreen(
+                        initialLocalJobsKey,
                         showTopBar,
                         {
                             viewModel.setSelectedLocalJobItem(it)
-                            localJobsViewModel.setSelectedItem(it)
+                            localJobsViewModel.setSelectedItem(initialLocalJobsKey, it)
                             onNavigateUpLocalJobDetailedScreen()
                         },
                         localJobsViewModel
                     )
                 }
 
-                if (!onlySearchBar) {
-                    Boards(
-                        boards = boardItems,
-                        pagerState = pagerState,
-                        servicesContent = servicesContent,
-                        secondsContent = secondsContent,
-                        localJobsContent = localJobsContent,
-                        onPageChanged = {
-                            onDockedFabAddNewSecondsVisibility(it == "second_hands")
-                        }
-                    )
-                } else {
-                    when (nestedType) {
-                        "services" -> servicesContent()
-                        "second_hands" -> secondsContent()
-                        "local_jobs" -> localJobsContent()
+                Boards(
+                    boards = boardItems,
+                    pagerState = pagerState,
+                    servicesContent = servicesContent,
+                    secondsContent = secondsContent,
+                    localJobsContent = localJobsContent,
+                    onPageChanged = {
+                        initialPageIndex =  boardLabels.indexOf(it).coerceAtLeast(0)
+                        onDockedFabAddNewSecondsVisibility(it == "second_hands")
                     }
-                }
-
+                )
 
                 if (isSearching) {
                     Box(
@@ -346,28 +371,66 @@ fun HomeScreen(
                                                     if (it.isNotEmpty()) {
 
                                                         if (boardLabels[pagerState.currentPage] == "services") {
+
+                                                            servicesViewModel.loadServiceRepository(
+                                                                it,
+                                                                true,
+                                                                servicesViewModel.getKey(initialServicesKey) + 1
+                                                            )
+
+                                                            servicesViewModel.loadServices(servicesViewModel.getKey(initialServicesKey) + 1)
+
                                                             viewModel.navigateToOverlay(
                                                                 navController,
                                                                 BottomBar.NestedServices(
-                                                                    servicesViewModel.getKey() + 1,
+                                                                    servicesViewModel.getKey(initialServicesKey) + 1,
                                                                     it,
                                                                     true
 
                                                                 )
                                                             )
                                                         } else if (boardLabels[pagerState.currentPage] == "second_hands") {
+
+
+                                                            secondsViewModel.loadSecondsRepository(
+                                                                it,
+                                                                true,
+                                                                secondsViewModel.getKey(initialSecondsKey) + 1
+                                                            )
+
+                                                            secondsViewModel.loadSeconds(secondsViewModel.getKey(initialSecondsKey) + 1)
+
+
                                                             viewModel.navigateToOverlay(
                                                                 navController,
                                                                 BottomBar.NestedSeconds(
-                                                                    servicesViewModel.getKey() + 1,
+                                                                    servicesViewModel.getKey(initialServicesKey) + 1,
                                                                     it,
                                                                     true
                                                                 )
                                                             )
 
+                                                        }else if(boardLabels[pagerState.currentPage] == "local_jobs"){
+                                                            localJobsViewModel.loadLocalJobsRepository(
+                                                                it,
+                                                                true,
+                                                                localJobsViewModel.getKey(initialLocalJobsKey) + 1
+                                                            )
+
+                                                            localJobsViewModel.loadLocalJobs(localJobsViewModel.getKey(initialLocalJobsKey) + 1)
+
+
+                                                            viewModel.navigateToOverlay(
+                                                                navController,
+                                                                BottomBar.NestedLocalJobs(
+                                                                    localJobsViewModel.getKey(initialLocalJobsKey) + 1,
+                                                                    it,
+                                                                    true
+                                                                )
+                                                            )
                                                         }
 
-                                                        scope.launch {
+                                                        coroutineScope.launch {
                                                             delay(100)
                                                             focusManager.clearFocus()
                                                         }
@@ -376,9 +439,9 @@ fun HomeScreen(
                                                 .padding(
                                                     16.dp,
                                                     vertical = 8.dp
-                                                ), // Padding inside the card,
+                                                ),
 
-                                            verticalAlignment = Alignment.CenterVertically // Align items vertically
+                                            verticalAlignment = Alignment.CenterVertically
 
                                         ) {
                                             Icon(
@@ -440,16 +503,16 @@ fun HomeScreen(
 
                     fun reloadItems() {
                         if (boardLabels[pagerState.currentPage] == "services") {
-                            servicesViewModel.updateLastLoadedItemPosition(-1)
-                            servicesViewModel.refresh(userId, searchQuery.text)
+                            servicesViewModel.updateLastLoadedItemPosition(initialServicesKey, -1)
+                            servicesViewModel.refresh(initialServicesKey, userId, searchQuery.text)
                         }
                         if (boardLabels[pagerState.currentPage] == "second_hands") {
-                            secondsViewModel.updateLastLoadedItemPosition(-1)
-                            secondsViewModel.refresh(userId, searchQuery.text)
+                            secondsViewModel.updateLastLoadedItemPosition(initialSecondsKey,-1)
+                            secondsViewModel.refresh(initialSecondsKey, userId, searchQuery.text)
                         }
                         if(boardLabels[pagerState.currentPage] == "local_jobs"){
-                            localJobsViewModel.updateLastLoadedItemPosition(-1)
-                            localJobsViewModel.refresh(userId, searchQuery.text)
+                            localJobsViewModel.updateLastLoadedItemPosition(initialLocalJobsKey, -1)
+                            localJobsViewModel.refresh(initialLocalJobsKey, userId, searchQuery.text)
                         }
                         coroutineScope.launch {
                             modalBottomSheetState.hide()
@@ -574,6 +637,7 @@ fun HomeScreen(
 @Composable
 fun NestedServicesScreen(
     navController: NavController,
+    key:Int,
     onNavigateUpServiceDetailedScreen: () -> Unit,
     onNavigateUpServiceOwnerProfile: (Long) -> Unit,
     onPopBackStack: () -> Unit,
@@ -694,14 +758,16 @@ fun NestedServicesScreen(
 
                 fun navigateToResults() {
                     if (searchQuery.text.isNotEmpty()) {
-                        val destination = BottomBar.NestedServices(servicesViewModel.getKey() + 1, searchQuery.text, true)
-                        if (onlySearchBar) {
-                            viewModel.navigateToOverlay(navController, destination)
-                        } else {
-                            scope.launch {
-                                viewModel.navigateToOverlay(navController, destination)
-                            }
-                        }
+                        servicesViewModel.loadServiceRepository(
+                            searchQuery.text,
+                            true,
+                            servicesViewModel.getKey(key) + 1
+                        )
+
+                        servicesViewModel.loadServices(servicesViewModel.getKey(key) + 1)
+
+                        val destination = BottomBar.NestedServices(servicesViewModel.getKey(key) + 1, searchQuery.text, true)
+                        viewModel.navigateToOverlay(navController, destination)
                     }
                 }
 
@@ -735,15 +801,16 @@ fun NestedServicesScreen(
 
 
                 ServicesScreen(
+                    key,
                     showTopBar,
                     {
                         viewModel.setSelectedServiceItem(it)
-                        servicesViewModel.setSelectedItem(it)
+                        servicesViewModel.setSelectedItem(key, it)
                         onNavigateUpServiceDetailedScreen()
                     },
                     { service, ownerId ->
                         viewModel.setSelectedServiceOwnerServiceItem(service)
-                        servicesViewModel.setSelectedItem(service)
+                        servicesViewModel.setSelectedItem(key, service)
                         onNavigateUpServiceOwnerProfile(ownerId)
                     },
                     servicesViewModel
@@ -775,10 +842,18 @@ fun NestedServicesScreen(
                                                     viewModel.setSearchQuery(it)
                                                     if (it.isNotEmpty()) {
 
+                                                        servicesViewModel.loadServiceRepository(
+                                                            it,
+                                                            true,
+                                                            servicesViewModel.getKey(key) + 1
+                                                        )
+
+                                                        servicesViewModel.loadServices(servicesViewModel.getKey(key) + 1)
+
                                                         viewModel.navigateToOverlay(
                                                             navController,
                                                             BottomBar.NestedServices(
-                                                                servicesViewModel.getKey() + 1,
+                                                                servicesViewModel.getKey(key) + 1,
                                                                 it,
                                                                 true
 
@@ -857,8 +932,8 @@ fun NestedServicesScreen(
                     }
 
                     fun reloadItems() {
-                        servicesViewModel.updateLastLoadedItemPosition(-1)
-                        servicesViewModel.refresh(userId, searchQuery.text)
+                        servicesViewModel.updateLastLoadedItemPosition(key, -1)
+                        servicesViewModel.refresh(key, userId, searchQuery.text)
                         coroutineScope.launch {
                             modalBottomSheetState.hide()
                         }
@@ -981,6 +1056,7 @@ fun NestedServicesScreen(
 @Composable
 fun NestedSecondsScreen(
     navController: NavController,
+    key: Int,
     onNavigateUpUsedProductListingDetailedScreen: () -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: HomeViewModel,
@@ -1100,15 +1176,20 @@ fun NestedSecondsScreen(
 
                 fun navigateToResults() {
                     if (searchQuery.text.isNotEmpty()) {
-                        val destination = BottomBar.NestedSeconds(secondsViewModel.getKey() + 1, searchQuery.text, true)
 
-                        if (onlySearchBar) {
-                            viewModel.navigateToOverlay(navController, destination)
-                        } else {
-                            scope.launch {
-                                viewModel.navigateToOverlay(navController, destination)
-                            }
-                        }
+                        secondsViewModel.loadSecondsRepository(
+                            searchQuery.text,
+                            true,
+                            secondsViewModel.getKey(key) + 1
+                        )
+
+                        secondsViewModel.loadSeconds(secondsViewModel.getKey(key) + 1)
+
+                        val destination = BottomBar.NestedSeconds(secondsViewModel.getKey(key) + 1, searchQuery.text, true)
+
+
+                        viewModel.navigateToOverlay(navController, destination)
+
                     }
                 }
 
@@ -1140,10 +1221,11 @@ fun NestedSecondsScreen(
             Box(modifier = Modifier.fillMaxSize()) {
 
                 SecondsScreen(
+                    key,
                     showTopBar,
                     {
                         viewModel.setSelectedUsedProductListingItem(it)
-                        secondsViewModel.setSelectedItem(it)
+                        secondsViewModel.setSelectedItem(key, it)
                         onNavigateUpUsedProductListingDetailedScreen()
                     },
                     secondsViewModel
@@ -1176,10 +1258,18 @@ fun NestedSecondsScreen(
                                                     viewModel.setSearchQuery(it)
                                                     if (it.isNotEmpty()) {
 
+                                                        secondsViewModel.loadSecondsRepository(
+                                                            it,
+                                                            true,
+                                                            secondsViewModel.getKey(key) + 1
+                                                        )
+
+                                                        secondsViewModel.loadSeconds(secondsViewModel.getKey(key) + 1)
+
                                                         viewModel.navigateToOverlay(
                                                             navController,
                                                             BottomBar.NestedSeconds(
-                                                                secondsViewModel.getKey() + 1,
+                                                                secondsViewModel.getKey(key) + 1,
                                                                 it,
                                                                 true
                                                             )
@@ -1257,8 +1347,8 @@ fun NestedSecondsScreen(
                     }
 
                     fun reloadItems() {
-                        secondsViewModel.updateLastLoadedItemPosition(-1)
-                        secondsViewModel.refresh(userId, searchQuery.text)
+                        secondsViewModel.updateLastLoadedItemPosition(key, -1)
+                        secondsViewModel.refresh(key, userId, searchQuery.text)
                         coroutineScope.launch {
                             modalBottomSheetState.hide()
                         }
@@ -1380,6 +1470,7 @@ fun NestedSecondsScreen(
 @Composable
 fun NestedLocalJobsScreen(
     navController: NavController,
+    key:Int,
     onNavigateUpLocalJobDetailedScreen: () -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: HomeViewModel,
@@ -1498,15 +1589,18 @@ fun NestedLocalJobsScreen(
 
                 fun navigateToResults() {
                     if (searchQuery.text.isNotEmpty()) {
-                        val destination =  BottomBar.NestedLocalJobs(localJobsViewModel.getKey() + 1, searchQuery.text, true)
 
-                        if (onlySearchBar) {
-                            viewModel.navigateToOverlay(navController, destination)
-                        } else {
-                            scope.launch {
-                                viewModel.navigateToOverlay(navController, destination)
-                            }
-                        }
+                        localJobsViewModel.loadLocalJobsRepository(
+                            searchQuery.text,
+                            true,
+                            localJobsViewModel.getKey(key) + 1
+                        )
+
+                        localJobsViewModel.loadLocalJobs(localJobsViewModel.getKey(key) + 1)
+
+                        val destination =  BottomBar.NestedLocalJobs(localJobsViewModel.getKey(key) + 1, searchQuery.text, true)
+                        viewModel.navigateToOverlay(navController, destination)
+
                     }
                 }
 
@@ -1538,10 +1632,11 @@ fun NestedLocalJobsScreen(
             Box(modifier = Modifier.fillMaxSize()) {
 
                 LocalJobsScreen(
+                    key,
                     showTopBar,
                     {
                         viewModel.setSelectedLocalJobItem(it)
-                        localJobsViewModel.setSelectedItem(it)
+                        localJobsViewModel.setSelectedItem(key, it)
                         onNavigateUpLocalJobDetailedScreen()
                     },
                     localJobsViewModel
@@ -1571,11 +1666,17 @@ fun NestedLocalJobsScreen(
                                                     viewModel.setSearchQuery(it)
                                                     if (it.isNotEmpty()) {
 
+                                                        localJobsViewModel.loadLocalJobsRepository(
+                                                            searchQuery.text,
+                                                            true,
+                                                            localJobsViewModel.getKey(key) + 1
+                                                        )
 
+                                                        localJobsViewModel.loadLocalJobs(localJobsViewModel.getKey(key) + 1)
                                                         viewModel.navigateToOverlay(
                                                             navController,
                                                             BottomBar.NestedSeconds(
-                                                                localJobsViewModel.getKey() + 1,
+                                                                localJobsViewModel.getKey(key) + 1,
                                                                 it,
                                                                 true
                                                             )
@@ -1653,8 +1754,8 @@ fun NestedLocalJobsScreen(
                     }
 
                     fun reloadItems() {
-                        localJobsViewModel.updateLastLoadedItemPosition(-1)
-                        localJobsViewModel.refresh(userId, searchQuery.text)
+                        localJobsViewModel.updateLastLoadedItemPosition(key, -1)
+                        localJobsViewModel.refresh(key, userId, searchQuery.text)
                         coroutineScope.launch {
                             modalBottomSheetState.hide()
                         }

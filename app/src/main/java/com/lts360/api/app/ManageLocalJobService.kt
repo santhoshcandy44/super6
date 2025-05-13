@@ -15,7 +15,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 
-interface ManageLocalJobService{
+interface ManageLocalJobService {
 
     @GET("api/app/serve/local-jobs/guest-get-local-jobs")
     suspend fun guestGetLocalJobs(
@@ -32,8 +32,8 @@ interface ManageLocalJobService{
     @GET("api/app/serve/local-jobs/get-local-jobs")
     suspend fun getLocalJobs(
         @Query("user_id") userId: Long,
-        @Query("page") page: Int,
         @Query("s") query: String?,
+        @Query("page") page: Int,
         @Query("last_timestamp") lastTimestamp: String?,
         @Query("last_total_relevance") lastTotalRelevance: String?
     ): Response<ResponseReply>
@@ -43,6 +43,12 @@ interface ManageLocalJobService{
         @Path("user_id") userId: Long,
     ): Response<ResponseReply>
 
+    @GET("api/app/serve/local-jobs/get-local-job-applicants/{local_job_id}")
+    suspend fun getLocalJobApplicantsByLocalJobId(
+        @Path("local_job_id") localJobId: Long,
+        @Query("page") page: Int,
+        @Query("last_timestamp") lastTimestamp: String?
+    ): Response<ResponseReply>
 
     @Multipart
     @POST("api/app/serve/local-jobs/create-or-update-local-job")
@@ -68,7 +74,30 @@ interface ManageLocalJobService{
     @POST("api/app/serve/local-jobs/bookmark-local-job")
     suspend fun bookmarkLocalJob(
         @Field("user_id") userId: Long,
-        @Field("local_job_id") serviceId: Long,
+        @Field("local_job_id") localJobId: Long,
+    ): Response<ResponseReply>
+
+    @FormUrlEncoded
+    @POST("api/app/serve/local-jobs/mark-as-reviewed-local-job")
+    suspend fun markAsReviewedLocalJob(
+        @Field("user_id") userId: Long,
+        @Field("local_job_id") localJobId: Long,
+        @Field("applicant_id") applicantId: Long,
+        ): Response<ResponseReply>
+
+    @FormUrlEncoded
+    @POST("api/app/serve/local-jobs/unmark-reviewed-local-job")
+    suspend fun unmarkAsReviewedLocalJob(
+        @Field("user_id") userId: Long,
+        @Field("local_job_id") localJobId: Long,
+        @Field("applicant_id") applicantId: Long,
+    ): Response<ResponseReply>
+
+    @FormUrlEncoded
+    @POST("api/app/serve/local-jobs/apply-local-job")
+    suspend fun applyLocalJob(
+        @Field("user_id") userId: Long,
+        @Field("local_job_id") localJobId: Long,
     ): Response<ResponseReply>
 
 
@@ -76,7 +105,7 @@ interface ManageLocalJobService{
     @POST("api/app/serve/local-jobs/remove-bookmark-local-job")
     suspend fun removeBookmarkLocalJob(
         @Field("user_id") userId: Long,
-        @Field("local_job_id") serviceId: Long,
+        @Field("local_job_id") localJobId: Long,
     ): Response<ResponseReply>
 
 
@@ -96,7 +125,7 @@ interface ManageLocalJobService{
 
     @DELETE("api/app/serve/local-jobs/{product_id}/delete-local-job")
     suspend fun deleteLocalJob(
-        @Path("product_id") serviceId: Long,
+        @Path("local_job_id") serviceId: Long,
         @Query("user_id") userId: Long,
     ): Response<ResponseReply>
 

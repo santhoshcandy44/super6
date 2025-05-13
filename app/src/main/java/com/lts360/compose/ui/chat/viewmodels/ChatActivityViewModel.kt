@@ -18,19 +18,18 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
 
 
 class ChatActivityViewModel(
     application: Application,
     private val messageDao: MessageDao,
     private val chatUserDao: ChatUserDao,
-    val recipientId:Long,
+    val recipientId: Long,
     private val repository: ChatUserRepository,
 ) : AndroidViewModel(application) {
-
 
 
     private val appContext: Context = application
@@ -39,7 +38,6 @@ class ChatActivityViewModel(
     val selectedChatUser = _selectedChatUser.asStateFlow()
 
 
-    // Channel to signal when loading is complete
     private val _loadingComplete = CompletableDeferred<Unit>()
 
     val loadingComplete: CompletableDeferred<Unit> = _loadingComplete
@@ -62,7 +60,7 @@ class ChatActivityViewModel(
 
                     chatUserDao.getChatUserByRecipientId(recipientId)?.let {
 
-                        val startTime = System.currentTimeMillis()  // Record start time
+                        val startTime = System.currentTimeMillis()
 
                         val chatUserWithDetails = chatUserDao.getSpecificChatUserWithUnreadMessages(
                             messageDao,
@@ -74,9 +72,6 @@ class ChatActivityViewModel(
                         val lastMessage = chatUserWithDetails.lastMessage
                         val unreadCount = chatUserWithDetails.unreadCount
                         val messages = chatUserWithDetails.messages
-
-                        val endTime = System.currentTimeMillis()  // Record end time
-                        val elapsedTime = endTime - startTime  // Calculate elapsed time
 
                         SELECTED_CHAT_USER_MESSAGES_SIZE = messages.size
 
@@ -92,25 +87,24 @@ class ChatActivityViewModel(
                         appContext.imageLoader.enqueue(
                             ImageRequest.Builder(appContext)
                                 .data(chatUser.userProfile.profilePicUrl96By96)
-                                .build())
+                                .build()
+                        )
 
                         _selectedChatUser.value = UserState(
                             chatUser = chatUser,
                             messages = groupedMessages,
                             lastMessage = lastMessage,
                             unreadCount = unreadCount,
-                            userName = "${chatUser.userProfile.firstName} ${chatUser.userProfile.lastName.orEmpty()}",
-                            profileImageUrl = chatUser.userProfile.profilePicUrl.orEmpty(),
                             isMessagesLoaded = true,
                             firstVisibleItemIndex = if (firstUnreadIndex == -1) 0 else firstUnreadIndex
                         )
 
 
-                        // Notify that loading is complete
                         _loadingComplete.complete(Unit)
 
-                        val foundedLastMessage = _selectedChatUser.value?.messages?.values?.flatten()?.lastOrNull()
-                            ?.receivedMessage
+                        val foundedLastMessage =
+                            _selectedChatUser.value?.messages?.values?.flatten()?.lastOrNull()
+                                ?.receivedMessage
 
                         messagesHandlerJob(chatUser, foundedLastMessage)
 
@@ -120,16 +114,13 @@ class ChatActivityViewModel(
                 }
 
 
-            } catch (e: Exception) {
-                // Notify that loading is complete even on error
+            } catch (_: Exception) {
                 _loadingComplete.complete(Unit)
             }
         }
     }
 
 
-
-    // A function to load initial page and subsequent pages
     fun loadMessages(chatUser: ChatUser, lastMessage: Message, pageSize: Int) {
 
         viewModelScope.launch {
@@ -148,18 +139,13 @@ class ChatActivityViewModel(
                 it.copy(
                     messages = combinedMessages,
                     chatUser = chatUser,
-                    userName = "${chatUser.userProfile.firstName} ${chatUser.userProfile.lastName.orEmpty()}",
-                    profileImageUrl = chatUser.userProfile.profilePicUrl.orEmpty(),
                     isMessagesLoaded = true
                 )
-            }
-                ?: UserState(
-                    chatUser = chatUser,
-                    messages = repository.groupMessagesByDay(messages),
-                    userName = "${chatUser.userProfile.firstName} ${chatUser.userProfile.lastName.orEmpty()}",
-                    profileImageUrl = chatUser.userProfile.profilePicUrl.orEmpty(),
-                    isMessagesLoaded = true
-                )
+            } ?: UserState(
+                chatUser = chatUser,
+                messages = repository.groupMessagesByDay(messages),
+                isMessagesLoaded = true
+            )
 
 
             _selectedChatUser.value = updatedState
@@ -183,27 +169,22 @@ class ChatActivityViewModel(
         lastMessage: Message?,
     ) {
 
-
-
         val userState = _selectedChatUser.value
             ?: return
 
-        // Collect chat messages with replies
         messagesHandlerJob = viewModelScope.launch(Dispatchers.IO) {
 
 
             val messagesCollectionFlow = if (lastMessage == null) {
-                messageDao.getMessagesWithRepliesFlow(chatUser.chatId) // It is new chat user
+                messageDao.getMessagesWithRepliesFlow(chatUser.chatId)
 
             } else {
                 messageDao.getMessagesAfterMessageWithInclusiveFlow(chatUser.chatId, lastMessage.id)
 
             }
-
-
             messagesCollectionFlow
                 .filter { newMessages ->
-                    newMessages != userState.messages.values.flatten() // Compare with the already collected messages
+                    newMessages != userState.messages.values.flatten()
                 }
                 .collect { messageList ->
 /*
@@ -216,43 +197,37 @@ class ChatActivityViewModel(
 */
 
 
+                    val isMessagesLoaded = userState.isMessagesLoaded
+                    val groupedMessages = repository.groupMessagesByDay(messageList)
 
-                val isMessagesLoaded = userState.isMessagesLoaded
-                val groupedMessages = repository.groupMessagesByDay(messageList)
+                    if (!isMessagesLoaded) {
+                        viewModelScope.launch {
+                            updateIsMessagesLoaded()
+                            updateMessageList(groupedMessages)
+                        }
 
-                if (!isMessagesLoaded) {
-                    viewModelScope.launch {
-                        // Update LazyListState and message list
-                        updateIsMessagesLoaded()
+                    } else {
                         updateMessageList(groupedMessages)
                     }
-
-                } else {
-                    updateMessageList(groupedMessages)
                 }
-            }
         }
     }
 
     private fun updateIsMessagesLoaded() {
-        val userState = _selectedChatUser.value ?: return
-
-        val updatedState = userState.copy(isMessagesLoaded = true)
-        _selectedChatUser.value = updatedState
+        updateUserState { it.copy(isMessagesLoaded = true) }
     }
 
     private fun updateMessageList(
         messageList: Map<String, List<MessageWithReply>>
     ) {
+        updateUserState { it.copy(messages = messageList) }
+    }
 
-        val userState = _selectedChatUser.value
-            ?: return
+    private inline fun updateUserState(update: (UserState) -> UserState) {
 
-        val updatedState = userState.copy(messages = messageList)
-        _selectedChatUser.value = updatedState
-
-        _selectedChatUser.value?.let {
-            _selectedChatUser.value = it.copy(messages = messageList)
+        _selectedChatUser.update {
+            if (it == null) return@update it
+            update(it)
         }
     }
 
@@ -266,10 +241,5 @@ class ChatActivityViewModel(
         super.onCleared()
         messagesHandlerJob?.cancel()
     }
-
-}
-
-class B{
-
 
 }

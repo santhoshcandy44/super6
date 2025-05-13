@@ -1,6 +1,7 @@
 package com.lts360.compose.ui.usedproducts.manage
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -87,13 +88,14 @@ fun PublishedUsedProductListingScreen(
                                 title = publishedUsedProductListing.name,
                                 shortDescription = publishedUsedProductListing.description,
                                 status = publishedUsedProductListing.status,
+                                type = publishedUsedProductListing.status,
+                                item = publishedUsedProductListing,
                                 onClick = { _, serviceId ->
                                     viewModel.setSelectedSeconds(serviceId)
                                     onNavigateUp(publishedUsedProductListing)
                                 },
-                                type = publishedUsedProductListing.status,
-                                item = publishedUsedProductListing
                             )
+
                         }
                     }
 
@@ -155,20 +157,19 @@ fun PublishedUsedProductListingScreen(
 
 
 @Composable
-fun UsedProductListingItem(
+private fun UsedProductListingItem(
     title: String,
     shortDescription: String,
     status: String,
-    onClick: (String, Long) -> Unit, // onClick callback
     type: String,
     item: EditableUsedProductListing,
-) {
-    // Outer container with vertical margin and rounded background
+    onClick: (String, Long) -> Unit,
+    ) {
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        onClick = dropUnlessResumed {
+        onClick = {
             onClick(type, item.productId)
         }
     ) {
@@ -192,7 +193,6 @@ fun UsedProductListingItem(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                // Short description text
                 Text(
                     text = shortDescription,
                     style = MaterialTheme.typography.bodyMedium,
@@ -200,7 +200,6 @@ fun UsedProductListingItem(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                // Status text with dynamic color
                 Text(
                     text = status,
                     style = MaterialTheme.typography.bodyMedium,

@@ -21,6 +21,7 @@ import androidx.navigation.toRoute
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.chat.IsolatedChatActivity
 import com.lts360.compose.ui.localjobs.BookmarkedDetailedLocalJobInfoScreen
+import com.lts360.compose.ui.localjobs.manage.BookmarkedLocalJobsImagesSliderScreen
 import com.lts360.compose.ui.main.navhosts.routes.BookMarkRoutes
 import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.main.profile.BookmarkedServiceOwnerProfileScreen
@@ -33,7 +34,6 @@ import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.usedproducts.BookmarkedDetailedUsedProductListingInfoScreen
 import com.lts360.compose.ui.usedproducts.BookmarkedFeedUserDetailedUsedProductListingInfoScreen
 import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
-import com.lts360.compose.ui.usedproducts.manage.BookmarkedLocalJobsSliderScreen
 import com.lts360.compose.ui.usedproducts.manage.BookmarkedSecondsOwnerProfileScreen
 import com.lts360.compose.ui.usedproducts.manage.BookmarkedSecondsSliderScreen
 import com.lts360.compose.ui.usedproducts.manage.FeedUserSecondsImagesSliderScreen
@@ -60,7 +60,7 @@ class BookmarksActivity : ComponentActivity() {
 
                         var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
 
-                        val navController = rememberBookMarksCustomBottomNavController(
+                        val navController = rememberBookMarksCustomNavController(
                             lastEntry,
                             bookmarksViewModel.isSelectedBookmarkNull(),
                             secondsOwnerProfileViewModel.isSelectedUsedProductListingNull(),
@@ -393,7 +393,7 @@ class BookmarksActivity : ComponentActivity() {
                                 val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
 
                                 selectedItem?.let {
-                                    BookmarkedLocalJobsSliderScreen(
+                                    BookmarkedLocalJobsImagesSliderScreen(
                                         selectedImagePosition,
                                         bookmarksViewModel
                                     ) { navController.popBackStack() }

@@ -48,39 +48,47 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import coil3.compose.AsyncImage
+import com.google.gson.Gson
 import com.lts360.R
 import com.lts360.app.database.models.notification.Notification
+import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
+import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
 import com.lts360.compose.ui.viewmodels.NotificationViewModel.Companion.getTimeAgo
-
+import com.lts360.pot.database.services.LocalJobApplicantNotification
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationScreen(navController: NavHostController,
-                       viewModel: NotificationViewModel
-) {
+fun NotificationScreen(navController: NavHostController, viewModel: NotificationViewModel) {
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-
-
 
     BackHandler {
 
         val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
         val hierarchy = navBackStackEntry?.destination?.hierarchy
 
-        if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
-            // Navigate back to A and preserve its state
+        if (hierarchy?.any { nonNullDestination ->
+                allowedScreens.any {
+                    nonNullDestination.hasRoute(
+                        it::class
+                    )
+                }
+            } == true) {
             navController.navigate(BottomBar.Home()) {
                 launchSingleTop = true
                 restoreState = true
@@ -89,28 +97,19 @@ fun NotificationScreen(navController: NavHostController,
                 }
             }
         } else {
-            // Let the default back behavior occur
             navController.popBackStack()
         }
     }
-
-
-
-
-    // Collect state from ViewModel
 
     val notifications by viewModel.notifications.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val selectedItem by viewModel.selectedItem.collectAsState()
 
-
-    // Initialize the ModalBottomSheetState with default value
-
     val sheetState = rememberModalBottomSheetState()
 
-    val listState = rememberLazyListState() // Remember the scroll state
+    val listState = rememberLazyListState()
 
-    var bottomSheetValue by remember{ mutableStateOf(false) }
+    var bottomSheetValue by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(bottomSheetValue) {
@@ -122,10 +121,9 @@ fun NotificationScreen(navController: NavHostController,
     }
 
 
+    Surface(modifier = Modifier.fillMaxSize()) {
 
-    Surface(modifier = Modifier.fillMaxSize()){
-
-        Column(modifier = Modifier.fillMaxSize()){
+        Column(modifier = Modifier.fillMaxSize()) {
             TopAppBar(
                 title = {
                     Text(
@@ -134,31 +132,19 @@ fun NotificationScreen(navController: NavHostController,
                     )
                 })
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize() // This makes the Box take up the entire available space
-
-            ) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .align(Alignment.Center) // Centers the CircularProgressIndicator inside the Box
-                    )
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 } else {
 
 
                     if (notifications.isEmpty()) {
 
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            contentAlignment = Alignment.Center // Center content within the Box
-
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-
-                            ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
                                 Image(
                                     painter = painterResource(R.drawable.no_notifications),
@@ -188,12 +174,11 @@ fun NotificationScreen(navController: NavHostController,
 
                             if (notifications.any { it.status == "un_read" }) {
                                 item {
-                                    // "Mark All as Read" Button
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(8.dp),
-                                        horizontalArrangement = Arrangement.End // Aligns the button to the end
+                                        horizontalArrangement = Arrangement.End
                                     ) {
                                         Text(
                                             text = "Mark All as Read",
@@ -213,10 +198,29 @@ fun NotificationScreen(navController: NavHostController,
                                 notifications,
                             ) { index, notification ->
 
-                                NotificationCard(notification, index) {
-                                    bottomSheetValue=true
-                                    viewModel.setSelectedItem(notification)
+                                if(notification.type=="general"){
+                                    GeneralNotificationCard(notification) {
+                                        bottomSheetValue = true
+                                        viewModel.setSelectedItem(notification)
+                                    }
+                                }else if(notification.type=="business_local_job_application"){
+
+                                    val data = remember(notification.data) {
+                                        runCatching {
+                                            Gson().fromJson(notification.data, LocalJobApplicantNotification::class.java)
+                                        }.getOrNull()
+                                    }
+
+                                    data?.let {
+                                        BusinessLocalJobApplicationNotificationCard(notification, it) {
+                                            bottomSheetValue = true
+                                            viewModel.setSelectedItem(notification)
+                                        }
+                                    }
+
                                 }
+
+
                             }
                         }
                     }
@@ -234,7 +238,7 @@ fun NotificationScreen(navController: NavHostController,
                 .safeDrawingPadding()
                 .padding(16.dp),
             onDismissRequest = {
-                bottomSheetValue=false
+                bottomSheetValue = false
             },
             sheetState = sheetState,
             dragHandle = null,
@@ -245,14 +249,13 @@ fun NotificationScreen(navController: NavHostController,
                 Column(modifier = Modifier.fillMaxWidth()) {
 
 
-
-                    if(nonNullSelectedItem.status=="un_read"){
+                    if (nonNullSelectedItem.status == "un_read") {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
                                     viewModel.markAsRead(nonNullSelectedItem)
-                                    bottomSheetValue=false
+                                    bottomSheetValue = false
 
                                 }
                                 .padding(16.dp),
@@ -271,8 +274,10 @@ fun NotificationScreen(navController: NavHostController,
                                 tint = Color.Unspecified
                             )
 
-                            Text(text = "Mark as Read",
-                                style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "Mark as Read",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
                     }
 
@@ -282,7 +287,7 @@ fun NotificationScreen(navController: NavHostController,
                             .clickable {
 
                                 viewModel.deleteNotification(nonNullSelectedItem)
-                                bottomSheetValue=false
+                                bottomSheetValue = false
                             }
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -290,7 +295,6 @@ fun NotificationScreen(navController: NavHostController,
                     ) {
 
 
-                        // Bookmark Icon
                         Icon(
                             painter = painterResource(
                                 MaterialTheme.icons.deleteNotification
@@ -300,8 +304,8 @@ fun NotificationScreen(navController: NavHostController,
                             tint = Color.Unspecified
                         )
 
-                        // Text
-                        Text(text = "Delete",
+                        Text(
+                            text = "Delete",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -319,17 +323,15 @@ fun NotificationScreen(navController: NavHostController,
 
 
 @Composable
-fun NotificationCard(
+private fun GeneralNotificationCard(
     notification: Notification,
-    position: Int,
-    onMoreOptionClick: (Int) -> Unit,
+    onMoreOptionClick: () -> Unit,
 ) {
 
-    // Determine background color based on notification status
     val backgroundColor = if (notification.status == "un_read") {
-        Color(0xFFDEECFF).copy(alpha = 0.2f) // Example for unread color
+        Color(0xFFDEECFF).copy(alpha = 0.2f)
     } else {
-       MaterialTheme.colorScheme.surfaceContainerHighest
+        MaterialTheme.colorScheme.surfaceContainerHighest
     }
 
     Card(
@@ -351,18 +353,17 @@ fun NotificationCard(
                     .weight(1f)
                     .padding(8.dp)
             ) {
-                // Notification icon
                 Box(
                     modifier = Modifier
-                        .size(32.dp) // Adjust size based on padding and drawable dimensions
-                        .background(Color(0xFFC7F6C7), shape = CircleShape) // Oval shape with color
+                        .size(32.dp)
+                        .background(Color(0xFFC7F6C7), shape = CircleShape)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_general_notification_message),
                         contentDescription = null,
                         modifier = Modifier
                             .size(24.dp)
-                            .align(Alignment.Center) // Center the icon
+                            .align(Alignment.Center)
                     )
                 }
 
@@ -373,7 +374,6 @@ fun NotificationCard(
                     modifier = Modifier
                         .align(Alignment.CenterVertically)
                 ) {
-                    // Title
                     Text(
                         text = notification.title,
                         style = MaterialTheme.typography.bodyMedium.copy(
@@ -383,14 +383,12 @@ fun NotificationCard(
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
 
-                    // Message
                     Text(
                         text = notification.message,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
 
-                    // Time aligned to the end
                     Text(
                         text = getTimeAgo(notification.timestamp),
                         style = MaterialTheme.typography.bodySmall,
@@ -401,9 +399,124 @@ fun NotificationCard(
                 }
             }
 
-            // More option icon with click handling
             IconButton(
-                onClick = { onMoreOptionClick(position) },
+                onClick = onMoreOptionClick,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_more_vertical_dots),
+                    contentDescription = "More options"
+                )
+            }
+        }
+    }
+    Spacer(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(0.8.dp)
+            .background(Color.LightGray)
+    )
+
+}
+
+@Composable
+private fun BusinessLocalJobApplicationNotificationCard(
+    notification: Notification,
+    applicantData: LocalJobApplicantNotification,
+    onMoreOptionClick: () -> Unit,
+
+) {
+
+
+
+    val backgroundColor = if (notification.status == "un_read") {
+        Color(0xFFDEECFF).copy(alpha = 0.2f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHighest
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = backgroundColor
+        ),
+        shape = RectangleShape,
+        modifier = Modifier
+            .fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .background(Color(0xFFC7F6C7), shape = CircleShape)
+                ) {
+                    AsyncImage(
+                        applicantData.user.profilePicUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(60.dp)
+                            .align(Alignment.Center)
+                    )
+                }
+
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                ) {
+                    Text(
+                        text = "You received new application!",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+
+                    Text(
+                        text =  buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.customColorScheme.linkColor
+                                )
+                            ) {
+                                append(applicantData.user.firstName)
+                                val lastName = applicantData.user.lastName
+                                if (!lastName.isNullOrBlank()) {
+                                    append(" ")
+                                    append(lastName)
+                                }
+                            }
+
+                            append(" applied for the local job.")
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+
+                    Text(text = getTimeAgo(notification.timestamp),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(horizontal = 8.dp)
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = onMoreOptionClick,
                 modifier = Modifier.align(Alignment.CenterVertically)
             ) {
                 Icon(

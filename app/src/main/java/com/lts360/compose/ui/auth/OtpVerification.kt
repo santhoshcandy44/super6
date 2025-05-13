@@ -97,56 +97,36 @@ fun OtpVerificationScreen(
     onPopBackStack: () -> Unit
 ) {
 
-    // Collecting state for the OTP fields
     val otpFields by viewModel.otpFields.collectAsState()
-
-    // Collecting state for the timer
     val timeLeft by viewModel.timeLeft.collectAsState()
-
-    // Collecting state for the resend button enable/disable status
     val resendEnabled by viewModel.resendEnabled.collectAsState()
-
-
-    // Collecting state for the resend button enable/disable status
     val timerVisible by viewModel.timerVisible.collectAsState()
-
-
-    // Function to check if all fields are filled
     val allOtpFieldsEntered = otpFields.all { it.text.isNotEmpty() }
-
 
     val focusedIndex by viewModel.focusedIndex.collectAsState()
 
-
-
     Box(modifier = Modifier.fillMaxSize()) {
 
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    navigationIcon = {
-                        IconButton(
-                            modifier = Modifier.focusProperties { canFocus = false },
-                            onClick = dropUnlessResumed
-                            { onPopBackStack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back Icon"
-                            )
-                        }
-
-                    },
-
-                    title = {
-                        Text(
-                            text = "OTP Sent via Email",
-                            style = MaterialTheme.typography.titleMedium
+        Scaffold(topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "OTP Sent via Email",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        modifier = Modifier.focusProperties { canFocus = false },
+                        onClick = dropUnlessResumed { onPopBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back Icon"
                         )
                     }
-                )
-            }
-
-        ) { innerPadding ->
+                }
+            )
+        }) { innerPadding ->
 
             Surface(
                 modifier = Modifier
@@ -155,18 +135,35 @@ fun OtpVerificationScreen(
             ) {
 
 
-                OtpVerificationContent(
-                    allOtpFieldsEntered = allOtpFieldsEntered,
-                    timerVisible = timerVisible,
-                    resendEnabled = resendEnabled,
-                    isLoading = isLoading,
+                OtpVerificationColumn(
                     email = email,
                     otpFields = otpFields,
+                    allOtpFieldsEntered = allOtpFieldsEntered,
                     timeLeft = timeLeft,
+                    timerVisibility = timerVisible,
+                    resendEnabled = resendEnabled,
+                    focusedIndex = focusedIndex,
+                    isLoading = isLoading,
+                    updateFocusedIndex = {
+                        viewModel.updateFocusedIndex(it)
+                    },
+                    onForwardFocusedIndex = {
+                        val i = viewModel.focusedIndex.value
+                        if (i < otpFields.size - 1) {
+                            viewModel.updateFocusedIndex(i + 1)
+                        }
+                    },
+                    onBackWardFocusedIndex = {
+
+                        val i = viewModel.focusedIndex.value
+
+                        if (i != 0) {
+                            viewModel.updateFocusedIndex(i - 1)
+                        }
+                    },
                     updateDigit = { value ->
                         viewModel.updateDigit(value, viewModel.focusedIndex.value) {
                             viewModel.updateFocusedIndex(it)
-
                         }
                     },
 
@@ -186,36 +183,12 @@ fun OtpVerificationScreen(
                         }
                     },
 
-                    onResendOtpClicked = {
-                        onResendOtpClicked()
-                    },
+                    onResendOtpClicked = onResendOtpClicked,
                     {
                         onVerifyClicked(otpFields.joinToString("") { it.text })
                     },
-                    focusedIndex = focusedIndex,
-                    onForwardFocusedIndex = {
-                        val i = viewModel.focusedIndex.value
-
-                        if (i < otpFields.size - 1) {
-                            viewModel.updateFocusedIndex(i + 1)
-                        }
-                    },
-
-                    updateFocusedIndex = {
-                        viewModel.updateFocusedIndex(it)
-
-                    },
-                    onBackWardFocusedIndex = {
-
-                        val i = viewModel.focusedIndex.value
-
-                        if (i != 0) {
-                            viewModel.updateFocusedIndex(i - 1)
-                        }
-                    }
                 )
             }
-
 
         }
         if (isLoading) {
@@ -228,33 +201,30 @@ fun OtpVerificationScreen(
 }
 
 @Composable
-private fun OtpVerificationContent(
-    allOtpFieldsEntered: Boolean,
-    timerVisible: Boolean,
-    resendEnabled: Boolean,
-    isLoading: Boolean,
+private fun OtpVerificationColumn(
     email: String,
     otpFields: List<TextFieldValue>,
+    allOtpFieldsEntered: Boolean,
     timeLeft: String,
-    updateDigit: (String) -> Unit,
-    onBackSpace: () -> Unit,
-    onResendOtpClicked: () -> Unit,
-    onVerifyClicked: () -> Unit,
+    timerVisibility: Boolean,
+    resendEnabled: Boolean,
     focusedIndex: Int,
+    isLoading: Boolean,
     updateFocusedIndex: (Int) -> Unit,
     onForwardFocusedIndex: () -> Unit,
     onBackWardFocusedIndex: () -> Unit,
+    updateDigit: (String) -> Unit,
+    onBackSpace: () -> Unit,
+    onResendOtpClicked: () -> Unit,
+    onVerifyClicked: () -> Unit
 ) {
 
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
+    Column(modifier = Modifier
+            .fillMaxSize()) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .weight(1f) // Take up available space above the bottom box
+                .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(top = 16.dp)
@@ -263,29 +233,27 @@ private fun OtpVerificationContent(
 
 
             Row(
-                modifier = Modifier.fillMaxWidth(), // Fill available width
-                verticalAlignment = Alignment.CenterVertically // Align items vertically in the center
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Image
                 Image(
                     painter = painterResource(id = R.drawable.email_otp_verification),
                     contentDescription = null,
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(CircleShape) // Make the image rounded
+                        .clip(CircleShape)
                 )
 
-                Spacer(modifier = Modifier.width(8.dp)) // Use width instead of height to space horizontally
+                Spacer(modifier = Modifier.width(8.dp))
 
-                // Title with weight
                 Text(
                     text = "Email Verification",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
-                        .weight(1f) // Take remaining space in the row
+                        .weight(1f)
                         .padding(vertical = 4.dp),
-                    textAlign = TextAlign.Start // Align text to the start
+                    textAlign = TextAlign.Start
                 )
             }
 
@@ -320,19 +288,17 @@ private fun OtpVerificationContent(
 
                         otpFields.forEachIndexed { i, _ ->
                             Box(
-                                contentAlignment = Alignment.Center, // Center the text inside the box
+                                contentAlignment = Alignment.Center,
                                 modifier = Modifier
                                     .sizeIn(
                                         maxWidth = 40.dp,
                                         maxHeight = 40.dp
-                                    ) // Size of the box, adjust based on your design
+                                    )
                                     .weight(1f, fill = false)
                                     .aspectRatio(1f)
                                     .graphicsLayer {
-
                                         scaleX = if (focusedIndex == i) 1.10f else 1f
                                         scaleY = if (focusedIndex == i) 1.10f else 1f
-
                                     }
 
                                     .border(
@@ -340,7 +306,7 @@ private fun OtpVerificationContent(
                                             2.dp,
                                             if (focusedIndex == i) MaterialTheme.colorScheme.primary else Color.LightGray
                                         ),
-                                        shape = RoundedCornerShape(4.dp) // Optional: Rounded corners
+                                        shape = RoundedCornerShape(4.dp)
                                     )
                                     .clickable(
                                         indication = null,
@@ -348,15 +314,12 @@ private fun OtpVerificationContent(
                                             MutableInteractionSource()
                                         }
                                     ) {
-                                        // Handle click event to focus the box
                                         updateFocusedIndex(i)
                                     }
                             ) {
 
-
-                                // Display the OTP digit, or show a placeholder if it's empty
                                 Text(
-                                    text = otpFields[i].text.ifEmpty { "_" }, // Placeholder when empty
+                                    text = otpFields[i].text.ifEmpty { "_" },
                                     style = TextStyle(
                                         textAlign = TextAlign.Center,
                                         fontSize = 24.sp,
@@ -366,7 +329,6 @@ private fun OtpVerificationContent(
                             }
 
 
-                            // Optional spacing between the input fields
                             if (i < otpFields.size - 1) {
                                 Spacer(modifier = Modifier.width(8.dp))
                             }
@@ -376,7 +338,6 @@ private fun OtpVerificationContent(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Verify Button
 
 
                     NavigatorSubmitButton(
@@ -409,25 +370,23 @@ private fun OtpVerificationContent(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Timer and Resend OTP Section
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
 
-                        if (timerVisible) {
+                        if (timerVisibility) {
                             Row(
 
                                 modifier = Modifier
                                     .background(
                                         color = MaterialTheme.colorScheme.surface,
-                                        shape = RoundedCornerShape(8.dp) // Add rounded corners with a radius of 8dp
+                                        shape = RoundedCornerShape(8.dp)
                                     )
-                                    .padding(8.dp), // Optional padding for spacing inside the box
+                                    .padding(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center // Align the content horizontally in the center
+                                horizontalArrangement = Arrangement.Center
                             ) {
 
-                                // Combine both texts into a single spannable string
                                 Text(
                                     text = buildAnnotatedString {
                                         append("Request new OTP after ")
@@ -437,7 +396,7 @@ private fun OtpVerificationContent(
                                     },
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier
-                                        .padding(4.dp), // Optional padding for spacing inside the box
+                                        .padding(4.dp),
                                 )
                             }
                         }
@@ -449,9 +408,9 @@ private fun OtpVerificationContent(
                                     .padding(8.dp)
                                     .focusProperties {
                                         canFocus = false
-                                    }, // Optional padding for spacing inside the box
+                                    },
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center // Align the content horizontally in the center
+                                horizontalArrangement = Arrangement.Center
                             ) {
 
 
@@ -462,7 +421,7 @@ private fun OtpVerificationContent(
                                         .clickable {
                                             onResendOtpClicked()
                                         }
-                                        .padding(4.dp), // Optional padding for spacing inside the box
+                                        .padding(4.dp),
                                 )
                             }
                         }
@@ -476,22 +435,17 @@ private fun OtpVerificationContent(
 
         Box(
             modifier = Modifier
-                .fillMaxWidth() // Fill the width
+                .fillMaxWidth()
                 .background(Color.Blue)
-                .wrapContentHeight() // Wrap content height
-
-
+                .wrapContentHeight()
         ) {
 
 
             CustomNumberInput(onDigitClick = {
-
                 updateDigit(it)
-
             }, onBackspaceClick = {
                 onBackSpace()
             }, onForwardClick = {
-
                 onForwardFocusedIndex()
 
             }) {
@@ -894,11 +848,10 @@ fun CustomPinInput(
                                 if (digit == "BackSpace") {
 
 
-
                                     Button(
                                         shape = RectangleShape,
                                         modifier = Modifier
-                                        .weight(1f)
+                                            .weight(1f)
                                             .focusProperties { canFocus = false }
                                             .indication(MutableInteractionSource(), null),
 

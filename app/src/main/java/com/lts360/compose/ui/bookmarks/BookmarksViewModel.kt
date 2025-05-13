@@ -29,17 +29,21 @@ import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
 import com.lts360.compose.ui.localjobs.models.LocalJob
+import com.lts360.compose.ui.managers.UserGeneralPreferencesManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
+import com.lts360.compose.ui.profile.repos.UserProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.reflect.Type
 import javax.inject.Inject
-
 
 class BookMarkedItemTypeAdapter : JsonDeserializer<BookMarkedItem?> {
 
@@ -52,7 +56,11 @@ class BookMarkedItemTypeAdapter : JsonDeserializer<BookMarkedItem?> {
         val type = jsonObject?.get("type")?.asString
         return when (type) {
             "service" -> context?.deserialize<Service>(json, Service::class.java)
-            "used_product_listing" -> context?.deserialize<UsedProductListing>(json, UsedProductListing::class.java)
+            "used_product_listing" -> context?.deserialize<UsedProductListing>(
+                json,
+                UsedProductListing::class.java
+            )
+
             "local_job" -> context?.deserialize<LocalJob>(json, LocalJob::class.java)
             else -> throw JsonParseException("Unknown type: $type")
         }
@@ -66,13 +74,27 @@ class BookmarksViewModel @Inject constructor(
     val tokenManager: TokenManager,
     private val chatUserDao: ChatUserDao,
     val chatUserRepository: ChatUserRepository,
+    userProfileRepository: UserProfileRepository,
+    private val userGeneralPreferencesManager: UserGeneralPreferencesManager
 
-    ) : ViewModel() {
+) : ViewModel() {
 
     val userId = UserSharedPreferencesManager.userId
 
     val signInMethod = tokenManager.getSignInMethod()
 
+
+    val isPhoneNumberVerified = userProfileRepository
+        .getUserProfileSettingsInfoFlow(userId)
+        .map { it?.phoneCountryCode != null && it.phoneNumber != null }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = false
+        )
+
+    val isDontAskAgainChecked =
+        userGeneralPreferencesManager.isDontAskAgainChecked
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading = _isLoading.asStateFlow()
@@ -93,14 +115,14 @@ class BookmarksViewModel @Inject constructor(
     private val _selectedItem = MutableStateFlow<BookMarkedItem?>(null)
     val selectedItem = _selectedItem.asStateFlow()
 
-
+    private val _isApplying = MutableStateFlow(false)
+    val isApplying = _isApplying.asStateFlow()
 
     init {
         onFetchUserBookmarks(userId)
     }
 
 
-    // Function to update the error message
     fun updateError(exception: Throwable?) {
 
         _error.value = exception?.let {
@@ -120,7 +142,7 @@ class BookmarksViewModel @Inject constructor(
         }
     }
 
-    fun isSelectedBookmarkNull()  =_selectedItem.value==null
+    fun isSelectedBookmarkNull() = _selectedItem.value == null
 
     fun removeUsedProductListingItem(service: UsedProductListing) {
         _bookmarks.value = _bookmarks.value.filter {
@@ -143,6 +165,7 @@ class BookmarksViewModel @Inject constructor(
             }
         }
     }
+
     fun updateUsedProductItem(usedProductListing: UsedProductListing, isBookmarked: Boolean) {
         _bookmarks.value = _bookmarks.value.map {
             if (it is UsedProductListing && it.type == "used_product_listing" && it.productId == usedProductListing.productId) {
@@ -165,23 +188,27 @@ class BookmarksViewModel @Inject constructor(
     }
 
 
+    fun setLocalJobPersonalInfoPromptIsDontAskAgainChecked(value: Boolean) {
+        viewModelScope.launch {
+            userGeneralPreferencesManager.setLocalJobPersonalInfoPromptIsDontAskAgainChecked(value)
+        }
+    }
+
     suspend fun getChatUser(userId: Long, userProfile: FeedUserProfileInfo): ChatUser {
 
 
         return withContext(Dispatchers.IO) {
             val chatUser = chatUserDao.getChatUserByRecipientId(userProfile.userId)
 
-            // If chat user exists, update selected values
             chatUser ?: run {
-                // Insert new chat user and then update the state
-                val newChatUser = ChatUser(
+                ChatUser(
                     userId = userId,
                     recipientId = userProfile.userId,
                     timestamp = System.currentTimeMillis(),
                     userProfile = userProfile.copy(isOnline = false)
-                )
-                val chatId = chatUserDao.insertChatUser(newChatUser).toInt() // New chat ID
-                newChatUser.copy(chatId = chatId)
+                ).let {
+                    it.copy(chatId = chatUserDao.insertChatUser(it).toInt())
+                }
             }
         }
 
@@ -192,8 +219,8 @@ class BookmarksViewModel @Inject constructor(
         userId: Long,
         isLoading: Boolean = true,
         isRefreshing: Boolean = false,
-        onSuccess: (String) -> Unit={},
-        onError: (String) -> Unit={},
+        onSuccess: (String) -> Unit = {},
+        onError: (String) -> Unit = {},
     ) {
 
         viewModelScope.launch {
@@ -303,7 +330,6 @@ class BookmarksViewModel @Inject constructor(
     }
 
 
-
     fun onRemoveLocalJobBookmark(
         userId: Long,
         item: LocalJob,
@@ -330,6 +356,74 @@ class BookmarksViewModel @Inject constructor(
         }
     }
 
+    fun onApplyLocalJob(
+        userId: Long,
+        localJobId: Long,
+        onSuccess: (String) -> Unit={},
+        onError: (String) -> Unit={}
+    ) {
+        _isApplying.value = true
+        viewModelScope.launch {
+            try {
+                when (val result = applyLocalJob(userId, localJobId)) {
+                    is Result.Success -> {
+                        onSuccess(result.data.message)
+                    }
+
+                    is Result.Error -> {
+                        val error = mapExceptionToError(result.error).errorMessage
+                        onError(error)
+                    }
+                }
+            } catch (_: Exception) {
+                val error = "Something Went Wrong"
+                onError(error)
+
+            }
+            finally {
+                _isApplying.value = false
+            }
+        }
+    }
+
+
+    private suspend fun fetchUserBookmarks(
+        userId: Long,
+    ): Result<ResponseReply> {
+
+
+        return try {
+            val response = AppClient.instance.create(ApiService::class.java)
+                .getUserBookmarks(userId)
+
+            if (response.isSuccessful) {
+                // Handle successful response
+                val body = response.body()
+
+                if (body != null && body.isSuccessful) {
+
+                    Result.Success(body)
+
+
+                } else {
+                    val errorMessage = "Failed, try again later..."
+                    Result.Error(Exception(errorMessage))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = try {
+                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
+                } catch (e: Exception) {
+                    "An unknown error occurred"
+                }
+
+                Result.Error(Exception(errorMessage))
+            }
+        } catch (t: Throwable) {
+            t.printStackTrace()
+            Result.Error(t)
+        }
+    }
 
     private suspend fun removeLocalJobBookmark(
         userId: Long,
@@ -359,7 +453,7 @@ class BookmarksViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))
@@ -398,7 +492,7 @@ class BookmarksViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))
@@ -436,7 +530,7 @@ class BookmarksViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))
@@ -448,43 +542,46 @@ class BookmarksViewModel @Inject constructor(
     }
 
 
-    // Method to handle registration
-    private suspend fun fetchUserBookmarks(
+    suspend fun applyLocalJob(
         userId: Long,
+        localJobId: Long,
     ): Result<ResponseReply> {
-
-
         return try {
-            val response = AppClient.instance.create(ApiService::class.java)
-                .getUserBookmarks(userId)
+            AppClient.instance.create(ManageLocalJobService::class.java)
+                .applyLocalJob(
+                    userId,
+                    localJobId
+                )
+                .let {
+                    if (it.isSuccessful) {
+                        val body = it.body()
+                        if (body != null && body.isSuccessful) {
+                            Result.Success(body)
 
-            if (response.isSuccessful) {
-                // Handle successful response
-                val body = response.body()
-
-                if (body != null && body.isSuccessful) {
-
-                    Result.Success(body)
-
-
-                } else {
-                    val errorMessage = "Failed, try again later..."
-                    Result.Error(Exception(errorMessage))
+                        } else {
+                            val errorMessage = "Failed, try again later..."
+                            Result.Error(Exception(errorMessage))
+                        }
+                    } else {
+                        Result.Error(
+                            Exception(
+                                try {
+                                    Gson().fromJson(
+                                        it.errorBody()?.string(),
+                                        ErrorResponse::class.java
+                                    ).message
+                                } catch (_: Exception) {
+                                    "An unknown error occurred"
+                                }
+                            )
+                        )
+                    }
                 }
-            } else {
-                val errorBody = response.errorBody()?.string()
-                val errorMessage = try {
-                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
-                    "An unknown error occurred"
-                }
 
-                Result.Error(Exception(errorMessage))
-            }
         } catch (t: Throwable) {
-            t.printStackTrace()
             Result.Error(t)
         }
+
     }
 
 

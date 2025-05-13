@@ -9,21 +9,30 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.os.Build
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.util.Log
+import android.widget.RemoteViews
+import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.IconCompat
+import androidx.core.graphics.drawable.toBitmap
 import coil3.ImageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.toBitmap
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import com.lts360.R
+import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.app.database.models.chat.Message
 import com.lts360.components.isMainActivityInStack
 
@@ -50,28 +59,28 @@ fun buildAndShowGeneralNotification(context: Context, title: String?, messageBod
         .setContentTitle(title)
         .setContentText(messageBody)
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-        .setContentIntent(PendingIntent.getActivity(
-            context,
-            requestID,
-            Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            },
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        ))
+        .setContentIntent(
+            PendingIntent.getActivity(
+                context,
+                requestID,
+                Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                },
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        )
         .setAutoCancel(true)
 
     val notificationManager = NotificationManagerCompat.from(context)
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val name = "General"
-        val descriptionText = "Notifications for general updates"
-        val importance = NotificationManager.IMPORTANCE_DEFAULT
-        val channel = NotificationChannel(GENERAL_CHANNEL_ID, name, importance).apply {
-            description = descriptionText
-        }
-        val notificationManagerChannel = context.getSystemService(NotificationManager::class.java)
-        notificationManagerChannel.createNotificationChannel(channel)
+    val name = "General"
+    val descriptionText = "Notifications for general updates"
+    val importance = NotificationManager.IMPORTANCE_DEFAULT
+    val channel = NotificationChannel(GENERAL_CHANNEL_ID, name, importance).apply {
+        description = descriptionText
     }
+    val notificationManagerChannel = context.getSystemService(NotificationManager::class.java)
+    notificationManagerChannel.createNotificationChannel(channel)
 
     // Check if the permission to post notifications is granted
     if (ActivityCompat.checkSelfPermission(
@@ -168,8 +177,6 @@ suspend fun buildAndShowChatNotification(
 }
 
 
-
-
 private fun buildChatNotification(
     context: Context,
     notificationId: Int,
@@ -247,24 +254,22 @@ private fun buildChatNotification(
     val notificationManager = NotificationManagerCompat.from(context)
     notificationManager.cancel(notificationId)
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val name = "Messages"
-        val descriptionText = "Notifications for new messages and chat updates"
-        val importance = NotificationManager.IMPORTANCE_HIGH
-        val notificationManagerChannel = context.getSystemService(NotificationManager::class.java)
-        val chatChannelGroup = NotificationChannelGroup(CHAT_GROUP_ID, "Chats")
-        notificationManager.createNotificationChannelGroup(chatChannelGroup)
-        notificationManagerChannel.createNotificationChannel(
-            NotificationChannel(
-                CHAT_CHANNEL_ID,
-                name,
-                importance
-            ).apply {
-                description = descriptionText
-                group = CHAT_GROUP_ID
-            }
-        )
-    }
+    val name = "Messages"
+    val descriptionText = "Notifications for new messages and chat updates"
+    val importance = NotificationManager.IMPORTANCE_HIGH
+    val notificationManagerChannel = context.getSystemService(NotificationManager::class.java)
+    val chatChannelGroup = NotificationChannelGroup(CHAT_GROUP_ID, "Chats")
+    notificationManager.createNotificationChannelGroup(chatChannelGroup)
+    notificationManagerChannel.createNotificationChannel(
+        NotificationChannel(
+            CHAT_CHANNEL_ID,
+            name,
+            importance
+        ).apply {
+            description = descriptionText
+            group = CHAT_GROUP_ID
+        }
+    )
 
     if (ActivityCompat.checkSelfPermission(
             context,
@@ -274,5 +279,172 @@ private fun buildChatNotification(
         notificationManager.notify(notificationId, notificationBuilder.build())
     } else {
         Log.d(TAG, "Notification permission not granted.")
+    }
+}
+
+
+data class LocalJobApplicantNotification(
+    @SerializedName("applicant_id")
+    val applicantId: Long,
+    @SerializedName("user")
+    val user: FeedUserProfileInfo,
+    @SerializedName("local_job_title")
+    var localJobTitle: String
+)
+
+
+@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+suspend fun buildAndShowLocalJobApplicationNotification(
+    context: Context,
+    data: String
+) {
+
+
+    val localJobApplicantNotification =
+        Gson().fromJson(data, LocalJobApplicantNotification::class.java)
+
+    val applicantName = buildString {
+        append(localJobApplicantNotification.user.firstName)
+        val lastName = localJobApplicantNotification.user.lastName
+        if (!lastName.isNullOrBlank()) {
+            append(" ")
+            append(lastName)
+        }
+    }
+
+
+    val localJobTitle = localJobApplicantNotification.localJobTitle
+
+    val profileBitmap = localJobApplicantNotification.user.profilePicUrl?.let {
+        loadBitmapFromUrl(context, it)
+    }
+
+    val manager = context.getSystemService(NotificationManager::class.java)
+
+    val groupId = "business_group"
+
+    val group = NotificationChannelGroup(groupId, "Business")
+    manager.createNotificationChannelGroup(group)
+
+    val channelId = "local_job_application_channel"
+
+    val channel = NotificationChannel(
+        channelId, "Local Job Application Alerts", NotificationManager.IMPORTANCE_DEFAULT
+    )
+
+    channel.group = groupId
+    manager.createNotificationChannel(channel)
+
+
+    val collapsedRemoteView = RemoteViews(
+        context.packageName,
+        R.layout.collapsed_custom_local_job_applicant_applied_notification
+    ).apply {
+        val baseText = "$applicantName applied for the local job."
+        val spannable = SpannableString(baseText)
+
+        val start = baseText.indexOf(applicantName)
+        val end = start + applicantName.length
+
+        spannable.setSpan(
+            ForegroundColorSpan(ContextCompat.getColor(context, R.color.text_indicator_blue)),
+            start,
+            end,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        setTextViewText(R.id.text_applicant_name, spannable)
+        setTextViewText(R.id.text_job_title, localJobTitle)
+
+        profileBitmap?.let {
+            setImageViewBitmap(R.id.image_profile, getCircularBitmap(it))
+
+        } ?: run {
+            ContextCompat
+                .getDrawable(context, R.drawable.user_placeholder)
+                ?.toBitmap()
+                ?.let {
+                    setImageViewBitmap(R.id.image_profile, getCircularBitmap(it))
+                }
+        }
+    }
+
+    val expandedRemoteView = RemoteViews(
+        context.packageName,
+        R.layout.expanded_custom_local_job_applicant_applied_notification
+    ).apply {
+        val baseText = "$applicantName applied for the local job."
+        val spannable = SpannableString(baseText)
+
+        val start = baseText.indexOf(applicantName)
+        val end = start + applicantName.length
+
+        spannable.setSpan(
+            ForegroundColorSpan(ContextCompat.getColor(context, R.color.text_indicator_blue)),
+            start,
+            end,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        setTextViewText(R.id.text_applicant_name, spannable)
+        setTextViewText(R.id.text_job_title, localJobTitle)
+
+        ContextCompat
+            .getDrawable(context, R.drawable.user_placeholder)
+            ?.toBitmap()
+            ?.let {
+                setImageViewBitmap(R.id.image_profile, getCircularBitmap(it))
+            }
+
+    }
+
+
+    val notification = NotificationCompat.Builder(context, channelId)
+        .setSmallIcon(R.drawable.notification_icon)
+        .setCustomContentView(collapsedRemoteView)
+        .setCustomBigContentView(expandedRemoteView)
+        .setAutoCancel(true)
+        .build()
+
+    NotificationManagerCompat.from(context).notify(1001, notification)
+}
+
+
+fun getCircularBitmap(srcBitmap: Bitmap): Bitmap {
+    val size = minOf(srcBitmap.width, srcBitmap.height)
+    val output = createBitmap(size, size)
+
+    val canvas = android.graphics.Canvas(output)
+    val paint = android.graphics.Paint().apply {
+        isAntiAlias = true
+        shader = android.graphics.BitmapShader(
+            srcBitmap,
+            android.graphics.Shader.TileMode.CLAMP,
+            android.graphics.Shader.TileMode.CLAMP
+        )
+    }
+
+    val radius = size / 2f
+    canvas.drawCircle(radius, radius, radius, paint)
+
+    return output
+}
+
+
+suspend fun loadBitmapFromUrl(context: Context, imageUrl: String): Bitmap? {
+    val loader = ImageLoader(context)
+
+    val request = ImageRequest.Builder(context)
+        .data(imageUrl)
+        .allowHardware(false)
+        .build()
+
+    val result = loader.execute(request)
+
+
+    return if (result is SuccessResult) {
+        getCircularBitmap(result.image.toBitmap())
+    } else {
+        null
     }
 }

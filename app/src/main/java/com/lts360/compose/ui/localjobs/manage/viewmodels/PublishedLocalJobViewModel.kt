@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.lts360.api.utils.Result
 import com.lts360.api.utils.ResultError
 import com.lts360.api.utils.mapExceptionToError
@@ -14,9 +15,14 @@ import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.models.service.EditableLocation
 import com.lts360.compose.ui.chat.MAX_IMAGES
-import com.lts360.compose.ui.localjobs.manage.LocalJobsRepository
 import com.lts360.compose.ui.localjobs.manage.MaritalStatus
+import com.lts360.compose.ui.localjobs.manage.PublishedLocalJobsRepository
+import com.lts360.compose.ui.localjobs.manage.repos.LocalJobApplicantsPageSource
 import com.lts360.compose.ui.localjobs.models.EditableLocalJob
+import com.lts360.compose.ui.localjobs.models.LocalJob
+import com.lts360.compose.ui.localjobs.models.LocalJobApplicant
+import com.lts360.compose.ui.localjobs.models.toEditableLocalJob
+import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.services.manage.models.CombinedContainer
 import com.lts360.compose.ui.services.manage.models.CombinedContainerFactory
@@ -29,25 +35,31 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import java.time.ZonedDateTime
+import java.time.chrono.ChronoZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Currency
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.collections.map
 
 @HiltViewModel
 class PublishedLocalJobViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val savedStateHandle: SavedStateHandle,
-    private val repository: LocalJobsRepository
-) : ViewModel() {
+    private val repository: PublishedLocalJobsRepository,
+    networkConnectivityManager: NetworkConnectivityManager,
+
+    ) : ViewModel() {
 
     val userId: Long = UserSharedPreferencesManager.userId
 
-
     data class LocalJobState(
-        val localJobId: Long =-1,
+        val localJobId: Long = -1,
         val title: String = "",
         val description: String = "",
         val company: String = "",
@@ -86,10 +98,7 @@ class PublishedLocalJobViewModel @Inject constructor(
     )
 
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading = _isLoading.asStateFlow()
-
-
+    val connectivityManager = networkConnectivityManager
 
     val maritalStatusUnits = listOf(MaritalStatus.MARRIED, MaritalStatus.UNMARRIED)
 
@@ -110,8 +119,6 @@ class PublishedLocalJobViewModel @Inject constructor(
             salaryUnit = if (userCurrency in salaryUnits) userCurrency else "INR"
         )
     )
-
-
 
     val localJob = _localJob.asStateFlow()
 
@@ -137,16 +144,25 @@ class PublishedLocalJobViewModel @Inject constructor(
         )
 
 
-    private var onCreateOrUpdateJob: Job? = null
-
+    private var onUpdateLocalJob: Job? = null
 
     private var errorMessage: String = ""
 
-    val publishedLocalJobs = repository.publishedLocalJobs
-    val selectedLocalJob = repository.selectedLocalJob
+    private val _publishedLocalJobs = MutableStateFlow<List<EditableLocalJob>>(emptyList())
+    val publishedLocalJobs = _publishedLocalJobs.asStateFlow()
+
+    private val _selectedItem = MutableStateFlow<EditableLocalJob?>(null)
+    val selectedItem = _selectedItem.asStateFlow()
+
+    private val _pageSource = LocalJobApplicantsPageSource(pageSize = 30)
+    val pageSource: LocalJobApplicantsPageSource get() = _pageSource
+
 
     private val _resultError = MutableStateFlow<ResultError?>(null)
     val resultError = _resultError.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
@@ -162,16 +178,14 @@ class PublishedLocalJobViewModel @Inject constructor(
 
     init {
         _isLoading.value = true
-        viewModelScope.launch {
-            repository.onGetPublishedLocalJobs(userId, {
-                _isLoading.value = false
-            }, {
-                _isLoading.value = false
-                val mappedException = mapExceptionToError(it)
-                _resultError.value = mappedException
-                errorMessage = mappedException.errorMessage
-            })
-        }
+        onGetPublishedLocalJobs(userId, {
+            _isLoading.value = false
+        }, {
+            _isLoading.value = false
+            val mappedException = mapExceptionToError(it)
+            _resultError.value = mappedException
+            errorMessage = mappedException.errorMessage
+        })
     }
 
     fun setPickerLaunch(isLaunched: Boolean) {
@@ -182,34 +196,87 @@ class PublishedLocalJobViewModel @Inject constructor(
         _refreshImageIndex.value = index
     }
 
-    fun refreshPublishedItems(userId: Long) {
-        _resultError.value = null
-        _isRefreshing.value = true
-        viewModelScope.launch {
-            repository.onGetPublishedLocalJobs(userId, {
-                _isRefreshing.value = false
-            }, {
-                _isRefreshing.value = false
-                val mappedException = mapExceptionToError(it)
-                _resultError.value = mappedException
-                errorMessage = mapExceptionToError(it).errorMessage
-            })
+    private fun updatePublishedLocalJobs(items: List<EditableLocalJob>) {
+        _publishedLocalJobs.value = items
+    }
+
+
+    fun updateLocalJobId(item: EditableLocalJob) {
+        _publishedLocalJobs.update { list ->
+            list.map {
+                if (it.localJobId == item.localJobId) {
+                    item
+                } else {
+                    it
+                }
+            }
+        }
+
+        _selectedItem.value?.let {
+            if (it.localJobId == item.localJobId) {
+                _selectedItem.update {
+                    item
+                }
+            }
         }
     }
 
+    fun refreshPublishedItems(userId: Long) {
+        _resultError.value = null
+        _isRefreshing.value = true
+        onGetPublishedLocalJobs(userId, {
+            _isRefreshing.value = false
+        }, {
+            _isRefreshing.value = false
+            val mappedException = mapExceptionToError(it)
+            _resultError.value = mappedException
+            errorMessage = mapExceptionToError(it).errorMessage
+        })
+    }
+
     fun isSelectedLocalJobNull(): Boolean {
-        return selectedLocalJob.value == null
+        return _selectedItem.value == null
+    }
+
+    fun setSelectedItemAndLoadApplicants(itemId: Long) {
+        val index = _publishedLocalJobs.value.indexOfFirst {
+            it.localJobId == itemId
+        }
+        if (index != -1) {
+            _selectedItem.value = _publishedLocalJobs.value[index]
+        }
+        onNextPageLocalJobApplicants(itemId)
     }
 
     fun setSelectedItem(itemId: Long) {
-        repository.setSelectedItem(itemId)
-        selectedLocalJob.value?.let {
+        val index = _publishedLocalJobs.value.indexOfFirst {
+            it.localJobId == itemId
+        }
+        if (index != -1) {
+            _selectedItem.value = _publishedLocalJobs.value[index]
+        }
+        _selectedItem.value?.let {
             loadItemDetails(it)
         }
     }
 
     fun removeSelectedItem(itemId: Long) {
-        repository.removeSelectedItem(itemId)
+
+        val index = _publishedLocalJobs.value.indexOfFirst {
+            it.localJobId == itemId
+        }
+
+        if (index != -1) {
+            _publishedLocalJobs.value = _publishedLocalJobs.value.filter {
+                it.localJobId != itemId
+            }
+        }
+
+        _selectedItem.value = null
+    }
+
+    private fun createNewPageSource(): LocalJobApplicantsPageSource {
+        return LocalJobApplicantsPageSource(pageSize = 30)
     }
 
 
@@ -230,13 +297,14 @@ class PublishedLocalJobViewModel @Inject constructor(
         updateSalaryMax(item.salaryMax)
 
         updateCountry(item.country ?: "")
-        updateState(item.state?: "")
+        updateState(item.state ?: "")
         updateLocation(item.location)
 
         loadImageContainers(item.images.map {
             containerFactory.createCombinedContainerForEditableImage(it)
         })
     }
+
 
     fun onDeleteItem(
         userId: Long,
@@ -497,15 +565,17 @@ class PublishedLocalJobViewModel @Inject constructor(
         if (_localJob.value.ageMin < 18) {
             _errors.value = _errors.value.copy(age = "Minimum age must be at least 18")
             isValid = false
-        } else if (_localJob.value.ageMin > _localJob.value.ageMax) {
-            _errors.value = _errors.value.copy(age = "Minimum age cannot be greater than maximum age")
+        } else if (_localJob.value.salaryMax != -1 && _localJob.value.ageMin > _localJob.value.ageMax) {
+            _errors.value =
+                _errors.value.copy(age = "Minimum age cannot be greater than maximum age")
             isValid = false
         } else {
             _errors.value = _errors.value.copy(age = null)
         }
 
         if (_localJob.value.ageMax < _localJob.value.ageMin) {
-            _errors.value = _errors.value.copy(age = "Maximum age must be greater than or equal to minimum age")
+            _errors.value =
+                _errors.value.copy(age = "Maximum age must be greater than or equal to minimum age")
             isValid = false
         } else if (_localJob.value.ageMax > 99) {
             _errors.value = _errors.value.copy(age = "Maximum age cannot exceed 99")
@@ -519,7 +589,8 @@ class PublishedLocalJobViewModel @Inject constructor(
             .map { it.status }
 
         if (selectedStatuses.isEmpty()) {
-            _errors.value = _errors.value.copy(maritalStatuses = "At least 1 marital status must be selected")
+            _errors.value =
+                _errors.value.copy(maritalStatuses = "At least 1 marital status must be selected")
             isValid = false
         } else if (!selectedStatuses.all { it in maritalStatusUnits }) {
             _errors.value = _errors.value.copy(maritalStatuses = "Invalid marital status selected")
@@ -541,15 +612,17 @@ class PublishedLocalJobViewModel @Inject constructor(
         if (_localJob.value.salaryMin < 0) {
             _errors.value = _errors.value.copy(salaryMin = "Minimum salary must be set")
             isValid = false
-        } else if (_localJob.value.salaryMin > _localJob.value.salaryMax) {
-            _errors.value = _errors.value.copy(salaryMin = "Minimum salary cannot be greater than maximum salary")
+        } else if (_localJob.value.salaryMax != -1 && _localJob.value.salaryMin > _localJob.value.salaryMax) {
+            _errors.value =
+                _errors.value.copy(salaryMin = "Minimum salary cannot be greater than maximum salary")
             isValid = false
         } else {
             _errors.value = _errors.value.copy(salaryMin = null)
         }
 
-        if (_localJob.value.salaryMax < _localJob.value.salaryMin) {
-            _errors.value = _errors.value.copy(salaryMax = "Maximum salary must be greater than or equal to minimum salary")
+        if (_localJob.value.salaryMax != -1 && _localJob.value.salaryMax < _localJob.value.salaryMin) {
+            _errors.value =
+                _errors.value.copy(salaryMax = "Maximum salary must be greater than or equal to minimum salary")
             isValid = false
         } else {
             _errors.value = _errors.value.copy(salaryMax = null)
@@ -588,6 +661,45 @@ class PublishedLocalJobViewModel @Inject constructor(
     }
 
 
+    fun onGetPublishedLocalJobs(
+        userId: Long,
+        onSuccess: (items: List<EditableLocalJob>) -> Unit,
+        onError: (Throwable) -> Unit,
+    ) {
+
+        viewModelScope.launch {
+            try {
+                when (val result = repository.getLocalJobsByUserId(userId)) {
+                    is Result.Success -> {
+                        val data = Gson().fromJson(
+                            result.data.data,
+                            object : TypeToken<List<LocalJob>>() {}.type
+                        )
+                                as List<LocalJob>
+                        val listings = data.map { it.toEditableLocalJob() }
+
+                        updatePublishedLocalJobs(listings)
+                        onSuccess(listings)
+                    }
+
+                    is Result.Error -> {
+                        if (_publishedLocalJobs.value.isNotEmpty()) {
+                            _publishedLocalJobs.value = emptyList()
+                        }
+                        onError(result.error)
+                    }
+                }
+            } catch (t: Throwable) {
+                if (_publishedLocalJobs.value.isNotEmpty()) {
+                    _publishedLocalJobs.value = emptyList()
+                }
+                t.printStackTrace()
+                onError(Exception("Something Went Wrong"))
+            }
+        }
+    }
+
+
     fun onUpdateLocalJob(
         localJobId: RequestBody,
         title: RequestBody,
@@ -607,10 +719,10 @@ class PublishedLocalJobViewModel @Inject constructor(
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        onCreateOrUpdateJob = viewModelScope.launch {
+        onUpdateLocalJob = viewModelScope.launch {
             _isUpdating.value = true
 
-            when (val result = createOrUpdateUsedProductListing(
+            when (val result = updateLocalJob(
                 localJobId,
                 title,
                 description,
@@ -630,7 +742,7 @@ class PublishedLocalJobViewModel @Inject constructor(
                 is Result.Success -> {
                     onSuccess(result.data.message)
 
-                    repository.updateLocalJobId(
+                    updateLocalJobId(
                         Gson().fromJson(
                             result.data.data,
                             EditableLocalJob::class.java
@@ -648,7 +760,46 @@ class PublishedLocalJobViewModel @Inject constructor(
         }
     }
 
-    private suspend fun createOrUpdateUsedProductListing(
+
+    fun onNextPageLocalJobApplicants(userId: Long) {
+        viewModelScope.launch {
+            _pageSource.nextPage(userId)
+        }
+    }
+
+    fun onUpdateLastLoadedApplicantItemPosition(lastLoadedItemPosition: Int) {
+        _pageSource.updateLastLoadedItemPosition(lastLoadedItemPosition)
+    }
+
+    fun onRefreshApplicants(localJobId: Long) {
+        viewModelScope.launch {
+            _pageSource.refresh(localJobId)
+        }
+    }
+
+    fun onRetryGetApplicants(localJobId: Long) {
+        viewModelScope.launch {
+            _pageSource.retry(localJobId)
+        }
+    }
+
+
+    fun onMarkAsReviewedLocalJob(userId: Long, localJobId: Long, applicantId: Long
+    , onSuccess: () -> Unit={}, onError: (String) -> Unit={}) {
+        viewModelScope.launch {
+            _pageSource.markAsReviewedLocalJob(userId, localJobId, applicantId, onSuccess, onError)
+        }
+    }
+
+    fun onUnmarkAsReviewedLocalJob(userId: Long, localJobId: Long, applicantId: Long,
+                                   onSuccess: () -> Unit={}, onError: (String) -> Unit={}) {
+        viewModelScope.launch {
+            _pageSource.unmarkAsReviewedLocalJob(userId, localJobId, applicantId, onSuccess, onError)
+        }
+    }
+
+
+    private suspend fun updateLocalJob(
         localJobId: RequestBody,
         title: RequestBody,
         description: RequestBody,
@@ -718,4 +869,28 @@ class PublishedLocalJobViewModel @Inject constructor(
     }
 
 
+    fun formatZonedDateTimeFormat(zonedDateTime: String): String {
+        val parsedDateTime = ZonedDateTime.parse(zonedDateTime)
+        val formatted = parsedDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        return formatted
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

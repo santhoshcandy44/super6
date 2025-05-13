@@ -50,7 +50,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -73,6 +72,7 @@ import com.lts360.api.models.service.Image
 import com.lts360.api.models.service.UsedProductListing
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.dropUnlessResumedV2
+import com.lts360.compose.noRippleClickable
 import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
@@ -88,6 +88,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun DetailedUsedProductListingScreen(
     navHostController: NavHostController,
+    key: Int,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long) -> Unit,
     onUsedProductListingOwnerProfileClicked: (Long) -> Unit,
@@ -96,7 +97,7 @@ fun DetailedUsedProductListingScreen(
 
     val userId = viewModel.userId
     val isGuest = viewModel.isGuest
-    val selectedItem by viewModel.selectedItem.collectAsState()
+    val selectedItem by viewModel.getSecondsRepository(key).selectedItem.collectAsState()
 
 
     val scope = rememberCoroutineScope()
@@ -104,48 +105,33 @@ fun DetailedUsedProductListingScreen(
 
     DetailedUsedProductListingContent(
         userId,
+        isGuest,
         selectedItem,
         onNavigateUpSlider,
+
+        {
+            selectedItem?.let {
+                if (job?.isActive == true) {
+                    return@let
+                }
+
+                job = scope.launch {
+                    val selectedChatUser = viewModel.getChatUser(userId, it.user)
+                    val selectedChatId = selectedChatUser.chatId
+
+                    navigateUpChat(
+                        selectedChatUser,
+                        selectedChatId,
+                        it.user.userId
+                    )
+                }
+            }
+        },
         {
             selectedItem?.let {
                 onUsedProductListingOwnerProfileClicked(it.user.userId)
             }
         },
-        {
-            selectedItem?.let {
-                OutlinedButton(
-                    onClick = dropUnlessResumed {
-
-                        if (job?.isActive == true) {
-                            return@dropUnlessResumed
-                        }
-
-                        job = scope.launch {
-                            val selectedChatUser = viewModel.getChatUser(userId, it.user)
-                            val selectedChatId = selectedChatUser.chatId
-
-                            if (isGuest) {
-                                it()
-                            } else {
-                                navigateUpChat(
-                                    selectedChatUser,
-                                    selectedChatId,
-                                    it.user.userId
-                                )
-                            }
-                        }
-
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(text = "Send message", color = MaterialTheme.colorScheme.surface)
-                }
-            }
-        }
     ) {
         navHostController.popBackStack()
     }
@@ -165,51 +151,33 @@ fun FeedUserDetailedSecondsInfoScreen(
 
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
+    val isGuest = signInMethod == "guest"
 
     val selectedItem by viewModel.selectedItem.collectAsState()
 
-
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     DetailedUsedProductListingContent(
         userId,
+        isGuest,
         selectedItem,
         onNavigateUpSlider,
-        {},
         {
-
             selectedItem?.let {
-                OutlinedButton(
-                    onClick = dropUnlessResumed {
+                if (job?.isActive == true) {
+                    return@let
+                }
 
-                        if (job?.isActive == true) {
-                            return@dropUnlessResumed
-                        }
+                job = scope.launch {
+                    val selectedChatUser = viewModel.getChatUser(userId, it.user)
+                    val selectedChatId = selectedChatUser.chatId
 
-                        job = scope.launch {
-                            val selectedChatUser = viewModel.getChatUser(userId, it.user)
-                            val selectedChatId = selectedChatUser.chatId
-
-                            if (signInMethod == "guest") {
-                                it()
-                            } else {
-                                navigateUpChat(
-                                    selectedChatUser,
-                                    selectedChatId,
-                                    it.user.userId
-                                )
-                            }
-                        }
-
-                    },
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(text = "Send message", color = MaterialTheme.colorScheme.surface)
+                    navigateUpChat(
+                        selectedChatUser,
+                        selectedChatId,
+                        it.user.userId
+                    )
                 }
             }
 
@@ -230,57 +198,40 @@ fun BookmarkedDetailedUsedProductListingInfoScreen(
 
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
+    val isGuest = signInMethod == "guest"
 
     val selectedItem by viewModel.selectedItem.collectAsState()
 
-    val item = selectedItem // Store in a local variable
+    val item = selectedItem
 
-    if (item !is UsedProductListing) return // Smart cast now works
+    if (item !is UsedProductListing) return
 
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     DetailedUsedProductListingContent(
         userId,
+        isGuest,
         item,
         onNavigateUpSlider,
         {
-            onNavigateUpSecondsOwnerProfile(item.user.userId)
-        },
-        {
 
             item.let {
-                OutlinedButton(
-                    onClick = dropUnlessResumed {
-                        if (job?.isActive == true) {
-                            return@dropUnlessResumed
-                        }
-                        job = scope.launch {
-                            val selectedChatUser = viewModel.getChatUser(userId, it.user)
-                            val selectedChatId = selectedChatUser.chatId
+                job = scope.launch {
+                    val selectedChatUser = viewModel.getChatUser(userId, it.user)
+                    val selectedChatId = selectedChatUser.chatId
 
-                            if (signInMethod == "guest") {
-                                it()
-                            } else {
-                                navigateUpChat(
-                                    selectedChatId,
-                                    it.user.userId,
-                                    it.user
-                                )
-                            }
-                        }
-
-                    },
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(text = "Send message", color = MaterialTheme.colorScheme.surface)
+                    navigateUpChat(
+                        selectedChatId,
+                        it.user.userId,
+                        it.user
+                    )
                 }
             }
-        }
+        },
+        {
+            onNavigateUpSecondsOwnerProfile(item.user.userId)
+        },
     ) {
         navHostController.popBackStack()
     }
@@ -298,58 +249,39 @@ fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
 
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
+    val isGuest = signInMethod == "guest"
 
     val selectedItem by viewModel.selectedItem.collectAsState()
 
 
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
 
-    val item = selectedItem // Store in a local variable
+    val item = selectedItem
 
-    if (item !is UsedProductListing) return // Smart cast now works
+    if (item !is UsedProductListing) return
 
 
     DetailedUsedProductListingContent(
         userId,
+        isGuest,
         item,
         onNavigateUpSlider,
-        {},
         {
-
-            OutlinedButton(
-                onClick = dropUnlessResumed {
-
-                    if (job?.isActive == true) {
-                        return@dropUnlessResumed
-                    }
-
-                    job = scope.launch {
-                        val selectedChatUser = viewModel.getChatUser(userId, item.user)
-                        val selectedChatId = selectedChatUser.chatId
-
-                        if (signInMethod == "guest") {
-                            it()
-                        } else {
-                            navigateUpChat(
-                                selectedChatId,
-                                item.user.userId,
-                                item.user
-                            )
-                        }
-                    }
-
-                },
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = MaterialTheme.colorScheme.onSurface,
-                ),
-                shape = RectangleShape,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(text = "Send message", color = MaterialTheme.colorScheme.surface)
+            if (job?.isActive == true) {
+                return@DetailedUsedProductListingContent
             }
 
+            job = scope.launch {
+                val selectedChatUser = viewModel.getChatUser(userId, item.user)
+                val selectedChatId = selectedChatUser.chatId
+                navigateUpChat(
+                    selectedChatId,
+                    item.user.userId,
+                    item.user
+                )
+            }
         }
     ) {
         navHostController.popBackStack()
@@ -361,10 +293,11 @@ fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
 @Composable
 private fun DetailedUsedProductListingContent(
     userId: Long,
+    isGuest: Boolean,
     selectedSeconds: UsedProductListing?,
     onNavigateUpSlider: (Int) -> Unit,
-    onUsedProductListingOwnerProfileClicked: () -> Unit,
-    onChatButtonClicked: @Composable (() -> Unit) -> Unit,
+    onChatButtonClicked: () -> Unit,
+    onUsedProductListingOwnerProfileClicked: () -> Unit = {},
     onPopBackStack: () -> Unit
 ) {
 
@@ -418,8 +351,8 @@ private fun DetailedUsedProductListingContent(
                 }
             }
         },
-        sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetSwipeEnabled = true, // Allow gestures to hide/show bottom sheet
+        sheetPeekHeight = 0.dp,
+        sheetSwipeEnabled = true,
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -452,11 +385,14 @@ private fun DetailedUsedProductListingContent(
                     onNavigateUpSlider,
                     onUsedProductListingOwnerProfileClicked
                 ) {
-                    onChatButtonClicked {
+                    if (isGuest) {
                         coroutineScope.launch {
                             bottomSheetScaffoldState.bottomSheetState.expand()
                         }
+                    } else {
+                        onChatButtonClicked()
                     }
+
                 }
             } ?: run {
                 LoadingDetailedSecondsInfo()
@@ -469,10 +405,10 @@ private fun DetailedUsedProductListingContent(
 @Composable
 private fun DetailedUsedProductListingInfo(
     userId: Long,
-    seconds: UsedProductListing,
+    item: UsedProductListing,
     onNavigateUpSlider: (Int) -> Unit,
     onUsedProductListingOwnerProfileClicked: () -> Unit,
-    chatButtonClicked: @Composable () -> Unit
+    chatButtonClicked: () -> Unit
 ) {
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -485,38 +421,47 @@ private fun DetailedUsedProductListingInfo(
         ) {
 
 
-            item(key = "secondsImages-${seconds.productId}") {
-                SecondsImagesSliderDetailedSecondsInfo(seconds.images, onNavigateUpSlider)
+            item(key = "secondsImages-${item.productId}") {
+                SecondsImagesSliderDetailedSecondsInfo(item.images, onNavigateUpSlider)
             }
 
-            item(key = "secondsOwner-${seconds.user.userId}") {
+            item(key = "secondsOwner-${item.user.userId}") {
                 SecondsOwner(
-                    "${seconds.user.firstName} ${seconds.user.lastName ?: ""}",
-                    seconds.user.profilePicUrl,
-                    "${seconds.country}/${seconds.state}",
-                    seconds.user.isOnline,
+                    "${item.user.firstName} ${item.user.lastName ?: ""}",
+                    item.user.profilePicUrl,
+                    "${item.country}/${item.state}",
+                    item.user.isOnline,
                     onUsedProductListingOwnerProfileClicked
                 )
             }
 
-            item(key = "secondsDescription-${seconds.productId}") {
+            item(key = "secondsDescription-${item.productId}") {
                 SecondsDescription(
-                    seconds.name,
-                    seconds.description,
+                    item.name,
+                    item.description,
                     formatCurrency(
-                        seconds.price,
-                        seconds.priceUnit
+                        item.price,
+                        item.priceUnit
                     )
                 )
             }
 
 
         }
+        if(item.user.userId != userId){
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
 
-        Box(modifier = Modifier.fillMaxWidth()){
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                if (userId != seconds.user.userId) {
-                    SendMessageButton(chatButtonClicked)
+                    CallButton(onClick = {
+
+                    }, modifier = Modifier.weight(1f))
+
+                    SendMessageButton(chatButtonClicked, modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -634,7 +579,7 @@ private fun SecondsOwner(
     urlImage: String?,
     secondsFrom: String,
     isOnline: Boolean,
-    onUsedProductListingClicked: () -> Unit
+    onUsedProductListingOwnerProfileClicked: () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -643,7 +588,7 @@ private fun SecondsOwner(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .clickable { onUsedProductListingClicked() },
+            .noRippleClickable { onUsedProductListingOwnerProfileClicked() },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.size(40.dp)) {
@@ -823,5 +768,19 @@ private fun SecondsImagesSliderDetailedSecondsInfo(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CallButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    OutlinedButton(
+        onClick = onClick, shape = RoundedCornerShape(8.dp), modifier = modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF25D366),
+            contentColor = Color.White
+        ),
+
+    ) {
+        Text("Call")
     }
 }

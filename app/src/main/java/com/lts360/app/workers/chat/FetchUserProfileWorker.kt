@@ -182,7 +182,6 @@ class FetchUserProfileWorker @AssistedInject constructor(
                             }
                         })
 
-                        // Wait for the acknowledgment or timeout
                         try {
                             withTimeout(100000) {
                                 if (!completeDeferred.isCompleted) {

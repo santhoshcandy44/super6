@@ -1,7 +1,6 @@
 package com.lts360.compose.ui.main
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -11,30 +10,35 @@ import androidx.navigation.NavHostController
 import androidx.navigation.Navigator
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.DialogNavigator
-import com.lts360.components.utils.LogUtils.TAG
+import com.lts360.compose.ui.auth.navhost.AuthScreen
+import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
+import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
 import kotlin.reflect.KClass
 
 
 @Composable
-fun rememberCustomBottomNavController(
-    lastEntry:String?,
-    isSelectedServiceItemNull:Boolean,
-    isSelectedServiceOwnerServiceItemNull:Boolean,
-    isSelectedUsedProductListingItemNull:Boolean,
-    isSelectedServiceOwnerUsedProductListingItemNull:Boolean,
+fun rememberCustomMainNavController(
+    lastEntry: String?,
+    isSelectedServiceItemNull: Boolean,
+    isSelectedServiceOwnerServiceItemNull: Boolean,
+    isSelectedUsedProductListingItemNull: Boolean,
+    isSelectedServiceOwnerUsedProductListingItemNull: Boolean,
     isSelectedLocalJobItemNull: Boolean,
     vararg navigators: Navigator<out NavDestination>,
 ): NavHostController {
     val context = LocalContext.current
-    return rememberSaveable(inputs = navigators, saver = navControllerSaver(context, lastEntry,
-        isSelectedServiceItemNull,
-        isSelectedServiceOwnerServiceItemNull,
-        isSelectedUsedProductListingItemNull,
-        isSelectedServiceOwnerUsedProductListingItemNull,
-        isSelectedLocalJobItemNull
-        )) {
+    return rememberSaveable(
+        inputs = navigators, saver = navControllerSaver(
+            context, lastEntry,
+            isSelectedServiceItemNull,
+            isSelectedServiceOwnerServiceItemNull,
+            isSelectedUsedProductListingItemNull,
+            isSelectedServiceOwnerUsedProductListingItemNull,
+            isSelectedLocalJobItemNull
+        )
+    ) {
         createNavController(context)
     }
         .apply {
@@ -50,14 +54,15 @@ private fun createNavController(context: Context) =
         navigatorProvider.addNavigator(DialogNavigator())
     }
 
-private fun navControllerSaver(context: Context, lasEntry:String?,
-                               isSelectedServiceItemNull:Boolean,
-                               isSelectedServiceOwnerServiceItemNull:Boolean,
-                               isSelectedUsedProductListingItemNull:Boolean,
-                               isSelectedSecondsOwnerUsedProductListingItemNull:Boolean,
-                               isSelectedLocalJobItemNull : Boolean,
+private fun navControllerSaver(
+    context: Context, lasEntry: String?,
+    isSelectedServiceItemNull: Boolean,
+    isSelectedServiceOwnerServiceItemNull: Boolean,
+    isSelectedUsedProductListingItemNull: Boolean,
+    isSelectedSecondsOwnerUsedProductListingItemNull: Boolean,
+    isSelectedLocalJobItemNull: Boolean,
 
-): Saver<NavHostController, *> =
+    ): Saver<NavHostController, *> =
     Saver(
         save = { it.saveState() },
         restore = {
@@ -67,22 +72,31 @@ private fun navControllerSaver(context: Context, lasEntry:String?,
                     ?.replace(Regex("/\\{[^}]+\\}"), "")
                     ?.replace(Regex("\\?.*"), "")?.trim()
 
-                val navScreens  = listOf(
-                    BottomBar.Home::class,
-                    BottomBar.Chats::class,
-                    BottomBar.Notifications::class,
-                    BottomBar.More::class,
-                    BottomBar.NestedServices::class,
-                    BottomBar.NestedSeconds::class
+                val navScreens = listOf(
+                    MainRoutes.Main::class,
+                    MainRoutes.ChatWindow::class,
+                    MainRoutes.GuestChooseIndustries::class,
+                    MainRoutes.ChooseIndustries::class,
+                    AccountAndProfileSettingsRoutes.AccountAndProfileSettings::class,
+                    AccountAndProfileSettingsRoutes.PersonalSettings::class,
+                    AccountAndProfileSettingsRoutes.EditProfileFirstName::class,
+                    AccountAndProfileSettingsRoutes.EditProfileLastName::class,
+                    AccountAndProfileSettingsRoutes.EditProfileAbout::class,
+                    AccountAndProfileSettingsRoutes.EditProfileEmail::class,
+                    AccountAndProfileSettingsRoutes.EditEmailOtpVerification::class,
+                    AccountAndProfileSettingsRoutes.ChangeAccountPassword::class,
+                    AuthScreen.ForgotPassword::class,
+                    AuthScreen.ForgotPasswordEmailOtpVerification::class,
 
+                    AuthScreen.ResetPassword::class,
+                    AccountAndProfileSettingsRoutes.SwitchAccountType::class
                 )
 
-                var allowedScreens: List<KClass<out BottomNavRoutes>>  = listOf()
+                var allowedScreens: List<KClass<out BottomNavRoutes>> = listOf()
 
 
 
-                if(
-                    cleanedRoute == BottomNavRoutes.DetailedService::class.qualifiedName.orEmpty() ||
+                if (cleanedRoute == BottomNavRoutes.DetailedService::class.qualifiedName.orEmpty() ||
                     cleanedRoute == BottomNavRoutes.DetailedServiceImagesSlider::class.qualifiedName.orEmpty() ||
 
                     cleanedRoute == BottomNavRoutes.ServiceOwnerProfile::class.qualifiedName.orEmpty() ||
@@ -99,7 +113,7 @@ private fun navControllerSaver(context: Context, lasEntry:String?,
                     cleanedRoute == BottomNavRoutes.DetailedLocalJob::class.qualifiedName.orEmpty() ||
                     cleanedRoute == BottomNavRoutes.DetailedLocalJobsImagesSlider::class.qualifiedName.orEmpty()
 
-                    ){
+                ) {
 
 
                     if (!isSelectedServiceItemNull) {
@@ -111,7 +125,7 @@ private fun navControllerSaver(context: Context, lasEntry:String?,
                             }
                     }
 
-                    if(!isSelectedServiceItemNull && !isSelectedServiceOwnerServiceItemNull){
+                    if (!isSelectedServiceItemNull && !isSelectedServiceOwnerServiceItemNull) {
                         allowedScreens = allowedScreens.toMutableList()
                             .apply {
                                 add(BottomNavRoutes.DetailedServiceFeedUser::class)
@@ -129,7 +143,7 @@ private fun navControllerSaver(context: Context, lasEntry:String?,
                             }
                     }
 
-                    if(!isSelectedUsedProductListingItemNull && !isSelectedSecondsOwnerUsedProductListingItemNull){
+                    if (!isSelectedUsedProductListingItemNull && !isSelectedSecondsOwnerUsedProductListingItemNull) {
                         allowedScreens = allowedScreens.toMutableList()
                             .apply {
                                 add(BottomNavRoutes.DetailedSecondsFeedUser::class)
@@ -137,7 +151,7 @@ private fun navControllerSaver(context: Context, lasEntry:String?,
                             }
                     }
 
-                    if(!isSelectedLocalJobItemNull){
+                    if (!isSelectedLocalJobItemNull) {
                         allowedScreens = allowedScreens.toMutableList()
                             .apply {
                                 add(BottomNavRoutes.DetailedLocalJob::class)
@@ -146,7 +160,7 @@ private fun navControllerSaver(context: Context, lasEntry:String?,
                     }
                 }
 
-                val navRoutes =  navScreens.map { it.qualifiedName.orEmpty() }
+                val navRoutes = navScreens.map { it.qualifiedName.orEmpty() }
 
                 val allowedRoutes = allowedScreens.map { it.qualifiedName.orEmpty() }
 

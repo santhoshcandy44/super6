@@ -18,7 +18,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.usedproducts.manage.navhost.ManageUsedProductListingRoutes
-import com.lts360.compose.ui.usedproducts.manage.navhost.rememberManageUsedProductListingCustomBottomNavController
+import com.lts360.compose.ui.usedproducts.manage.navhost.rememberManageUsedProductListingCustomNavController
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.compose.utils.SafeDrawingBox
@@ -49,7 +49,7 @@ class UsedProductListingActivity : ComponentActivity() {
 
 
 @Composable
-fun ManageUsedProductListingNavHost(
+private fun ManageUsedProductListingNavHost(
     defaultValue: ManageUsedProductListingRoutes = ManageUsedProductListingRoutes.ManageUsedProductListing,
     onFinishActivity: () -> Unit
 ) {
@@ -60,7 +60,7 @@ fun ManageUsedProductListingNavHost(
         hiltViewModel()
 
     var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
-    val navController = rememberManageUsedProductListingCustomBottomNavController(
+    val navController = rememberManageUsedProductListingCustomNavController(
         lastEntry,
         publishedUsedProductsListingViewModel.isSelectedUsedProductListingNull()
     )

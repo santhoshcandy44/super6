@@ -67,6 +67,7 @@ import com.lts360.compose.ui.auth.ForceWelcomeScreen
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
 import com.lts360.compose.ui.services.ServiceOwnerProfileViewModel
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
+import com.lts360.libs.ui.ShortToast
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -83,11 +84,11 @@ fun ServiceOwnerProfileScreen(
 
 
     val userId = servicesViewModel.userId
-    val selectedParentService by servicesViewModel.selectedItem.collectAsState()
+    val selectedParentService by servicesViewModel.getServiceRepository(key).selectedItem.collectAsState()
 
 
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     ServiceOwnerProfile(
         selectedParentService,
@@ -111,7 +112,7 @@ fun ServiceOwnerProfileScreen(
 
         },
         {
-            servicesViewModel.setNestedServiceOwnerProfileSelectedItem(it)
+            servicesViewModel.setNestedServiceOwnerProfileSelectedItem(key, it)
             onNavigateUpDetailedService(key)
         },
         {
@@ -136,7 +137,7 @@ fun BookmarkedServiceOwnerProfileScreen(
     val selectedParentService by servicesViewModel.selectedItem.collectAsState()
     val scope = rememberCoroutineScope()
 
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
     val item = selectedParentService
 
@@ -322,18 +323,15 @@ private fun ServiceOwnerProfile(
                     onDismissRequest = {
                         bottomSheetState = false
                     },
-                    shape = RectangleShape, // Set shape to square (rectangle)
+                    shape = RectangleShape,
                     sheetState = sheetState,
-                    dragHandle = null // Remove the drag handle
+                    dragHandle = null
 
                 ) {
 
-                    // Sheet content
                     selectedItem?.let { nonNullSelectedItem ->
 
-                        viewModel.setSelectedItem(
-                            nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked)
-                        )
+                        viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked))
 
                         Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -479,25 +477,17 @@ private fun ServiceOwnerProfile(
                                                     putExtra(
                                                         Intent.EXTRA_TEXT,
                                                         it.shortCode
-                                                    )  // Text you want to share
-                                                    type = "text/plain"  // MIME type for text
+                                                    )
+                                                    type = "text/plain"
                                                 }
-                                                // Start the share intent
                                                 context.startActivity(
                                                     Intent.createChooser(
                                                         shareIntent,
                                                         "Share via"
                                                     )
                                                 )
-                                            } catch (e: ActivityNotFoundException) {
-
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        "No app to open",
-                                                        Toast.LENGTH_SHORT
-                                                    )
-                                                    .show()
+                                            } catch (_: ActivityNotFoundException) {
+                                                ShortToast(context,"No app to open")
                                             }
 
                                         }
@@ -507,14 +497,12 @@ private fun ServiceOwnerProfile(
                                 verticalAlignment = Alignment.CenterVertically) {
 
 
-                                // Bookmark Icon
                                 Icon(
                                     Icons.Default.Share,
                                     contentDescription = "Share",
                                     modifier = Modifier.size(24.dp),
                                 )
 
-                                // Text
                                 Text(
                                     text = "Share",
                                     modifier = Modifier.padding(horizontal = 4.dp),

@@ -126,20 +126,20 @@ class LogInViewModel @Inject constructor(
         onSuccess: () -> Unit,
         onError: (String) -> Unit,
     ) {
+        _isLoading.value = true
         viewModelScope.launch {
             try {
-                _isLoading.value = true
                 when (val result = legacyEmailLogin(email, password)) {
                     is Result.Success -> {
                         val data = Gson().fromJson(result.data.data, LogInResponse::class.java)
                         (context.applicationContext as App).setIsInvalidSession(false)
                         withContext(Dispatchers.IO) {
-                            boardDao.clearAndInsertSelectedBoards( data.boards)
+                            boardDao.clearAndInsertSelectedBoards(data.boards)
                             authRepository.updateProfileIfNeeded(data.userDetails)
                         }
                         authRepository.saveEmailSignInInfo(data.accessToken, data.refreshToken)
                         authRepository.saveUserId(data.userId)
-                        onSuccess()  // Proceed to next step or navigate to OTP screen
+                        onSuccess()
                     }
 
                     is Result.Error -> {
@@ -148,6 +148,7 @@ class LogInViewModel @Inject constructor(
                     }
                 }
             } catch (t: Throwable) {
+                t.printStackTrace()
                 errorMessage = "Something went wrong"
                 onError(errorMessage)
             } finally {
@@ -158,11 +159,11 @@ class LogInViewModel @Inject constructor(
 
 
     fun onGoogleSignIn(idToken: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        _isLoading.value = true
         viewModelScope.launch {
             try {
-                _isLoading.value = true
 
-                when (val result = googleSignIn(idToken)) { // Call the network function
+                when (val result = googleSignIn(idToken)) {
                     is Result.Success -> {
 
                         val data = Gson().fromJson(result.data.data, LogInResponse::class.java)
@@ -176,14 +177,11 @@ class LogInViewModel @Inject constructor(
                         authRepository.saveUserId(data.userId)
 
                         onSuccess()
-                        // Handle success
-                        // Proceed to next step or navigate to OTP screen
                     }
 
                     is Result.Error -> {
                         gsoErrorMessage = mapExceptionToError(result.error).errorMessage
                         onError(gsoErrorMessage)
-                        // Handle the error and update the UI accordingly
                     }
 
                 }
@@ -192,13 +190,12 @@ class LogInViewModel @Inject constructor(
                 gsoErrorMessage = "Something Went Wrong"
                 onError(gsoErrorMessage)
             } finally {
-                _isLoading.value = false // Reset loading state
+                _isLoading.value = false
             }
         }
     }
 
 
-    // Method to handle registration
     private suspend fun legacyEmailLogin(
         email: String, password: String
     ): Result<ResponseReply> {
@@ -208,7 +205,6 @@ class LogInViewModel @Inject constructor(
                 .legacyEmailLogin(email, password)
 
             if (response.isSuccessful) {
-                // Handle successful response
                 val body = response.body()
 
                 if (body != null && body.isSuccessful) {
@@ -229,7 +225,6 @@ class LogInViewModel @Inject constructor(
             }
         } catch (t: Throwable) {
             Result.Error(t)
-
         }
     }
 

@@ -40,7 +40,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.pullToRefresh
@@ -74,41 +73,46 @@ import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.utils.FormatterUtils
+import com.lts360.libs.ui.ShortToast
 import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SecondsScreen(isTopBarShowing:Boolean,
+fun SecondsScreen(
+    key: Int,
+    isTopBarShowing:Boolean,
     onNavigateUpSecondsDetailedScreen: (UsedProductListing) -> Unit,
     viewModel: SecondsViewmodel) {
 
+    val repository = viewModel.getSecondsRepository(key)
 
-    val searchQuery = viewModel.submittedQuery
+
+    val searchQuery = repository.submittedQuery
 
     val userId = viewModel.userId
-    val onlySearchBar = viewModel.onlySearchBar
+    val onlySearchBar = repository.onlySearchBar
 
     val context = LocalContext.current
 
     val isGuest = viewModel.isGuest
 
-    val selectedItem by viewModel.selectedItem.collectAsState()
+    val selectedItem by repository.selectedItem.collectAsState()
 
-    val initialLoadState by viewModel.pageSource.initialLoadState.collectAsState()
-    val isLoadingItems by viewModel.pageSource.isLoadingItems.collectAsState()
-    val isRefreshingItems by viewModel.pageSource.isRefreshingItems.collectAsState()
+    val initialLoadState by repository.pageSource.initialLoadState.collectAsState()
+    val isLoadingItems by repository.pageSource.isLoadingItems.collectAsState()
+    val isRefreshingItems by repository.pageSource.isRefreshingItems.collectAsState()
 
-    val items by viewModel.pageSource.items.collectAsState()
+    val items by repository.pageSource.items.collectAsState()
 
-    val hasNetworkError by viewModel.pageSource.hasNetworkError.collectAsState()
-    val hasAppendError by viewModel.pageSource.hasAppendError.collectAsState()
-    val hasMoreItems by viewModel.pageSource.hasMoreItems.collectAsState()
+    val hasNetworkError by repository.pageSource.hasNetworkError.collectAsState()
+    val hasAppendError by repository.pageSource.hasAppendError.collectAsState()
+    val hasMoreItems by repository.pageSource.hasMoreItems.collectAsState()
 
-    val connectivityManager = viewModel.connectivityManager
+    val connectivityManager = repository.connectivityManager
 
     val lazyGridState = rememberLazyGridState()
-    val lastLoadedItemPosition by viewModel.lastLoadedItemPosition.collectAsState()
+    val lastLoadedItemPosition by repository.lastLoadedItemPosition.collectAsState()
 
     val serviceInfoBottomSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -117,7 +121,7 @@ fun SecondsScreen(isTopBarShowing:Boolean,
     LaunchedEffect(lazyGridState) {
         snapshotFlow { lazyGridState.layoutInfo }
             .collect { layoutInfo ->
-                // Check if the last item is visible
+
                 val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull {
                     (it.key as? String)?.startsWith("grid_items_") == true
                 }?.index
@@ -131,12 +135,12 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                     && lastVisibleItemIndex >= lastLoadedItemPosition
                 ) {
 
-                    viewModel.updateLastLoadedItemPosition(if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex)
-                    // Call nextPage if last item is visible and not currently loading
+                    viewModel.updateLastLoadedItemPosition(key, if (lastLoadedItemPosition == -1) 0 else lastVisibleItemIndex)
                     viewModel.nextPage(
+                        key,
                         userId,
                         searchQuery
-                    ) // Make sure to pass necessary parameters
+                    )
                 }
             }
     }
@@ -144,27 +148,26 @@ fun SecondsScreen(isTopBarShowing:Boolean,
     val statusCallback: (NetworkConnectivityManager.STATUS) -> Unit = {
         when (it) {
             NetworkConnectivityManager.STATUS.STATUS_CONNECTED -> {
-                viewModel.updateLastLoadedItemPosition(-1)
-                viewModel.refresh(userId, searchQuery)
+                viewModel.updateLastLoadedItemPosition(key, -1)
+                viewModel.refresh(key, userId, searchQuery)
 
             }
 
             NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_INITIALLY -> {
-                viewModel.pageSource.setNetWorkError(true)
+                repository.pageSource.setNetWorkError(true)
             }
 
             NetworkConnectivityManager.STATUS.STATUS_NOT_CONNECTED_ON_COMPLETED_JOB -> {
-                viewModel.pageSource.setNetWorkError(true)
-                viewModel.pageSource.setRefreshingItems(false)
-                Toast.makeText(context, "No internet connection", Toast.LENGTH_SHORT)
-                    .show()
+                repository.pageSource.setNetWorkError(true)
+                repository.pageSource.setRefreshingItems(false)
+                ShortToast(context, "No internet connection")
             }
         }
     }
 
 
     val onRefresh: () -> Unit = {
-        viewModel.pageSource.setRefreshingItems(true)
+        repository.pageSource.setRefreshingItems(true)
         connectivityManager.checkForSeconds(
             Handler(Looper.getMainLooper()), statusCallback,
             4000
@@ -172,7 +175,7 @@ fun SecondsScreen(isTopBarShowing:Boolean,
     }
 
     val onRetry = {
-        viewModel.pageSource.setRefreshingItems(true)
+        repository.pageSource.setRefreshingItems(true)
         connectivityManager.checkForSeconds(
             Handler(Looper.getMainLooper()), statusCallback,
             4000
@@ -188,7 +191,7 @@ fun SecondsScreen(isTopBarShowing:Boolean,
 
         Box(
             modifier = Modifier
-                .fillMaxSize() // This makes the Box take up the entire available space
+                .fillMaxSize()
                 .pullToRefresh(
                     isRefreshingItems, pullToRefreshState,
                     enabled = !(initialLoadState && items.isEmpty()) && isTopBarShowing
@@ -201,7 +204,7 @@ fun SecondsScreen(isTopBarShowing:Boolean,
             if (initialLoadState && items.isEmpty()) {
                 LazyColumn(
                     contentPadding = PaddingValues(horizontal = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp), // Adjust the space between items
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     if (onlySearchBar) {
@@ -233,12 +236,12 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                 }
 
             } else {
-                // Handle no internet case
+
                 if (hasNetworkError) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .verticalScroll(rememberScrollState()) // Enables nested scrolling
+                            .verticalScroll(rememberScrollState())
                     ) {
                         NoInternetScreen(modifier = Modifier.align(Alignment.Center)) {
                             onRetry()
@@ -246,12 +249,12 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                     }
                 }
 
-                // Handle empty state after loading
+
                 else if (!isLoadingItems && !hasAppendError && items.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .verticalScroll(rememberScrollState()) // Enables nested scrolling
+                            .verticalScroll(rememberScrollState())
 
                     ) {
                         Column(
@@ -271,7 +274,7 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                         }
                     }
                 }
-                // Handle loaded items
+
                 else {
                     LazyVerticalGrid(
                         GridCells.Adaptive(120.dp),
@@ -295,16 +298,19 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                                 {
                                     if (usedProductListing.isBookmarked) {
 
-                                        viewModel.directUpdateServiceIsBookMarked(
+                                        viewModel.directUpdateSecondsIsBookMarked(
+                                            key,
                                             usedProductListing.productId,
                                             false
                                         )
 
                                         viewModel.onRemoveBookmark(
+                                            key,
                                             viewModel.userId,
                                             usedProductListing, onSuccess = {
 
-                                                viewModel.directUpdateServiceIsBookMarked(
+                                                viewModel.directUpdateSecondsIsBookMarked(
+                                                    key,
                                                     usedProductListing.productId,
                                                     false
                                                 )
@@ -317,7 +323,8 @@ fun SecondsScreen(isTopBarShowing:Boolean,
 
                                             }, onError = {
 
-                                                viewModel.directUpdateServiceIsBookMarked(
+                                                viewModel.directUpdateSecondsIsBookMarked(
+                                                    key,
                                                     usedProductListing.productId,
                                                     true
                                                 )
@@ -334,18 +341,21 @@ fun SecondsScreen(isTopBarShowing:Boolean,
 
                                     } else {
 
-                                        viewModel.directUpdateServiceIsBookMarked(
+                                        viewModel.directUpdateSecondsIsBookMarked(
+                                            key,
                                             usedProductListing.productId,
                                             true
                                         )
 
                                         viewModel.onBookmark(
+                                            key,
                                             viewModel.userId,
                                             usedProductListing,
                                             onSuccess = {
 
 
-                                                viewModel.directUpdateServiceIsBookMarked(
+                                                viewModel.directUpdateSecondsIsBookMarked(
+                                                    key,
                                                     usedProductListing.productId,
                                                     true
                                                 )
@@ -362,7 +372,8 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                                             },
                                             onError = {
 
-                                                viewModel.directUpdateServiceIsBookMarked(
+                                                viewModel.directUpdateSecondsIsBookMarked(
+                                                    key,
                                                     usedProductListing.productId,
                                                     false
                                                 )
@@ -381,7 +392,6 @@ fun SecondsScreen(isTopBarShowing:Boolean,
 
                         }
 
-                        // Loading indicator for appending more items
                         if (isLoadingItems) {
                             item(span = { GridItemSpan(maxLineSpan) }) {
                                 Row(
@@ -401,7 +411,6 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                             }
                         }
 
-                        // Handle errors for appending items
                         if (hasAppendError) {
                             item(span = { GridItemSpan(maxLineSpan) }) {
                                 Row(
@@ -418,6 +427,7 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                                         modifier = Modifier
                                             .clickable {
                                                 viewModel.retry(
+                                                    key,
                                                     userId,
                                                     searchQuery
                                                 )
@@ -455,7 +465,7 @@ fun SecondsScreen(isTopBarShowing:Boolean,
             )
         }
 
-        if (serviceInfoBottomSheetState.currentValue == SheetValue.Expanded) {
+        if (serviceInfoBottomSheetState.isVisible) {
             ModalBottomSheet(
                 modifier = Modifier
                     .safeDrawingPadding(),
@@ -464,15 +474,15 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                         serviceInfoBottomSheetState.hide()
                     }
                 },
-                shape = RectangleShape, // Set shape to square (rectangle)
+                shape = RectangleShape,
                 sheetState = serviceInfoBottomSheetState,
-                dragHandle = null // Remove the drag handle
+                dragHandle = null
 
             ) {
-                // Sheet content
+
                 selectedItem?.let { nonNullSelectedItem ->
 
-                    viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked))
+                    viewModel.setSelectedItem(key,nonNullSelectedItem.copy(isBookmarked = nonNullSelectedItem.isBookmarked))
 
                     Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -532,7 +542,7 @@ fun SecondsScreen(isTopBarShowing:Boolean,
                                                     "Share via"
                                                 )
                                             )
-                                        } catch (e: ActivityNotFoundException) {
+                                        } catch (_: ActivityNotFoundException) {
 
                                             Toast
                                                 .makeText(

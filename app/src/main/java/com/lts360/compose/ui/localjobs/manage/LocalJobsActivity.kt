@@ -17,7 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.localjobs.manage.navhost.ManageLocalJobRoutes
-import com.lts360.compose.ui.localjobs.manage.navhost.rememberManageLocalJobsCustomBottomNavController
+import com.lts360.compose.ui.localjobs.manage.navhost.rememberManageLocalJobsCustomNavController
 import com.lts360.compose.ui.localjobs.manage.viewmodels.LocalJobWorkFlowViewModel
 import com.lts360.compose.ui.localjobs.manage.viewmodels.PublishedLocalJobViewModel
 import com.lts360.compose.ui.theme.AppTheme
@@ -58,7 +58,7 @@ fun ManageLocalJobsNavHost(
     val publishedLocalJobViewModel: PublishedLocalJobViewModel = hiltViewModel()
 
     var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
-    val navController = rememberManageLocalJobsCustomBottomNavController(
+    val navController = rememberManageLocalJobsCustomNavController(
         lastEntry,
         publishedLocalJobViewModel.isSelectedLocalJobNull()
     )
@@ -84,7 +84,11 @@ fun ManageLocalJobsNavHost(
                     navController.navigate(ManageLocalJobRoutes.CreateLocalJob)
                 }, {
                     navController.navigate(ManageLocalJobRoutes.ManagePublishedLocalJob)
-                }, onFinishActivity
+                },
+                {
+                    navController.navigate(ManageLocalJobRoutes.ViewApplicantsPublishedLocalJob)
+                },
+                onFinishActivity
             )
         }
 
@@ -103,7 +107,7 @@ fun ManageLocalJobsNavHost(
 
         slideComposable<ManageLocalJobRoutes.ManagePublishedLocalJob> {
 
-            val editableSelectedUsedProductListing by publishedLocalJobViewModel.selectedLocalJob.collectAsState()
+            val editableSelectedUsedProductListing by publishedLocalJobViewModel.selectedItem.collectAsState()
 
             editableSelectedUsedProductListing?.let {
 
@@ -117,6 +121,22 @@ fun ManageLocalJobsNavHost(
             }
 
         }
+
+        slideComposable<ManageLocalJobRoutes.ViewApplicantsPublishedLocalJob> {
+
+            val editableSelectedUsedProductListing by publishedLocalJobViewModel.selectedItem.collectAsState()
+
+            if (editableSelectedUsedProductListing == null) return@slideComposable
+
+            ManagePublishedLocalJobApplicantsScreen(
+                {
+                    navController.popBackStack()
+                },
+                publishedLocalJobViewModel
+            )
+
+        }
+
     }
 }
 

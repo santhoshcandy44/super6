@@ -1,12 +1,21 @@
 package com.lts360.compose
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 
-// Global function to execute actions based on lifecycle state
 fun dropUnlessResumedV2(lifecycleOwner: LifecycleOwner, block: () -> Unit) {
-    // Execute the action only if the lifecycle is RESUMED
     if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
         block()
     }
 }
+
+
+fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier =
+    clickable(
+        interactionSource = MutableInteractionSource(),
+        indication = null,
+        onClick = onClick
+    )

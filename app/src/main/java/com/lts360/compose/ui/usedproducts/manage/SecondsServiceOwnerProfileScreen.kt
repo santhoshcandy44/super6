@@ -75,13 +75,13 @@ fun SecondsServiceOwnerProfileScreen(
     key: Int,
     onNavigateUpChat: (ChatUser, Int, Long) -> Unit,
     onNavigateUpDetailedSeconds: (Int, UsedProductListing) -> Unit,
-    servicesViewModel: SecondsViewmodel,
+    secondsViewModel: SecondsViewmodel,
     secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel
 ) {
 
 
-    val userId = servicesViewModel.userId
-    val selectedParentService by servicesViewModel.selectedItem.collectAsState()
+    val userId = secondsViewModel.userId
+    val selectedParentService by secondsViewModel.getSecondsRepository(key).selectedItem.collectAsState()
 
 
     val scope = rememberCoroutineScope()
@@ -97,8 +97,7 @@ fun SecondsServiceOwnerProfileScreen(
             job = scope.launch {
                 selectedParentService?.let { nonNullSelectedService ->
 
-                    val selectedChatUser =
-                        servicesViewModel.getChatUser(userId, nonNullSelectedService.user)
+                    val selectedChatUser = secondsViewModel.getChatUser(userId, nonNullSelectedService.user)
                     val selectedChatId = selectedChatUser.chatId
                     onNavigateUpChat(
                         selectedChatUser,
@@ -109,6 +108,7 @@ fun SecondsServiceOwnerProfileScreen(
 
         },
         {
+            secondsViewModel.setNestedSecondsOwnerProfileSelectedItem(key, it)
             onNavigateUpDetailedSeconds(key, it)
         },
         {
@@ -134,7 +134,7 @@ fun BookmarkedSecondsOwnerProfileScreen(
     val selectedParentService by servicesViewModel.selectedItem.collectAsState()
     val scope = rememberCoroutineScope()
 
-    var job by remember { mutableStateOf<Job?>(null) } // Track job reference
+    var job by remember { mutableStateOf<Job?>(null) }
 
 
     val item = selectedParentService
@@ -174,7 +174,7 @@ fun BookmarkedSecondsOwnerProfileScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SecondsOwnerProfileScreenContent(
+private fun SecondsOwnerProfileScreenContent(
     selectedParentService: UsedProductListing?,
     onNavigateUpChat: () -> Unit,
     onNavigateUpDetailedSeconds: (UsedProductListing) -> Unit,
@@ -477,12 +477,10 @@ private fun SecondsOwnerProfile(
         ) {
 
             item {
-                //Profile Header
                 ProfilePicUrlHeader(userProfile)
             }
 
             item {
-                // About Section
                 userProfile.about?.let {
                     Spacer(modifier = Modifier.height(8.dp))
                     ProfileAboutSection(userProfile.about)

@@ -358,6 +358,24 @@ class LocalJobWorkFlowViewModel @Inject constructor(
             _errors.value = _errors.value.copy(salaryUnit = null)
         }
 
+        if (_localJob.value.salaryMin < 0) {
+            _errors.value = _errors.value.copy(salaryMin = "Minimum salary must be set")
+            isValid = false
+        } else if (_localJob.value.salaryMax!=-1 && _localJob.value.salaryMin > _localJob.value.salaryMax) {
+            _errors.value = _errors.value.copy(salaryMin = "Minimum salary cannot be greater than maximum salary")
+            isValid = false
+        } else {
+            _errors.value = _errors.value.copy(salaryMin = null)
+        }
+
+        if (_localJob.value.salaryMax!=-1 && _localJob.value.salaryMax < _localJob.value.salaryMin) {
+            _errors.value = _errors.value.copy(salaryMax = "Maximum salary must be greater than or equal to minimum salary")
+            isValid = false
+        } else {
+            _errors.value = _errors.value.copy(salaryMax = null)
+        }
+
+
         if (_localJob.value.country.isBlank()) {
             _errors.value = _errors.value.copy(country = "Country must be selected")
             isValid = false

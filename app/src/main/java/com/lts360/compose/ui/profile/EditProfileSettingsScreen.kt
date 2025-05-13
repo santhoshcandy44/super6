@@ -2,9 +2,6 @@ package com.lts360.compose.ui.profile
 
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.provider.OpenableColumns
-import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -38,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,7 +56,6 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.BuildConfig
 import com.lts360.R
 import com.lts360.components.utils.InputStreamRequestBody
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.components.utils.getFileNameForUri
 import com.lts360.compose.transformations.PlaceholderTransformation
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
@@ -66,6 +63,7 @@ import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.libs.imagecrop.CropProfilePicActivityContracts
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
+import com.lts360.libs.ui.ShortToast
 import okhttp3.MultipartBody
 import java.io.File
 import java.io.InputStream
@@ -84,8 +82,12 @@ fun EditProfileSettingsScreen(
 
     val userId = viewModel.userId
 
-    val purpleGradientBrush = Brush.linearGradient(colors = listOf(Color(0xFF6200EE),
-        Color(0xFF9747ff), Color(0xFFBB86FC)))
+    val purpleGradientBrush = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFF6200EE),
+            Color(0xFF9747ff), Color(0xFFBB86FC)
+        )
+    )
 
     val userProfile by viewModel.userProfile.collectAsState()
 
@@ -102,7 +104,6 @@ fun EditProfileSettingsScreen(
 
 
     fun startUploadFile(uri: Uri) {
-        // Convert the URI to a file and upload the image
         val inputStreamRequestBody = InputStreamRequestBody(context, uri)
 
         val displayName = getFileNameForUri(context, uri)
@@ -111,14 +112,11 @@ fun EditProfileSettingsScreen(
         val imagePart =
             MultipartBody.Part.createFormData("profile_pic", displayName, inputStreamRequestBody)
 
-        viewModel.onUploadImage(userId, imagePart, onSuccess = {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                .show()
+        viewModel.onUploadProfileImage(userId, imagePart, onSuccess = {
+            ShortToast(context = context, message = it)
         }) {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                .show()
+            ShortToast(context = context, message = it)
         }
-
     }
 
     val cropLauncher = rememberLauncherForActivityResult(
@@ -137,32 +135,23 @@ fun EditProfileSettingsScreen(
 
                 try {
 
-                    // Step 1: Get InputStream from URI safely
                     val inputStream: InputStream? =
                         context.contentResolver.openInputStream(selectedUri)
 
-                    // Step 2: Decode InputStream to Bitmap
                     val bitmap = inputStream?.let { BitmapFactory.decodeStream(it) }
 
                     if (bitmap != null) {
-                        // Step 3: Get image width and height
                         val width = bitmap.width
                         val height = bitmap.height
 
-                        // Step 4: Check if the image meets the minimum size (100px by 100px)
                         if (width >= 100 && height >= 100) {
-                            // Step 5: Check the aspect ratio (1:1)
                             if (width == height) {
-
                                 startUploadFile(selectedUri)
-
                             } else {
                                 cropLauncher.launch(selectedUri)
                             }
                         } else {
-
-                            Toast.makeText(context, "Image is too small", Toast.LENGTH_SHORT)
-                                .show()
+                            ShortToast(context, "Image is too small")
                         }
                     }
 
@@ -176,7 +165,6 @@ fun EditProfileSettingsScreen(
         }
 
     var isCameraPickerLauncherLaunched by rememberSaveable { mutableStateOf(false) }
-
     var cameraPickerUri: Uri? = remember { null }
 
     val cameraImagePickerLauncher = rememberLauncherForActivityResult(
@@ -193,20 +181,18 @@ fun EditProfileSettingsScreen(
     }
 
 
-// Determine progress color based on health status
     val progressColor = when (healthStatus) {
         "Poor" -> Color.Red
-        "Weak" -> Color(0xFFFFA500) // Orange color
-        "Good" -> Color.Green // Good status
+        "Weak" -> Color(0xFFFFA500)
+        "Good" -> Color.Green
         else -> Color.Unspecified
     }
 
-// Calculate track color as an alpha version of the original color
-    val trackColor = progressColor.copy(alpha = 0.3f) // Adjust alpha value as needed
+    val trackColor = progressColor.copy(alpha = 0.3f)
 
-    Scaffold(
+    var bottomEditPhoneSheetState by remember { mutableStateOf(false) }
 
-        topBar = {
+    Scaffold(topBar = {
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = dropUnlessResumed { onPopStack() }) {
@@ -223,33 +209,32 @@ fun EditProfileSettingsScreen(
                     )
                 }
             )
-        }
-    ) { contentPadding ->
+        }) { contentPadding ->
 
-        Box(
-            modifier = Modifier
+        Box(modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(contentPadding)
-        ) {
+                .padding(contentPadding)) {
 
             userProfile?.let { nonNullUserProfile ->
 
-                val firstName = nonNullUserProfile.first_name
-                val lastName = nonNullUserProfile.last_name ?: ""
+                val firstName = nonNullUserProfile.firstName
+                val lastName = nonNullUserProfile.lastName ?: ""
                 val about = nonNullUserProfile.about
                 val aboutError = if (about.isNullOrEmpty()) "About is not yet updated" else null
                 val email = nonNullUserProfile.email
+                val phoneNumber = nonNullUserProfile.phoneNumber
+                val phoneCountryCode = nonNullUserProfile.phoneCountryCode
+                val phoneError = if (phoneCountryCode.isNullOrEmpty() || phoneNumber.isNullOrEmpty()) "Phone is not yet updated" else null
 
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    // Progress Bar and Profile Status
                     LinearProgressIndicator(
-                        color = progressColor, // Use the determined color
-                        trackColor = trackColor, // Set the track color to the alpha version
+                        color = progressColor,
+                        trackColor = trackColor,
                         progress = { profileCompletionPercentage },
                         gapSize = 0.dp,
                         strokeCap = StrokeCap.Square,
@@ -261,18 +246,17 @@ fun EditProfileSettingsScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Displaying Profile Completion Percentage
                     Text(
                         text = "Profile Completion: ${(profileCompletionPercentage * 100).toInt()}%",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    // Health Status Text and Color
+
                     Text(
                         text = "Profile Health Status: $healthStatus",
                         color = when (healthStatus) {
                             "Poor" -> Color.Red
-                            "Weak" -> Color(0xFFFFA500) // Orange color
+                            "Weak" -> Color(0xFFFFA500)
                             else -> Color.Green
                         },
                         style = MaterialTheme.typography.bodyMedium
@@ -287,14 +271,12 @@ fun EditProfileSettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Profile Image with Edit Icon and Progress Indicator
                     Box(
                         modifier = Modifier
                             .size(100.dp)
                             .align(Alignment.CenterHorizontally)
                     ) {
 
-                        // Display the image if available, else display a placeholder
                         profilePicBitmap?.let { bitmap ->
 
                             Image(
@@ -310,13 +292,10 @@ fun EditProfileSettingsScreen(
                                     .padding(4.dp)
                                     .clip(CircleShape),
                                 contentScale = ContentScale.Crop
-                            )// Crop the image to fit the circle
+                            )
 
 
                         } ?: run {
-                            // Placeholder if image is not yet loaded
-
-                            // Use Image composable to display the drawable
                             Image(
                                 painter = painterResource(R.drawable.user_placeholder),
                                 contentDescription = "Profile Image",
@@ -329,7 +308,7 @@ fun EditProfileSettingsScreen(
                                     )
                                     .padding(4.dp)
                                     .clip(CircleShape),
-                                contentScale = ContentScale.Crop // Crop the image to fit the circle
+                                contentScale = ContentScale.Crop
                             )
                         }
 
@@ -365,19 +344,17 @@ fun EditProfileSettingsScreen(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Personal Information Section
                     Text(
                         text = "Personal Information",
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // First Name Input
                     OutlinedTextField(
-                        value = firstName, // Bind this from your ViewModel
+                        value = firstName,
                         onValueChange = { },
                         label = { Text("First Name") },
-                        readOnly = true, // Makes it non-editable
+                        readOnly = true,
                         trailingIcon = {
                             IconButton(onClick = dropUnlessResumed {
                                 onEditFirstNameNavigateUp()
@@ -398,17 +375,16 @@ fun EditProfileSettingsScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Last Name Input
                     OutlinedTextField(
-                        value = lastName, // Bind this from your ViewModel
+                        value = lastName,
                         onValueChange = {},
                         label = { Text("Last Name") },
-                        readOnly = true, // Makes it non-editable
+                        readOnly = true,
 
                         trailingIcon = {
                             IconButton(onClick = dropUnlessResumed { onEditLastNameNavigateUp() }) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.ic_edit), // Edit icon as an example
+                                    painter = painterResource(id = R.drawable.ic_edit),
                                     contentDescription = "Edit icon"
                                 )
                             }
@@ -422,12 +398,11 @@ fun EditProfileSettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // About Input
                     OutlinedTextField(
-                        value = about ?: "", // Bind this from your ViewModel
+                        value = about ?: "",
                         onValueChange = { },
                         label = { Text("About") },
-                        readOnly = true, // Makes it non-editable
+                        readOnly = true,
                         visualTransformation = if (about.isNullOrEmpty())
                             PlaceholderTransformation(" ")
                         else VisualTransformation.None,
@@ -437,7 +412,7 @@ fun EditProfileSettingsScreen(
                                 onEditAboutNavigateUp()
                             }) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.ic_edit), // Edit icon as an example
+                                    painter = painterResource(id = R.drawable.ic_edit),
                                     contentDescription = "Edit icon"
                                 )
                             }
@@ -454,7 +429,6 @@ fun EditProfileSettingsScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Contact Information Section
                     Text(
                         text = "Contact",
                         style = MaterialTheme.typography.titleMedium,
@@ -462,19 +436,18 @@ fun EditProfileSettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Email Input
                     OutlinedTextField(
-                        value = email, // Bind this from your ViewModel
+                        value = email,
                         onValueChange = { },
                         label = { Text("Email") },
-                        readOnly = true, // Makes it non-editable
+                        readOnly = true,
                         visualTransformation = if (email.isEmpty())
                             PlaceholderTransformation(" ")
                         else VisualTransformation.None,
                         trailingIcon = {
                             IconButton(onClick = dropUnlessResumed { onEditEmailNavigateUp() }) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.ic_edit), // Edit icon as an example
+                                    painter = painterResource(id = R.drawable.ic_edit),
                                     contentDescription = "Edit icon"
                                 )
                             }
@@ -483,6 +456,38 @@ fun EditProfileSettingsScreen(
                             .fillMaxWidth(),
                         singleLine = true
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+
+                    OutlinedTextField(
+                        value = if(phoneCountryCode!=null && phoneNumber!=null)
+                            "$phoneCountryCode $phoneNumber" else "",
+                        onValueChange = { },
+                        label = { Text("Phone") },
+                        readOnly = true,
+                        visualTransformation = if (email.isEmpty())
+                            PlaceholderTransformation(" ")
+                        else VisualTransformation.None,
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                bottomEditPhoneSheetState = true
+                            }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_edit),
+                                    contentDescription = "Edit icon"
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        singleLine = true,
+                        isError = phoneError != null
+                    )
+
+                    phoneError?.let {
+                        ErrorText(it)
+                    }
 
                 }
             } ?: run {
@@ -493,6 +498,14 @@ fun EditProfileSettingsScreen(
             }
 
 
+            if (bottomEditPhoneSheetState) {
+
+                EditPhoneBottomSheet(onVerifyClick = {
+
+                }, onDismiss = {
+                    bottomEditPhoneSheetState = false
+                })
+            }
 
             TakePictureSheet(
                 profilePickerState,

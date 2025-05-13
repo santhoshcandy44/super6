@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -68,7 +69,7 @@ fun ManagePublishedServicesScreen(
     onNavigateUpManageServicePlans: () -> Unit,
     onNavigateUpManageServiceLocation: () -> Unit,
     onNavigatePop: () -> Unit,
-    onPopBackStack:() -> Unit,
+    onPopBackStack: () -> Unit,
     viewModel: PublishedServicesViewModel
 ) {
 
@@ -78,9 +79,9 @@ fun ManagePublishedServicesScreen(
 
 
     BackHandler {
-       /* editableService?.let {
-            viewModel.inValidateSelectedService()
-        }*/
+        /* editableService?.let {
+             viewModel.inValidateSelectedService()
+         }*/
         navHostController.popBackStack()
     }
 
@@ -93,11 +94,10 @@ fun ManagePublishedServicesScreen(
     var bottomSheetState by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(bottomSheetState) {
-        if (bottomSheetState) {
+        if (bottomSheetState)
             sheetState.expand()
-        } else {
+        else
             sheetState.hide()
-        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -162,7 +162,7 @@ fun ManagePublishedServicesScreen(
 
                 },
                 onDeleteServiceClick = {
-                    bottomSheetState=true
+                    bottomSheetState = true
                 },
                 modifier = Modifier.padding(contentPadding)
             )
@@ -175,14 +175,15 @@ fun ManagePublishedServicesScreen(
                         .safeDrawingPadding(),
                     dragHandle = null,
                     onDismissRequest = {
-                        bottomSheetState=false
+                        bottomSheetState = false
                     },
                     sheetState = sheetState,
                     shape = RoundedCornerShape(16.dp)
                 ) {
 
 
-                    DeleteInfoBottomSheet("Are you sure you want to delete this service? This action cannot be undone.",
+                    DeleteInfoBottomSheet(
+                        "Are you sure you want to delete this service? This action cannot be undone.",
                         {
 
                             editableService?.let { editableServiceNonNull ->
@@ -196,10 +197,10 @@ fun ManagePublishedServicesScreen(
                                         .show()
                                 }
                             }
-                            bottomSheetState=false
+                            bottomSheetState = false
 
                         }) {
-                        bottomSheetState=false
+                        bottomSheetState = false
                     }
 
                 }
@@ -367,36 +368,34 @@ fun DeleteInfoBottomSheet(
             .padding(24.dp)
     ) {
 
-        // Message Text
         Text(
             text = message,
             fontSize = 16.sp,
             modifier = Modifier.padding(vertical = 16.dp)
         )
 
-        // Buttons
-        Column(
-            modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Proceed Button
+
             Button(
                 onClick = onProceed,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
+                    .weight(1f),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    text = "Proceed",
+                    text = "Continue",
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
 
-            // Cancel Button
             OutlinedButton(
                 onClick = onCancel,
                 colors = ButtonDefaults.outlinedButtonColors(
@@ -404,7 +403,7 @@ fun DeleteInfoBottomSheet(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
+                    .weight(1f),
                 shape = RoundedCornerShape(8.dp)
 
             ) {

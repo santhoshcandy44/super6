@@ -1,9 +1,7 @@
 package com.lts360.compose.ui.usedproducts.manage
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,82 +38,66 @@ fun ManageUsedProductListingScreen(
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
     val isUsedProductListingCreated = savedStateHandle?.get<Boolean>("is_used_product_listing_created")
 
-
-    // Parent Frame Layout
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = onPopBackStack ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back Icon"
-                        )
-                    }
-                },
-                title = {
-                    Text(
-                        text = "Manage Second Hands",
-                        style = MaterialTheme.typography.titleMedium
+    Scaffold(topBar = {
+        TopAppBar(
+            navigationIcon = {
+                IconButton(onClick = onPopBackStack ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back Icon"
                     )
                 }
-            )
-        }) { paddingValues ->
-
-
-            Column(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 8.dp)
-            ) {
-                Column(modifier = Modifier
-                        .fillMaxWidth()) {
-                    Text(
-                        text = "Create Second Hands",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    OutlinedButton(
-                        onClick = dropUnlessResumed { onAddNewUsedProductListingClick() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        shape = RectangleShape,
-
-                        ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Create Seconds",
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                        )
-                        Text(text = "Add New")
-                    }
-
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-
-                PublishedUsedProductListingScreen(
-                    isUsedProductListingCreated,
-                    {
-                        isUsedProductListingCreated?.let {
-                            savedStateHandle.remove<String>("is_service_created")
-                        }
-                    },
-                    onNavigateUpManagePublishedUsedProductListing,
-                    publishedUsedProductsListingViewModel
-
+            },
+            title = {
+                Text(
+                    text = "Manage Second Hands",
+                    style = MaterialTheme.typography.titleMedium
                 )
             }
+        )
+    }) { paddingValues ->
+
+
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+                .padding(top = 8.dp)
+        ) {
+            Text(text = "Create Second Hands",
+                style = MaterialTheme.typography.titleMedium)
+
+            OutlinedButton(
+                onClick = dropUnlessResumed { onAddNewUsedProductListingClick() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                shape = RectangleShape
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Create Seconds Hands",
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                )
+                Text(text = "Add New")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            PublishedUsedProductListingScreen(
+                isUsedProductListingCreated,
+                {
+                    isUsedProductListingCreated?.let {
+                        savedStateHandle.remove<String>("is_used_product_listing_created")
+                    }
+                },
+                onNavigateUpManagePublishedUsedProductListing,
+                publishedUsedProductsListingViewModel
+
+            )
         }
-
     }
-
 
 }

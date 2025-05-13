@@ -16,7 +16,7 @@ import com.lts360.compose.ui.usedproducts.manage.navhost.ManageUsedProductListin
 
 
 @Composable
-public fun rememberManageServicesCustomBottomNavController(
+public fun rememberManageServicesCustomNavController(
     lastEntry:String?,
     isSelectedServiceNull:Boolean,
     vararg navigators: Navigator<out NavDestination>,

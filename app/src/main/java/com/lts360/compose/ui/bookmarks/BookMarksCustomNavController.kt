@@ -16,7 +16,7 @@ import kotlin.reflect.KClass
 
 
 @Composable
-fun rememberBookMarksCustomBottomNavController(
+fun rememberBookMarksCustomNavController(
     lastEntry: String?,
     isSelectedBookmarkNull: Boolean,
     isSelectedItemSecondsOwnerProfileNull:Boolean,

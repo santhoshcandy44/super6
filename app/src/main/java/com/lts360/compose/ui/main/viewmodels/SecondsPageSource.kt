@@ -107,7 +107,7 @@ class SecondsPageSource(
     }
 
 
-    fun updateServiceBookMarkedInfo(serviceId: Long, isBookMarked: Boolean) {
+    fun updateUsedProductListingBookMarkedInfo(serviceId: Long, isBookMarked: Boolean) {
         _items.update { currentItems ->
             currentItems.map { service ->
                 if (service.productId == serviceId) {

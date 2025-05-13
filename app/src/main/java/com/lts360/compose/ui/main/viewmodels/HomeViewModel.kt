@@ -66,6 +66,8 @@ class HomeViewModel @Inject constructor(
     private val _selectedLocationGeo = MutableStateFlow<String?>(null)
     val selectedLocationGeo = _selectedLocationGeo.asStateFlow()
 
+    private val _nestedType = MutableStateFlow<String?>(null)
+    val nestedType = _nestedType.asStateFlow()
 
     var error = ""
 
@@ -181,7 +183,6 @@ class HomeViewModel @Inject constructor(
             )
         }
         setEmptySuggestions()
-
     }
 
     fun collapseSearchAction(forceResetSearchText:Boolean=false) {

@@ -96,18 +96,15 @@ class AuthRepository @Inject constructor(
 
             val idToken = googleIdTokenCredential.idToken
             onSuccess(idToken)
-            // Process the Google ID token credential as needed
         } catch (e: GetCredentialException) {
             e.printStackTrace()
             onError("Failed to log in try again")
         } catch (e: GoogleIdTokenParsingException) {
             e.printStackTrace()
             onError("Failed to log in try again")
-        } catch (e: IOException) {
-            // Handle network issues, such as no connectivity
+        } catch (_: IOException) {
             onError("Network error. Please check your internet connection and try again.")
-        } catch (e: Exception) {
-            // Handle any other unexpected exceptions
+        } catch (_: Exception) {
             onError("An unexpected error occurred. Please try again.")
         }
 
@@ -122,26 +119,25 @@ class AuthRepository @Inject constructor(
 
 
         if (existingProfile == null || existingProfile.updatedAt != userProfile.updatedAt) {
-            // Check if profilePicUrl is not null and download the image
-            val updatedProfilePicUrl = if (userProfile.profilePicUrl != null) {
-                downloadAndSaveProfileImage(userProfile.profilePicUrl)
-            } else {
-                null
+            val updatedProfilePicUrl = userProfile.profilePicUrl?.let {
+                downloadAndSaveProfileImage(it)
             }
 
-            val profileUpdatedAt =
-                if (updatedProfilePicUrl != null) userProfile.updatedAt else existingProfile?.updatedAt
             val userProfileData = UserProfile(
-                    userId = userProfile.userId,
-                    firstName = userProfile.firstName,
-                    lastName = userProfile.lastName,
-                    email = userProfile.email,
-                    profilePicUrl = updatedProfilePicUrl,
-                    accountType = userProfile.accountType,
-                    createdAt = userProfile.createdAt,
-                    updatedAt = profileUpdatedAt,
-                    about = userProfile.about
-                )
+                userId = userProfile.userId,
+                firstName = userProfile.firstName,
+                lastName = userProfile.lastName,
+                email = userProfile.email,
+                isEmailVerified = userProfile.isEmailVerified,
+                phoneCountryCode = userProfile.phoneCountryCode,
+                phoneNumber = userProfile.phoneNumber,
+                isPhoneVerified = userProfile.isPhoneVerified,
+                profilePicUrl = updatedProfilePicUrl,
+                accountType = userProfile.accountType,
+                createdAt = userProfile.createdAt,
+                updatedAt = if (updatedProfilePicUrl != null) userProfile.updatedAt else existingProfile?.updatedAt,
+                about = userProfile.about
+            )
 
             userProfileDao.insert(userProfileData)
 
@@ -171,27 +167,21 @@ class AuthRepository @Inject constructor(
 
         return try {
             val profileDir = File(filesDir, "user/profile")
-            // Check if the directory exists, if not create it
             if (!profileDir.exists()) {
-                profileDir.mkdirs() // Create the necessary directories
+                profileDir.mkdirs()
             }
             val localFile = File(profileDir, "profile_pic.jpg")
-            // Make the network request in the background using Retrofit
             val response = CommonClient.rawInstance.create(CommonService::class.java)
                 .downloadMedia(imageUrl)
 
-            // Write the downloaded image to the local file
             withContext(Dispatchers.IO) {
                 response.byteStream().use { inputStream ->
-                    // Save the image as a JPEG
                     FileOutputStream(localFile).use { outputStream ->
                         inputStream.copyTo(outputStream)
                     }
                 }
             }
 
-
-            // Return the URI string with timestamp for cache invalidation
             Uri.fromFile(localFile).toString() + "?timestamp=" + System.currentTimeMillis()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -349,7 +339,7 @@ class AuthRepository @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))
@@ -387,7 +377,7 @@ class AuthRepository @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))
@@ -428,7 +418,7 @@ class AuthRepository @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))
@@ -468,7 +458,7 @@ class AuthRepository @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))

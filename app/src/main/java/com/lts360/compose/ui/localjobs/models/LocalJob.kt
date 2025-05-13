@@ -66,6 +66,9 @@ data class LocalJob(
     @SerializedName("is_bookmarked")
     var isBookmarked: Boolean,
 
+    @SerializedName("is_applied")
+    var isApplied: Boolean,
+
     @SerializedName("images")
     var images: List<Image>,
 

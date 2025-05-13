@@ -53,7 +53,6 @@ object DatabaseModule {
                 "app_database"
             ).apply {
                 createFromAsset("database/external_database.db")
-                // Enable multi-instance invalidation (optional)
                 enableMultiInstanceInvalidation()
 
             }.build().also {

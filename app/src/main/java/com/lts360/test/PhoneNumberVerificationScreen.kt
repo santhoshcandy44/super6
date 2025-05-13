@@ -1,4 +1,3 @@
-/*
 package com.lts360.test
 
 
@@ -26,12 +25,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -40,6 +42,7 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lts360.compose.noRippleClickable
 import com.lts360.compose.ui.auth.CustomNumberInput
 import com.lts360.compose.ui.auth.CustomPinInput
 import com.lts360.compose.ui.theme.customColorScheme
@@ -51,15 +54,11 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CountryBottomSheetScreen() {
-    // Sample list of countries with codes and flags
 
     val countries = listOf(
-        Country("Singapore", "\uD83C\uDDF8\uD83C\uDDEC", "+65"),
-        Country("Sri Lanka", "\uD83C\uDDF1\uD83C\uDDF0", "+94"),
         Country("India", "\uD83C\uDDEE\uD83C\uDDF3", "+91")
     )
 
-    // State to control the BottomSheet visibility
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.Hidden,
@@ -77,7 +76,6 @@ fun CountryBottomSheetScreen() {
 
     BottomSheetScaffold(
         sheetContent = {
-            // Bottom Sheet content
             LazyColumn(
                 contentPadding = PaddingValues(8.dp),
                 modifier = Modifier.fillMaxHeight()
@@ -117,7 +115,7 @@ fun CountryBottomSheetScreen() {
                     ListItem(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable{
+                            .clickable {
                                 selectedCountry = country
                                 coroutineScope.launch {
                                     bottomSheetScaffoldState.bottomSheetState.hide()
@@ -140,14 +138,13 @@ fun CountryBottomSheetScreen() {
                 }
             }
         },
-        sheetPeekHeight = 0.dp, // Start with sheet collapsed
+        sheetPeekHeight = 0.dp,
         scaffoldState = bottomSheetScaffoldState,
         sheetDragHandle = null,
         sheetShape = RectangleShape,
         topBar = {
         }
     ) { paddingValues ->
-        // Main content that triggers the Bottom Sheet
         Column(
             modifier = Modifier
                 .fillMaxSize(),
@@ -156,7 +153,7 @@ fun CountryBottomSheetScreen() {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .weight(1f) // Take up available space above the bottom box
+                    .weight(1f)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .padding(top = 16.dp)
@@ -187,88 +184,16 @@ fun CountryBottomSheetScreen() {
                 Spacer(modifier = Modifier.height(8.dp))
 
 
-
-                // Phone Number Input Field
-                BasicTextField(
-                    value = phoneNumber,
-                    onValueChange = { phoneNumberText ->
-                       */
-/* if (phoneNumberText.length <= 10 && phoneNumberText.all { it.isDigit() }) {
-                            phoneNumber = phoneNumberText
-                        }*//*
-
+                PhoneNumberInput(
+                    phoneNumber = phoneNumber,
+                    onPhoneNumberChange = {
+                        phoneNumber = it
                     },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            MaterialTheme.customColorScheme.searchBarColor,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .heightIn(min = 40.dp)
-                        .padding(vertical = 8.dp, horizontal = 16.dp),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 24.sp,
-                        platformStyle = PlatformTextStyle(includeFontPadding = false),
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    singleLine = true,
-                    readOnly = true,
-                    decorationBox = {
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-                            Row(modifier = Modifier
-                                .wrapContentWidth()
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ){
-                                    coroutineScope.launch {
-                                        bottomSheetScaffoldState.bottomSheetState.expand()
-                                    }
-                                }, verticalAlignment = Alignment.CenterVertically
-                            ) {
-
-                                Text(
-                                    text = selectedCountry.flag,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontSize = 24.sp,
-                                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                                    )
-                                )
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                Text(
-                                    text = selectedCountry.code,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontSize = 24.sp,
-                                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                                    )
-                                )
-                            }
-
-
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Box(
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                if (phoneNumber.isEmpty()) {
-                                    Text(
-                                        "Phone Number",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-                                it()
-                            }
+                    selectedCountry = selectedCountry,
+                    onChooseCountry = {
+                        coroutineScope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.expand()
                         }
-
                     }
                 )
 
@@ -334,21 +259,22 @@ fun CountryBottomSheetScreen() {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text("Email Log In", modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                    ){
+                Text(
+                    "Email Log In", modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
 
-                })
+                    })
 
 
             }
 
             Box(
                 modifier = Modifier
-                    .fillMaxWidth() // Fill the width
+                    .fillMaxWidth()
                     .background(Color.Blue)
-                    .wrapContentHeight() // Wrap content height
-
+                    .wrapContentHeight()
 
             ) {
 
@@ -370,46 +296,118 @@ fun CountryBottomSheetScreen() {
             }
 
 
-
-
         }
     }
 }
 
+
+@Composable
+fun PhoneNumberInput(
+    phoneNumber: String,
+    onPhoneNumberChange: (String) -> Unit,
+    onChooseCountry: () -> Unit,
+    selectedCountry: Country,
+    modifier: Modifier = Modifier,
+    readOnly: Boolean=false
+) {
+    BasicTextField(
+        value = phoneNumber,
+        onValueChange = { phoneNumberText ->
+            if (phoneNumberText.length <= 10 && phoneNumberText.all { it.isDigit() }) {
+                onPhoneNumberChange(phoneNumberText)
+            }
+        },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                MaterialTheme.customColorScheme.searchBarColor,
+                RoundedCornerShape(8.dp)
+            )
+            .heightIn(min = 40.dp)
+            .padding(vertical = 8.dp, horizontal = 16.dp),
+        textStyle =LocalTextStyle.current.copy(
+            fontSize = 18.sp,
+            platformStyle = PlatformTextStyle(includeFontPadding = false),
+            color = MaterialTheme.colorScheme.onSurface,
+            ),
+        singleLine = true,
+        readOnly = readOnly,
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        decorationBox = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .noRippleClickable(onClick = onChooseCountry),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedCountry.flag,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 24.sp,
+                            platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = selectedCountry.code,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 24.sp,
+                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (phoneNumber.isEmpty()) {
+                        Text(
+                            "Phone Number",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    it()
+                }
+            }
+        }
+    )
+}
+
+
 data class Country(val name: String, val flag: String, val code: String)
-
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PinVerificationAppOpenScreen() {
-    // Sample list of countries with codes and flags
-
-
 
     val coroutineScope = rememberCoroutineScope()
 
     var pin by remember { mutableStateOf("") }
-    var   isLoading by remember { mutableStateOf(false) }
-    var currentLoadingIndex by remember { mutableIntStateOf(0) } // Keeps track of the currently active box
+    var isLoading by remember { mutableStateOf(false) }
+    var currentLoadingIndex by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(isLoading) {
         while (isLoading) {
-            currentLoadingIndex = (currentLoadingIndex + 1) % 4 // Cycle through indices 0 to 3
-            delay(100L) // Delay between each box
+            currentLoadingIndex = (currentLoadingIndex + 1) % 4
+            delay(100L)
         }
-        currentLoadingIndex = 0 // Reset index when loading stops
+        currentLoadingIndex = 0
     }
 
 
-    // Shake animation offset
     val shakeOffset = remember { Animatable(0f) }
 
-    // Trigger the shake animation if the PIN is incorrect
     LaunchedEffect(pin) {
         isLoading = false
-        var isWrong = (pin=="1220")
+        var isWrong = (pin == "1220")
         if (pin.length == 4 && !isWrong) {
             coroutineScope.launch {
                 shakeOffset.animateTo(
@@ -420,7 +418,7 @@ fun PinVerificationAppOpenScreen() {
                         repeatMode = RepeatMode.Reverse
                     )
                 )
-                shakeOffset.snapTo(0f) // Reset position
+                shakeOffset.snapTo(0f)
                 isWrong = false
             }
         }
@@ -434,7 +432,7 @@ fun PinVerificationAppOpenScreen() {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .weight(1f) // Take up available space above the bottom box
+                .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(top = 16.dp)
@@ -461,7 +459,8 @@ fun PinVerificationAppOpenScreen() {
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier
+                    .padding(16.dp)
                     .offset { IntOffset(shakeOffset.value.roundToInt(), 0) } // Apply shake offset
 
             ) {
@@ -471,13 +470,13 @@ fun PinVerificationAppOpenScreen() {
                             .size(40.dp)
                             .border(
                                 width = 2.dp,
-                                color =  Color.LightGray,
+                                color = Color.LightGray,
                                 shape = CircleShape
                             )
                             .background(
-                                color = if(isLoading && currentLoadingIndex==index){
+                                color = if (isLoading && currentLoadingIndex == index) {
                                     MaterialTheme.colorScheme.primary
-                                }else {
+                                } else {
                                     if (index < pin.length) Color.LightGray else Color.Transparent
                                 },
                                 shape = CircleShape
@@ -495,9 +494,11 @@ fun PinVerificationAppOpenScreen() {
         }
 
 
-        Column(modifier = Modifier.fillMaxWidth(),
+        Column(
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally){
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
             Text("Forgot Pin")
 
@@ -528,4 +529,4 @@ fun PinVerificationAppOpenScreen() {
         }
 
     }
-}*/
+}

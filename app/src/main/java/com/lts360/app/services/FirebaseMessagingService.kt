@@ -11,14 +11,9 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class FirebaseMessagingService : FirebaseMessagingService() {
 
-
     @Inject
     lateinit var fcmMessageHandlerRepository: FCMMessageHandlerRepository
-
-
     val userId = UserSharedPreferencesManager.userId
-
-
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
 
@@ -34,19 +29,14 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         if (partNumber == 1 && totalParts == 1) {
             fcmMessageHandlerRepository.processMessage(applicationContext, userId, chunkData,messageId?.toLong()?:-1)
         }else{
-            // Store the part data
             fcmMessageHandlerRepository.storeMessagePart(messageId, partNumber, totalParts, chunkData)
 
-            // Check if all parts are received
             if (fcmMessageHandlerRepository.areAllPartsReceived(messageId, totalParts)) {
                 val fullMessage = fcmMessageHandlerRepository.reassembleMessage(messageId, totalParts)
                 fcmMessageHandlerRepository.processMessage(applicationContext, userId, fullMessage,messageId?.toLong()?:-1)
             }
         }
     }
-
-
-
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
@@ -56,3 +46,5 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 }
+
+

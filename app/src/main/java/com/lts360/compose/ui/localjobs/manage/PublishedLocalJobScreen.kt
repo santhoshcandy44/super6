@@ -1,18 +1,24 @@
 package com.lts360.compose.ui.localjobs.manage
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
@@ -28,7 +34,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.dropUnlessResumed
 import coil3.compose.AsyncImage
 import com.lts360.api.utils.ResultError
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
@@ -40,10 +45,13 @@ import com.lts360.compose.ui.services.manage.NoInternetText
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PublishedLocalJobScreen(
-    isLocalJobCreated:Boolean?,
-    onRemoveLocalJobCreatedState:()->Unit,
-    onNavigateUp: (EditableLocalJob) -> Unit,
-    viewModel: PublishedLocalJobViewModel) {
+    isLocalJobCreated: Boolean?,
+    onRemoveLocalJobCreatedSavedState: () -> Unit,
+    onNavigateUpManagePublishedLocalJob: () -> Unit,
+    onNavigateUpPublishedLocalJobViewApplicants: () -> Unit,
+
+    viewModel: PublishedLocalJobViewModel
+) {
 
     val userId = viewModel.userId
     val publishedSeconds by viewModel.publishedLocalJobs.collectAsState()
@@ -51,10 +59,10 @@ fun PublishedLocalJobScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val resultError by viewModel.resultError.collectAsState()
 
-    LaunchedEffect(isLocalJobCreated){
+    LaunchedEffect(isLocalJobCreated) {
         isLocalJobCreated?.let {
             viewModel.refreshPublishedItems(userId)
-            onRemoveLocalJobCreatedState()
+            onRemoveLocalJobCreatedSavedState()
         }
     }
 
@@ -75,24 +83,24 @@ fun PublishedLocalJobScreen(
 
                     if (publishedSeconds.isNotEmpty()) {
 
-                        item{
+                        item {
                             Text(
-                                text = "All Published Seconds",
+                                text = "All Published Local Jobs",
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
 
-                        items(publishedSeconds) { item  ->
+                        items(publishedSeconds) { item ->
                             LocalJobItem(
-                                title = item.title,
-                                shortDescription = item.description,
-                                status = item.status,
-                                onClick = { _, itemId ->
-                                    viewModel.setSelectedItem(itemId)
-                                    onNavigateUp(item)
+                                item = item,
+                                onEditClick = {
+                                    viewModel.setSelectedItem(it)
+                                    onNavigateUpManagePublishedLocalJob()
                                 },
-                                type = item.status,
-                                item = item
+                                onViewApplicantsClick = {
+                                    viewModel.setSelectedItemAndLoadApplicants(it)
+                                    onNavigateUpPublishedLocalJobViewApplicants()
+                                }
                             )
                         }
                     }
@@ -156,27 +164,28 @@ fun PublishedLocalJobScreen(
 
 @Composable
 fun LocalJobItem(
-    title: String,
-    shortDescription: String,
-    status: String,
-    onClick: (String, Long) -> Unit,
-    type: String,
     item: EditableLocalJob,
+    onEditClick: (Long) -> Unit,
+    onViewApplicantsClick: (Long) -> Unit
 ) {
 
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        onClick = dropUnlessResumed {
-            onClick(type, item.localJobId)
-        }
+            .padding(vertical = 4.dp)
     ) {
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)){
-            AsyncImage(item.images.firstOrNull()?.imageUrl, contentDescription = null,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AsyncImage(
+                item.images.firstOrNull()?.imageUrl, contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.size(120.dp).background(Color.LightGray))
+                modifier = Modifier
+                    .size(120.dp)
+                    .background(Color.LightGray)
+            )
 
             Column(
                 modifier = Modifier
@@ -185,25 +194,75 @@ fun LocalJobItem(
                     .padding(vertical = 4.dp)
             ) {
                 Text(
-                    text = title,
+                    text = item.title,
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
                 Text(
-                    text = shortDescription,
+                    text = item.description,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 4,
                     overflow = TextOverflow.Ellipsis
                 )
 
                 Text(
-                    text = status,
+                    text = item.status,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (status == "Active")  Color(0xFF00C000)  else if(status=="In-Review") Color(0xFFFFA500)  else Color.Red // Conditional color
+                    color = if (item.status == "Active") Color(0xFF00C000) else if (item.status == "In-Review") Color(
+                        0xFFFFA500
+                    ) else Color.Red
                 )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF8AB4F8))
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier
+                    .clickable { onEditClick(item.localJobId) },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit",
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    "Edit",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable {
+                    onViewApplicantsClick(item.localJobId)
+                }) {
+                Icon(
+                    imageVector = Icons.Default.Visibility,
+                    contentDescription = "View Applicants",
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    "View Applicants",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White,
+
+                    )
             }
         }
 

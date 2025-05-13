@@ -34,7 +34,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LocationAccessViewModel @Inject constructor(
     val userProfileDao: UserProfileDao,
-    val boardDao:BoardDao,
+    val boardDao: BoardDao,
     tokenManager: TokenManager,
     val authRepository: AuthRepository,
     private val locationRepository: LocationRepository,
@@ -165,7 +165,8 @@ class LocationAccessViewModel @Inject constructor(
         context: Context,
         currentLocation: CurrentLocation,
         onSuccess: () -> Unit,
-        onError: (String) -> Unit) {
+        onError: (String) -> Unit
+    ) {
 
         _isLoading.value = true
 
@@ -178,27 +179,37 @@ class LocationAccessViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                when (val result = boardsPreferencesRepository.guestGetBoards(userId)) { // Call the network function
+                when (val result =
+                    boardsPreferencesRepository.guestGetBoards(userId)) { // Call the network function
                     is Result.Success -> {
 
-                        withContext(Dispatchers.IO){
-                            boardDao.clearAndInsertSelectedBoards((Gson().fromJson(
-                                result.data.data,
-                                object : TypeToken<List<BoardPref>>() {}.type
-                            ) as List<BoardPref>)
-                                .map { boardItem ->
-                                    boardItem
-                                }
+                        withContext(Dispatchers.IO) {
+                            boardDao.clearAndInsertSelectedBoards(
+                                (Gson().fromJson(
+                                    result.data.data,
+                                    object : TypeToken<List<BoardPref>>() {}.type
+                                ) as List<BoardPref>)
+                                    .map { boardItem ->
+                                        boardItem
+                                    }
                             )
 
 
                             userProfileDao.insert(
                                 UserProfile(
-                                    generateGuestId, "Guest", "",
-                                    null, null, "",
-                                    "guest",
-                                    System.currentTimeMillis().toString(),
-                                    System.currentTimeMillis().toString()
+                                    userId = generateGuestId,
+                                    firstName = "Guest",
+                                    lastName = "",
+                                    about = null,
+                                    profilePicUrl = null,
+                                    email = "",
+                                    isEmailVerified = false,
+                                    phoneCountryCode = null,
+                                    phoneNumber = null,
+                                    isPhoneVerified = false,
+                                    accountType = "guest",
+                                    createdAt = System.currentTimeMillis().toString(),
+                                    updatedAt = System.currentTimeMillis().toString()
                                 )
                             )
 
@@ -222,7 +233,7 @@ class LocationAccessViewModel @Inject constructor(
                             return@launch
                         }
                         val error = mapExceptionToError(result.error)
-                        onError( error.errorMessage)
+                        onError(error.errorMessage)
                     }
 
                 }

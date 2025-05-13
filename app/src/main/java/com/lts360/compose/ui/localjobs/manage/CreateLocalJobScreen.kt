@@ -101,7 +101,6 @@ fun CreateLocalJobScreen(
 
 
     val localJob by viewModel.localJob.collectAsState()
-    val maritalStatusUnits = viewModel.maritalStatusUnits
     val salaryUnits = viewModel.salaryUnits
 
     val errors by viewModel.errors.collectAsState()
@@ -533,86 +532,99 @@ fun CreateLocalJobScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    ExposedDropdownMenuBox(
-                                        expanded = salaryExpanded,
-                                        onExpandedChange = { salaryExpanded = !salaryExpanded },
-                                        modifier = Modifier
-                                            .background(
-                                                MaterialTheme.colorScheme.surface,
-                                                shape = RoundedCornerShape(4.dp)
-                                            )
-                                            .weight(1f)
-                                    ) {
-                                        OutlinedTextField(
-                                            value = localJob.salaryUnit,
-                                            onValueChange = {},
-                                            readOnly = true,
-                                            label = { Text("Salary") },
-                                            trailingIcon = {
-                                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = salaryExpanded)
-                                            },
-                                            modifier = Modifier
-                                                .menuAnchor(
-                                                    ExposedDropdownMenuAnchorType.PrimaryNotEditable
-                                                )
-                                                .fillMaxWidth()
-                                        )
 
-                                        ExposedDropdownMenu(
+                                    Column(modifier = Modifier.fillMaxWidth()
+                                        .weight(1f)){
+                                        ExposedDropdownMenuBox(
                                             expanded = salaryExpanded,
-                                            onDismissRequest = { salaryExpanded = false }
-                                        ) {
-                                            salaryUnits.forEach {
-                                                DropdownMenuItem(
-                                                    text = { Text(text = it) },
-                                                    onClick = {
-                                                        viewModel.updateSalaryUnit(it)
-                                                        salaryExpanded = false
-                                                    }
+                                            onExpandedChange = { salaryExpanded = !salaryExpanded },
+                                            modifier = Modifier
+                                                .background(
+                                                    MaterialTheme.colorScheme.surface,
+                                                    shape = RoundedCornerShape(4.dp)
                                                 )
+
+                                        ) {
+                                            OutlinedTextField(
+                                                value = localJob.salaryUnit,
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = { Text("Salary") },
+                                                trailingIcon = {
+                                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = salaryExpanded)
+                                                },
+                                                modifier = Modifier
+                                                    .menuAnchor(
+                                                        ExposedDropdownMenuAnchorType.PrimaryNotEditable
+                                                    )
+                                                    .fillMaxWidth()
+                                            )
+
+                                            ExposedDropdownMenu(
+                                                expanded = salaryExpanded,
+                                                onDismissRequest = { salaryExpanded = false }
+                                            ) {
+                                                salaryUnits.forEach {
+                                                    DropdownMenuItem(
+                                                        text = { Text(text = it) },
+                                                        onClick = {
+                                                            viewModel.updateSalaryUnit(it)
+                                                            salaryExpanded = false
+                                                        }
+                                                    )
+                                                }
                                             }
+                                        }
+
+                                        errors.salaryUnit?.let {
+                                            ErrorText(it)
                                         }
                                     }
 
-                                    errors.salaryUnit?.let {
-                                        ErrorText(it)
+                                    Column(modifier = Modifier.fillMaxWidth()
+                                        .weight(1f)){
+
+                                        OutlinedTextField(
+                                            value = if (localJob.salaryMin == -1) "" else localJob.salaryMin.toString(),
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            onValueChange = {
+                                                viewModel.updateSalaryMin(it.toIntOrNull() ?: -1)
+                                            },
+                                            label = { Text("Salary Min") },
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            minLines = 1,
+                                            isError = errors.salaryMin != null
+                                        )
+
+                                        errors.salaryMin?.let {
+                                            ErrorText(it)
+                                        }
+
                                     }
 
-                                    OutlinedTextField(
-                                        value = if (localJob.salaryMin == -1) "" else localJob.salaryMin.toString(),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        onValueChange = {
-                                            viewModel.updateSalaryMin(it.toIntOrNull() ?: -1)
-                                        },
-                                        label = { Text("Salary Min") },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f),
-                                        minLines = 1,
-                                        isError = errors.salaryMin != null
-                                    )
 
-                                    errors.salaryMin?.let {
-                                        ErrorText(it)
+                                    Column(modifier = Modifier.fillMaxWidth()
+                                        .weight(1f)){
+
+                                        OutlinedTextField(
+                                            value = if (localJob.salaryMax == -1) "" else localJob.salaryMax.toString(),
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            onValueChange = {
+                                                viewModel.updateSalaryMax(it.toIntOrNull() ?: -1)
+                                            },
+                                            label = { Text("Salary Max (Optional)") },
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            minLines = 1,
+                                            isError = errors.salaryMax != null
+                                        )
+
+                                        errors.salaryMax?.let {
+                                            ErrorText(it)
+                                        }
                                     }
 
-                                    OutlinedTextField(
-                                        value = if (localJob.salaryMax == -1) "" else localJob.salaryMax.toString(),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        onValueChange = {
-                                            viewModel.updateSalaryMax(it.toIntOrNull() ?: -1)
-                                        },
-                                        label = { Text("Salary Max") },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f),
-                                        minLines = 1,
-                                        isError = errors.salaryMax != null
-                                    )
-
-                                    errors.salaryMax?.let {
-                                        ErrorText(it)
-                                    }
                                 }
 
                             }
@@ -773,7 +785,7 @@ fun CreateLocalJobScreen(
                                                 .toRequestBody("text/plain".toMediaType())
                                         }
 
-                                        val bodySalaryMax = localJob.salaryMin.let {
+                                        val bodySalaryMax = localJob.salaryMax.let {
                                             Gson().toJson(it)
                                                 .toRequestBody("text/plain".toMediaType())
                                         }

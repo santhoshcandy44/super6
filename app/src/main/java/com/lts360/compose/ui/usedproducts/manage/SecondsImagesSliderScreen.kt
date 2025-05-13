@@ -36,11 +36,12 @@ import com.lts360.compose.ui.usedproducts.SecondsOwnerProfileViewModel
 
 @Composable
 fun SecondsImagesSliderScreen(
-    selectedImagePosition: Int, viewModel: SecondsViewmodel,
+    key: Int,
+    selectedImagePosition: Int,
+    viewModel: SecondsViewmodel,
     onPopBackStack:()-> Unit
-
 ) {
-    val selectedService by viewModel.selectedItem.collectAsState()
+    val selectedService by viewModel.getSecondsRepository(key).selectedItem.collectAsState()
 
     SecondsImagesSliderScreenContent(selectedService, selectedImagePosition, onPopBackStack)
 }
@@ -74,21 +75,6 @@ fun BookmarkedSecondsSliderScreen(
 }
 
 
-@Composable
-fun BookmarkedLocalJobsSliderScreen(
-    selectedImagePosition: Int,
-    viewModel: BookmarksViewModel,
-    onPopBackStack:()-> Unit
-
-) {
-    val selectedService by viewModel.selectedItem.collectAsState()
-    val item = selectedService
-
-    if(item !is LocalJob) return
-
-    LocalJobsImagesSliderScreenContent(item, selectedImagePosition, onPopBackStack)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SecondsImagesSliderScreenContent(selectedService: UsedProductListing?, selectedImagePosition: Int,
@@ -98,20 +84,20 @@ private fun SecondsImagesSliderScreenContent(selectedService: UsedProductListing
             TopAppBar(
                 modifier = Modifier.shadow(2.dp),
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = dropUnlessResumed {
-                            onPopBackStack()
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back Icon"
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Viewer",
-                            color = Color.White,
-                            style = MaterialTheme.typography.titleMedium
+                    Text(
+                        text = "Viewer",
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+
+                navigationIcon = {
+                    IconButton(onClick = dropUnlessResumed {
+                        onPopBackStack()
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back Icon"
                         )
                     }
                 },

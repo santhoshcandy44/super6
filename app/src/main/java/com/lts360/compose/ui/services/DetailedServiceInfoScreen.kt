@@ -29,7 +29,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -53,7 +55,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -83,9 +84,7 @@ import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
-import com.lts360.compose.ui.localjobs.DetailedLocalJobScreen
 import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
-import com.lts360.compose.ui.usedproducts.DetailedUsedProductListingScreen
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import com.lts360.compose.utils.ExpandableText
@@ -96,51 +95,37 @@ import kotlinx.coroutines.launch
 @Composable
 fun DetailedServiceScreen(
     navHostController: NavHostController,
+    key: Int,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long) -> Unit,
     viewModel: ServicesViewModel
 ) {
     val userId = viewModel.userId
     val isGuest = viewModel.isGuest
-    val selectedItem by viewModel.selectedItem.collectAsState()
+    val selectedItem by viewModel.getServiceRepository(key).selectedItem.collectAsState()
 
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) }
 
     DetailedServiceInfo(
         userId,
+        isGuest,
         selectedItem,
         onNavigateUpSlider,
         {
             selectedItem?.let {
-                Button(
-                    onClick = dropUnlessResumed {
+                if (job?.isActive == true) {
+                    return@let
+                }
 
-                        if (job?.isActive == true) {
-                            return@dropUnlessResumed
-                        }
-
-                        job = scope.launch {
-                            val selectedChatUser = viewModel.getChatUser(userId, it.user)
-                            val selectedChatId = selectedChatUser.chatId
-
-                            if (isGuest) {
-                                it()
-                            } else {
-                                navigateUpChat(
-                                    selectedChatUser,
-                                    selectedChatId,
-                                    it.user.userId
-                                )
-                            }
-                        }
-
-                    },
-
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(text = "Send message", color = Color.White)
+                job = scope.launch {
+                    val selectedChatUser = viewModel.getChatUser(userId, it.user)
+                    val selectedChatId = selectedChatUser.chatId
+                    navigateUpChat(
+                        selectedChatUser,
+                        selectedChatId,
+                        it.user.userId
+                    )
                 }
             }
         }
@@ -154,6 +139,7 @@ fun DetailedServiceScreen(
 @Composable
 fun FeedUserDetailedServiceInfoScreen(
     navHostController: NavHostController,
+    key: Int,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long) -> Unit,
     servicesViewModel: ServicesViewModel,
@@ -162,43 +148,30 @@ fun FeedUserDetailedServiceInfoScreen(
 
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
+    val isGuest = signInMethod == "guest"
 
-    val selectedItem by servicesViewModel.nestedServiceOwnerProfileSelectedItem.collectAsState()
+    val selectedItem by servicesViewModel.getServiceRepository(key).nestedServiceOwnerProfileSelectedItem.collectAsState()
 
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) }
 
     DetailedServiceInfo(
         userId,
+        isGuest,
         selectedItem,
+
         onNavigateUpSlider,
         {
             selectedItem?.let {
-                Button(
-                    onClick = dropUnlessResumed {
-                        if (job?.isActive == true) {
-                            return@dropUnlessResumed
-                        }
+                job = scope.launch {
+                    val selectedChatUser = viewModel.getChatUser(userId, it.user)
+                    val selectedChatId = selectedChatUser.chatId
 
-                        job = scope.launch {
-                            val selectedChatUser = viewModel.getChatUser(userId, it.user)
-                            val selectedChatId = selectedChatUser.chatId
-
-                            if (signInMethod == "guest") {
-                                it()
-                            } else {
-                                navigateUpChat(
-                                    selectedChatUser,
-                                    selectedChatId,
-                                    it.user.userId
-                                )
-                            }
-                        }
-                    },
-                    shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Send message", color = Color.White)
+                    navigateUpChat(
+                        selectedChatUser,
+                        selectedChatId,
+                        it.user.userId
+                    )
                 }
             }
         }
@@ -218,6 +191,7 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
 
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
+    val isGuest = signInMethod == "guest"
 
     val selectedItem by viewModel.selectedItem.collectAsState()
     val item = selectedItem
@@ -228,38 +202,24 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
 
     DetailedServiceInfo(
         userId,
+        isGuest,
         item,
         onNavigateUpSlider,
         {
             item.let {
-                Button(
-                    onClick = dropUnlessResumed {
+                if (job?.isActive == true) {
+                    return@DetailedServiceInfo
+                }
 
-                        if (job?.isActive == true) {
-                            return@dropUnlessResumed
-                        }
+                job = scope.launch {
+                    val selectedChatUser = viewModel.getChatUser(userId, it.user)
+                    val selectedChatId = selectedChatUser.chatId
 
-                        job = scope.launch {
-                            val selectedChatUser = viewModel.getChatUser(userId, it.user)
-                            val selectedChatId = selectedChatUser.chatId
-
-                            if (signInMethod == "guest") {
-                                it()
-                            } else {
-                                navigateUpChat(
-                                    selectedChatId,
-                                    it.user.userId,
-                                    it.user
-                                )
-                            }
-                        }
-
-                    },
-
-                    shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(text = "Send message", color = Color.White)
+                    navigateUpChat(
+                        selectedChatId,
+                        it.user.userId,
+                        it.user
+                    )
                 }
             }
 
@@ -280,6 +240,7 @@ fun BookmarkedDetailedServiceInfoScreen(
 
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
+    val isGuest = signInMethod == "guest"
 
     val selectedItem by viewModel.selectedItem.collectAsState()
 
@@ -292,36 +253,22 @@ fun BookmarkedDetailedServiceInfoScreen(
 
     DetailedServiceInfo(
         userId,
+        isGuest,
         item,
         onNavigateUpSlider,
         {
-            item.let {
-                Button(
-                    onClick = dropUnlessResumed {
-                        if (job?.isActive == true) {
-                            return@dropUnlessResumed
-                        }
-                        job = scope.launch {
-                            val selectedChatUser = viewModel.getChatUser(userId, it.user)
-                            val selectedChatId = selectedChatUser.chatId
+            if (job?.isActive == true) {
+                return@DetailedServiceInfo
+            }
+            job = scope.launch {
+                val selectedChatUser = viewModel.getChatUser(userId, item.user)
+                val selectedChatId = selectedChatUser.chatId
 
-                            if (signInMethod == "guest") {
-                                it()
-                            } else {
-                                navigateUpChat(
-                                    selectedChatId,
-                                    it.user.userId,
-                                    it.user
-                                )
-                            }
-                        }
-
-                    },
-                    shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(text = "Send message", color = Color.White)
-                }
+                navigateUpChat(
+                    selectedChatId,
+                    item.user.userId,
+                    item.user
+                )
             }
         }
     ) {
@@ -334,9 +281,10 @@ fun BookmarkedDetailedServiceInfoScreen(
 @Composable
 private fun DetailedServiceInfo(
     userId: Long,
+    isGuest: Boolean,
     selectedService: Service?,
     onNavigateUpSlider: (Int) -> Unit,
-    onChatButtonClicked: @Composable (() -> Unit) -> Unit,
+    onChatButtonClick: () -> Unit,
     onPopBackStack: () -> Unit
 ) {
 
@@ -453,13 +401,15 @@ private fun DetailedServiceInfo(
                         item(key = "sendMessage-${it.serviceId}") {
 
                             Row(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                SendMessageButton {
-                                    onChatButtonClicked {
+                                SendMessageButton(onClick = {
+                                    if (isGuest) {
                                         coroutineScope.launch {
                                             bottomSheetScaffoldState.bottomSheetState.expand()
                                         }
+                                    } else {
+                                        onChatButtonClick()
                                     }
-                                }
+                                })
                             }
                         }
                     }
@@ -506,7 +456,7 @@ private fun LoadingDetailedServiceInfo() {
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Column(modifier = Modifier.fillMaxWidth()){
+                Column(modifier = Modifier.fillMaxWidth()) {
 
                     ShimmerBox {
                         Text(
@@ -818,30 +768,40 @@ private fun ServicePlanDetails(
     priceUnit: String
 ) {
 
-    Card(modifier = Modifier.fillMaxWidth().padding(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
 
-        Column(modifier = Modifier
+        Column(
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)) {
+                .padding(16.dp)
+        ) {
 
             Text(text = planName, style = MaterialTheme.typography.headlineSmall)
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(text = planDescription,
-                style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = planDescription,
+                style = MaterialTheme.typography.bodyMedium
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(text = "Features",
+            Text(
+                text = "Features",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Column(modifier = Modifier
+            Column(
+                modifier = Modifier
                     .fillMaxWidth()
             ) {
                 features.forEach { feature ->
@@ -877,7 +837,8 @@ private fun ServicePlanDetails(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(text = formatCurrency(price, priceUnit),
+            Text(
+                text = formatCurrency(price, priceUnit),
                 color = Color(0xFF55D7A9),
                 fontSize = 24.sp,
                 textAlign = TextAlign.End,
@@ -920,6 +881,18 @@ private fun FeatureItem(
 
 
 @Composable
-fun SendMessageButton(chatButtonClicked: @Composable () -> Unit) {
-    chatButtonClicked()
+fun SendMessageButton(
+    onClick: () -> Unit, modifier: Modifier = Modifier,
+    colors: ButtonColors = ButtonDefaults.outlinedButtonColors()
+) {
+    OutlinedButton(
+        onClick = dropUnlessResumed {
+            onClick()
+        },
+        shape = RoundedCornerShape(8.dp),
+        modifier = modifier.fillMaxWidth(),
+        colors = colors
+    ) {
+        Text(text = "Send message")
+    }
 }

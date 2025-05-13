@@ -40,7 +40,6 @@ class LocalJobsPageSource(
     private val _hasMoreItems = MutableStateFlow(true)
     val hasMoreItems = _hasMoreItems.asStateFlow()
 
-
     private var page =  1
     private var lastTimeStamp: String? = null
     private var lastTotalRelevance: String? = null
@@ -69,14 +68,11 @@ class LocalJobsPageSource(
             lastTotalRelevance = value
         }
 
-
-
     private var currentHasMoreItems: Boolean
         get() = _hasMoreItems.value
         set(value) {
             _hasMoreItems.value = value
         }
-
 
     private var currentInitialLoadState: Boolean
         get() = _initialLoadState.value
@@ -89,8 +85,6 @@ class LocalJobsPageSource(
         set(value) {
             _hasNetworkError.value = value
         }
-
-
 
     private var currentAppendError: Boolean
         get() = _hasAppendError.value
@@ -106,7 +100,6 @@ class LocalJobsPageSource(
         currentNetworkError=value
     }
 
-
     fun updateLocalJobBookMarkedInfo(localJobId: Long, isBookMarked: Boolean) {
         _items.update { currentItems ->
             currentItems.map { item ->
@@ -117,7 +110,18 @@ class LocalJobsPageSource(
                 }
             }
         }
+    }
 
+    fun updateLocalJobAppliedInfo(localJobId: Long, isApplied: Boolean) {
+        _items.update { currentItems ->
+            currentItems.map { item ->
+                if (item.localJobId == localJobId) {
+                    item.copy(isApplied = isApplied)
+                } else {
+                    item
+                }
+            }
+        }
     }
 
     suspend fun refresh(userId: Long, query: String?) {
@@ -181,7 +185,7 @@ class LocalJobsPageSource(
 
             try {
                 val response = AppClient.instance.create(ManageLocalJobService::class.java)
-                    .getLocalJobs(userId, page, query, lastTimeStamp, lastTotalRelevance)
+                    .getLocalJobs(userId, query,page, lastTimeStamp, lastTotalRelevance)
 
                 if (response.isSuccessful) {
                     val body = response.body()
@@ -360,7 +364,6 @@ class LocalJobsPageSource(
         }
     }
 
-    // Finalize loading state
     private fun finalizeLoad(isRefreshing: Boolean) {
         if (isRefreshing) {
             _isRefreshingItems.value = false

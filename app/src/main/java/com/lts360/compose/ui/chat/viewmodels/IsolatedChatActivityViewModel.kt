@@ -12,12 +12,12 @@ import com.lts360.app.database.models.chat.MessageWithReply
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -31,21 +31,12 @@ class IsolatedChatActivityViewModel @Inject constructor(
     private val repository: ChatUserRepository
 ) : ViewModel() {
 
-
     private val _selectedChatUser = MutableStateFlow<UserState?>(null)
     val selectedChatUser = _selectedChatUser.asStateFlow()
 
     val chatUsersProfileImageLoader = repository.chatUsersProfileImageLoader
 
-    // Channel to signal when loading is complete
-    private val _loadingComplete = CompletableDeferred<Unit>()
-
-    val loadingComplete: CompletableDeferred<Unit> = _loadingComplete
-
     private var messagesHandlerJob: Job? = null
-
-
-
 
     var SELECTED_CHAT_USER_MESSAGES_SIZE = 0
     var SELECTED_CHAT_USER_MESSAGES_SIZE_AFTER_INITIAL_LOAD = 200
@@ -53,84 +44,64 @@ class IsolatedChatActivityViewModel @Inject constructor(
 
     fun loadChatUser(selectedChatUser: ChatUser) {
         viewModelScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
+            withContext(Dispatchers.IO) {
 
-                    val startTime = System.currentTimeMillis()  // Record start time
+                val chatUserWithDetails = chatUserDao.getSpecificChatUserWithUnreadMessages(
+                    messageDao,
+                    selectedChatUser.chatId,
+                    30
+                )
 
-                    val chatUserWithDetails = chatUserDao.getSpecificChatUserWithUnreadMessages(
-                        messageDao,
-                        selectedChatUser.chatId,
-                        30
-                    )
-
-                    val chatUser = chatUserWithDetails.chatUser
-                    val lastMessage = chatUserWithDetails.lastMessage
-                    val unreadCount = chatUserWithDetails.unreadCount
-                    val messages = chatUserWithDetails.messages
-
-                    val endTime = System.currentTimeMillis()  // Record end time
-                    val elapsedTime = endTime - startTime  // Calculate elapsed time
+                val chatUser = chatUserWithDetails.chatUser
+                val messages = chatUserWithDetails.messages
 
 
+                SELECTED_CHAT_USER_MESSAGES_SIZE = messages.size
 
-                    SELECTED_CHAT_USER_MESSAGES_SIZE = messages.size
 
+                val groupedMessages = repository.groupMessagesByDay(messages)
+                val allMessages = flattenMessagesWithHeaders(groupedMessages)
 
-                    val groupedMessages = repository.groupMessagesByDay(messages)
-                    val allMessages = flattenMessagesWithHeaders(groupedMessages)
-
-                    val firstUnreadIndex =
-                        allMessages.indexOfLast { it.itemType == ItemType.MESSAGE && !it.message!!.receivedMessage.read }
+                val firstUnreadIndex =
+                    allMessages.indexOfLast { it.itemType == ItemType.MESSAGE && !it.message!!.receivedMessage.read }
 
 
 
-                    chatUsersProfileImageLoader.enqueue(
-                        ImageRequest.Builder(context)
-                            .data(chatUser.userProfile.profilePicUrl96By96)
-                            .build())
+                chatUsersProfileImageLoader.enqueue(
+                    ImageRequest.Builder(context)
+                        .data(chatUser.userProfile.profilePicUrl96By96)
+                        .build()
+                )
 
 
-                    _selectedChatUser.value = UserState(
-                        chatUser = chatUser,
-                        messages = groupedMessages,
-                        lastMessage = lastMessage,
-                        unreadCount = unreadCount,
-                        userName = "${chatUser.userProfile.firstName} ${chatUser.userProfile.lastName.orEmpty()}",
-                        profileImageUrl = chatUser.userProfile.profilePicUrl.orEmpty(),
-                        isMessagesLoaded = true,
-                        firstVisibleItemIndex = if (firstUnreadIndex == -1) 0 else firstUnreadIndex
-                    )
+                _selectedChatUser.value = UserState(
+                    chatUser = chatUser,
+                    messages = groupedMessages,
+                    lastMessage = chatUserWithDetails.lastMessage,
+                    unreadCount = chatUserWithDetails.unreadCount,
+                    isMessagesLoaded = true,
+                    firstVisibleItemIndex = if (firstUnreadIndex == -1) 0 else firstUnreadIndex
+                )
 
 
-                    // Notify that loading is complete
-                    _loadingComplete.complete(Unit)
-                    val foundedLastMessage = _selectedChatUser.value?.messages?.values?.flatten()?.lastOrNull()
+                val foundedLastMessage =
+                    _selectedChatUser.value?.messages?.values?.flatten()?.lastOrNull()
                         ?.receivedMessage
 
-                    messagesHandlerJob(chatUser, foundedLastMessage)
+                messagesHandlerJob(chatUser, foundedLastMessage)
 
 
-                }
-
-
-            } catch (e: Exception) {
-                // Notify that loading is complete even on error
-                _loadingComplete.complete(Unit)
             }
         }
     }
 
-    // A function to load initial page and subsequent pages
     fun loadMessages(chatUser: ChatUser, lastMessage: Message, pageSize: Int) {
 
         viewModelScope.launch {
 
-
             val messages = withContext(Dispatchers.IO) {
                 messageDao.getMessagesBefore(chatUser.chatId, lastMessage.id, pageSize)
             }
-
 
             val updatedState = _selectedChatUser.value?.let {
 
@@ -140,22 +111,16 @@ class IsolatedChatActivityViewModel @Inject constructor(
                 it.copy(
                     messages = combinedMessages,
                     chatUser = chatUser,
-                    userName = "${chatUser.userProfile.firstName} ${chatUser.userProfile.lastName.orEmpty()}",
-                    profileImageUrl = chatUser.userProfile.profilePicUrl.orEmpty(),
                     isMessagesLoaded = true
                 )
             }
                 ?: UserState(
                     chatUser = chatUser,
                     messages = repository.groupMessagesByDay(messages),
-                    userName = "${chatUser.userProfile.firstName} ${chatUser.userProfile.lastName.orEmpty()}",
-                    profileImageUrl = chatUser.userProfile.profilePicUrl.orEmpty(),
                     isMessagesLoaded = true
                 )
 
-
             _selectedChatUser.value = updatedState
-
 
             val combineLastMessage =
                 _selectedChatUser.value?.messages?.values?.flatten()?.lastOrNull()
@@ -171,35 +136,27 @@ class IsolatedChatActivityViewModel @Inject constructor(
 
     private fun messagesHandlerJob(
         chatUser: ChatUser,
-        lastMessage: Message?) {
+        lastMessage: Message?
+    ) {
+
+        val userState = _selectedChatUser.value ?: return
 
 
-
-
-
-        val userState = _selectedChatUser.value
-            ?: return
-
-
-        // Collect chat messages with replies
         messagesHandlerJob = viewModelScope.launch(Dispatchers.IO) {
 
-
-
             val messagesCollectionFlow = if (lastMessage == null) {
-                messageDao.getMessagesWithRepliesFlow(chatUser.chatId) // It is new chat user
+                messageDao.getMessagesWithRepliesFlow(chatUser.chatId)
 
             } else {
                 messageDao.getMessagesAfterMessageWithInclusiveFlow(chatUser.chatId, lastMessage.id)
 
             }
 
-
             messagesCollectionFlow
                 .filter { newMessages ->
-                    newMessages != userState.messages.values.flatten() // Compare with the already collected messages
+                    newMessages != userState.messages.values.flatten()
                 }
-                .collect{ messageList ->
+                .collect { messageList ->
 
                     /*      if (skipInitiallyCollectingItems) {
                               // Mark initial collection as done (once it's the first time collecting)
@@ -214,7 +171,6 @@ class IsolatedChatActivityViewModel @Inject constructor(
 
                     if (!isMessagesLoaded) {
                         viewModelScope.launch {
-                            // Update LazyListState and message list
                             updateIsMessagesLoaded()
                             updateMessageList(groupedMessages)
                         }
@@ -227,24 +183,20 @@ class IsolatedChatActivityViewModel @Inject constructor(
     }
 
     private fun updateIsMessagesLoaded() {
-        val userState = _selectedChatUser.value ?: return
-
-        val updatedState = userState.copy(isMessagesLoaded = true)
-        _selectedChatUser.value = updatedState
+        updateUserState { it.copy(isMessagesLoaded = true) }
     }
 
     private fun updateMessageList(
         messageList: Map<String, List<MessageWithReply>>
     ) {
+        updateUserState { it.copy(messages = messageList) }
+    }
 
-        val userState = _selectedChatUser.value
-            ?: return
+    private inline fun updateUserState(update: (UserState) -> UserState) {
 
-        val updatedState = userState.copy(messages = messageList)
-        _selectedChatUser.value = updatedState
-
-        _selectedChatUser.value?.let {
-            _selectedChatUser.value = it.copy(messages = messageList)
+        _selectedChatUser.update {
+            if (it == null) return@update it
+            update(it)
         }
     }
 

@@ -42,7 +42,7 @@ interface UserProfileDao {
     @Query("SELECT * FROM user_profile WHERE user_id = :id")
     fun getUserProfileSettingsInfoFlow(id: Long): Flow<UserProfileSettingsInfo?>
 
-    @Query("SELECT first_name, last_name, email, about, profile_pic_url FROM user_profile WHERE user_id = :id")
+    @Query("SELECT first_name, last_name, email, phone_country_code, phone_number, about, profile_pic_url FROM user_profile WHERE user_id = :id")
     fun getUserProfileSettingsInfo(id: Long): UserProfileSettingsInfo?
 
 

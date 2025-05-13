@@ -1,30 +1,29 @@
 package com.lts360.compose.ui.localjobs
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
+import com.lts360.api.auth.managers.TokenManager
+import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.api.utils.Result
 import com.lts360.api.utils.mapExceptionToError
-import com.lts360.api.app.AppClient
-import com.lts360.api.app.ManageLocalJobService
-import com.lts360.api.auth.managers.TokenManager
-import com.lts360.api.common.errors.ErrorResponse
-import com.lts360.api.common.responses.ResponseReply
-import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.daos.profile.UserLocationDao
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
+import com.lts360.compose.ui.localjobs.manage.repos.LocalJobsRepository
 import com.lts360.compose.ui.localjobs.models.LocalJob
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
+import com.lts360.compose.ui.managers.UserGeneralPreferencesManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
+import com.lts360.compose.ui.profile.repos.UserProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -32,71 +31,118 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LocalJobsViewmodel @Inject constructor(
-    val savedStateHandle: SavedStateHandle,
     val userProfileDao: UserProfileDao,
     private val guestUserLocationDao: UserLocationDao,
     val chatUserDao: ChatUserDao,
     val tokenManager: TokenManager,
+    userProfileRepository: UserProfileRepository,
     val chatUserRepository: ChatUserRepository,
-    networkConnectivityManager: NetworkConnectivityManager,
+    val networkConnectivityManager: NetworkConnectivityManager,
+    private val userGeneralPreferencesManager: UserGeneralPreferencesManager
 ) : ViewModel() {
-
-    val submittedQuery = savedStateHandle.get<String?>("submittedQuery")
-    val onlySearchBar = savedStateHandle.get<Boolean>("onlySearchBar") ?: false
-    private val key = savedStateHandle.get<Int>("key") ?: 0
 
     val userId = UserSharedPreferencesManager.userId
 
-    val connectivityManager = networkConnectivityManager
-
-
-    private val _selectedItem = MutableStateFlow<LocalJob?>(null)
-    val selectedItem = _selectedItem.asStateFlow()
-
-
-    private val _lastLoadedItemPosition = MutableStateFlow(-1)
-    val lastLoadedItemPosition = _lastLoadedItemPosition.asStateFlow()
-
-
-    private var error: String = ""
-
-
-    private var _pageSource = LocalJobsPageSource(pageSize = 30)
-    val pageSource: LocalJobsPageSource get() = _pageSource
-
     val isGuest = tokenManager.isGuest()
 
+    val repositories = mutableMapOf<Int, LocalJobsRepository>()
 
-    private var loadingItemsJob: Job? = null
+    val isPhoneNumberVerified = userProfileRepository
+        .getUserProfileSettingsInfoFlow(userId)
+        .map {
+            it?.phoneCountryCode != null && it.phoneNumber != null
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = false
+        )
 
+    val isDontAskAgainChecked = userGeneralPreferencesManager.isDontAskAgainChecked
+
+    private val _isApplying = MutableStateFlow(false)
+    val isApplying = _isApplying.asStateFlow()
 
     init {
+        loadLocalJobsRepository("", false, 0)
+        loadLocalJobs(0)
+    }
 
-        if (isGuest) {
-            viewModelScope.launch {
+    fun loadLocalJobsRepository(
+        submittedQuery: String,
+        onlySearchBar: Boolean,
+        key: Int
+    ) {
+        repositories.put(
+            key, LocalJobsRepository(
+                userProfileDao,
+                guestUserLocationDao,
+                chatUserDao,
+                chatUserRepository,
+                networkConnectivityManager
+            ).apply {
+                updateSubmittedQuery(submittedQuery)
+                updateOnlySearchBar(onlySearchBar)
+                updateKey(key)
+            })
+    }
 
-                launch {
-                    val userLocation = guestUserLocationDao.getLocation(userId)
-                    pageSource.guestNextPage(
-                        userId,
-                        submittedQuery,
-                        userLocation?.latitude,
-                        userLocation?.longitude
-                    )
-                }.join()
 
-            }
-        } else {
-            loadingItemsJob = viewModelScope.launch {
-                launch {
-                    pageSource.nextPage(userId, submittedQuery)
-                }.join()
-            }
+    fun loadLocalJobs(key: Int) {
+        viewModelScope.launch {
+            getLocalJobsRepository(key)
+                .apply {
+                    loadLocalJobs(userId, isGuest)
+                }
+        }
+    }
+
+    fun getLocalJobsRepository(key: Int): LocalJobsRepository =
+        repositories[key] ?: throw IllegalStateException("No repository found")
+
+    fun getKey(key: Int): Int =
+        repositories[key]?.getKey() ?: throw IllegalStateException("No repository found")
+
+
+    fun setSelectedItem(key: Int, item: LocalJob?) {
+        getLocalJobsRepository(key).apply {
+            updateSelectedItem(item)
+        }
+    }
+
+    fun directUpdateLocalJobIsBookMarked(key: Int, productId: Long, isBookMarked: Boolean) {
+        getLocalJobsRepository(key).apply {
+            updateUsedProductListingBookMarkedInfo(productId, isBookMarked)
         }
     }
 
 
-    fun getKey() = key
+    fun updateLastLoadedItemPosition(key: Int, newPosition: Int) {
+        viewModelScope.launch {
+            getLocalJobsRepository(key)
+                .apply {
+                    updateLastLoadedItemPosition(newPosition)
+                }
+
+        }
+    }
+
+
+    fun setLocalJobPersonalInfoPromptIsDontAskAgainChecked(value: Boolean) {
+        viewModelScope.launch {
+            userGeneralPreferencesManager.setLocalJobPersonalInfoPromptIsDontAskAgainChecked(value)
+        }
+    }
+
+    fun updateLocalJobIsApplied(key: Int, localJobId: Long) {
+        viewModelScope.launch {
+            getLocalJobsRepository(key)
+                .apply {
+                    pageSource.updateLocalJobAppliedInfo(localJobId, true)
+                    updateSelectedItemIsApplied(true)
+                }
+        }
+    }
 
     suspend fun getChatUser(userId: Long, userProfile: FeedUserProfileInfo): ChatUser {
         return withContext(Dispatchers.IO) {
@@ -115,212 +161,183 @@ class LocalJobsViewmodel @Inject constructor(
         }
     }
 
-
-    fun updateLastLoadedItemPosition(newPosition: Int) {
+    fun nextPage(key: Int, userId: Long, query: String?) {
         viewModelScope.launch {
-            _lastLoadedItemPosition.value = newPosition
-        }
-    }
 
+            getLocalJobsRepository(key)
+                .apply {
 
-    fun nextPage(userId: Long, query: String?) {
-        viewModelScope.launch {
-            if (isGuest) {
+                    if (isGuest) {
+                        val userLocation = guestUserLocationDao.getLocation(userId)
 
-                val userLocation = guestUserLocationDao.getLocation(userId)
-                if (userLocation != null) {
-                    pageSource.guestNextPage(
-                        userId, query, userLocation.latitude,
-                        userLocation.longitude
-                    )
-                } else {
-                    pageSource.guestNextPage(userId, query)
-                }
-
-            } else {
-                loadingItemsJob?.cancel()
-                loadingItemsJob = launch {
-                    pageSource.nextPage(userId, query)
-                }
-            }
-        }
-    }
-
-
-    fun refresh(userId: Long, query: String?) {
-        viewModelScope.launch {
-            if (isGuest) {
-                val location = guestUserLocationDao.getLocation(userId)
-                pageSource.guestRefresh(
-                    userId,
-                    query,
-                    location?.latitude,
-                    location?.longitude
-                )
-            } else {
-                loadingItemsJob?.cancel()
-                loadingItemsJob = launch {
-                    pageSource.refresh(userId, query)
-                }
-            }
-        }
-    }
-
-
-    fun retry(userId: Long, query: String?) {
-        viewModelScope.launch {
-            if (isGuest) {
-                val location = guestUserLocationDao.getLocation(userId)
-                pageSource.guestRetry(
-                    userId,
-                    query,
-                    location?.latitude,
-                    location?.longitude
-                )
-            } else {
-                pageSource.retry(userId, query)
-            }
-        }
-    }
-
-
-    fun setSelectedItem(item: LocalJob?) {
-        _selectedItem.value = item
-    }
-
-
-    fun directUpdateLocalJobIsBookMarked(localJobId: Long, isBookMarked: Boolean) {
-        _pageSource.updateLocalJobBookMarkedInfo(localJobId, isBookMarked)
-    }
-
-
-    fun onRemoveBookmark(
-        userId: Long,
-        item: LocalJob,
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit,
-    ) {
-        viewModelScope.launch {
-            try {
-                when (val result = removeBookmark(userId, item)) {
-                    is Result.Success -> {
-                        onSuccess()
-                    }
-
-                    is Result.Error -> {
-                        error = mapExceptionToError(result.error).errorMessage
-                        onError(error)
-                    }
-                }
-            } catch (_: Exception) {
-                error = "Something Went Wrong"
-                onError(error)
-
-            }
-        }
-    }
-
-
-    private suspend fun removeBookmark(
-        userId: Long,
-        item: LocalJob ,
-    ): Result<ResponseReply> {
-
-
-        return try {
-            AppClient.instance.create(ManageLocalJobService::class.java)
-                .removeBookmarkLocalJob(
-                    userId,
-                    item.localJobId
-                ).let {
-                    if (it.isSuccessful) {
-                        val body = it.body()
-                        if (body != null && body.isSuccessful) {
-                            Result.Success(body)
-
-                        } else {
-                            val errorMessage = "Failed, try again later..."
-                            Result.Error(Exception(errorMessage))
-                        }
-
+                        pageSource.guestNextPage(
+                            userId,
+                            query,
+                            userLocation?.latitude,
+                            userLocation?.longitude
+                        )
 
                     } else {
+                        getLoadingItemsJob()?.cancel()
+                        updateLoadingItemsJob(launch { pageSource.nextPage(userId, query) })
+                    }
 
-                        val errorBody = it.errorBody()?.string()
-                        val errorMessage = try {
-                            Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                        } catch (e: Exception) {
-                            "An unknown error occurred"
+                }
+
+        }
+
+    }
+
+    fun refresh(key: Int, userId: Long, query: String?) {
+
+        viewModelScope.launch {
+            getLocalJobsRepository(key)
+                .apply {
+                    if (isGuest) {
+                        val userLocation = guestUserLocationDao.getLocation(userId)
+
+                        pageSource.guestRefresh(
+                            userId,
+                            query,
+                            userLocation?.latitude,
+                            userLocation?.longitude
+                        )
+                    } else {
+                        getLoadingItemsJob()?.cancel()
+                        updateLoadingItemsJob(launch { pageSource.refresh(userId, query) })
+                    }
+
+                }
+        }
+    }
+
+    fun retry(key: Int, userId: Long, query: String?) {
+        viewModelScope.launch {
+            getLocalJobsRepository(key)
+                .apply {
+                    if (isGuest) {
+                        val userLocation = guestUserLocationDao.getLocation(userId)
+
+                        pageSource.guestRetry(
+                            userId,
+                            query,
+                            userLocation?.latitude,
+                            userLocation?.longitude
+                        )
+                    } else {
+                        pageSource.retry(userId, query)
+                    }
+                }
+
+        }
+    }
+
+    fun onApplyLocalJob(
+        key: Int,
+        userId: Long,
+        localJobId: Long,
+        onSuccess: (String) -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        _isApplying.value = true
+        viewModelScope.launch {
+            getLocalJobsRepository(key)
+                .apply {
+                    try {
+                        when (val result = applyLocalJob(userId, localJobId)) {
+                            is Result.Success -> {
+                                onSuccess(result.data.message)
+                            }
+
+                            is Result.Error -> {
+                                val error = mapExceptionToError(result.error).errorMessage
+                                updateError(error)
+                                onError(error)
+                            }
                         }
-                        Result.Error(Exception(errorMessage))
+                    } catch (_: Exception) {
+                        val error = "Something Went Wrong"
+                        updateError(error)
+                        onError(error)
+
+                    } finally {
+                        _isApplying.value = false
                     }
                 }
 
 
-        } catch (t: Exception) {
-            Result.Error(t)
         }
     }
 
 
     fun onBookmark(
+        key: Int,
+        userId: Long,
+        item: LocalJob,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            getLocalJobsRepository(key)
+                .apply {
+
+                    try {
+                        when (val result = bookmark(userId, item)) {
+                            is Result.Success -> {
+                                onSuccess()
+                            }
+
+                            is Result.Error -> {
+                                val error = mapExceptionToError(result.error).errorMessage
+                                updateError(error)
+                                onError(error)
+                            }
+                        }
+                    } catch (_: Exception) {
+                        val error = "Something Went Wrong"
+                        updateError(error)
+                        onError(error)
+
+                    }
+                }
+
+
+        }
+    }
+
+
+    fun onRemoveBookmark(
+        key: Int,
         userId: Long,
         item: LocalJob,
         onSuccess: () -> Unit,
         onError: (String) -> Unit,
     ) {
         viewModelScope.launch {
-            try {
-                when (val result = bookmark(userId, item)) {
-                    is Result.Success -> {
-                        onSuccess()
-                    }
+            getLocalJobsRepository(key)
+                .apply {
 
-                    is Result.Error -> {
-                        error = mapExceptionToError(result.error).errorMessage
-                        onError(error)
-                    }
-                }
-            } catch (_: Exception) {
-                error = "Something Went Wrong"
-                onError(error)
-            }
-        }
-    }
+                    try {
+                        when (val result = removeBookmark(userId, item)) {
+                            is Result.Success -> {
+                                onSuccess()
+                            }
 
-
-    private suspend fun bookmark(
-        userId: Long,
-        item: LocalJob,
-    ): Result<ResponseReply> {
-        return try {
-            AppClient.instance.create(ManageLocalJobService::class.java)
-                .bookmarkLocalJob(
-                    userId,
-                    item.localJobId)
-                .let {
-                    if (it.isSuccessful) {
-                        val body = it.body()
-                        if (body != null && body.isSuccessful) {
-                            Result.Success(body)
-
-                        } else {
-                            val errorMessage = "Failed, try again later..."
-                            Result.Error(Exception(errorMessage))
+                            is Result.Error -> {
+                                val error = mapExceptionToError(result.error).errorMessage
+                                updateError(error)
+                                onError(error)
+                            }
                         }
-                    } else {
-                        Result.Error(Exception(try {
-                            Gson().fromJson(it.errorBody()?.string(), ErrorResponse::class.java).message
-                        } catch (_: Exception) {
-                            "An unknown error occurred"
-                        }))
+                    } catch (_: Exception) {
+                        val error = "Something Went Wrong"
+                        updateError(error)
+                        onError(error)
+
                     }
                 }
 
-        } catch (t: Throwable) {
-            Result.Error(t)
         }
-
     }
 
 

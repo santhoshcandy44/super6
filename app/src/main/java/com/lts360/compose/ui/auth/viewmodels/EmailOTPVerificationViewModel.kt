@@ -19,11 +19,10 @@ open class EmailOTPVerificationViewModel(protected val authRepository: AuthRepos
 
 
     private var countDownTimer: CountDownTimer? = null
-    private val countDownTime: Long = 60000 // 1 minute in milliseconds
+    private val countDownTime: Long = 60000
     private var timeLeftInMillis: Long = countDownTime
 
-    private val _otpFields = MutableStateFlow(List(6) { TextFieldValue( "", TextRange.Zero ) })  // A list representing the six OTP fields
-
+    private val _otpFields = MutableStateFlow(List(6) { TextFieldValue( "", TextRange.Zero ) })
     val otpFields = _otpFields.asStateFlow()
 
 

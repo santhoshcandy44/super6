@@ -25,7 +25,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -47,95 +46,74 @@ class ProfileSettingsViewModel @Inject constructor(
     val socketManager: SocketManager
 ) : ViewModel() {
 
-    // Retrieve the argument from the navigation
     val userId = UserSharedPreferencesManager.userId
 
     private val contentResolver = context.contentResolver
 
     private val filesDir = context.filesDir
 
-
     private val _profileImageBitmap = MutableStateFlow<Bitmap?>(null)
-    val profileImageBitmap: StateFlow<Bitmap?> = _profileImageBitmap
+    val profileImageBitmap = _profileImageBitmap.asStateFlow()
 
     private val _isProfilePicLoading = MutableStateFlow(false)
-    val isProfilePicLoading: StateFlow<Boolean> = _isProfilePicLoading
+    val isProfilePicLoading = _isProfilePicLoading.asStateFlow()
 
-    // For Progress Bar
     private val _profileCompletionPercentage = MutableStateFlow(0f)
-    val profileCompletionPercentage: StateFlow<Float> get() = _profileCompletionPercentage
+    val profileCompletionPercentage = _profileCompletionPercentage.asStateFlow()
 
     private val _profileHealthStatus = MutableStateFlow("")
-    val profileHealthStatus: StateFlow<String> get() = _profileHealthStatus
-
+    val profileHealthStatus = _profileHealthStatus.asStateFlow()
 
     private val _userProfile = MutableStateFlow<UserProfileSettingsInfo?>(null)
     val userProfile = _userProfile.asStateFlow()
-
 
     private var errorMessage: String = ""
 
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            // Fetch and update UI with initial user profile
-      /*      userProfileRepository.getUserProfileSettingsInfo(userId)?.let {
-                _userProfile.value=it
-                updateUI(it)
-            }
-
-*/
-
-            // Collect updates from the flow and update UI
-
-
-            userProfileRepository.getUserProfileSettingsInfoFlow(userId).collectLatest { userProfile ->
-                _userProfile.value=userProfile
-                userProfile?.let { updateUI(it) }
-            }
+            userProfileRepository.getUserProfileSettingsInfoFlow(userId)
+                .collectLatest { userProfile ->
+                    _userProfile.value = userProfile
+                    userProfile?.let { updateUserProfileSettings(it) }
+                }
         }
 
-
-        viewModelScope.launch{
+        viewModelScope.launch {
             userProfileRepository.fetchUserProfile(userId)
         }
 
     }
 
 
-    // Helper function to update UI components
-    private suspend fun updateUI(userProfileSettingsInfo: UserProfileSettingsInfo) {
-        userProfileSettingsInfo.profile_pic_url?.let { updateProfilePicUrl(it) }
-
-        val percentage = userProfileRepository.calculateCompletionPercentage(userProfileSettingsInfo)
-        val status = userProfileRepository.determineProfileHealthStatus(userProfileSettingsInfo, percentage)
-        updateProfileStatus(percentage, status)
+    private fun updateUserProfileSettings(userProfileSettingsInfo: UserProfileSettingsInfo) {
+        viewModelScope.launch {
+            userProfileSettingsInfo.profilePicUrl?.let { updateProfilePicUrl(it) }
+            updateProfileHealthStatus(userProfileSettingsInfo)
+        }
     }
-
-
 
 
     private suspend fun updateProfilePicUrl(profilePicUrl: String) {
         _profileImageBitmap.value = withContext(Dispatchers.IO) {
             try {
-                BitmapFactory.decodeStream(
-                    contentResolver.openInputStream(profilePicUrl.toUri())
-                )
-            } catch (e: Exception) {
-                null // Handle the error gracefully
+                BitmapFactory.decodeStream(contentResolver.openInputStream(profilePicUrl.toUri()))
+            } catch (_: Exception) {
+                null
             }
         }
     }
 
 
-    // Update the profile status based on current user data
-    private fun updateProfileStatus(percentage: Int, status: String) {
+    private fun updateProfileHealthStatus(userProfileSettingsInfo: UserProfileSettingsInfo) {
+        val percentage =
+            userProfileRepository.calculateProfileCompletionPercentage(userProfileSettingsInfo)
         _profileCompletionPercentage.value = percentage / 100f
-        _profileHealthStatus.value = status
+        _profileHealthStatus.value =  userProfileRepository.determineProfileHealthStatus(userProfileSettingsInfo, percentage)
     }
 
 
-    fun onUploadImage(
+    fun onUploadProfileImage(
         userId: Long,
         imagePart: MultipartBody.Part,
         onSuccess: (String) -> Unit,
@@ -147,7 +125,7 @@ class ProfileSettingsViewModel @Inject constructor(
             try {
                 _isProfilePicLoading.value = true
 
-                when (val result = uploadImage(userId, imagePart)) { // Call the network function
+                when (val result = uploadProfileImage(userId, imagePart)) {
                     is Result.Success -> {
 
                         val gsonData = Gson().fromJson(result.data.data, JsonObject::class.java)
@@ -155,7 +133,7 @@ class ProfileSettingsViewModel @Inject constructor(
                         val updatedAt = gsonData.get("updated_at").asString
 
                         try {
-                            val localFile = downloadImage(profilePicUrl)
+                            val localFile = downloadProfileImage(profilePicUrl)
                             val updatedProfilePicUrl = Uri.fromFile(localFile)
                                 .toString() + "?timestamp=" + System.currentTimeMillis()
 
@@ -181,7 +159,6 @@ class ProfileSettingsViewModel @Inject constructor(
                     is Result.Error -> {
                         errorMessage = mapExceptionToError(result.error).errorMessage
                         onError(errorMessage)
-                        // Handle the error and update the UI accordingly
                     }
 
                 }
@@ -190,13 +167,13 @@ class ProfileSettingsViewModel @Inject constructor(
                 onError(errorMessage)
                 t.printStackTrace()
             } finally {
-                _isProfilePicLoading.value = false // Reset loading state
+                _isProfilePicLoading.value = false
             }
         }
     }
 
 
-    private suspend fun uploadImage(
+    private suspend fun uploadProfileImage(
         userId: Long,
         imagePart: MultipartBody.Part,
     ): Result<ResponseReply> {
@@ -217,44 +194,45 @@ class ProfileSettingsViewModel @Inject constructor(
                 }
 
             } else {
-                val errorBody = response.errorBody()?.string()
-                val errorMessage = try {
-                    Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
-                    "An unknown error occurred"
-                }
-                Result.Error(Exception(errorMessage))
+                Result.Error(
+                    Exception(
+                        try {
+                            Gson().fromJson(
+                                response.errorBody()?.string(),
+                                ErrorResponse::class.java
+                            ).message
+                        } catch (_: Exception) {
+                            "An unknown error occurred"
+                        }
+                    )
+                )
 
             }
-        } catch (t: Throwable) {
+        } catch (_: Throwable) {
             Result.Error(Exception("Failed to update profile pic"))
         }
     }
 
 
-    // Download the image from the server and store it locally
-    private suspend fun downloadImage(imageUrl: String): File = withContext(Dispatchers.IO) {
+    private suspend fun downloadProfileImage(imageUrl: String): File = withContext(Dispatchers.IO) {
 
-        val profileDir = File(filesDir, "user/profile")
-        // Check if the directory exists, if not create it
-        if (!profileDir.exists()) {
-            profileDir.mkdirs() // Create the necessary directories
-        }
-        val localFile = File(profileDir, "profile_pic.jpg")
+        val localFile = File(
+            File(filesDir, "user/profile")
+                .apply {
+                    if (!exists()) {
+                        mkdirs()
+                    }
+                }, "profile_pic.jpg"
+        )
 
-        // Make the network request in the background using Retrofit
-        val downloadImageResponse = CommonClient.rawInstance.create(CommonService::class.java)
-            .downloadMedia(imageUrl)
-
-        // Write the downloaded image to the local file
-        downloadImageResponse.byteStream().use { inputStream ->
-            // Save the image as a JPEG
-            FileOutputStream(localFile).use { outputStream ->
-                inputStream.copyTo(outputStream)
+        CommonClient.rawInstance.create(CommonService::class.java)
+            .downloadMedia(imageUrl).byteStream().use { inputStream ->
+                FileOutputStream(localFile).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
             }
-        }
 
-        return@withContext localFile
+        localFile
     }
 
 }

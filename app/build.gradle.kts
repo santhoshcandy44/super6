@@ -53,10 +53,10 @@ android {
     buildTypes {
 
         debug {
-           /* buildConfigField("String", "BASE_URL", "\"http://192.168.80.85:3000\"")
-            buildConfigField("String", "SOCKET_BASE_URL", "\"http://192.97.80.85:3080\"")*/
-            buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
-            buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.26.85:3000\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"http://192.168.26.85:3080\"")
+         /*   buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")*/
             buildConfigField("String", "REFERER", "\"referer.lts360.com\"")
             buildConfigField("String", "GOOGLE_SIGN_IN_OAUTH_WEB_CLIENT_ID", "\"300991981824-m4ovoojo09sklaqcvijandmnndduda0r.apps.googleusercontent.com\"")
         }
@@ -67,10 +67,7 @@ android {
             buildConfigField("String", "REFERER", "\"referer.lts360.com\"")
             buildConfigField("String", "GOOGLE_SIGN_IN_OAUTH_WEB_CLIENT_ID", "\"300991981824-m4ovoojo09sklaqcvijandmnndduda0r.apps.googleusercontent.com\"")
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
@@ -166,7 +163,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.8")
+    implementation("androidx.navigation:navigation-compose:2.8.9")
 
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")

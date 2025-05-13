@@ -98,12 +98,10 @@ import androidx.core.net.toUri
 fun ManagePublishedUsedProductListingScreen(
     onPopBackStack: () -> Unit,
     viewModel: PublishedUsedProductsListingViewModel
-
 ) {
 
 
     val userId = viewModel.userId
-
 
     val serviceTitleError by viewModel.titleError.collectAsState()
     val shortDescriptionError by viewModel.shortDescriptionError.collectAsState()
@@ -124,7 +122,6 @@ fun ManagePublishedUsedProductListingScreen(
 
 
     val selectedLocation by viewModel.selectedLocation.collectAsState()
-    // Ensure containers reflect the latest state of imageContainers
     val imageContainers by viewModel.imageContainers.collectAsState()
 
 
@@ -136,7 +133,6 @@ fun ManagePublishedUsedProductListingScreen(
     val isDeleting by viewModel.isDeleting.collectAsState()
 
 
-    // Mutable state for isPickerLaunch and refreshImageIndex
     val isPickerLaunch by viewModel.isPickerLaunch.collectAsState()
     val refreshImageIndex by viewModel.refreshImageIndex.collectAsState()
 
@@ -144,44 +140,42 @@ fun ManagePublishedUsedProductListingScreen(
 
     val slots by viewModel.slots.collectAsState()
 
-    // Create a launcher for picking multiple images
-    val pickImagesLauncher =   if (slots > 0) {
+    val pickImagesLauncher = if (slots > 0) {
 
         rememberLauncherForActivityResult(
-    GalleryPagerActivityResultContracts.PickMultipleImages(slots, allowSingleItemChoose = true)
-    ) { uris ->
+            GalleryPagerActivityResultContracts.PickMultipleImages(
+                slots,
+                allowSingleItemChoose = true
+            )
+        ) { uris ->
 
-        if (imageContainers.size < MAX_IMAGES) {
-            // Proceed if there are URIs to handle
-            if (uris.isNotEmpty()) {
+            if (imageContainers.size < MAX_IMAGES) {
+                if (uris.isNotEmpty()) {
 
-                uris.take(MAX_IMAGES-imageContainers.size).forEach { uri ->
-                    val result = isValidImageDimensions(context, uri)
-                    val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
-                    viewModel.addContainer(
-                        uri.toString(),
-                        result.width,
-                        result.height,
-                        result.format.toString(),
-                        errorMessage = errorMessage
-                    )
+                    uris.take(MAX_IMAGES - imageContainers.size).forEach { uri ->
+                        val result = isValidImageDimensions(context, uri)
+                        val errorMessage =
+                            if (result.isValidDimension) null else "Invalid Dimension"
+                        viewModel.addContainer(
+                            uri.toString(),
+                            result.width,
+                            result.height,
+                            result.format.toString(),
+                            errorMessage = errorMessage
+                        )
+                    }
+
                 }
-
+            } else {
+                ShortToast(context, "Only $MAX_IMAGES images are allowed")
             }
-        } else {
-            // Show a toast message if the image limit is reached
-            Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
-                .show()
-        }
 
-        // Reset picker launch flag
-        viewModel.setPickerLaunch(false)
-    }}
-    else {
+            viewModel.setPickerLaunch(false)
+        }
+    } else {
         null
     }
 
-    // Create a launcher for picking multiple images
     val pickSingleImageLauncher = rememberLauncherForActivityResult(
         GalleryPagerActivityResultContracts.PickSingleImage()
     ) { uri ->
@@ -201,7 +195,7 @@ fun ManagePublishedUsedProductListingScreen(
                 )
             }
         }
-        // Reset picker launch flag
+
         viewModel.setPickerLaunch(false)
 
     }
@@ -229,14 +223,14 @@ fun ManagePublishedUsedProductListingScreen(
                     errorMessage = errorMessage
                 )
             }
-        }else{
-            // Check if the number of selected images is less than 12
+        } else {
             if (imageContainers.size < MAX_IMAGES) {
                 if (isSuccess) {
                     requestedData?.let {
                         cameraData = it
                         val result = isValidImageDimensions(context, it)
-                        val errorMessage = if (result.isValidDimension) null else "Invalid Dimension"
+                        val errorMessage =
+                            if (result.isValidDimension) null else "Invalid Dimension"
                         viewModel.addContainer(
                             requestedData.toString(),
                             result.width,
@@ -248,7 +242,6 @@ fun ManagePublishedUsedProductListingScreen(
                     }
 
                 } else {
-                    // Get the ContentResolver
                     requestedData?.let {
                         context.contentResolver.delete(it, null, null)
                     }
@@ -256,9 +249,7 @@ fun ManagePublishedUsedProductListingScreen(
                 }
 
             } else {
-                // Show a toast message if the image limit is reached
-                Toast.makeText(context, "Only $MAX_IMAGES images are allowed", Toast.LENGTH_SHORT)
-                    .show()
+                ShortToast(context, "Only $MAX_IMAGES images are allowed")
             }
         }
 
@@ -283,7 +274,6 @@ fun ManagePublishedUsedProductListingScreen(
                 bottomSheetScaffoldState.bottomSheetState.hide()
             }
         } else {
-//        viewModel.inValidateSelectedService()
             onPopBackStack()
         }
 
@@ -295,12 +285,8 @@ fun ManagePublishedUsedProductListingScreen(
     var bottomSheetState by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(bottomSheetState) {
-
-        if (bottomSheetState) {
-            sheetState.expand()
-        } else {
-            sheetState.hide()
-        }
+        if (bottomSheetState) sheetState.expand()
+        else sheetState.hide()
     }
 
 
@@ -313,8 +299,7 @@ fun ManagePublishedUsedProductListingScreen(
         scaffoldState = bottomSheetScaffoldState,
         sheetShape = RectangleShape,
         sheetContent = {
-
-            if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+            if (bottomSheetScaffoldState.bottomSheetState.isVisible) {
 
                 ManagePublishedUsedProductListingLocationBottomSheetScreen(
                     bottomSheetScaffoldState.bottomSheetState.currentValue, {
@@ -354,7 +339,7 @@ fun ManagePublishedUsedProductListingScreen(
                             }
                         }
 
-                    }, { district->
+                    }, { district ->
 
 
                         editableService?.let { nonNullableEditableService ->
@@ -383,13 +368,10 @@ fun ManagePublishedUsedProductListingScreen(
 
                 )
             }
-
-
         },
         sheetDragHandle = null,
-        sheetPeekHeight = 0.dp, // Default height when sheet is collapsed
-        sheetSwipeEnabled = false, // Allow gestures to hide/show bottom sheet
-//            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        sheetPeekHeight = 0.dp,
+        sheetSwipeEnabled = false,
     ) { _ ->
 
 
@@ -403,7 +385,6 @@ fun ManagePublishedUsedProductListingScreen(
                                 contentDescription = "Back Icon"
                             )
                         }
-
                     },
                     title = {
                         Text(
@@ -431,7 +412,6 @@ fun ManagePublishedUsedProductListingScreen(
                         strokeWidth = 4.dp
                     )
                 } else {
-                    // Main content
                     LazyVerticalGrid(
                         modifier = Modifier.fillMaxWidth(),
                         columns = GridCells.Adaptive(140.dp),
@@ -439,7 +419,7 @@ fun ManagePublishedUsedProductListingScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
 
-                        item(span = { GridItemSpan(maxLineSpan) }) {  // let item span across all columns in Grid
+                        item(span = { GridItemSpan(maxLineSpan) }) {
                             Text(
                                 text = "Update Product",
                                 style = MaterialTheme.typography.titleMedium
@@ -451,7 +431,6 @@ fun ManagePublishedUsedProductListingScreen(
 
                             Column(modifier = Modifier.fillMaxWidth()) {
 
-                                // Text Field for UsedProductListing Title
                                 OutlinedTextField(
                                     value = serviceTitle,
                                     onValueChange = { viewModel.updateTitle(it) },
@@ -467,18 +446,16 @@ fun ManagePublishedUsedProductListingScreen(
                                         modifier = Modifier.padding(
                                             horizontal = 16.dp,
                                             vertical = 4.dp
-                                        ) // Adjust padding as needed
+                                        )
                                     )
                                 }
 
-                                // Display error message if there's an error
                                 serviceTitleError?.let {
                                     ErrorText(it)
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
-                                // Text Field for Short Description
                                 OutlinedTextField(
                                     value = serviceShortDescription,
                                     onValueChange = { viewModel.updateShortDescription(it) },
@@ -496,7 +473,7 @@ fun ManagePublishedUsedProductListingScreen(
                                         modifier = Modifier.padding(
                                             horizontal = 16.dp,
                                             vertical = 4.dp
-                                        ) // Adjust padding as needed
+                                        )
                                     )
                                 }
 
@@ -579,7 +556,6 @@ fun ManagePublishedUsedProductListingScreen(
                                 }
                             }
 
-                            // Display error message if there's an error
                             priceUnitError?.let {
                                 ErrorText(it)
                             }
@@ -593,8 +569,8 @@ fun ManagePublishedUsedProductListingScreen(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Box(
                                         modifier = Modifier
-                                            .size(140.dp) // Container size
-                                            .clip(RoundedCornerShape(4.dp)) // Clips to rounded corners
+                                            .size(140.dp)
+                                            .clip(RoundedCornerShape(4.dp))
                                     ) {
 
                                         AsyncImage(
@@ -644,13 +620,15 @@ fun ManagePublishedUsedProductListingScreen(
 
                         item(span = { GridItemSpan(maxLineSpan) }) {
 
-                            // Upload Images Section
                             Spacer(modifier = Modifier.height(8.dp))
 
                             UploadServiceImagesContainer(imageContainersError) {
-                                if(imageContainers.size == MAX_IMAGES){
-                                    ShortToast(context, "You already selected maximum $MAX_IMAGES images")
-                                }else{
+                                if (imageContainers.size == MAX_IMAGES) {
+                                    ShortToast(
+                                        context,
+                                        "You already selected maximum $MAX_IMAGES images"
+                                    )
+                                } else {
                                     pickerSheetState = true
                                 }
                             }
@@ -677,11 +655,10 @@ fun ManagePublishedUsedProductListingScreen(
                         item(span = { GridItemSpan(maxLineSpan) }) {
 
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                // Location TextField
                                 OutlinedTextField(
                                     readOnly = true,
                                     value = selectedLocation?.geo ?: "",
-                                    onValueChange = { /* Handle location change */ },
+                                    onValueChange = { },
                                     label = { Text("Location") },
                                     trailingIcon = {
 
@@ -720,7 +697,6 @@ fun ManagePublishedUsedProductListingScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                // Action Buttons
                                 Button(
 
                                     onClick = {
@@ -749,12 +725,10 @@ fun ManagePublishedUsedProductListingScreen(
                                                     .toRequestBody("text/plain".toMediaTypeOrNull())
 
 
-
                                                 val bodyPrice = price.toDouble().let {
                                                     Gson().toJson(it)
                                                         .toRequestBody("text/plain".toMediaType())
                                                 }
-
 
 
                                                 val bodyKeepImageIdsList = imageContainers
@@ -762,9 +736,9 @@ fun ManagePublishedUsedProductListingScreen(
                                                     .mapNotNull { it.image }
                                                     .map { it.imageId }
                                                     .map { imageId ->
-                                                        imageId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+                                                        imageId.toString()
+                                                            .toRequestBody("text/plain".toMediaTypeOrNull())
                                                     }
-
 
 
                                                 val bodyLocation = selectedLocation?.let {
@@ -876,18 +850,17 @@ fun ManagePublishedUsedProductListingScreen(
         ) {
 
 
-            DeleteInfoBottomSheet("Are you sure you want to delete this product? This action cannot be undone.",
+            DeleteInfoBottomSheet(
+                "Are you sure you want to delete this used product listing? This action cannot be undone.",
                 {
-
                     editableService?.let { editableServiceNonNull ->
                         viewModel.onDeleteSeconds(userId, editableService!!.productId, {
                             viewModel.removeSelectedSeconds(editableServiceNonNull.productId)
-                            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                            ShortToast(context, it)
                             onPopBackStack()
 
                         }) {
-                            Toast.makeText(context, it, Toast.LENGTH_SHORT)
-                                .show()
+                            ShortToast(context, it)
                         }
                     }
                     bottomSheetState = false
@@ -905,9 +878,9 @@ fun ManagePublishedUsedProductListingScreen(
         if (isPickerLaunch)
             return@TakePictureSheet
         viewModel.setPickerLaunch(true)
-        if(refreshImageIndex!=-1){
+        if (refreshImageIndex != -1) {
             pickSingleImageLauncher.launch(Unit)
-        }else{
+        } else {
             pickImagesLauncher?.launch(Unit)
         }
         pickerSheetState = false

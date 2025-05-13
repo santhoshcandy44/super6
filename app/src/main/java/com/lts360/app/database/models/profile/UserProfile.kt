@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -31,6 +32,18 @@ data class UserProfile(
 
     @ColumnInfo(name = "email")
     val email: String,
+
+    @ColumnInfo("is_email_verified")
+    val isEmailVerified: Boolean,
+
+    @ColumnInfo("phone_country_code")
+    val phoneCountryCode: Boolean?=null,
+
+    @ColumnInfo("phone_number")
+    val phoneNumber: Boolean?=null,
+
+    @SerializedName("is_phone_verified")
+    val isPhoneVerified: Boolean,
 
     @ColumnInfo(name = "account_type")
     val accountType: String,

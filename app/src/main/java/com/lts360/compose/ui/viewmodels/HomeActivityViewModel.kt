@@ -53,8 +53,7 @@ class HomeActivityViewModel @Inject constructor(
 
     val notificationCount: Flow<Int> = notificationDao.countAllUnreadNotifications()
 
-    private val _bottomNavVisibility = MutableStateFlow(true)
-    val bottomNavVisibility = _bottomNavVisibility.asStateFlow()
+
 
     private val _boards = MutableStateFlow<List<Board>>(emptyList())
     val boards = _boards.asStateFlow()
@@ -94,11 +93,7 @@ class HomeActivityViewModel @Inject constructor(
         }
     }
 
-    fun updateBottomNavVisibility(value: Boolean){
-        viewModelScope.launch {
-            _bottomNavVisibility.value = value
-        }
-    }
+
 
     fun isNotificationPermissionDismissed(): Boolean {
         return UserSharedPreferencesManager.isNotificationPermissionDismissed()

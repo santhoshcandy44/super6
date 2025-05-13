@@ -19,7 +19,7 @@ import com.lts360.compose.ui.services.manage.EditServicePlanScreen
 import com.lts360.compose.ui.services.manage.EditServiceThumbnailScreen
 import com.lts360.compose.ui.services.manage.ManagePublishedServicesScreen
 import com.lts360.compose.ui.services.manage.ManageServicesScreen
-import com.lts360.compose.ui.services.manage.rememberManageServicesCustomBottomNavController
+import com.lts360.compose.ui.services.manage.rememberManageServicesCustomNavController
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 
@@ -36,7 +36,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
 
 
     val lastEntry by draftServicesViewModel.lastEntry.collectAsState()
-    val navController = rememberManageServicesCustomBottomNavController(lastEntry, publishedServicesViewModel.isSelectedServiceNull())
+    val navController = rememberManageServicesCustomNavController(lastEntry, publishedServicesViewModel.isSelectedServiceNull())
 
     val currentBackStackEntryAsState by navController.currentBackStackEntryAsState()
 

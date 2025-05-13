@@ -12,6 +12,7 @@ import com.lts360.compose.ui.services.CommentsList
 import com.lts360.compose.ui.services.ReplyScreen
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
 
+/*
 sealed class ServiceReviewsRoutes{
 
     data object Reviews: ServiceReviewsRoutes()
@@ -95,4 +96,4 @@ fun ServiceReviewsNavHost(userId:Long, selectedItem: Service?, viewModel:Service
             }
         }
     }
-}
+}*/
