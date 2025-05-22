@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.lts360.R
-import com.lts360.compose.ui.chat.StateSyncingModifier
+import com.lts360.compose.ui.chat.panel.StateSyncingModifier
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.main.models.ServiceReview
 import com.lts360.compose.ui.main.models.ServiceReviewReply

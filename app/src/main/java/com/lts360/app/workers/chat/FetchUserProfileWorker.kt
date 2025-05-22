@@ -34,7 +34,7 @@ import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
 import com.lts360.compose.ui.auth.repos.DecryptionStatus
 import com.lts360.compose.ui.auth.repos.decryptFile
 import com.lts360.compose.ui.auth.repos.decryptMessage
-import com.lts360.pot.database.services.buildAndShowChatNotification
+import com.lts360.app.notifications.buildAndShowChatNotification
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.socket.client.Ack
@@ -622,7 +622,6 @@ class FetchUserProfileWorker @AssistedInject constructor(
                         if (!App.isAppInForeground) {
                             buildAndShowChatNotification(
                                 context,
-                                NotificationIdManager.getNotificationId(senderId), // Reusing notification ID
                                 senderId,
                                 "${chatUserProfile.firstName} ${chatUserProfile.lastName ?: ""}",
                                 lastUnreadMessages,

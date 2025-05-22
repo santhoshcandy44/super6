@@ -61,18 +61,26 @@ import java.math.BigDecimal
 import javax.inject.Inject
 import androidx.core.net.toUri
 import com.lts360.components.utils.LogUtils.TAG
+import com.lts360.compose.ui.managers.UserSharedPreferencesManager
+import com.lts360.compose.ui.profile.repos.UserProfileRepository
 
 @HiltViewModel
 class ServicesWorkflowViewModel @Inject constructor(
     @ApplicationContext val context: Context,
+    val savedStateHandle: SavedStateHandle,
     private val draftServicesDao: DraftServiceDao,
     private val draftLocationDao: DraftLocationDao,
     private val draftPlansDao: DraftPlanDao,
     private val draftImagesDao: DraftImageDao,
     private val draftThumbnailDao: DraftThumbnailDao,
-    val savedStateHandle: SavedStateHandle,
+    userProfileRepository: UserProfileRepository
+
 ) : ViewModel() {
 
+    val userId: Long = UserSharedPreferencesManager.userId
+
+    val isProfileCompletedFlow = userProfileRepository.isProfileCompletedFlow(userId)
+    val unCompletedProfileFieldsFlow = userProfileRepository.unCompletedProfileFieldsFlow(userId)
 
     private val _lastEntry = MutableStateFlow<String?>(null)
     val lastEntry = _lastEntry.asStateFlow()
@@ -148,7 +156,6 @@ class ServicesWorkflowViewModel @Inject constructor(
     private val _stateError = MutableStateFlow<String?>(null)
     val selectedStateError = _stateError.asStateFlow()
 
-
     private val _industryError = MutableStateFlow<String?>(null)
     val industryError = _industryError.asStateFlow()
 
@@ -157,7 +164,6 @@ class ServicesWorkflowViewModel @Inject constructor(
 
     private val _imageContainersError = MutableStateFlow<String?>(null)
     val imageContainersError = _imageContainersError.asStateFlow()
-
 
     private val _deleteDraftDialogVisibility = MutableStateFlow(false)
     val deleteDraftDialogVisibility: StateFlow<Boolean> = _deleteDraftDialogVisibility
@@ -175,7 +181,6 @@ class ServicesWorkflowViewModel @Inject constructor(
             SharingStarted.Eagerly,
             initialValue = MAX_IMAGES
         )
-
 
     private val _isPickerLaunch = MutableStateFlow(false)
     val isPickerLaunch = _isPickerLaunch.asStateFlow()

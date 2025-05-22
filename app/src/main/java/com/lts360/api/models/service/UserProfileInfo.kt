@@ -36,10 +36,10 @@ data class UserProfileInfo(
     val isEmailVerified: Boolean,
 
     @SerializedName("phone_country_code")
-    val phoneCountryCode: Boolean,
+    val phoneCountryCode: String?,
 
     @SerializedName("phone_number")
-    val phoneNumber: Boolean,
+    val phoneNumber: String?,
 
     @SerializedName("is_phone_verified")
     val isPhoneVerified: Boolean,

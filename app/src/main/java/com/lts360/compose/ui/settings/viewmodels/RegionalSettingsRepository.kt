@@ -66,8 +66,7 @@ class RegionalSettingsRepository @Inject constructor(@ApplicationContext val con
     fun saveCountryToPreferences(isoCountryCode: String) {
 
         val country = countries.firstOrNull { it.code == isoCountryCode } ?: Country("IN", "India")
-        val sharedPreferences =
-            context.getSharedPreferences("user_general_preferences", Context.MODE_PRIVATE)
+        val sharedPreferences = context.getSharedPreferences("user_general_preferences", Context.MODE_PRIVATE)
         sharedPreferences.edit {
             putString("selected_country_code", country.code)
         }

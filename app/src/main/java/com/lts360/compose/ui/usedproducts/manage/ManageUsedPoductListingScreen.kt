@@ -18,30 +18,46 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavController
 import com.lts360.api.models.service.EditableUsedProductListing
+import com.lts360.compose.ui.common.ProfileNotCompletedPromptSheet
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageUsedProductListingScreen(
     navController: NavController,
-    publishedUsedProductsListingViewModel:PublishedUsedProductsListingViewModel,
+    viewModel: PublishedUsedProductsListingViewModel,
     onAddNewUsedProductListingClick: () -> Unit,
     onNavigateUpManagePublishedUsedProductListing: (EditableUsedProductListing) -> Unit,
-    onPopBackStack:()->Unit) {
+    onNavigateProfileSettings:()-> Unit,
+    onPopBackStack: () -> Unit
+) {
 
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-    val isUsedProductListingCreated = savedStateHandle?.get<Boolean>("is_used_product_listing_created")
+    val isUsedProductListingCreated =
+        savedStateHandle?.get<Boolean>("is_used_product_listing_created")
+
+    var isShowingProfileNotCompletedBottomSheet by remember { mutableStateOf(false) }
+
+    val isProfileCompleted by viewModel.isProfileCompletedFlow.collectAsState(initial = false)
+    val unCompletedProfileFieldsFlow by viewModel.unCompletedProfileFieldsFlow.collectAsState(
+        initial = listOf("EMAIL", "PHONE")
+    )
 
     Scaffold(topBar = {
         TopAppBar(
             navigationIcon = {
-                IconButton(onClick = onPopBackStack ) {
+                IconButton(onClick = onPopBackStack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back Icon"
@@ -64,11 +80,22 @@ fun ManageUsedProductListingScreen(
                 .padding(horizontal = 16.dp)
                 .padding(top = 8.dp)
         ) {
-            Text(text = "Create Second Hands",
-                style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "Create Second Hands",
+                style = MaterialTheme.typography.titleMedium
+            )
 
             OutlinedButton(
-                onClick = dropUnlessResumed { onAddNewUsedProductListingClick() },
+                onClick =
+                    if (isProfileCompleted) {
+                        dropUnlessResumed {
+                            onAddNewUsedProductListingClick()
+                        }
+                    } else {
+                        {
+                            isShowingProfileNotCompletedBottomSheet = true
+                        }
+                    },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
@@ -94,9 +121,19 @@ fun ManageUsedProductListingScreen(
                     }
                 },
                 onNavigateUpManagePublishedUsedProductListing,
-                publishedUsedProductsListingViewModel
+                viewModel
 
             )
+        }
+
+
+        if (isShowingProfileNotCompletedBottomSheet) {
+            ProfileNotCompletedPromptSheet(
+                unCompletedProfileFields = unCompletedProfileFieldsFlow,
+                onProfileCompleteClick = onNavigateProfileSettings,
+                onDismiss = {
+                    isShowingProfileNotCompletedBottomSheet = false
+                })
         }
     }
 

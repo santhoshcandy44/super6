@@ -176,7 +176,7 @@ fun ManagePublishedLocalJobApplicantsScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(title = {
-                Text("Applicants")
+                Text("Applicants", style = MaterialTheme.typography.titleMedium)
             }, navigationIcon = {
                 IconButton(onClick = dropUnlessResumed {
                     onPopBackStack()

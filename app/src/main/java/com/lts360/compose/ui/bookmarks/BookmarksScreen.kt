@@ -63,7 +63,6 @@ import com.lts360.R
 import com.lts360.api.utils.ResultError
 import com.lts360.api.models.service.Service
 import com.lts360.api.models.service.UsedProductListing
-import com.lts360.compose.ui.getCurrencySymbol
 import com.lts360.compose.ui.localjobs.models.LocalJob
 import com.lts360.compose.ui.main.common.NoInternetScreen
 import com.lts360.compose.ui.services.ServiceCard
@@ -464,10 +463,8 @@ private fun BookmarkedUsedProductListingCard(
                         .background(Color(0xFFFFA500))
                         .align(Alignment.BottomStart)
                 ) {
-                    Text(
-                        "Seconds", color = Color.White, modifier = Modifier
-                            .padding(4.dp), style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("Second Hands", color = Color.White, modifier = Modifier
+                            .padding(4.dp), style = MaterialTheme.typography.bodySmall)
                 }
             }
 

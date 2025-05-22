@@ -16,6 +16,7 @@ import com.lts360.api.models.service.EditableLocation
 import com.lts360.api.models.service.EditableUsedProductListing
 import com.lts360.compose.ui.chat.MAX_IMAGES
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
+import com.lts360.compose.ui.profile.repos.UserProfileRepository
 import com.lts360.compose.ui.services.manage.models.CombinedContainer
 import com.lts360.compose.ui.services.manage.models.CombinedContainerFactory
 import com.lts360.compose.ui.usedproducts.manage.UsedProductListingsRepository
@@ -39,11 +40,15 @@ import javax.inject.Inject
 class PublishedUsedProductsListingViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val savedStateHandle: SavedStateHandle,
-    private val repository: UsedProductListingsRepository
+    private val repository: UsedProductListingsRepository,
+    val userProfileRepository: UserProfileRepository
 ) : ViewModel() {
 
 
     val userId: Long = UserSharedPreferencesManager.userId
+
+    val isProfileCompletedFlow = userProfileRepository.isProfileCompletedFlow(userId)
+    val unCompletedProfileFieldsFlow = userProfileRepository.unCompletedProfileFieldsFlow(userId)
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()

@@ -4,13 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.compose.ui.auth.navhost.slideComposable
+import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
+import com.lts360.compose.ui.profile.EditProfileSettingsScreen
+import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
 import com.lts360.compose.ui.services.manage.CreateServiceScreen
 import com.lts360.compose.ui.services.manage.EditServiceImagesScreen
 import com.lts360.compose.ui.services.manage.EditServiceInfoScreen
@@ -25,26 +25,31 @@ import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewMode
 
 
 @Composable
-fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRoutes.ManageServices, onFinishActivity:()->Unit) {
+fun ManageServicesNavHost(
+    defaultValue: ManageServicesRoutes = ManageServicesRoutes.ManageServices,
+    onFinishActivity: () -> Unit
+) {
 
 
-
-
-    val draftServicesViewModel: ServicesWorkflowViewModel =  hiltViewModel()
-    val publishedServicesViewModel: PublishedServicesViewModel =  hiltViewModel()
-
+    val draftServicesViewModel: ServicesWorkflowViewModel = hiltViewModel()
+    val publishedServicesViewModel: PublishedServicesViewModel = hiltViewModel()
 
 
     val lastEntry by draftServicesViewModel.lastEntry.collectAsState()
-    val navController = rememberManageServicesCustomNavController(lastEntry, publishedServicesViewModel.isSelectedServiceNull())
+    val navController = rememberManageServicesCustomNavController(
+        lastEntry,
+        publishedServicesViewModel.isSelectedServiceNull()
+    )
 
     val currentBackStackEntryAsState by navController.currentBackStackEntryAsState()
 
 
-    LaunchedEffect(currentBackStackEntryAsState){
+    LaunchedEffect(currentBackStackEntryAsState) {
         draftServicesViewModel.updateLastEntry(navController.currentBackStackEntry?.destination?.route)
     }
 
+
+    val profileSettingViewModel: ProfileSettingsViewModel = hiltViewModel()
 
     NavHost(
         navController = navController,
@@ -62,15 +67,23 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
                     navController.navigate(ManageServicesRoutes.CreateService)
                 }, {
                     navController.navigate(ManageServicesRoutes.ManagePublishedService)
-                },onFinishActivity,
+                },
+                {
+                    navController.navigate(AccountAndProfileSettingsRoutes.PersonalSettings)
+                },
+                onFinishActivity,
                 draftServicesViewModel,
-                publishedServicesViewModel)
+                publishedServicesViewModel
+            )
         }
 
         slideComposable<ManageServicesRoutes.CreateService> {
             CreateServiceScreen(
                 {
-                    navController.previousBackStackEntry?.savedStateHandle?.set("is_service_created", true)
+                    navController.previousBackStackEntry?.savedStateHandle?.set(
+                        "is_service_created",
+                        true
+                    )
                     navController.popBackStack()
                 },
                 {
@@ -79,7 +92,8 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
                 {
                     navController.popBackStack()
                 },
-                draftServicesViewModel)
+                draftServicesViewModel
+            )
         }
 
         slideComposable<ManageServicesRoutes.ManagePublishedService> {
@@ -111,7 +125,8 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
                         navController.popBackStack()
                     }, {
                         navController.popBackStack()
-                    },viewModel)
+                    }, viewModel
+                )
             }
 
         }
@@ -121,7 +136,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             val viewModel: PublishedServicesViewModel = publishedServicesViewModel
             val editableService by viewModel.selectedService.collectAsState()
             editableService?.let {
-                EditServiceInfoScreen({navController.popBackStack()}, viewModel)
+                EditServiceInfoScreen({ navController.popBackStack() }, viewModel)
             }
         }
 
@@ -129,7 +144,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             val viewModel: PublishedServicesViewModel = publishedServicesViewModel
             val editableService by viewModel.selectedService.collectAsState()
             editableService?.let {
-                EditServiceThumbnailScreen( {navController.popBackStack()}, viewModel)
+                EditServiceThumbnailScreen({ navController.popBackStack() }, viewModel)
             }
 
         }
@@ -139,7 +154,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             val editableService by viewModel.selectedService.collectAsState()
 
             editableService?.let {
-                EditServicePlanScreen({navController.popBackStack()}, viewModel)
+                EditServicePlanScreen({ navController.popBackStack() }, viewModel)
             }
         }
 
@@ -147,7 +162,7 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             val viewModel: PublishedServicesViewModel = publishedServicesViewModel
             val editableService by viewModel.selectedService.collectAsState()
             editableService?.let {
-                EditServiceImagesScreen({navController.popBackStack()}, viewModel)
+                EditServiceImagesScreen({ navController.popBackStack() }, viewModel)
             }
         }
 
@@ -155,10 +170,23 @@ fun ManageServicesNavHost(defaultValue: ManageServicesRoutes = ManageServicesRou
             val viewModel: PublishedServicesViewModel = publishedServicesViewModel
             val editableService by viewModel.selectedService.collectAsState()
             editableService?.let {
-                EditServiceLocationScreen({navController.popBackStack()}, viewModel)
+                EditServiceLocationScreen({ navController.popBackStack() }, viewModel)
             }
         }
 
+        slideComposable<AccountAndProfileSettingsRoutes.PersonalSettings> {
+            EditProfileSettingsScreen({
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileFirstName)
+            }, {
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileLastName)
+            }, {
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileAbout("complete_about"))
+            }, {
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileEmail)
+            }, {
+                navController.popBackStack()
+            }, profileSettingViewModel)
+        }
     }
 }
 

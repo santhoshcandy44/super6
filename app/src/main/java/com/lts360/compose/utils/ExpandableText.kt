@@ -1,6 +1,5 @@
 package com.lts360.compose.utils
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +35,6 @@ import com.lts360.compose.ui.theme.customColorScheme
 fun ExpandableText(
     text: String,
     fontSize: TextUnit = TextUnit.Unspecified,
-    modifier: Modifier = Modifier,
     textModifier: Modifier = Modifier,
     style: TextStyle = LocalTextStyle.current,
     fontStyle: FontStyle? = null,
@@ -48,7 +46,6 @@ fun ExpandableText(
     textAlign: TextAlign? = null,
     linkColor: Color = MaterialTheme.customColorScheme.chatTextLinkColor
 ) {
-    // State variables to track the expanded state, clickable state, and last character index.
     var isExpanded by rememberSaveable { mutableStateOf(false) }
     var clickable by rememberSaveable { mutableStateOf(false) }
     var lastCharIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -57,135 +54,123 @@ fun ExpandableText(
 
     val textMeasurer = rememberTextMeasurer()
 
-    // Box composable containing the Text composable.
-    Box(modifier = Modifier
-            .then(modifier)) {
+    BoxWithConstraints {
 
-        BoxWithConstraints {
+        val maxWidth = this.maxWidth
+        val maxWidthPx = with(LocalDensity.current) { maxWidth.toPx().toInt() }
 
-            val maxWidth = this.maxWidth
-            val maxWidthPx = with(LocalDensity.current) { maxWidth.toPx().toInt() }
+        val annotatedString = buildAnnotatedString {
 
-            val annotatedString = buildAnnotatedString {
-
-                val urlPattern = Regex(
-                    "(?<!\\S)(https?|ftp)://([a-zA-Z0-9\\-]+\\.)+[a-zA-Z]{2,}(/[^\\s]*)?|(?:www\\.)[a-zA-Z0-9\\-]+\\.[a-zA-Z]{2,}(/[^\\s]*)?",
-                    setOf(RegexOption.IGNORE_CASE) // Enable case insensitive matching
-                )
-
-                var currentIndex = 0
-
-
-                // Find all links in the message
-                urlPattern.findAll(text).forEach { match ->
-                    // Add text before the link
-                    if (match.range.first > currentIndex) {
-                        append(text.substring(currentIndex, match.range.first))
-                    }
-
-                    // Add the link itself as a clickable text
-                    pushStringAnnotation(tag = "URL", annotation = match.value)
-
-                    withLink(
-                        LinkAnnotation.Url(
-                            url = match.value,
-                            styles = TextLinkStyles(
-                                style = SpanStyle(
-                                    color = linkColor,
-                                    textDecoration = TextDecoration.Underline
-                                ))) {
-                            openUrlInCustomTab(
-                                context,
-                                match.value.trim()
-                            )
-
-                        }
-                    ) {
-                        append(match.value) // Link style (blue)
-                    }
-
-                    pop()
-
-                    currentIndex = match.range.last + 1
-                }
-
-                // Append the remaining part of the message if any text is left
-                if (currentIndex < text.length) {
-                    append(text.substring(currentIndex))
-                }
-            }
-
-            val result = remember { textMeasurer.measure(text = annotatedString,
-                style = style.copy(fontSize = fontSize), maxLines = collapsedMaxLine,
-                constraints = Constraints(maxWidth = (maxWidthPx)))
-            }
-
-            if (!isExpanded && result.hasVisualOverflow) {
-                clickable = true
-                lastCharIndex = result.getLineEnd(collapsedMaxLine - 1)
-            }
-
-            val finalizedText = buildAnnotatedString {
-                if (clickable) {
-                    if (isExpanded) {
-                        // Display the full text and "Show Less" button when expanded.
-                        append(annotatedString)
-
-                        withLink(
-                            LinkAnnotation.Clickable(tag = showLessText, styles = TextLinkStyles(style = showLessStyle)) {
-
-                                if (clickable) {
-                                    isExpanded = !isExpanded
-                                }
-                            }
-                        ) {
-                            append(showLessText)
-                        }
-
-                    } else {
-
-
-                        // Display truncated text and "Show More" button when collapsed.
-                        val adjustText = annotatedString.substring(startIndex = 0, endIndex = lastCharIndex)
-                            .dropLast(showMoreText.length)
-                            .dropLastWhile { Character.isWhitespace(it) || it == '.' }
-
-                        append(adjustText)
-
-                        withLink(
-                            LinkAnnotation.Clickable(
-                                tag = showMoreText,
-                                styles = TextLinkStyles(
-                                    style = showMoreStyle
-                                )
-                            ) {
-                                if (clickable) {
-                                    isExpanded = !isExpanded
-                                }
-                            }
-                        ) {
-                            append(showMoreText)
-                        }
-
-                    }
-                } else {
-                    // Display the full text when not clickable.
-                    append(annotatedString)
-                }
-            }
-
-            Text(
-                modifier = textModifier,
-                text = finalizedText,
-                // Set max lines based on the expanded state.
-                maxLines = if (isExpanded) Int.MAX_VALUE else collapsedMaxLine,
-                fontStyle = fontStyle,
-                style = style,
-                textAlign = textAlign,
-                fontSize = fontSize
+            val urlPattern = Regex(
+                "(?<!\\S)(https?|ftp)://([a-zA-Z0-9\\-]+\\.)+[a-zA-Z]{2,}(/[^\\s]*)?|(?:www\\.)[a-zA-Z0-9\\-]+\\.[a-zA-Z]{2,}(/[^\\s]*)?",
+                setOf(RegexOption.IGNORE_CASE)
             )
+
+            var currentIndex = 0
+
+
+            urlPattern.findAll(text).forEach { match ->
+                if (match.range.first > currentIndex) {
+                    append(text.substring(currentIndex, match.range.first))
+                }
+
+                pushStringAnnotation(tag = "URL", annotation = match.value)
+
+                withLink(
+                    LinkAnnotation.Url(
+                        url = match.value,
+                        styles = TextLinkStyles(
+                            style = SpanStyle(
+                                color = linkColor,
+                                textDecoration = TextDecoration.Underline
+                            ))) {
+                        openUrlInCustomTab(
+                            context,
+                            match.value.trim()
+                        )
+
+                    }
+                ) {
+                    append(match.value)
+                }
+
+                pop()
+
+                currentIndex = match.range.last + 1
+            }
+
+            // Append the remaining part of the message if any text is left
+            if (currentIndex < text.length) {
+                append(text.substring(currentIndex))
+            }
         }
 
+        val result = remember { textMeasurer.measure(text = annotatedString,
+            style = style.copy(fontSize = fontSize), maxLines = collapsedMaxLine,
+            constraints = Constraints(maxWidth = (maxWidthPx)))
+        }
+
+        if (!isExpanded && result.hasVisualOverflow) {
+            clickable = true
+            lastCharIndex = result.getLineEnd(collapsedMaxLine - 1)
+        }
+
+        val finalizedText = buildAnnotatedString {
+            if (clickable) {
+                if (isExpanded) {
+                    append(annotatedString)
+
+                    withLink(
+                        LinkAnnotation.Clickable(tag = showLessText, styles = TextLinkStyles(style = showLessStyle)) {
+
+                            if (clickable) {
+                                isExpanded = !isExpanded
+                            }
+                        }
+                    ) {
+                        append(showLessText)
+                    }
+
+                } else {
+
+
+                    // Display truncated text and "Show More" button when collapsed.
+                    val adjustText = annotatedString.substring(startIndex = 0, endIndex = lastCharIndex)
+                        .dropLast(showMoreText.length)
+                        .dropLastWhile { Character.isWhitespace(it) || it == '.' }
+
+                    append(adjustText)
+
+                    withLink(
+                        LinkAnnotation.Clickable(
+                            tag = showMoreText,
+                            styles = TextLinkStyles(
+                                style = showMoreStyle
+                            )
+                        ) {
+                            if (clickable) {
+                                isExpanded = !isExpanded
+                            }
+                        }
+                    ) {
+                        append(showMoreText)
+                    }
+
+                }
+            } else {
+                append(annotatedString)
+            }
+        }
+
+        Text(
+            modifier = textModifier,
+            text = finalizedText,
+            maxLines = if (isExpanded) Int.MAX_VALUE else collapsedMaxLine,
+            fontStyle = fontStyle,
+            style = style,
+            textAlign = textAlign,
+            fontSize = fontSize
+        )
     }
 
 }

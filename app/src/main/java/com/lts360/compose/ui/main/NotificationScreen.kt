@@ -30,10 +30,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -62,13 +60,12 @@ import coil3.compose.AsyncImage
 import com.google.gson.Gson
 import com.lts360.R
 import com.lts360.app.database.models.notification.Notification
-import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
 import com.lts360.compose.ui.viewmodels.NotificationViewModel.Companion.getTimeAgo
-import com.lts360.pot.database.services.LocalJobApplicantNotification
+import com.lts360.app.notifications.LocalJobApplicantNotification
 
 
 @OptIn(ExperimentalMaterial3Api::class)

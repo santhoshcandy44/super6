@@ -1,15 +1,8 @@
 package com.lts360.test
 
 
-import android.app.NotificationChannel
-import android.app.NotificationChannelGroup
-import android.app.NotificationManager
 import android.content.res.Configuration
 import android.os.Bundle
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
-import android.widget.RemoteViews
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
@@ -50,15 +43,22 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import com.lts360.R
+import com.lts360.app.notifications.NotificationIdManager
+import com.lts360.compose.ui.bookmarks.BookmarksActivity
+import com.lts360.compose.ui.chat.ChatPanel
+import com.lts360.compose.ui.chat.panel.message.ChatOtherMessageItem
+import com.lts360.compose.ui.localjobs.manage.CreateLocalJobScreen
+import com.lts360.compose.ui.localjobs.manage.ManagePublishedLocalJobApplicantsScreen
+import com.lts360.compose.ui.main.prefs.BoardsSetupActivity
+import com.lts360.compose.ui.profile.EditProfileFirstNameScreen
+import com.lts360.compose.ui.profile.EditProfileLastNameScreen
+import com.lts360.compose.ui.profile.EditProfileSettingsScreen
+import com.lts360.compose.ui.settings.SettingsScreen
 import com.lts360.compose.ui.theme.AppTheme
+import com.lts360.compose.ui.usedproducts.manage.ManageUsedProductListingScreen
+import com.lts360.compose.utils.ExpandableText
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.core.graphics.drawable.toBitmap
-import com.lts360.compose.ui.main.NotificationScreen
-import com.lts360.pot.database.services.getCircularBitmap
 
 
 @AndroidEntryPoint
@@ -70,17 +70,13 @@ class TestActivity : ComponentActivity() {
         }
     }
 
-
-
-
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.expanded_custom_local_job_applicant_applied_notification)
 
 
-        /*  setContent {
+        /* setContent {
               AppTheme {
                   Surface {
                       SafeDrawingBox {
@@ -99,175 +95,6 @@ class TestActivity : ComponentActivity() {
 
 
 
-
-    @Composable
-    fun add() {
-
-        Scaffold(topBar = {
-
-
-        }) { paddingValues ->
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(top = 16.dp)
-                        .padding(horizontal = 16.dp)
-
-                ) {
-
-                }
-            }
-
-
-            /*
-                        ProfileNotCompletedPromptSheet(onDismiss = {})
-            */
-        }
-    }
-
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun ProfileNotCompletedPromptSheet(
-        onDismiss: () -> Unit,
-        modifier: Modifier = Modifier,
-        sheetState: SheetState = rememberModalBottomSheetState()
-    ) {
-
-        var unCompletedProfileFields = listOf("EMAIL", "PHONE")
-
-        ModalBottomSheet(
-            onDismissRequest = onDismiss,
-            sheetState = sheetState,
-            dragHandle = null,
-            modifier = modifier
-        ) {
-            Column(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        "Profile Not Completed",
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.padding(8.dp)
-                    )
-
-                    Text(text = "Complete below required profile fields to proceed.")
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(Color.Red)
-                        ) {
-                            Text("${unCompletedProfileFields.size}", color = Color.White)
-                        }
-
-                        Text(text = "${if (unCompletedProfileFields.size == 1) "Field" else "Fields"} Need to be Complete")
-
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    unCompletedProfileFields.forEach {
-                        when (it) {
-                            "EMAIL" -> {
-                                ListItem(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    headlineContent = {
-                                        Text(text = "Email", fontWeight = FontWeight.Bold)
-                                    },
-                                    leadingContent = {
-                                        Image(
-                                            painterResource(R.drawable.ic_verify_phone),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(48.dp)
-                                        )
-                                    },
-                                )
-
-                            }
-
-                            "PHONE" -> {
-                                ListItem(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    headlineContent = {
-                                        Text(text = "Phone", fontWeight = FontWeight.Bold)
-                                    },
-                                    leadingContent = {
-                                        Image(
-                                            painterResource(R.drawable.ic_verify_phone),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(48.dp)
-                                        )
-                                    },
-                                )
-
-                            }
-                        }
-                    }
-
-
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(
-                                0xFF25D366
-                            )
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        shape = RectangleShape
-                    ) {
-                        Text("Complete Profile", color = Color.White)
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        shape = RectangleShape
-                    ) {
-                        Text("Cancel")
-                    }
-
-
-                }
-            }
-        }
-
-    }
 
 
     @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO)

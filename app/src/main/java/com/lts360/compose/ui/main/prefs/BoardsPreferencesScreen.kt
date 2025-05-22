@@ -149,7 +149,7 @@ fun GuestBoardsPreferencesScreen(viewModel: GuestBoardPreferencesViewModel = hil
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = {},
+                    title = { Text("Boards Settings") },
                     navigationIcon = {
                         IconButton(
                             dropUnlessResumed {
@@ -181,7 +181,6 @@ fun GuestBoardsPreferencesScreen(viewModel: GuestBoardPreferencesViewModel = hil
                     if (error is ResultError.NoInternet) {
 
                         Row(
-                            horizontalArrangement = Arrangement.Center,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(8.dp)
@@ -248,7 +247,6 @@ fun GuestBoardsPreferencesScreen(viewModel: GuestBoardPreferencesViewModel = hil
                                 } else {
                                     ShortToast(context, "At least 1 board must be selected")
                                 }
-
                             },
                             modifier = Modifier.fillMaxSize()
                         )
@@ -351,7 +349,7 @@ fun BoardsPreferencesScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = {},
+                    title = { Text("Boards Settings") },
                     navigationIcon = {
                         IconButton(
                             dropUnlessResumed {
@@ -384,7 +382,6 @@ fun BoardsPreferencesScreen(
                     if (error is ResultError.NoInternet) {
 
                         Row(
-                            horizontalArrangement = Arrangement.Center,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(8.dp)

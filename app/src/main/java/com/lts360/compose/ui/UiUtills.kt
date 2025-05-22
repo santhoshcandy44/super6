@@ -16,7 +16,6 @@ import java.util.Currency
 import java.util.concurrent.TimeUnit
 import androidx.core.graphics.createBitmap
 
-
 class NoRippleInteractionSource : MutableInteractionSource {
 
     override val interactions: Flow<Interaction> = emptyFlow()
@@ -50,16 +49,23 @@ fun exitFullScreenMode(activity: Activity) {
     }
 }
 
-fun getRoundedBitmap(bitmap: Bitmap): Bitmap {
-    val size = bitmap.width.coerceAtMost(bitmap.height)
-    val radius = size / 2f
 
+fun getCircularBitmap(srcBitmap: Bitmap): Bitmap {
+    val size = minOf(srcBitmap.width, srcBitmap.height)
     val output = createBitmap(size, size)
 
-    Canvas(output).drawCircle(radius, radius, radius, Paint().apply {
-        shader = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+    val canvas = Canvas(output)
+    val paint = Paint().apply {
         isAntiAlias = true
-    })
+        shader = BitmapShader(
+            srcBitmap,
+            Shader.TileMode.CLAMP,
+            Shader.TileMode.CLAMP
+        )
+    }
+
+    val radius = size / 2f
+    canvas.drawCircle(radius, radius, radius, paint)
 
     return output
 }

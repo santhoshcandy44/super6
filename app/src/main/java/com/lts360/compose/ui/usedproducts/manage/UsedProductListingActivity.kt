@@ -16,6 +16,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.compose.ui.auth.navhost.slideComposable
+import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
+import com.lts360.compose.ui.profile.EditProfileSettingsScreen
+import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.usedproducts.manage.navhost.ManageUsedProductListingRoutes
 import com.lts360.compose.ui.usedproducts.manage.navhost.rememberManageUsedProductListingCustomNavController
@@ -71,6 +74,8 @@ private fun ManageUsedProductListingNavHost(
         lastEntry = navController.currentBackStackEntry?.destination?.route
     }
 
+    val profileSettingViewModel: ProfileSettingsViewModel = hiltViewModel()
+
 
     NavHost(
         navController = navController,
@@ -86,7 +91,11 @@ private fun ManageUsedProductListingNavHost(
                     navController.navigate(ManageUsedProductListingRoutes.CreateUsedProductListing)
                 }, {
                     navController.navigate(ManageUsedProductListingRoutes.ManagePublishedUsedProductListing)
-                }, onFinishActivity
+                },
+                {
+                    navController.navigate(AccountAndProfileSettingsRoutes.PersonalSettings)
+                },
+                onFinishActivity
             )
 
         }
@@ -121,6 +130,20 @@ private fun ManageUsedProductListingNavHost(
 
             }
 
+        }
+
+        slideComposable<AccountAndProfileSettingsRoutes.PersonalSettings> {
+            EditProfileSettingsScreen({
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileFirstName)
+            }, {
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileLastName)
+            }, {
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileAbout("complete_about"))
+            }, {
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileEmail)
+            }, {
+                navController.popBackStack()
+            }, profileSettingViewModel)
         }
     }
 }

@@ -91,8 +91,8 @@ import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
 import com.lts360.R
-import com.lts360.compose.ui.chat.E2EEEMessageHeader
-import com.lts360.compose.ui.chat.StateSyncingModifier
+import com.lts360.compose.ui.chat.panel.E2EEEMessageHeader
+import com.lts360.compose.ui.chat.panel.StateSyncingModifier
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.utils.ScrollBarConfig
 import com.lts360.compose.utils.verticalScrollWithScrollbar

@@ -28,7 +28,12 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -39,6 +44,7 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavController
 import com.lts360.api.models.service.EditableService
 import com.lts360.compose.dropUnlessResumedV2
+import com.lts360.compose.ui.common.ProfileNotCompletedPromptSheet
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 import kotlinx.coroutines.launch
@@ -51,12 +57,11 @@ fun ManageServicesScreen(
     onAddNewServiceClick: () -> Unit,
     onNavigateUpCreateService: (String, Long) -> Unit,
     onNavigateUpManagePublishedService: (EditableService) -> Unit,
+    onNavigateProfileSettings:()-> Unit,
     onPopBackStack:()->Unit,
     draftServicesViewModel: ServicesWorkflowViewModel,
     publishedServicesViewModel: PublishedServicesViewModel,
-    tabTitles: List<String> = listOf("Draft", "Published"),
-
-    ) {
+    tabTitles: List<String> = listOf("Draft", "Published")) {
 
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
     val isServiceCreated = savedStateHandle?.get<Boolean>("is_service_created")
@@ -65,6 +70,12 @@ fun ManageServicesScreen(
     val pagerState = rememberPagerState(pageCount = { tabTitles.size }, initialPage = 0)
     val scrollToPageCoroutinePage = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    var isShowingProfileNotCompletedBottomSheet by remember { mutableStateOf(false) }
+
+    val isProfileCompleted by draftServicesViewModel.isProfileCompletedFlow.collectAsState(initial = false)
+    val unCompletedProfileFieldsFlow by draftServicesViewModel.unCompletedProfileFieldsFlow.collectAsState(initial = listOf("EMAIL","PHONE"))
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(topBar = {
@@ -93,7 +104,7 @@ fun ManageServicesScreen(
                     .padding(horizontal = 16.dp)
                     .padding(top = 8.dp)
             ) {
-                // Header View
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -104,7 +115,15 @@ fun ManageServicesScreen(
                     )
 
                     OutlinedButton(
-                        onClick = dropUnlessResumed { onAddNewServiceClick() },
+                        onClick =  if (isProfileCompleted) {
+                            dropUnlessResumed {
+                                onAddNewServiceClick()
+                            }
+                        } else {
+                            {
+                                isShowingProfileNotCompletedBottomSheet = true
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
@@ -182,7 +201,7 @@ fun ManageServicesScreen(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize()
                 ) { page ->
-                    // Replace this with content for each tab
+
                     when (page) {
                         0 -> {
                             DraftServicesScreen ({ type, draftId ->
@@ -208,10 +227,18 @@ fun ManageServicesScreen(
                     }
                 }
             }
+
+
+            if (isShowingProfileNotCompletedBottomSheet) {
+                ProfileNotCompletedPromptSheet(
+                    unCompletedProfileFields = unCompletedProfileFieldsFlow,
+                    onProfileCompleteClick = onNavigateProfileSettings,
+                    onDismiss = {
+                        isShowingProfileNotCompletedBottomSheet = false
+                    })
+            }
         }
-
     }
-
 
 }
 

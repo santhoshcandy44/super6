@@ -15,9 +15,11 @@ import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.UserLocation
 import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.app.database.models.profile.UserProfileSettingsInfo
+import com.lts360.components.utils.errorLogger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -41,34 +43,49 @@ class UserProfileRepository @Inject constructor(
 
     fun calculateProfileCompletionPercentage(userProfileSettingsInfo: UserProfileSettingsInfo): Int {
         var fieldsCompleted = 0
-        val totalFields = 4
+        val totalFields = 5
 
         if (userProfileSettingsInfo.firstName.isNotEmpty()) fieldsCompleted++
         if (!userProfileSettingsInfo.profilePicUrl.isNullOrEmpty()) fieldsCompleted++
         if (userProfileSettingsInfo.email.isNotEmpty()) fieldsCompleted++
-        /*
-                if (userProfileSettingsInfo.phone.isNullOrEmpty()) fieldsCompleted++
-        */
+        if (!userProfileSettingsInfo.phoneCountryCode.isNullOrEmpty()
+            && !userProfileSettingsInfo.phoneNumber.isNullOrEmpty()
+        ) fieldsCompleted++
         if (!userProfileSettingsInfo.about.isNullOrEmpty()) fieldsCompleted++
 
         return (fieldsCompleted * 100) / totalFields
     }
 
-    fun isProfileCompleted(userProfileSettingsInfo: UserProfileSettingsInfo) =
-        calculateProfileCompletionPercentage(userProfileSettingsInfo)
+    fun isProfileCompletedFlow(userId: Long): Flow<Boolean> {
 
+        return userProfileDao.getUserProfileSettingsInfoFlow(userId)
+            .map {
+                errorLogger(it?.email.toString())
+                errorLogger(it?.phoneCountryCode.toString())
+                errorLogger(it?.phoneNumber.toString())
 
-    fun unCompletedProfileFields(userProfileSettingsInfo: UserProfileSettingsInfo): List<String> {
-        val uncompletedFields = mutableListOf<String>()
-        if (userProfileSettingsInfo.email.isNotEmpty()) {
-            uncompletedFields.add("EMAIL")
-        }
-        if (userProfileSettingsInfo.phoneCountryCode.isNullOrEmpty()
-            || userProfileSettingsInfo.phoneNumber.isNullOrEmpty()) {
-            uncompletedFields.add("PHONE")
-        }
-        return uncompletedFields
+                it?.let {
+                    it.email.isNotEmpty() && it.phoneCountryCode!=null && it.phoneNumber!=null
+                } == true
+            }
     }
+
+    fun unCompletedProfileFieldsFlow(userId: Long): Flow<List<String>> {
+        return userProfileDao.getUserProfileSettingsInfoFlow(userId)
+            .map { profile ->
+                val uncompletedFields = mutableListOf<String>()
+                profile?.let {
+                    if (it.email.isEmpty()) {
+                        uncompletedFields.add("EMAIL")
+                    }
+                    if (it.phoneCountryCode.isNullOrEmpty() || it.phoneNumber.isNullOrEmpty()) {
+                        uncompletedFields.add("PHONE")
+                    }
+                } ?: uncompletedFields.addAll(listOf("EMAIL", "PHONE"))
+                uncompletedFields
+            }
+    }
+
 
     fun determineProfileHealthStatus(profile: UserProfileSettingsInfo, percentage: Int): String {
         return when {

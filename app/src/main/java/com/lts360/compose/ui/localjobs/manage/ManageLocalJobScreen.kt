@@ -18,28 +18,39 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavController
 import com.lts360.compose.ui.localjobs.manage.viewmodels.PublishedLocalJobViewModel
-import com.lts360.compose.ui.localjobs.models.EditableLocalJob
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.lts360.compose.ui.common.ProfileNotCompletedPromptSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageLocalJobScreen(
     navController: NavController,
-    publishedLocalJobViewModel: PublishedLocalJobViewModel,
+    viewModel: PublishedLocalJobViewModel,
     onAddNewLocalJobClick: () -> Unit,
-    onNavigateUpManagePublishedLocalJob: () -> Unit,
-    onNavigateUpPublishedLocalJobViewApplicants: () -> Unit,
+    onNavigateManagePublishedLocalJob: () -> Unit,
+    onNavigatePublishedLocalJobViewApplicants: () -> Unit,
+    onNavigateProfileSettings:()->Unit,
     onPopBackStack: () -> Unit
 ) {
 
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
     val isLocalJobCreated = savedStateHandle?.get<Boolean>("is_local_job_created")
 
+
+    val isProfileCompleted by viewModel.isProfileCompletedFlow.collectAsState(initial = false)
+    val unCompletedProfileFieldsFlow by viewModel.unCompletedProfileFieldsFlow.collectAsState(initial = listOf("EMAIL","PHONE"))
+
+    var isShowingProfileNotCompletedBottomSheet by remember { mutableStateOf(false) }
 
     Scaffold(topBar = {
         TopAppBar(
@@ -73,7 +84,16 @@ fun ManageLocalJobScreen(
             )
 
             OutlinedButton(
-                onClick = dropUnlessResumed { onAddNewLocalJobClick() },
+                onClick =
+                    if (isProfileCompleted) {
+                        dropUnlessResumed {
+                            onAddNewLocalJobClick()
+                        }
+                    } else {
+                        {
+                            isShowingProfileNotCompletedBottomSheet = true
+                        }
+                    },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
@@ -102,12 +122,21 @@ fun ManageLocalJobScreen(
                         savedStateHandle.remove<String>("is_local_job_created")
                     }
                 },
-                onNavigateUpManagePublishedLocalJob = onNavigateUpManagePublishedLocalJob,
-                onNavigateUpPublishedLocalJobViewApplicants = onNavigateUpPublishedLocalJobViewApplicants,
-                viewModel = publishedLocalJobViewModel
+                onNavigateUpManagePublishedLocalJob = onNavigateManagePublishedLocalJob,
+                onNavigateUpPublishedLocalJobViewApplicants = onNavigatePublishedLocalJobViewApplicants,
+                viewModel = viewModel
             )
+
+            if (isShowingProfileNotCompletedBottomSheet) {
+                ProfileNotCompletedPromptSheet(
+                    unCompletedProfileFields = unCompletedProfileFieldsFlow,
+                    onProfileCompleteClick = onNavigateProfileSettings,
+                    onDismiss = {
+                    isShowingProfileNotCompletedBottomSheet = false
+                })
+            }
+
         }
     }
-
 
 }

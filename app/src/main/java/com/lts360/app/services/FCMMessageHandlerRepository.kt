@@ -9,9 +9,9 @@ import com.google.gson.JsonObject
 import com.lts360.App
 import com.lts360.app.database.daos.notification.NotificationDao
 import com.lts360.app.database.models.notification.Notification
-import com.lts360.pot.database.services.buildAndShowGeneralNotification
+import com.lts360.app.notifications.buildAndShowGeneralNotification
 import com.lts360.app.workers.helpers.ChatMessageHandlerWorkerHelper
-import com.lts360.pot.database.services.buildAndShowLocalJobApplicationNotification
+import com.lts360.app.notifications.buildAndShowLocalJobApplicationNotification
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -52,7 +52,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun EditProfileLastNameScreen(
     onNavigatePop: () -> Unit,
-    onPopBackStack:() -> Unit,
+    onPopBackStack: () -> Unit,
     viewModel: EditLastNameViewModel = hiltViewModel(),
 
     ) {
@@ -78,17 +78,15 @@ fun EditProfileLastNameScreen(
             topBar = {
                 TopAppBar(
                     title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back Icon"
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Edit Last Name",
-                                style = MaterialTheme.typography.titleMedium
+                        Text(
+                            text = "Edit Last Name",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }, navigationIcon = {
+                        IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back Icon"
                             )
                         }
                     })

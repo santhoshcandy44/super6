@@ -54,7 +54,8 @@ import kotlinx.coroutines.launch
 fun EditProfileFirstNameScreen(
     navigatePop: () -> Unit,
     onPopBackStack: () -> Unit,
-    viewModel: EditFirstNameViewModel = hiltViewModel()) {
+    viewModel: EditFirstNameViewModel = hiltViewModel()
+) {
 
     val context = LocalContext.current
 
@@ -71,29 +72,26 @@ fun EditProfileFirstNameScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-
     ) {
         Scaffold(
 
             topBar = {
                 TopAppBar(
                     title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back Icon"
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Edit First Name",
-                                style = MaterialTheme.typography.titleMedium
+                        Text(
+                            text = "Edit First Name",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back Icon"
                             )
                         }
-                    },
-
-                    )
+                    }
+                )
             }
 
         ) { innerPadding ->
@@ -117,7 +115,8 @@ fun EditProfileFirstNameScreen(
                     visualTransformation = if (firstName.isEmpty())
                         PlaceholderTransformation(" ")
                     else VisualTransformation.None,
-                    textStyle = TextStyle(fontSize = 14.sp))
+                    textStyle = TextStyle(fontSize = 14.sp)
+                )
 
                 if (firstNameError != null || firstName.length > 70) {
                     Text(

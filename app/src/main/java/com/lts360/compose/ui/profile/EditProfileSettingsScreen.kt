@@ -264,11 +264,9 @@ fun EditProfileSettingsScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Section Headers
-                    Text(
-                        text = "Profile Image",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Text(text = "Profile Picture",
+                        style = MaterialTheme.typography.titleMedium)
+
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Box(

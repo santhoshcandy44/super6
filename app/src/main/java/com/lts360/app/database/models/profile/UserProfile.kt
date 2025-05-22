@@ -37,10 +37,10 @@ data class UserProfile(
     val isEmailVerified: Boolean,
 
     @ColumnInfo("phone_country_code")
-    val phoneCountryCode: Boolean?=null,
+    val phoneCountryCode: String?=null,
 
     @ColumnInfo("phone_number")
-    val phoneNumber: Boolean?=null,
+    val phoneNumber: String?=null,
 
     @SerializedName("is_phone_verified")
     val isPhoneVerified: Boolean,

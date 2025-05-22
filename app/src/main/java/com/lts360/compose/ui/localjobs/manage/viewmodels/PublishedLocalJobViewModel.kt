@@ -20,10 +20,10 @@ import com.lts360.compose.ui.localjobs.manage.PublishedLocalJobsRepository
 import com.lts360.compose.ui.localjobs.manage.repos.LocalJobApplicantsPageSource
 import com.lts360.compose.ui.localjobs.models.EditableLocalJob
 import com.lts360.compose.ui.localjobs.models.LocalJob
-import com.lts360.compose.ui.localjobs.models.LocalJobApplicant
 import com.lts360.compose.ui.localjobs.models.toEditableLocalJob
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
+import com.lts360.compose.ui.profile.repos.UserProfileRepository
 import com.lts360.compose.ui.services.manage.models.CombinedContainer
 import com.lts360.compose.ui.services.manage.models.CombinedContainerFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -53,10 +53,12 @@ class PublishedLocalJobViewModel @Inject constructor(
     val savedStateHandle: SavedStateHandle,
     private val repository: PublishedLocalJobsRepository,
     networkConnectivityManager: NetworkConnectivityManager,
-
-    ) : ViewModel() {
+    userProfileRepository: UserProfileRepository
+) : ViewModel() {
 
     val userId: Long = UserSharedPreferencesManager.userId
+    val isProfileCompletedFlow = userProfileRepository.isProfileCompletedFlow(userId)
+    val unCompletedProfileFieldsFlow = userProfileRepository.unCompletedProfileFieldsFlow(userId)
 
     data class LocalJobState(
         val localJobId: Long = -1,
@@ -784,17 +786,30 @@ class PublishedLocalJobViewModel @Inject constructor(
     }
 
 
-    fun onMarkAsReviewedLocalJob(userId: Long, localJobId: Long, applicantId: Long
-    , onSuccess: () -> Unit={}, onError: (String) -> Unit={}) {
+    fun onMarkAsReviewedLocalJob(
+        userId: Long,
+        localJobId: Long,
+        applicantId: Long,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
         viewModelScope.launch {
             _pageSource.markAsReviewedLocalJob(userId, localJobId, applicantId, onSuccess, onError)
         }
     }
 
-    fun onUnmarkAsReviewedLocalJob(userId: Long, localJobId: Long, applicantId: Long,
-                                   onSuccess: () -> Unit={}, onError: (String) -> Unit={}) {
+    fun onUnmarkAsReviewedLocalJob(
+        userId: Long, localJobId: Long, applicantId: Long,
+        onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}
+    ) {
         viewModelScope.launch {
-            _pageSource.unmarkAsReviewedLocalJob(userId, localJobId, applicantId, onSuccess, onError)
+            _pageSource.unmarkAsReviewedLocalJob(
+                userId,
+                localJobId,
+                applicantId,
+                onSuccess,
+                onError
+            )
         }
     }
 

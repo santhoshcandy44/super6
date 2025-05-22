@@ -20,6 +20,9 @@ import com.lts360.compose.ui.localjobs.manage.navhost.ManageLocalJobRoutes
 import com.lts360.compose.ui.localjobs.manage.navhost.rememberManageLocalJobsCustomNavController
 import com.lts360.compose.ui.localjobs.manage.viewmodels.LocalJobWorkFlowViewModel
 import com.lts360.compose.ui.localjobs.manage.viewmodels.PublishedLocalJobViewModel
+import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
+import com.lts360.compose.ui.profile.EditProfileSettingsScreen
+import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
 import dagger.hilt.android.AndroidEntryPoint
@@ -69,6 +72,7 @@ fun ManageLocalJobsNavHost(
         lastEntry = navController.currentBackStackEntry?.destination?.route
     }
 
+    val profileSettingViewModel: ProfileSettingsViewModel = hiltViewModel()
 
     NavHost(
         navController = navController,
@@ -87,6 +91,9 @@ fun ManageLocalJobsNavHost(
                 },
                 {
                     navController.navigate(ManageLocalJobRoutes.ViewApplicantsPublishedLocalJob)
+                },
+                {
+                 navController.navigate(AccountAndProfileSettingsRoutes.PersonalSettings)
                 },
                 onFinishActivity
             )
@@ -135,6 +142,20 @@ fun ManageLocalJobsNavHost(
                 publishedLocalJobViewModel
             )
 
+        }
+
+        slideComposable<AccountAndProfileSettingsRoutes.PersonalSettings> {
+            EditProfileSettingsScreen({
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileFirstName)
+            }, {
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileLastName)
+            }, {
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileAbout("complete_about"))
+            }, {
+                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileEmail)
+            }, {
+                navController.popBackStack()
+            }, profileSettingViewModel)
         }
 
     }
