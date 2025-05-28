@@ -7,7 +7,6 @@ plugins {
     id("kotlin-parcelize")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.kotlin.plugin.compose")
-    // Add the Crashlytics Gradle plugin
     id("com.google.firebase.crashlytics")
 }
 
@@ -37,7 +36,7 @@ android {
 
         ndk {
             // Configure the NDK version if needed
-            version = "28.0.12674087"  // Choose the version that matches your setup
+            version = "28.0.12674087"
         }
 
 
@@ -53,10 +52,10 @@ android {
     buildTypes {
 
         debug {
-          /*  buildConfigField("String", "BASE_URL", "\"http://192.168.26.85:3000\"")
-            buildConfigField("String", "SOCKET_BASE_URL", "\"http://192.168.26.85:3080\"")*/
-            buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
-            buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.45.85:3000\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"http://192.168.45.85:3080\"")
+          /*  buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
+            buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")*/
             buildConfigField("String", "REFERER", "\"referer.lts360.com\"")
             buildConfigField("String", "GOOGLE_SIGN_IN_OAUTH_WEB_CLIENT_ID", "\"300991981824-m4ovoojo09sklaqcvijandmnndduda0r.apps.googleusercontent.com\"")
         }

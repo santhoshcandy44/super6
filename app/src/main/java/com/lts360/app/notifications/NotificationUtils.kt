@@ -111,33 +111,6 @@ suspend fun buildAndShowChatNotification(
     ) {
         val intent = Intent(context, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-
-        /*        val pendingIntent = PendingIntent.getActivity(this, 0, intent,PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE )
-
-
-                val replyLabel = "Enter your reply here"
-                val remoteInput = androidx.core.app.RemoteInput.Builder("KEY_REPLY")
-                    .setLabel(replyLabel)
-                    .build()
-
-                // Create an intent for the reply action
-                val replyIntent = Intent(applicationContext, ReplyReceiver::class.java)
-
-                val replyPendingIntent = PendingIntent.getBroadcast(
-                    applicationContext,
-                    0,
-                    replyIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-
-                )
-
-                val replyAction = NotificationCompat.Action.Builder(
-                    android.R.drawable.ic_menu_send,
-                    "Reply",
-                    replyPendingIntent
-                ).addRemoteInput(remoteInput)
-                    .build()*/
-
         val imageLoader = ImageLoader(context)
 
         val bitmap = withContext(Dispatchers.IO) {
@@ -213,6 +186,7 @@ suspend fun buildAndShowChatNotification(
                     setNumber(unreadMessageCount)
                 }
             }
+            .setOnlyAlertOnce(true)
             .setNumber(100)
             .setStyle(style)
 

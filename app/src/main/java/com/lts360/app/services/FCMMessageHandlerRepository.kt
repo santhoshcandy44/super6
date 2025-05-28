@@ -28,19 +28,19 @@ class FCMMessageHandlerRepository @Inject constructor(
         context.getSharedPreferences("FCM_MESSAGE_PARTS", MODE_PRIVATE)
 
 
-    fun storeMessagePart(messageId: String?, partNumber: Int, totalParts: Int, chunkData: String) {
+    fun storeMessagePart(messageKey: String, partNumber: Int, totalParts: Int, chunkData: String) {
         sharedPreferences.edit {
-            val key = "$messageId-$partNumber"
+            val key = "$messageKey-$partNumber"
             putString(key, chunkData)
-            putInt("$messageId-totalParts", totalParts)
+            putInt("$messageKey-totalParts", totalParts)
             apply()
         }
 
     }
 
-    fun areAllPartsReceived(messageId: String?, totalParts: Int): Boolean {
+    fun areAllPartsReceived(messageKey: String, totalParts: Int): Boolean {
         for (i in 1..totalParts) {
-            val partKey = "$messageId-$i"
+            val partKey = "$messageKey-$i"
             if (sharedPreferences.getString(partKey, null) == null) {
                 return false
             }
@@ -48,11 +48,11 @@ class FCMMessageHandlerRepository @Inject constructor(
         return true
     }
 
-    fun reassembleMessage(messageId: String?, totalParts: Int): String {
+    fun reassembleMessage(messageKey: String, totalParts: Int): String {
         val messageBuilder = StringBuilder()
 
         for (i in 1..totalParts) {
-            val partKey = "$messageId-$i"
+            val partKey = "$messageKey-$i"
             val partData = sharedPreferences.getString(partKey, null)
             if (partData != null) {
                 messageBuilder.append(partData)
@@ -64,7 +64,7 @@ class FCMMessageHandlerRepository @Inject constructor(
         }
 
         sharedPreferences.edit {
-            remove("$messageId-totalParts").apply()
+            remove("$messageKey-totalParts").apply()
         }
 
         return messageBuilder.toString()
@@ -74,15 +74,18 @@ class FCMMessageHandlerRepository @Inject constructor(
         applicationContext: Context,
         userId: Long,
         chunkData: String,
-        messageId: Long
     ) {
 
         val remoteMessageData = Gson().fromJson(chunkData, JsonObject::class.java)
-        val title = remoteMessageData.get("title").asString
-        val data = remoteMessageData.get("data").asString
         val remoteMessageType = remoteMessageData.get("type").asString
 
+
+
         if (remoteMessageType == "general") {
+
+            val title = remoteMessageData.get("title").asString
+            val data = remoteMessageData.get("data").asString
+
             if (title != null && data != null) {
 
                 val messageData = Gson().fromJson(data, JsonObject::class.java)
@@ -102,18 +105,17 @@ class FCMMessageHandlerRepository @Inject constructor(
                     buildAndShowGeneralNotification(context, title, message)
                 }
             }
-        } else if (remoteMessageType == "chat_message") {
-            ChatMessageHandlerWorkerHelper.enqueueChatMessageProcessor(
+        }
+        else if (remoteMessageType == "new_chat_message") {
+            ChatMessageHandlerWorkerHelper.enqueueFetchChatMessages(
                 applicationContext as App,
                 userId,
-                messageId,
-                title,
-                data,
-                remoteMessageType
+                remoteMessageType,
+                remoteMessageData.toString()
             )
         } else if (remoteMessageType == "business_local_job_application") {
-
-
+            val title = remoteMessageData.get("title").asString
+            val data = remoteMessageData.get("data").asString
             notificationDao.insert(
                 Notification(
                     title = title,

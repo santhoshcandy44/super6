@@ -192,15 +192,12 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    // Function to update the last loaded message ID
     fun updateLastLoadedItemId(id: Long) {
         viewModelScope.launch {
             _lastLoadedItemId.value = id
         }
     }
 
-
-    // Function to update the last loaded message ID
     fun updateFirstItemId(id: Long) {
         viewModelScope.launch {
             _firstItemId.value = id
@@ -1785,27 +1782,17 @@ class ChatViewModel @Inject constructor(
 
 
     private var typingJob: Job? = null
-    private val typingTimeout = 1000L // 1 second timeout
 
-
-    // Function to handle typing logic
     fun onUserTyping(userId: Long, recipientId: Long) {
-        // Cancel the previous typing job if it's still running
         typingJob?.cancel()
-
-        // Send typing event
         sendTypingEvent(userId, recipientId, true)
-
-        // Start a new job to wait before sending "not typing" event
         typingJob = viewModelScope.launch {
-            delay(typingTimeout)
+            delay(1000L)
             sendTypingEvent(userId, recipientId, false)
         }
     }
 
-    // Function to send typing event
     private fun sendTypingEvent(userId: Long, recipientId: Long, isTyping: Boolean) {
-        // Emit the typing event via socket
         socket?.emit("chat:typing",  JSONObject().apply {
             put("user_id", userId)
             put("recipient_id", recipientId)

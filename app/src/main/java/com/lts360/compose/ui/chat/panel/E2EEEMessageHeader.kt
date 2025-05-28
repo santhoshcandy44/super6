@@ -72,7 +72,6 @@ fun E2EEEMessageHeader() {
                 inlineContent = inlineContent
             )
 
-
         }
     }
 }

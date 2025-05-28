@@ -91,7 +91,7 @@ interface MessageDao {
         newMessage: Message, mediaMetaDataDao: MessageMediaMetaDataDao,
         fileMetadata: MessageMediaMetadata
     ): Long {
-        // Insert the message and get the inserted message ID
+
         val insertedId = insertMessage(newMessage)
 
         mediaMetaDataDao.insertMessageMediaMetaData(fileMetadata.copy(messageId = insertedId))

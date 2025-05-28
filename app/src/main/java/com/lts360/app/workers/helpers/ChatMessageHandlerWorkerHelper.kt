@@ -9,8 +9,8 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.lts360.app.workers.chat.ChatMessageProcessor
 import com.lts360.app.workers.chat.FetchUserProfileWorker
+import com.lts360.app.workers.chat.OfflineChatMessagesProcessor
 import com.lts360.app.workers.chat.VisualMediaChatMessageProcessor
 import org.json.JSONObject
 import java.io.File
@@ -20,10 +20,12 @@ import java.util.concurrent.TimeUnit
 
 object ChatMessageHandlerWorkerHelper {
 
-    private val FETCH_USER_PROFILE = "fetch_user_profile"
 
-    private val CHAT_MESSAGE_PROCESSOR = "chat_message_processor"
-    private val VISUAL_MEDIA_MESSAGE_PROCESSOR_WORKER = "visual_media_message_processor"
+    private const val FETCH_USER_PROFILE = "fetch_user_profile"
+
+    private const val OFFLINE_MESSAGES_FETCH_PROCESSOR = "offline_messages_processor"
+
+    private const val VISUAL_MEDIA_MESSAGE_PROCESSOR_WORKER = "visual_media_message_processor"
 
 
     fun enqueueFetchUserProfileWork(
@@ -39,12 +41,11 @@ object ChatMessageHandlerWorkerHelper {
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        val context = application.applicationContext // Get application context
+        val context = application.applicationContext
 
         val cacheFile = File(context.cacheDir, "${userId}_${senderId}_${messageId}_data.txt")
-        cacheFile.writeText(data)  // Write your large data to the file
+        cacheFile.writeText(data)
 
-        // You can now pass the file path to the worker
         val filePath = cacheFile.absolutePath
 
 
@@ -70,44 +71,29 @@ object ChatMessageHandlerWorkerHelper {
     }
 
 
-    fun enqueueChatMessageProcessor(
+    fun enqueueFetchChatMessages(
         application: Application,
         userId: Long,
-        messageId: Long,
-        title: String,
-        data: String,
         type: String,
+        data: String,
     ) {
-        // Create input data to pass the FCM token to the worker
 
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-
-        val context = application.applicationContext // Get application context
-
-        val cacheFile = File(context.cacheDir, "${messageId}_data.txt")
-        cacheFile.writeText(data)  // Write your large data to the file
-
-       // You can now pass the file path to the worker
-        val filePath = cacheFile.absolutePath
-
-
         val inputData = Data.Builder()
             .putLong("user_id", userId)
-            .putString("title", title)
-            .putString("data_path", filePath)
+            .putString("data", data)
             .putString("type", type)
             .build()
 
 
-        // Create a work request to send the FCM token
-        val chatMessageWorkRequest = OneTimeWorkRequestBuilder<ChatMessageProcessor>()
+        val chatMessageWorkRequest = OneTimeWorkRequestBuilder<OfflineChatMessagesProcessor>()
             .setInputData(inputData)
             .setConstraints(constraints)
             .setBackoffCriteria(
-                BackoffPolicy.LINEAR,   // Retry with a fixed backoff
+                BackoffPolicy.LINEAR,
                 10,
                 TimeUnit.SECONDS
             ).build()
@@ -115,7 +101,7 @@ object ChatMessageHandlerWorkerHelper {
 
         WorkManager.getInstance(application.applicationContext)
             .enqueueUniqueWork(
-                CHAT_MESSAGE_PROCESSOR,          // Unique work name
+                OFFLINE_MESSAGES_FETCH_PROCESSOR,
                 ExistingWorkPolicy.APPEND_OR_REPLACE,
                 chatMessageWorkRequest
             )
@@ -133,7 +119,6 @@ object ChatMessageHandlerWorkerHelper {
         content:String
     ) {
 
-        // Create input data to pass the FCM token to the worker
         val fileMetadata = JSONObject(data.getString("file_metadata"))
 
         val originalFileName = fileMetadata.optString("original_file_name")
@@ -147,7 +132,6 @@ object ChatMessageHandlerWorkerHelper {
         val downloadUrl = fileMetadata.optString("download_url")
         val thumbDownloadUrl = fileMetadata.optString("thumb_download_url")
 
-        // Create a work request to send the FCM token
         val doFileUploadWorkRequest = OneTimeWorkRequestBuilder<VisualMediaChatMessageProcessor>()
             .setConstraints( Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -172,16 +156,14 @@ object ChatMessageHandlerWorkerHelper {
                 )
             )
             .setBackoffCriteria(
-                BackoffPolicy.LINEAR,   // Retry with a fixed backoff
+                BackoffPolicy.LINEAR,
                 10,
                 TimeUnit.SECONDS
             ).build()
 
-
-
         WorkManager.getInstance(application.applicationContext).enqueueUniqueWork(
             "${VISUAL_MEDIA_MESSAGE_PROCESSOR_WORKER}_${chatId}_${chatRecipientId}_${senderMessageId}",          // Unique work name
-            ExistingWorkPolicy.REPLACE, // Replace existing work with the same name
+            ExistingWorkPolicy.REPLACE,
             doFileUploadWorkRequest
         )
 

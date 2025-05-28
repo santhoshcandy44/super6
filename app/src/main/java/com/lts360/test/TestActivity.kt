@@ -44,10 +44,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.lts360.R
+import com.lts360.api.auth.managers.socket.SocketManager
 import com.lts360.app.notifications.NotificationIdManager
+import com.lts360.app.services.FirebaseMessagingService
 import com.lts360.compose.ui.bookmarks.BookmarksActivity
 import com.lts360.compose.ui.chat.ChatPanel
 import com.lts360.compose.ui.chat.panel.message.ChatOtherMessageItem
+import com.lts360.compose.ui.chat.viewmodels.ChatViewModel
 import com.lts360.compose.ui.localjobs.manage.CreateLocalJobScreen
 import com.lts360.compose.ui.localjobs.manage.ManagePublishedLocalJobApplicantsScreen
 import com.lts360.compose.ui.main.prefs.BoardsSetupActivity

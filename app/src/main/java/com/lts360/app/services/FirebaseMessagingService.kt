@@ -16,24 +16,29 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     val userId = UserSharedPreferencesManager.userId
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-
-
         val remoteMessageData = remoteMessage.data
-
         val partNumber = remoteMessageData["partNumber"]?.toInt() ?: return
         val totalParts = remoteMessageData["totalParts"]?.toInt() ?: return
         val chunkData = remoteMessageData["data"] ?: return
-        val messageId = remoteMessageData["messageId"]
 
 
         if (partNumber == 1 && totalParts == 1) {
-            fcmMessageHandlerRepository.processMessage(applicationContext, userId, chunkData,messageId?.toLong()?:-1)
-        }else{
-            fcmMessageHandlerRepository.storeMessagePart(messageId, partNumber, totalParts, chunkData)
+            fcmMessageHandlerRepository.processMessage(applicationContext, userId, chunkData)
+        } else {
 
-            if (fcmMessageHandlerRepository.areAllPartsReceived(messageId, totalParts)) {
-                val fullMessage = fcmMessageHandlerRepository.reassembleMessage(messageId, totalParts)
-                fcmMessageHandlerRepository.processMessage(applicationContext, userId, fullMessage,messageId?.toLong()?:-1)
+            val messageKey = remoteMessageData["key"] ?: return
+
+            fcmMessageHandlerRepository.storeMessagePart(
+                messageKey,
+                partNumber,
+                totalParts,
+                chunkData
+            )
+
+            if (fcmMessageHandlerRepository.areAllPartsReceived(messageKey, totalParts)) {
+                val fullMessage =
+                    fcmMessageHandlerRepository.reassembleMessage(messageKey, totalParts)
+                fcmMessageHandlerRepository.processMessage(applicationContext, userId, fullMessage)
             }
         }
     }
