@@ -8,6 +8,10 @@ object LogUtils {
     const val TAG = "SUPER6_APP"
 }
 
+fun debugLogger(message:String, tag:String=TAG){
+    Log.e(tag, message)
+}
+
 fun errorLogger(message:String, tag:String=TAG){
     Log.e(tag, message)
 }

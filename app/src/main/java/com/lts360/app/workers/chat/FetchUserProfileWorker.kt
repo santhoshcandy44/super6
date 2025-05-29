@@ -313,20 +313,19 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
                                         var mediaFile: File? = null
 
-                                        withTimeout(5000) { // Set timeout to 5 seconds
+                                        withTimeout(5000) {
                                             suspendCancellableCoroutine<Unit> { continuation ->
                                                 socket.emit("chat:mediaStatus", JSONObject().apply {
                                                     put("status", "MEDIA_DOWNLOADED")
                                                     put("download_url", thumbDownloadUrl)
-                                                    put("sender", senderId)
+                                                    put("sender_id", senderId)
                                                     put("recipient_id", userId)
                                                     put(
                                                         "message_id",
                                                         messageId
-                                                    ) // Add the inserted message ID to JSON
+                                                    )
                                                 }, Ack {
 
-                                                    // Handle decryption after download
                                                     mediaFile = cacheThumbnailToAppSpecificFolder(
                                                         context,
                                                         originalFileName,
@@ -334,9 +333,7 @@ class FetchUserProfileWorker @AssistedInject constructor(
                                                         extension
                                                     )
 
-                                                    continuation.resume(Unit) { cause, value, context ->
-                                                        // Acknowledgment received, log it
-                                                    }
+                                                    continuation.resume(Unit) { cause, value, context -> }
                                                 })
                                             }
                                         }
@@ -640,17 +637,13 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
                         }
 
-                        val lastUnreadMessages = withContext(Dispatchers.IO) {
-                            messageDao.getLastSixUnreadMessage(fcmSenderId, chatUser.chatId)
-                                .reversed()
+
+                        val (chatUserProfile, lastUnreadMessages, unreadMessageCount) = withContext(Dispatchers.IO) {
+                            val user = chatUser.userProfile
+                            val messages = messageDao.getLastSixUnreadMessage(fcmSenderId, chatUser.chatId).reversed()
+                            val count = messageDao.countAllUnreadMessages()
+                            Triple(user, messages, count)
                         }
-
-                        val unreadMessageCount = withContext(Dispatchers.IO) {
-                            messageDao.countAllUnreadMessages()
-                        }
-
-                        val chatUserProfile = chatUser.userProfile
-
 
                         if (!App.isAppInForeground) {
                             buildAndShowChatNotification(

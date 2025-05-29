@@ -2,7 +2,6 @@ package com.lts360.app.workers.chat.upload
 
 import android.app.NotificationManager
 import android.content.Context
-import android.net.Uri
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -39,6 +38,7 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
 import kotlin.coroutines.resumeWithException
+import androidx.core.net.toUri
 
 @HiltWorker
 class MediaUploadWorker @AssistedInject constructor(
@@ -101,7 +101,6 @@ class MediaUploadWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        // Try to get cached file path from the database
         var cachedFilePath = uploadWorkerUtilRepository.getFileCachePathByMessageId(messageId)
 
         return try {
@@ -110,7 +109,7 @@ class MediaUploadWorker @AssistedInject constructor(
             try {
                 if (publicKey.isEmpty() || keyVersion == -1L) {
 
-                    return withTimeout<Result>(30_000) { // Timeout set to 30 seconds
+                    return withTimeout<Result>(30_000) {
                         suspendCancellableCoroutine { continuation ->
                             if (publicKey.isEmpty() || keyVersion == -1L) {
 
@@ -131,7 +130,6 @@ class MediaUploadWorker @AssistedInject constructor(
                                             val responsePublicKey = response.getString("publicKey")
                                             val responseKeyVersion = response.getLong("keyVersion")
 
-                                            // Perform database updates within the coroutine scope
                                             CoroutineScope(Dispatchers.IO).launch {
                                                 chatUserRepository.updatePublicKeyByRecipientId(
                                                     responseRecipientId,
@@ -161,10 +159,9 @@ class MediaUploadWorker @AssistedInject constructor(
 
 
                             } else {
-                                continuation.resume(Result.success()) { cause, _, _ -> } // If publicKey or keyVersion is already valid, return success
+                                continuation.resume(Result.success()) { cause, _, _ -> }
                             }
 
-                            // Handle cancellation
                             continuation.invokeOnCancellation {
                                 socket.off("chat:queryPublicKey")
                             }
@@ -173,7 +170,6 @@ class MediaUploadWorker @AssistedInject constructor(
                 }
             } catch (e: TimeoutCancellationException) {
                 e.printStackTrace()
-                // Handle timeout
                 return Result.retry()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -181,14 +177,12 @@ class MediaUploadWorker @AssistedInject constructor(
             }
 
             val inputStream =
-                applicationContext.contentResolver.openInputStream(Uri.parse(fileAbsPath))
+                applicationContext.contentResolver.openInputStream(fileAbsPath.toUri())
                     ?: return Result.failure()
 
             updateUploadState(messageId, FileUploadState.Started)
 
             val encryptedBytes = try {
-
-
                 withContext(Dispatchers.IO) {
                     uploadWorkerUtilRepository.getEncryptedFileBytes(
                         applicationContext,
@@ -210,7 +204,6 @@ class MediaUploadWorker @AssistedInject constructor(
                     }
                 }
             } catch (e: Exception) {
-
                 updateUploadState(
                     messageId,
                     FileUploadState.Retry(e.message ?: "Error: Caused by file encryption")
@@ -219,7 +212,6 @@ class MediaUploadWorker @AssistedInject constructor(
                 e.printStackTrace()
                 return Result.failure()
             }
-
 
             createUploadNotificationChannel(notificationManager)
 
@@ -258,43 +250,40 @@ class MediaUploadWorker @AssistedInject constructor(
                 messageId,
                 FileUploadState.Retry(e.message ?: "Caused by socket is not connected")
             )
-            notificationManager.cancel(notificationId)  // Dismiss the notification by using the notificationId
+            notificationManager.cancel(notificationId)
 
-            // If the socket connection error occurs, retry the work
-            Result.retry() // Request retry in case of socket connection failure
-        } catch (e: UserNotActiveException) {
+            Result.retry()
+        } catch (_: UserNotActiveException) {
             uploadWorkerUtilRepository.updateMessageStatus(messageId, ChatMessageStatus.FAILED)
             updateUploadState(messageId, FileUploadState.Failed)
-            notificationManager.cancel(notificationId)  // Dismiss the notification by using the notificationId
+            notificationManager.cancel(notificationId)
 
             deleteCachedFileAndUpdateMessage(messageId, cachedFilePath)
 
             uploadWorkerUtilRepository.updateLastChunkIndexByMessageId(messageId, -1)
             uploadWorkerUtilRepository.updateLastSentByteOffsetByMessageId(messageId, -1)
             Result.success()
-        } catch (e: InvalidKeyVersionException) {
+        } catch (_: InvalidKeyVersionException) {
             updateUploadState(messageId, FileUploadState.Retry("SocketAuth: Invalid key version"))
-            notificationManager.cancel(notificationId)  // Dismiss the notification by using the notificationId
+            notificationManager.cancel(notificationId)
 
             deleteCachedFileAndUpdateMessage(messageId, cachedFilePath)
 
             uploadWorkerUtilRepository.updateLastChunkIndexByMessageId(messageId, -1)
             uploadWorkerUtilRepository.updateLastSentByteOffsetByMessageId(messageId, -1)
 
-            Result.retry() // Request retry in case of socket connection failure
+            Result.retry()
         } catch (e: Exception) {
             runBlocking {
                 updateUploadState(
                     messageId,
                     FileUploadState.Retry(e.message ?: "Error: Caused by exception")
                 )
-                notificationManager.cancel(notificationId)  // Dismiss the notification by using the notificationId
+                notificationManager.cancel(notificationId)
             }
             return Result.failure()
         } finally {
-
             finalizeSocket()
-
         }
     }
 
@@ -325,7 +314,6 @@ class MediaUploadWorker @AssistedInject constructor(
         var lastSentChunkIndex: Long
         var byteOffset: Long
 
-        // Store the file ID associated with the message for resuming transfer
         withContext(Dispatchers.IO) {
 
             val messageProcessingMediaData =
@@ -334,33 +322,27 @@ class MediaUploadWorker @AssistedInject constructor(
             val currentFileId = uploadWorkerUtilRepository.getFileIdByMessageId(messageId)
             fileId = currentFileId
                 ?: "${senderId}_${recipientId}_${messageId}_${System.currentTimeMillis()}"
-            // Update or create fileId if it's new
+
             val updatedData = messageProcessingMediaData?.copy(
-                fileId = fileId // Update the fileId
+                fileId = fileId
             ) ?: MessageProcessingData(
                 messageId = messageId,
-                fileId = fileId // New entry with the provided fileId
+                fileId = fileId
             )
 
             uploadWorkerUtilRepository.insertOrUpdateMessageProcessingData(updatedData)
             byteOffset = uploadWorkerUtilRepository.getLastSentByteOffset(messageId)
             lastSentChunkIndex =
-                (byteOffset + CHUNK_SIZE - 1) / CHUNK_SIZE // Round up total chunks
+                (byteOffset + CHUNK_SIZE - 1) / CHUNK_SIZE
 
-
-            // Retrieve the last sent chunk index and byte offset from persistent storage (i.e., resume point)
-            /*
-                        lastSentChunkIndex = uploadWorkerUtilRepository.getLastSentChunkIndex(messageId)
-            */
         }
 
 
         try {
             val totalChunks =
-                (byteArray.size + CHUNK_SIZE - 1) / CHUNK_SIZE // Round up total chunks
+                (byteArray.size + CHUNK_SIZE - 1) / CHUNK_SIZE
 
 
-            // Start file transfer metadata
             val transferData = JSONObject().apply {
                 put("sender_id", senderId)
                 put("recipient_id", recipientId)
@@ -383,7 +365,6 @@ class MediaUploadWorker @AssistedInject constructor(
                 put("timestamp", System.currentTimeMillis())
             }
 
-            // Create a CompletableDeferred to wait for the transfer completion event
             val onMessageSentCompleted = CompletableDeferred<Unit>()
             val allChunksAckReceived = CompletableDeferred<Unit>()
 
@@ -396,7 +377,6 @@ class MediaUploadWorker @AssistedInject constructor(
             }
 
 
-            // Register the completion listener
             socket.once("chat:fileTransferCompleted-${fileId}") { args ->
 
                 if (isStopped || onMessageSentCompleted.isCompleted) {
@@ -414,9 +394,6 @@ class MediaUploadWorker @AssistedInject constructor(
                             allChunksAckReceived.await()
                         }
                     }
-
-                    val uploadCompletedMessageId = result.getLong("messageId")
-
 
 
                     if (status == "FILE_TRANSFER_COMPLETED" || status == "ALL_CHUNKS_RECEIVED_FILE_TRANSFER_COMPLETED") {
@@ -448,7 +425,6 @@ class MediaUploadWorker @AssistedInject constructor(
             }
 
 
-            // Emit the event to start file transfer
             socket.emit("chat:startFileTransfer", transferData, Ack {
 
                 CoroutineScope(Dispatchers.IO).launch {
@@ -485,14 +461,12 @@ class MediaUploadWorker @AssistedInject constructor(
                     else {
 
 
-                        // Initialize file transfer from the last sent chunk (resume)
                         ByteArrayInputStream(byteArray).use { fis ->
                             chunkIndex = lastSentChunkIndex
 
-
                             var lastSentByteOffset = byteOffset
                             fis.skip(lastSentByteOffset)
-                            // Start sending chunks
+
                             while (fis.read(buffer).also { bytesRead = it } != -1) {
 
                                 val chunk = ByteArray(bytesRead).apply {
@@ -505,14 +479,12 @@ class MediaUploadWorker @AssistedInject constructor(
                                     )
                                 }
 
-                                // Only send chunks from where we left off (resume upload)
                                 if (chunkIndex >= lastSentChunkIndex) {
 
                                     if (socket.connected()) {
 
                                         val chunkAcknowledged = CompletableDeferred<Unit>()
 
-                                        // Wait for the chunk acknowledgment asynchronously
                                         socket.once("chat:mediaChunkAck-${fileId}-$chunkIndex") { args ->
 
                                             if (isStopped || onMessageSentCompleted.isCompleted) {
@@ -540,7 +512,7 @@ class MediaUploadWorker @AssistedInject constructor(
                                                         updatedChunkIndex
                                                     )
 
-                                                    lastSentByteOffset = updatedSize // Increment by the size of the chunk received
+                                                    lastSentByteOffset = updatedSize
 
                                                     uploadWorkerUtilRepository.updateLastSentByteOffsetByMessageId(
                                                         messageId,
@@ -575,7 +547,6 @@ class MediaUploadWorker @AssistedInject constructor(
                                             }
                                         })
 
-                                        // Suspend the current loop until chunk acknowledgment is received
                                         chunkAcknowledged.await()
                                         chunkIndex++
 
@@ -597,7 +568,6 @@ class MediaUploadWorker @AssistedInject constructor(
             })
 
 
-            // Wait for the final chunk acknowledgment
             while (!onMessageSentCompleted.isCompleted && !isMessageSent) {
 
                 if (!socket.connected()) {
@@ -606,7 +576,6 @@ class MediaUploadWorker @AssistedInject constructor(
 
                 delay(1000)
             }
-
 
 
             if (!onMessageSentCompleted.isCompleted) {
@@ -619,7 +588,6 @@ class MediaUploadWorker @AssistedInject constructor(
             }
 
         } catch (e: SocketConnectionException) {
-            // Handle socket errors
             throw e
         } catch (e: InvalidKeyVersionException) {
             e.printStackTrace()

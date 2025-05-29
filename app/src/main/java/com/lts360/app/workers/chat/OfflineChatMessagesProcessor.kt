@@ -21,6 +21,7 @@ import com.lts360.app.workers.chat.download.downloadMediaAndCache
 import com.lts360.app.workers.chat.utils.awaitConnectToSocket
 import com.lts360.app.workers.chat.utils.cacheThumbnailToAppSpecificFolder
 import com.lts360.app.workers.helpers.ChatMessageHandlerWorkerHelper
+import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
 import com.lts360.compose.ui.auth.repos.DecryptionStatus
 import com.lts360.compose.ui.auth.repos.decryptFile
@@ -125,7 +126,6 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                         try {
                             val data = args[0] as JSONObject
                             val messagesJsonArray = data.getJSONArray("offline_messages")
-
                             cont.resume(messagesJsonArray) { cause, _, _ -> }
                         } catch (e: Exception) {
                             cont.resumeWithException(e)
@@ -154,8 +154,6 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                     try {
                            withTimeout(20_000L) {
                             suspendCancellableCoroutine<Unit>{ cont ->
-
-
                                 socket.emit("chat:offlineMessageAcknowledgment",
                                     JSONObject().apply {
                                         put("status", "delivered")
@@ -182,6 +180,7 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                 val replyId = messageData.getLong("reply_id")
                 val category = messageData.getString("category")
 
+
                 if (category.contains("image") || category.contains("video") || category.contains("gif")) {
 
                     val fileMetadata = messageData.getJSONObject("file_metadata")
@@ -203,27 +202,21 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                             extension
                         )
 
+
                     if (socket.connected()) {
-
-
                         try {
-
                             var mediaFile: File? = null
 
-                            withTimeout(5000) { // Set timeout to 5 seconds
+                            withTimeout(5000) {
                                 suspendCancellableCoroutine<Unit> { continuation ->
                                     socket.emit("chat:mediaStatus", JSONObject().apply {
                                         put("status", "MEDIA_DOWNLOADED")
                                         put("download_url", thumbDownloadUrl)
-                                        put("sender", senderId)
+                                        put("sender_id", senderId)
                                         put("recipient_id", userId)
-                                        put(
-                                            "message_id",
-                                            messageId
-                                        ) // Add the inserted message ID to JSON
+                                        put("message_id", messageId)
                                     }, Ack {
 
-                                        // Handle decryption after download
                                         mediaFile = cacheThumbnailToAppSpecificFolder(
                                             context,
                                             originalFileName,
@@ -232,7 +225,7 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                                         )
 
                                         continuation.resume(Unit) { cause, value, context ->
-                                            // Acknowledgment received, log it
+
                                         }
                                     })
                                 }
@@ -375,9 +368,11 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                     }
 
 
-                } else if (category.contains("audio")) {
+                }
 
-                    val fileMetadata = messageData.getJSONObject("file_meta_data")
+                else if (category.contains("audio")) {
+
+                    val fileMetadata = messageData.getJSONObject("file_metadata")
                     val originalFileName = fileMetadata.getString("original_file_name")
                     val downloadUrl = fileMetadata.getString("download_url")
                     val fileSize = fileMetadata.getLong("file_size")
@@ -414,7 +409,7 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                 } else if (category.contains("file")) {
 
 
-                    val fileMetadata = messageData.getJSONObject("file_meta_data")
+                    val fileMetadata = messageData.getJSONObject("file_metadata")
                     val originalFileName = fileMetadata.getString("original_file_name")
                     val downloadUrl = fileMetadata.getString("download_url")
                     val fileSize = fileMetadata.getLong("file_size")
@@ -447,7 +442,7 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
 
                 } else if (category.contains("others")) {
 
-                    val fileMetadata = messageData.getJSONObject("file_meta_data")
+                    val fileMetadata = messageData.getJSONObject("file_metadata")
                     val originalFileName = fileMetadata.getString("original_file_name")
                     val downloadUrl = fileMetadata.getString("download_url")
                     val fileSize = fileMetadata.getLong("file_size")
@@ -535,16 +530,12 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
 
             }
 
-            val lastUnreadMessages = withContext(Dispatchers.IO) {
-                messageDao.getLastSixUnreadMessage(fcmSenderId, chatUser.chatId).reversed()
+            val (chatUserProfile, lastUnreadMessages, unreadMessageCount) = withContext(Dispatchers.IO) {
+                val user = chatUser.userProfile
+                val messages = messageDao.getLastSixUnreadMessage(fcmSenderId, chatUser.chatId).reversed()
+                val count = messageDao.countAllUnreadMessages()
+                Triple(user, messages, count)
             }
-
-            val unreadMessageCount = withContext(Dispatchers.IO) {
-                messageDao.countAllUnreadMessages()
-            }
-
-            val chatUserProfile = chatUser.userProfile
-
 
             if (!App.isAppInForeground) {
                 buildAndShowChatNotification(

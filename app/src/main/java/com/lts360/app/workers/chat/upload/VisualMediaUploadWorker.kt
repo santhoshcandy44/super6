@@ -2,7 +2,6 @@ package com.lts360.app.workers.chat.upload
 
 import android.app.NotificationManager
 import android.content.Context
-import android.net.Uri
 import androidx.hilt.work.HiltWorker
 import androidx.media3.common.util.UnstableApi
 import androidx.work.CoroutineWorker
@@ -41,6 +40,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import kotlin.coroutines.resumeWithException
+import androidx.core.net.toUri
 
 @HiltWorker
 class VisualMediaUploadWorker @AssistedInject constructor(
@@ -51,25 +51,18 @@ class VisualMediaUploadWorker @AssistedInject constructor(
     val socketManager: SocketManager
 ) : CoroutineWorker(context, workerParams) {
 
-
-
     companion object {
         private const val CHUNK_SIZE = 1024 * 1024
         private const val THUMBNAIL_CHUNK_SIZE = 1024 * 1024
     }
 
-
-    // This will hold the notification ID (for notification updates)
     private val notificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-
-    private lateinit var socket: Socket // Use the appropriate type for your socket
-
+    private lateinit var socket: Socket
 
     private val notificationId = id.hashCode()
 
-    // Generate unique fileId using sender, recipient, message, and timestamp
     private var fileId: String? = null
     private var chunkIndex: Long = -1L
     private var thumbnailChunkIndex: Long = -1L
@@ -77,8 +70,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
     @androidx.annotation.OptIn(UnstableApi::class)
     override suspend fun doWork(): Result {
 
-
-        // Retrieve input data
         val fileName = inputData.getString("fileName") ?: return Result.failure()
         val extension = inputData.getString("extension") ?: return Result.failure()
         val category = inputData.getString("category") ?: return Result.failure()
@@ -100,20 +91,14 @@ class VisualMediaUploadWorker @AssistedInject constructor(
         val publicKey = e2eeKey?.publicKey ?: ""
         val keyVersion = e2eeKey?.keyVersion ?: -1L
 
-
         val userId = UserSharedPreferencesManager.userId
-
 
         if (userId == -1L) {
             return Result.failure()
         }
 
         var thumbCachePath = uploadWorkerUtilRepository.getFileThumbPathByMessageId(messageId)
-
-        // Try to get cached file path from the database
         var cachedFilePath = uploadWorkerUtilRepository.getFileCachePathByMessageId(messageId)
-
-
 
 
         return try {
@@ -123,7 +108,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
                 if (publicKey.isEmpty() || keyVersion == -1L) {
 
-                    return withTimeout<Result>(30_000) { // Timeout set to 30 seconds
+                    return withTimeout<Result>(30_000) {
                         suspendCancellableCoroutine { continuation ->
                             if (publicKey.isEmpty() || keyVersion == -1L) {
 
@@ -144,7 +129,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                             val responsePublicKey = response.getString("publicKey")
                                             val responseKeyVersion = response.getLong("keyVersion")
 
-                                            // Perform database updates within the coroutine scope
                                             CoroutineScope(Dispatchers.IO).launch {
                                                 chatUserRepository.updatePublicKeyByRecipientId(
                                                     responseRecipientId,
@@ -175,10 +159,9 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
                             } else {
 
-                                continuation.resume(Result.success()) { cause, _, _ -> } // If publicKey or keyVersion is already valid, return success
+                                continuation.resume(Result.success()) { cause, _, _ -> }
                             }
 
-                            // Handle cancellation
                             continuation.invokeOnCancellation {
                                 socket.off("chat:queryPublicKey")
                             }
@@ -188,7 +171,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
             } catch (e: TimeoutCancellationException) {
                 e.printStackTrace()
-                // Handle timeout
                 return Result.retry()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -200,12 +182,10 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
 
             val inputStream =
-                applicationContext.contentResolver.openInputStream(Uri.parse(fileAbsPath))
+                applicationContext.contentResolver.openInputStream(fileAbsPath.toUri())
                     ?: return Result.failure()
 
-
             updateUploadState(messageId, FileUploadState.Started)
-
 
             val encryptedFile = try {
 
@@ -300,7 +280,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             )
 
 
-        } catch (e: InvalidKeyVersionException) {
+        } catch (_: InvalidKeyVersionException) {
             updateUploadState(messageId, FileUploadState.Retry("SocketAuth: Invalid key version"))
             notificationManager.cancel(notificationId)
 
@@ -312,7 +292,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             uploadWorkerUtilRepository.updateLastSentThumbnailByteOffsetByMessageId(messageId, -1)
 
             Result.retry()
-        } catch (e: UserNotActiveException) {
+        } catch (_: UserNotActiveException) {
             uploadWorkerUtilRepository.updateMessageStatus(messageId, ChatMessageStatus.FAILED)
             updateUploadState(messageId, FileUploadState.Failed)
             notificationManager.cancel(notificationId)
@@ -329,7 +309,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
             when (e) {
                 is SocketConnectionException, is UploadFailedException
-                -> {
+                    -> {
                     fileId?.let {
                         socket.off("chat:fileTransferCompleted-${it}")
                         socket.off("chat:thumbnailTransferCompleted-${it}")
@@ -354,7 +334,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                             messageId,
                             FileUploadState.Retry(e.message ?: "Caused by exception")
                         )
-                        notificationManager.cancel(notificationId)  // Dismiss the notification by using the notificationId
+                        notificationManager.cancel(notificationId)
                     }
                     return Result.failure()
                 }
@@ -407,13 +387,12 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             val currentFileId = messageProcessingMediaData?.fileId
             fileId = currentFileId
                 ?: "${senderId}_${recipientId}_${messageId}_${System.currentTimeMillis()}"
-            // Update or create fileId if it's new
 
             val updatedData = messageProcessingMediaData?.copy(
-                fileId = fileId // Update the fileId
+                fileId = fileId
             ) ?: MessageProcessingData(
                 messageId = messageId,
-                fileId = fileId // New entry with the provided fileId
+                fileId = fileId
             )
 
             uploadWorkerUtilRepository.insertOrUpdateMessageProcessingData(updatedData)
@@ -533,7 +512,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
             }
 
-            // A function to handle chunk acknowledgment and progress
             fun onChunkAcknowledged(chunkIndex: Int) {
                 if (chunkIndex == totalChunks - 1) {
                     CoroutineScope(Dispatchers.IO).launch {
@@ -541,17 +519,13 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                             messageId,
                             -1
                         )
-//                                        updateLastSentByteOffsetByMessageId(messageId, -1)
-                        // Complete the deferred task once the last chunk is acknowledged
                         allChunksAckReceived.complete(Unit)
                     }
                 }
             }
 
 
-            // Emit the event to start file transfer
             socket.emit("chat:startFileTransfer", startTransferData, Ack {
-
 
                 CoroutineScope(Dispatchers.IO).launch {
 
@@ -562,7 +536,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                     val fileTransferData = if (it.isNotEmpty()) it[0] as? JSONObject else null
 
                     val status = fileTransferData?.optString("status")
-
 
 
                     if (status != null && status == "KEY_ERROR") {
@@ -585,23 +558,18 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
                     } else if (status != null && status == "USER_NOT_ACTIVE_ERROR") {
                         onMessageSentCompleted.completeExceptionally(UserNotActiveException("User not active"))
-                    } else if(status!=null && status == "ERROR"){
+                    } else if (status != null && status == "ERROR") {
                         onMessageSentCompleted.completeExceptionally(Exception("Unknown error occurred"))
-                    }else {
+                    } else {
 
-                        // Initialize file transfer from the last sent chunk (resume)
                         FileInputStream(encryptedFile).use { fis ->
 
                             chunkIndex = lastSentChunkIndex
 
                             var lastSentByteOffset = byteOffset
 
-
-
                             fis.skip(lastSentByteOffset)
 
-
-                            // Start sending chunks
                             while (fis.read(buffer).also { bytesRead = it } != -1) {
 
                                 val chunk = ByteArray(bytesRead).apply {
@@ -622,8 +590,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
                                         val chunkAcknowledged = CompletableDeferred<Unit>()
 
-
-                                        // Wait for the chunk acknowledgment asynchronously
                                         socket.once("chat:mediaChunkAck-${fileId}-$chunkIndex") { args ->
 
                                             if (isStopped || onMessageSentCompleted.isCompleted) {
@@ -651,7 +617,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                                         updatedChunkIndex
                                                     )
 
-                                                    lastSentByteOffset = updatedSize // Increment by the size of the chunk received
+                                                    lastSentByteOffset = updatedSize
 
                                                     uploadWorkerUtilRepository.updateLastSentByteOffsetByMessageId(
                                                         messageId,
@@ -688,8 +654,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                             }
                                         })
 
-
-                                        // Suspend the current loop until chunk acknowledgment is received
                                         chunkAcknowledged.await()
                                         chunkIndex++
 
@@ -701,8 +665,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                 }
                             }
 
-                            // Complete the transfer once the last chunk acknowledgment is received
-
                         }
                     }
 
@@ -712,7 +674,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             })
 
 
-            // Wait for the final chunk acknowledgment
             while (!onMessageSentCompleted.isCompleted && !isMessageSent) {
                 if (!socket.connected()) {
                     onMessageSentCompleted.completeExceptionally(SocketConnectionException("Waiting visual media transfer: Socket is not connected"))
@@ -733,7 +694,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             return Result.success()
 
         } catch (e: SocketConnectionException) {
-            // Handle socket errors
             throw e
         } catch (e: InvalidKeyVersionException) {
             e.printStackTrace()
@@ -781,24 +741,17 @@ class VisualMediaUploadWorker @AssistedInject constructor(
     ) {
 
 
-        // Start sending the chunks from the last sent chunk index
-        val buffer = ByteArray(THUMBNAIL_CHUNK_SIZE) // Buffer to read chunks into
+        val buffer = ByteArray(THUMBNAIL_CHUNK_SIZE)
 
 
         val totalThumbnailChunks =
-            (thumbnail.size + THUMBNAIL_CHUNK_SIZE - 1) / THUMBNAIL_CHUNK_SIZE // Calculate total chunks
+            (thumbnail.size + THUMBNAIL_CHUNK_SIZE - 1) / THUMBNAIL_CHUNK_SIZE
 
         val byteOffset = withContext(Dispatchers.IO) {
             uploadWorkerUtilRepository.getLastSentThumbnailByteOffsetByMessageId(messageId)
         }
-        // Load the last successfully sent chunk index from a persistent storage or variable (e.g., SharedPreferences, file)
         val lastSentThumbnailChunkIndex: Long =
-            (byteOffset + THUMBNAIL_CHUNK_SIZE - 1) / THUMBNAIL_CHUNK_SIZE // Round up total chunks
-
-        /*   withContext(Dispatchers.IO) {
-               lastSentThumbnailChunkIndex =  uploadWorkerUtilRepository.getLastSentThumbnailChunkIndexByMessageId(messageId)
-           } //
-        */
+            (byteOffset + THUMBNAIL_CHUNK_SIZE - 1) / THUMBNAIL_CHUNK_SIZE
 
 
         val startThumbnailTransferData = JSONObject().apply {
@@ -828,7 +781,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
         val onMessageSentCompletedDeferred = CompletableDeferred<Unit>()
 
 
-        // Register the completion listener
         socket.once("chat:thumbnailTransferCompleted-${fileId}") { args ->
 
             if (isStopped || isJobCompletableDeferred.isCompleted) {
@@ -836,9 +788,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             }
 
 
-            // Wait until the final chunk acknowledgment is complete
             CoroutineScope(Dispatchers.IO).launch {
-
 
                 val result = args[0] as? JSONObject?
 
@@ -870,14 +820,13 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                             messageId,
                             -1
                         )
-//                        updateLastSentThumbnailByteOffsetByMessageId(messageId, -1)
+
                         deleteCachedFilesAndUpdateMessage(
                             messageId,
                             cachedFilePath,
                             thumbCachePath
                         )
                         onMessageSentCompletedDeferred.complete(Unit)
-
 
                     } else {
                         onMessageSentFailed("Thumbnail transfer failed: Socket is not connected")
@@ -888,18 +837,15 @@ class VisualMediaUploadWorker @AssistedInject constructor(
             }
         }
 
-        // Function to handle chunk acknowledgment and progress
         fun onChunkAcknowledged(chunkIndex: Int) {
 
             if (chunkIndex == totalThumbnailChunks - 1) {
                 CoroutineScope(Dispatchers.IO).launch {
                     allThumbnailChunksSentCompletedDeferred.complete(Unit)
                 }
-                // Complete the deferred task once the last chunk is acknowledged
             }
         }
 
-        // Emit the event to start file transfer
         socket.emit("chat:startThumbnailTransfer", startThumbnailTransferData, Ack {
 
 
@@ -931,9 +877,9 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
                 } else if (status != null && status == "USER_NOT_ACTIVE_ERROR") {
                     onMessageSentFailed("User not active")
-                }  else if(status!=null && status == "ERROR"){
+                } else if (status != null && status == "ERROR") {
                     onMessageSentFailed("Unknown error occurred")
-                }else {
+                } else {
 
                     ByteArrayInputStream(thumbnail).use { fis ->
                         thumbnailChunkIndex = lastSentThumbnailChunkIndex
@@ -1011,7 +957,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
 
 
-                                    // Wait for acknowledgment of the chunk
                                     socket.once("chat:mediaThumbnailChunkAck-${fileId}-${thumbnailChunkIndex}") { args ->
 
                                         if (isStopped || isJobCompletableDeferred.isCompleted) {
@@ -1025,7 +970,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                             val updatedChunkIndex: Int = data.getInt("chunkIndex")
                                             val updatedSize: Long = data.getLong("updatedSize")
 
-                                            // Update chunk index and the last sent chunk
                                             CoroutineScope(Dispatchers.IO).launch {
 
                                                 val progress =
@@ -1045,7 +989,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                                     messageId,
                                                     lastSentByteOffset
                                                 )
-                                                // Acknowledge the chunk
+
                                                 onChunkAcknowledged(updatedChunkIndex)
                                                 chunkAcknowledged.complete(Unit)
                                             }
@@ -1056,7 +1000,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                                     }
 
                                     chunkAcknowledged.await()
-                                    thumbnailChunkIndex++ // Move to the next chunk
+                                    thumbnailChunkIndex++
 
                                 } else {
                                     onMessageSentFailed("Thumbnail transfer failed: Socket is not connected")
@@ -1075,8 +1019,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
         })
 
-
-
         if (!onMessageSentCompletedDeferred.isCompleted) {
             onMessageSentCompletedDeferred.await()
         }
@@ -1084,7 +1026,6 @@ class VisualMediaUploadWorker @AssistedInject constructor(
         onMessageSentCompleted()
 
     }
-
 
     private fun updateNotification(progress: Int, message: String = "Uploading") {
 
@@ -1111,6 +1052,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
                 }
             }
         } catch (_: IllegalStateException) {
+
         }
     }
 
@@ -1123,9 +1065,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
         deleteCachedFilePath(messageId, cachedFilePath)
         deleteThumbCachePath(messageId, thumbCachePath)
-
     }
-
 
     private suspend fun deleteCachedFilePath(messageId: Long, cachedFilePath: String?) {
         cachedFilePath?.let {
@@ -1151,7 +1091,7 @@ class VisualMediaUploadWorker @AssistedInject constructor(
 
     }
 
-   suspend private fun finalizeSocket() {
+    private suspend fun finalizeSocket() {
         if (socketManager.isBackgroundSocket) {
             socketManager.destroySocket()
             if (App.isAppInForeground) {

@@ -52,7 +52,7 @@ android {
     buildTypes {
 
         debug {
-         /*   buildConfigField("String", "BASE_URL", "\"http://192.168.45.85:3000\"")
+  /*          buildConfigField("String", "BASE_URL", "\"http://192.168.45.85:3000\"")
             buildConfigField("String", "SOCKET_BASE_URL", "\"http://192.168.45.85:3080\"")*/
             buildConfigField("String", "BASE_URL", "\"https://api.lts360.com\"")
             buildConfigField("String", "SOCKET_BASE_URL", "\"https://chat.lts360.com\"")
