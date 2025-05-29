@@ -32,29 +32,21 @@ object ChatMessageHandlerWorkerHelper {
         application: Application,
         userId: Long,
         senderId: Long,
-        messageId: Long,
+        type: String,
         data: String) {
 
-        val timestamp = System.currentTimeMillis()
 
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
-
-        val context = application.applicationContext
-
-        val cacheFile = File(context.cacheDir, "${userId}_${senderId}_${messageId}_data.txt")
-        cacheFile.writeText(data)
-
-        val filePath = cacheFile.absolutePath
 
 
         val fetchProfileWork = OneTimeWorkRequestBuilder<FetchUserProfileWorker>()
             .setInputData(
                 Data.Builder()
                     .putLong("user_id", userId)
-                    .putString("data_path", filePath)
-                    .putLong("timestamp", timestamp)
+                    .putString("data", data)
+                    .putString("type", type)
                     .build())
             .setConstraints(constraints)
             .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)

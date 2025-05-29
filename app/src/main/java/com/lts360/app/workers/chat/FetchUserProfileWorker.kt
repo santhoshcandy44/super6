@@ -25,7 +25,6 @@ import com.lts360.app.database.models.chat.ChatMessageType
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.app.database.models.chat.Message
 import com.lts360.app.database.models.chat.MessageMediaMetadata
-import com.lts360.app.notifications.NotificationIdManager
 import com.lts360.app.workers.chat.download.downloadMediaAndCache
 import com.lts360.app.workers.chat.utils.awaitConnectToSocket
 import com.lts360.app.workers.chat.utils.cacheThumbnailToAppSpecificFolder
@@ -39,12 +38,13 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.socket.client.Ack
 import io.socket.client.Socket
-import kotlinx.coroutines.CompletableDeferred
+import io.socket.emitter.Emitter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -57,57 +57,31 @@ class FetchUserProfileWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val chatUserDao: ChatUserDao,
     private val messageDao: MessageDao,
-    private val messageMediaMetadataDao: MessageMediaMetaDataDao,
+    private val fileMetadataDao: MessageMediaMetaDataDao,
     val socketManager: SocketManager
-    ) : CoroutineWorker(context, workerParams) {
+) : CoroutineWorker(context, workerParams) {
 
 
-    private lateinit var socket: Socket // Use the appropriate type for your socket
+    private lateinit var socket: Socket
 
 
     override suspend fun doWork(): Result {
 
-
-
-
         val userId = inputData.getLong("user_id", -1)
-        val filePath = inputData.getString("data_path")
-        /*
-                val messageId = inputData.getLong("message_id", -1)
-        */
-        val timestamp = inputData.getLong("timestamp", -1)
+        val data = inputData.getString("data")
+        val type = inputData.getString("type")
 
-        if (filePath == null) {
-            Log.e(TAG, "Missing required input file")
-            return Result.failure()  // Return failure if required data is missing
+        if (userId == -1L || type == null || data == null) {
+            Log.e(TAG, "Missing required input data")
+            return Result.failure()
         }
 
 
-        val cacheFile = File(filePath)
-        val cachedData = try {
+        val fcmData = JSONObject(data)
+        val fcmSenderId = fcmData.getLong("sender_id")
+        val messageId = fcmData.getLong("message_id")
 
-            if (cacheFile.exists()) {
-                val dataFromFile = cacheFile.readText()  // Read the large data from the file
-                dataFromFile
-            } else {
-                Log.e(TAG, "Cache file not found at: $filePath")
-                return Result.failure()  // If file doesn't exist, return failure
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error reading data from file: ${e.message}")
-            return Result.failure()  // Return failure if there's an issue reading the file
-        }
-
-
-
-        val data = JSONObject(cachedData)
-        val senderId = data.getLong("sender")
-        val encryptedMessage = data.getString("message")
-        val messageId = data.getLong("message_id")
-        val replyId = data.getLong("reply_id")
-        val category = data.getString("category")
-
-        val queryString = "sender=$senderId&message_id=$messageId&recipient_id=$userId"
+        val queryString = "sender_id=$fcmSenderId&message_id=$messageId&recipient_id=$userId"
 
 
         return try {
@@ -117,14 +91,14 @@ class FetchUserProfileWorker @AssistedInject constructor(
             if (socket.connected()) {
 
                 try {
-                   val profile = withTimeout(300000) {
-                        suspendCancellableCoroutine<FeedUserProfileInfo>{ continuation ->
+                    val profile = withTimeout(300000) {
+                        suspendCancellableCoroutine<FeedUserProfileInfo> { continuation ->
                             socket.emit("chat:getChatUserProfileInfo", JSONObject().apply {
                                 put("user_id", userId)
-                                put("recipient_id", senderId)
+                                put("recipient_id", fcmSenderId)
                             }, Ack { args ->
 
-                                if(isStopped){
+                                if (isStopped) {
                                     return@Ack
                                 }
 
@@ -140,7 +114,8 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
                                         continuation.resume(profile, { _, _, _ -> })
                                     } else {
-                                        val errorMessage = args.getOrNull(1)?.toString() ?: "Unknown error"
+                                        val errorMessage =
+                                            args.getOrNull(1)?.toString() ?: "Unknown error"
                                         continuation.resumeWithException(Exception("Error: $errorMessage"))
                                     }
                                 } catch (e: Exception) {
@@ -148,7 +123,6 @@ class FetchUserProfileWorker @AssistedInject constructor(
                                 }
                             })
 
-                            // Handle cancellation
                             continuation.invokeOnCancellation {
                                 socket.off("chat:getChatUserProfileInfo")
                             }
@@ -159,50 +133,46 @@ class FetchUserProfileWorker @AssistedInject constructor(
                     var publicKeyRecipientId: Long = -1
                     var publicKey: String? = null
                     var keyVersion: Long = -1
+
                     if (socket.connected()) {
 
-                        val completeDeferred = CompletableDeferred<Unit>()
-
-                        socket.emit("chat:queryPublicKey", JSONObject().apply {
-                            put("user_id", userId)
-                            put("recipient_id", senderId)
-                        }, Ack { args ->
-                            // Handle the acknowledgment from the server
-                            if (args.isNotEmpty()) {
-                                //val message = args[0] as String
-                                val queryKeyResponse = args[1] as JSONObject
-
-                                publicKeyRecipientId = queryKeyResponse.getLong("recipient_id")
-                                publicKey = queryKeyResponse.getString("publicKey")
-                                keyVersion = queryKeyResponse.getLong("keyVersion")
-                                completeDeferred.complete(Unit)
-
-                            } else {
-                                completeDeferred.completeExceptionally(NotFoundException("Public key not found"))
-                            }
-                        })
 
                         try {
-                            withTimeout(100000) {
-                                if (!completeDeferred.isCompleted) {
-                                    completeDeferred.await()
+                            withTimeout(100_000) {
+                                suspendCancellableCoroutine<Unit> { cont ->
+                                    socket.emit("chat:queryPublicKey", JSONObject().apply {
+                                        put("user_id", userId)
+                                        put("recipient_id", fcmSenderId)
+                                    }, Ack { args ->
+                                        if (args.isNotEmpty()) {
+                                            try {
+                                                val queryKeyResponse = args[1] as JSONObject
+
+                                                publicKeyRecipientId =
+                                                    queryKeyResponse.getLong("recipient_id")
+                                                publicKey = queryKeyResponse.getString("publicKey")
+                                                keyVersion = queryKeyResponse.getLong("keyVersion")
+
+                                                if (cont.isActive) cont.resume(
+                                                    Unit,
+                                                    { cause, _, _ -> })
+                                            } catch (e: Exception) {
+                                                if (cont.isActive) cont.resumeWithException(e)
+                                            }
+                                        } else {
+                                            if (cont.isActive) cont.resumeWithException(
+                                                NotFoundException("Public key not found")
+                                            )
+                                        }
+                                    })
                                 }
                             }
 
-                            completeDeferred.getCompletionExceptionOrNull()?.let {
-                                throw it
-                            }
-
-
                         } catch (e: Exception) {
                             e.printStackTrace()
-
                             Log.e(TAG, "Acknowledgment not received within 100000 milliseconds")
                             return Result.retry()
-                            // Handle timeout logic here (e.g., retry, show an error message, etc.)
                         }
-
-
 
 
                         if (publicKeyRecipientId == -1L || publicKey == null || keyVersion == -1L) {
@@ -211,24 +181,30 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
 
                         val chatUserProfilePicUrl = profile.profilePicUrl96By96?.let {
-                            cacheProfilePic(applicationContext, profile.profilePicUrl96By96, "profile_pic_url_96x96_${senderId}.jpg")
+                            cacheProfilePic(
+                                applicationContext,
+                                profile.profilePicUrl96By96,
+                                "profile_pic_url_96x96_${fcmSenderId}.jpg"
+                            )
                         }
 
-                        val chatUser = chatUserDao.getChatUserByRecipientId(senderId) ?: run {
+                        val chatUser = chatUserDao.getChatUserByRecipientId(fcmSenderId) ?: run {
 
-                            // Insert into the database
                             chatUserDao.insertChatUser(
                                 ChatUser(
                                     userId = userId,
-                                    recipientId = senderId,
-                                    timestamp = System.currentTimeMillis(),
-                                    userProfile = profile.copy(isOnline = false, profilePicUrl96By96 = chatUserProfilePicUrl),
+                                    recipientId = fcmSenderId,
+                                    userProfile = profile.copy(
+                                        isOnline = false,
+                                        profilePicUrl96By96 = chatUserProfilePicUrl
+                                    ),
                                     publicKeyBase64 = publicKey,
-                                    keyVersion = keyVersion
+                                    keyVersion = keyVersion,
+                                    timestamp = System.currentTimeMillis()
                                 )
                             )
 
-                            chatUserDao.getChatUserByRecipientId(senderId)
+                            chatUserDao.getChatUserByRecipientId(fcmSenderId)
                         }
 
                         if (chatUser == null) {
@@ -238,380 +214,437 @@ class FetchUserProfileWorker @AssistedInject constructor(
                         val context = applicationContext
 
 
+                        val messagesJsonArray = suspendCancellableCoroutine { cont ->
+
+                            socket.once("chat:offlineMessages", Emitter.Listener { args ->
+                                if (args.isNotEmpty()) {
+                                    try {
+                                        val data = args[0] as JSONObject
+                                        val messagesJsonArray =
+                                            data.getJSONArray("offline_messages")
+
+                                        cont.resume(messagesJsonArray, { cause, _, _ -> })
+                                    } catch (e: Exception) {
+                                        cont.resumeWithException(e)
+                                    }
+                                } else {
+                                    cont.resume(JSONArray(), { cause, _, _ -> })
+                                }
+                            })
+
+                            socket.emit("chat:requestOfflineMessages", JSONObject().apply {
+                                put("userId", userId)
+                                put("senderId", fcmSenderId)
+                            })
+                        }
+
+                        val messagesList = List(messagesJsonArray.length()) { i ->
+                            messagesJsonArray.getJSONObject(i)
+                        }
+
+                        messagesList.forEach { messageData ->
 
 
-                        if (category.contains("image") || category.contains("video") ||
-                            category.contains("gif")) {
+                            val senderId = messageData.getLong("sender_id")
+                            val messageId = messageData.getLong("message_id")
 
-                            val fileMetadata = JSONObject(data.getString("file_metadata"))
-                            val originalFileName = fileMetadata.getString("original_file_name")
-                            val downloadUrl = fileMetadata.getString("download_url")
-                            val thumbDownloadUrl = fileMetadata.getString("thumb_download_url")
-                            val fileSize = fileMetadata.getLong("file_size")
-                            val contentType = fileMetadata.getString("content_type")
-                            val extension = fileMetadata.getString("extension")
-                            val width = fileMetadata.getInt("width")
-                            val height = fileMetadata.getInt("height")
-                            val totalDuration = fileMetadata.getLong("total_duration")
-
-                            val cachedFile = downloadMediaAndCache(
-                                context,
-                                thumbDownloadUrl,
-                                originalFileName,
-                                extension
-                            )
-
-
-
-                            if(socket.connected()){
-
+                            if (socket.connected()) {
 
                                 try {
+                                    withTimeout(20_000L) {
+                                        suspendCancellableCoroutine<Unit> { cont ->
 
-                                    var mediaFile : File? =null
 
-                                    withTimeout(5000) { // Set timeout to 5 seconds
-                                        suspendCancellableCoroutine<Unit> { continuation ->
-                                            socket.emit("chat:mediaStatus", JSONObject().apply {
-                                                put("status", "MEDIA_DOWNLOADED")
-                                                put("download_url", thumbDownloadUrl)
-                                                put("sender", senderId)
-                                                put("recipient_id", userId)
-                                                put("message_id", messageId) // Add the inserted message ID to JSON
-                                            }, Ack {
-
-                                                // Handle decryption after download
-                                                mediaFile = cacheThumbnailToAppSpecificFolder(
-                                                    context,
-                                                    originalFileName,
-                                                    if (contentType.startsWith("video/")) ".jpg" else extension,
-                                                    extension
-                                                )
-
-                                                continuation.resume(Unit) { cause, value, context ->
-                                                    // Acknowledgment received, log it
+                                            socket.emit(
+                                                "chat:offlineMessageAcknowledgment",
+                                                JSONObject().apply {
+                                                    put("status", "delivered")
+                                                    put("sender_id", senderId)
+                                                    put("recipient_id", userId)
+                                                    put("message_id", messageId)
+                                                },
+                                                Ack {
+                                                    Log.e(TAG, "Acknowledgment received by client")
+                                                    cont.resume(Unit, { cause, _, _ -> })
                                                 }
-                                            })
+                                            )
                                         }
                                     }
-
-
-                                    mediaFile?.let {
-
-
-                                        when (val decryptionFileStatus = decryptFile(cachedFile, it)) {
-                                            is DecryptionFileStatus.DecryptionFailed -> {
-                                                cachedFile.delete()
-                                                it.delete()
-                                                messageDao.insertMessageAndMetadata(
-                                                    Message(
-                                                        chatId = chatUser.chatId,
-                                                        senderId = senderId,
-                                                        recipientId = userId,
-                                                        content = encryptedMessage,
-                                                        timestamp = System.currentTimeMillis(),
-                                                        senderMessageId = messageId,
-                                                        replyId = replyId,
-                                                        status = ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED,
-                                                        type = if (contentType.startsWith("image/")) {
-                                                            if(extension==".gif"){
-                                                                ChatMessageType.GIF
-                                                            }else{
-                                                                ChatMessageType.IMAGE
-                                                            }
-                                                        } else {
-                                                            ChatMessageType.VIDEO
-                                                        },
-                                                    ),
-                                                    messageMediaMetadataDao,
-                                                    MessageMediaMetadata(
-                                                        messageId = -1,
-                                                        fileDownloadUrl = downloadUrl,
-                                                        thumbData = null,
-                                                        fileThumbPath = null,
-                                                        fileSize = fileSize,
-                                                        fileMimeType = contentType,
-                                                        fileExtension = extension,
-                                                        originalFileName = originalFileName,
-                                                        width = width,
-                                                        height = height,
-                                                        totalDuration = totalDuration
-                                                    )
-                                                )
-
-                                            }
-
-
-                                            is DecryptionFileStatus.UnknownError -> {
-
-                                                cachedFile.delete()
-                                                it.delete()
-
-                                                messageDao.insertMessageAndMetadata(
-                                                    Message(
-                                                        chatId = chatUser.chatId,
-                                                        senderId = senderId,
-                                                        recipientId = userId,
-                                                        content = encryptedMessage,
-                                                        timestamp = System.currentTimeMillis(),
-                                                        senderMessageId = messageId,
-                                                        replyId = replyId,
-                                                        status = ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN,
-                                                        type = if (contentType.startsWith("image/")) {
-                                                            if(extension==".gif"){
-                                                                ChatMessageType.GIF
-                                                            }else{
-                                                                ChatMessageType.IMAGE
-                                                            }
-                                                        } else {
-                                                            ChatMessageType.VIDEO
-                                                        }
-                                                    ),
-                                                    messageMediaMetadataDao,
-                                                    MessageMediaMetadata(
-                                                        messageId = -1,
-                                                        fileDownloadUrl = downloadUrl,
-                                                        fileThumbPath = null,
-                                                        thumbData = null,
-                                                        fileSize = fileSize,
-                                                        fileMimeType = contentType,
-                                                        fileExtension = extension,
-                                                        originalFileName = originalFileName,
-                                                        width = width,
-                                                        height = height,
-                                                        totalDuration = totalDuration
-                                                    )
-                                                )
-
-                                            }
-
-
-                                            is DecryptionFileStatus.Success -> {
-
-                                                cachedFile.delete()
-
-                                                val outputFile = decryptionFileStatus.decryptedFile
-
-                                                messageDao.insertMessageAndMetadata(
-                                                    Message(
-                                                        chatId = chatUser.chatId,
-                                                        senderId = senderId,
-                                                        recipientId = userId,
-                                                        content = encryptedMessage,
-                                                        timestamp = System.currentTimeMillis(),
-                                                        senderMessageId = messageId,
-                                                        replyId = replyId,
-                                                        status = ChatMessageStatus.SENDING,
-                                                        type = if (contentType.startsWith("image/")) {
-                                                            if(extension==".gif"){
-                                                                ChatMessageType.GIF
-                                                            }else{
-                                                                ChatMessageType.IMAGE
-                                                            }
-                                                        } else {
-                                                            ChatMessageType.VIDEO
-                                                        }
-                                                    ),
-                                                    messageMediaMetadataDao,
-                                                    MessageMediaMetadata(
-                                                        messageId = -1,
-                                                        fileSize = fileSize,
-                                                        fileMimeType = contentType,
-                                                        fileExtension = extension,
-                                                        originalFileName = originalFileName,
-                                                        width = width,
-                                                        height = height,
-                                                        totalDuration = totalDuration,
-                                                        fileDownloadUrl = downloadUrl,
-                                                        fileThumbPath = outputFile.absolutePath,
-                                                        thumbData = outputFile.absolutePath,
-                                                    )
-                                                )
-
-                                            }
-                                        }
-
-                                    } ?: also {
-                                        return Result.failure()
-                                    }
-
-
-
-                                } catch (t: TimeoutCancellationException) {
-
-                                    return Result.retry()
-                                } catch (e: Exception) {
-                                    // Handle any unexpected errors
+                                } catch (_: TimeoutCancellationException) {
+                                    Log.e(TAG, "Acknowledgment not received in 20000 ms")
                                     return Result.failure()
                                 }
-
-                            }else{
+                            } else {
                                 throw SocketConnectionException("Socket connect error")
                             }
 
+                            val encryptedMessage = messageData.getString("message_body")
+                            val replyId = messageData.getLong("reply_id")
+                            val category = messageData.getString("category")
 
-
-
-                        }
-                        else if (category.contains("audio")) {
-
-                            val fileMetadata = JSONObject(data.getString("file_metadata"))
-                            val originalFileName = fileMetadata.getString("original_file_name")
-                            val downloadUrl = fileMetadata.getString("download_url")
-                            val fileSize = fileMetadata.getLong("file_size")
-                            val contentType = fileMetadata.getString("content_type")
-                            val extension = fileMetadata.getString("extension")
-                            val totalDuration = fileMetadata.getLong("total_duration")
-
-
-                            messageDao.insertMessageAndMetadata(
-                                Message(
-                                    chatId = chatUser.chatId,
-                                    senderId = senderId,
-                                    recipientId = userId,
-                                    content = encryptedMessage,
-                                    timestamp = timestamp,
-                                    senderMessageId = messageId,
-                                    replyId = replyId,
-                                    status = ChatMessageStatus.SENDING,
-                                    type = ChatMessageType.AUDIO
-                                ),
-                                messageMediaMetadataDao,
-                                MessageMediaMetadata(
-                                    messageId = -1,
-                                    fileSize = fileSize,
-                                    fileMimeType = contentType,
-                                    fileExtension = extension,
-                                    originalFileName = originalFileName,
-                                    totalDuration = totalDuration,
-                                    fileDownloadUrl = downloadUrl
+                            if (category.contains("image") || category.contains("video") || category.contains(
+                                    "gif"
                                 )
-                            )
+                            ) {
 
+                                val fileMetadata = messageData.getJSONObject("file_metadata")
+                                val originalFileName = fileMetadata.getString("original_file_name")
+                                val downloadUrl = fileMetadata.getString("download_url")
+                                val thumbDownloadUrl = fileMetadata.getString("thumb_download_url")
+                                val fileSize = fileMetadata.getLong("file_size")
+                                val contentType = fileMetadata.getString("content_type")
+                                val extension = fileMetadata.getString("extension")
+                                val width = fileMetadata.getInt("width")
+                                val height = fileMetadata.getInt("height")
+                                val totalDuration = fileMetadata.getLong("total_duration")
 
-                        }
-                        else if (category.contains("file")) {
-
-                            val fileMetadata = JSONObject(data.getString("file_metadata"))
-                            val originalFileName = fileMetadata.getString("original_file_name")
-                            val downloadUrl = fileMetadata.getString("download_url")
-                            val fileSize = fileMetadata.getLong("file_size")
-                            val contentType = fileMetadata.getString("content_type")
-                            val extension = fileMetadata.getString("extension")
-
-                            messageDao.insertMessageAndMetadata(
-                                Message(
-                                    chatId = chatUser.chatId,
-                                    senderId = senderId,
-                                    recipientId = userId,
-                                    content = encryptedMessage,
-                                    timestamp = timestamp,
-                                    senderMessageId = messageId,
-                                    replyId = replyId,
-                                    status = ChatMessageStatus.SENDING,
-                                    type = ChatMessageType.FILE,
-
-                                    ),
-                                messageMediaMetadataDao,
-
-                                MessageMediaMetadata(
-                                    messageId = -1,
-                                    fileDownloadUrl = downloadUrl,
-                                    fileSize = fileSize,
-                                    fileMimeType = contentType,
-                                    fileExtension = extension,
-                                    originalFileName = originalFileName,
-                                )
-                            )
-                        }
-                        else if (category.contains("others")) {
-
-                            val fileMetadata = data.getJSONObject("file_metadata")
-                            val originalFileName = fileMetadata.getString("original_file_name")
-                            val downloadUrl = fileMetadata.getString("download_url")
-                            val fileSize = fileMetadata.getLong("file_size")
-                            val contentType = fileMetadata.getString("content_type")
-                            val extension = fileMetadata.getString("extension")
-
-                            messageDao.insertMessageAndMetadata(
-                                Message(
-                                    chatId = chatUser.chatId,
-                                    senderId = senderId,
-                                    recipientId = userId,
-                                    content = encryptedMessage,
-                                    timestamp = timestamp,
-                                    senderMessageId = messageId,
-                                    replyId = replyId,
-                                    status = ChatMessageStatus.SENDING,
-                                    type = ChatMessageType.FILE,
-
-                                    ),
-                                messageMediaMetadataDao,
-                                MessageMediaMetadata(
-                                    messageId = -1,
-                                    fileSize = fileSize,
-                                    fileDownloadUrl = downloadUrl,
-                                    fileMimeType = contentType,
-                                    fileExtension = extension,
-                                    originalFileName = originalFileName,
-                                )
-                            )
-
-
-                        }
-                        else {
-                            when (val decryptionStatus = decryptMessage(encryptedMessage)) {
-                                is DecryptionStatus.DecryptionFailed -> {
-                                    messageDao.insertMessage(
-                                        Message(
-                                            chatId = chatUser.chatId,
-                                            senderId = senderId,
-                                            recipientId = userId,
-                                            content = "",
-                                            timestamp = timestamp,
-                                            senderMessageId = messageId,
-                                            replyId = replyId,
-                                            status = ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED
-                                        )
+                                val cachedFile =
+                                    downloadMediaAndCache(
+                                        context,
+                                        thumbDownloadUrl,
+                                        originalFileName,
+                                        extension
                                     )
+
+                                if (socket.connected()) {
+
+
+                                    try {
+
+                                        var mediaFile: File? = null
+
+                                        withTimeout(5000) { // Set timeout to 5 seconds
+                                            suspendCancellableCoroutine<Unit> { continuation ->
+                                                socket.emit("chat:mediaStatus", JSONObject().apply {
+                                                    put("status", "MEDIA_DOWNLOADED")
+                                                    put("download_url", thumbDownloadUrl)
+                                                    put("sender", senderId)
+                                                    put("recipient_id", userId)
+                                                    put(
+                                                        "message_id",
+                                                        messageId
+                                                    ) // Add the inserted message ID to JSON
+                                                }, Ack {
+
+                                                    // Handle decryption after download
+                                                    mediaFile = cacheThumbnailToAppSpecificFolder(
+                                                        context,
+                                                        originalFileName,
+                                                        if (contentType.startsWith("video/")) ".jpg" else extension,
+                                                        extension
+                                                    )
+
+                                                    continuation.resume(Unit) { cause, value, context ->
+                                                        // Acknowledgment received, log it
+                                                    }
+                                                })
+                                            }
+                                        }
+
+
+                                        mediaFile?.let {
+                                            when (val decryptionFileStatus =
+                                                decryptFile(cachedFile, it)) {
+
+                                                is DecryptionFileStatus.DecryptionFailed -> {
+                                                    cachedFile.delete()
+                                                    it.delete()
+
+                                                    messageDao.insertMessageAndMetadata(
+                                                        Message(
+                                                            chatId = chatUser.chatId,
+                                                            senderId = senderId,
+                                                            recipientId = userId,
+                                                            content = encryptedMessage,
+                                                            timestamp = System.currentTimeMillis(),
+                                                            senderMessageId = messageId,
+                                                            replyId = replyId,
+                                                            status = ChatMessageStatus.SENDING,
+                                                            type = if (contentType.startsWith("image/")) {
+                                                                ChatMessageType.IMAGE
+                                                            } else {
+                                                                ChatMessageType.VIDEO
+                                                            }
+                                                        ),
+                                                        fileMetadataDao,
+                                                        MessageMediaMetadata(
+                                                            messageId = -1,
+                                                            fileSize = fileSize,
+                                                            fileMimeType = contentType,
+                                                            fileExtension = extension,
+                                                            originalFileName = originalFileName,
+                                                            width = width,
+                                                            height = height,
+                                                            totalDuration = totalDuration,
+                                                            fileDownloadUrl = downloadUrl,
+                                                            fileThumbPath = null,
+                                                            thumbData = null,
+                                                        )
+                                                    )
+                                                }
+
+                                                is DecryptionFileStatus.UnknownError -> {
+                                                    cachedFile.delete()
+                                                    it.delete()
+
+                                                    messageDao.insertMessageAndMetadata(
+                                                        Message(
+                                                            chatId = chatUser.chatId,
+                                                            senderId = senderId,
+                                                            recipientId = userId,
+                                                            content = encryptedMessage,
+                                                            timestamp = System.currentTimeMillis(),
+                                                            senderMessageId = messageId,
+                                                            replyId = replyId,
+                                                            status = ChatMessageStatus.SENDING,
+                                                            type = if (contentType.startsWith("image/")) {
+                                                                ChatMessageType.IMAGE
+                                                            } else {
+                                                                ChatMessageType.VIDEO
+                                                            },
+
+                                                            ),
+                                                        fileMetadataDao,
+                                                        MessageMediaMetadata(
+                                                            messageId = -1,
+                                                            fileSize = fileSize,
+                                                            fileMimeType = contentType,
+                                                            fileExtension = extension,
+                                                            originalFileName = originalFileName,
+                                                            width = width,
+                                                            height = height,
+                                                            totalDuration = totalDuration,
+                                                            fileDownloadUrl = downloadUrl,
+                                                            fileThumbPath = null,
+                                                            thumbData = null,
+                                                        )
+                                                    )
+                                                }
+
+                                                is DecryptionFileStatus.Success -> {
+
+                                                    cachedFile.delete()
+
+                                                    val outputFile =
+                                                        decryptionFileStatus.decryptedFile
+
+                                                    messageDao.insertMessageAndMetadata(
+                                                        Message(
+                                                            chatId = chatUser.chatId,
+                                                            senderId = senderId,
+                                                            recipientId = userId,
+                                                            content = encryptedMessage,
+                                                            timestamp = System.currentTimeMillis(),
+                                                            senderMessageId = messageId,
+                                                            replyId = replyId,
+                                                            status = ChatMessageStatus.SENDING,
+                                                            type = if (contentType.startsWith("image/")) {
+                                                                ChatMessageType.IMAGE
+                                                            } else {
+                                                                ChatMessageType.VIDEO
+                                                            }
+                                                        ),
+                                                        fileMetadataDao,
+                                                        MessageMediaMetadata(
+                                                            messageId = -1,
+                                                            fileSize = fileSize,
+                                                            fileMimeType = contentType,
+                                                            fileExtension = extension,
+                                                            originalFileName = originalFileName,
+                                                            width = width,
+                                                            height = height,
+                                                            totalDuration = totalDuration,
+                                                            fileDownloadUrl = downloadUrl,
+                                                            fileThumbPath = outputFile.absolutePath,
+                                                            thumbData = outputFile.absolutePath,
+                                                        )
+                                                    )
+
+                                                }
+                                            }
+                                            Result.failure()
+                                        } ?: also {
+                                            return Result.failure()
+                                        }
+
+
+                                    } catch (_: TimeoutCancellationException) {
+
+                                        return Result.retry()
+                                    } catch (_: Exception) {
+                                        return Result.failure()
+                                    }
+
+                                } else {
+                                    throw SocketConnectionException("Socket connect error")
                                 }
 
-                                is DecryptionStatus.UnknownError -> {
-                                    messageDao.insertMessage(
-                                        Message(
-                                            chatId = chatUser.chatId,
-                                            senderId = senderId,
-                                            recipientId = userId,
-                                            content = "",
-                                            timestamp = timestamp,
-                                            senderMessageId = messageId,
-                                            replyId = replyId,
-                                            status = ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN
-                                        )
-                                    )
-                                }
 
-                                is DecryptionStatus.Success -> {
-                                    messageDao.insertMessage(
-                                        Message(
-                                            chatId = chatUser.chatId,
-                                            senderId = senderId,
-                                            recipientId = userId,
-                                            content = decryptionStatus.decryptedMessage,
-                                            timestamp = timestamp,
-                                            senderMessageId = messageId,
-                                            replyId = replyId,
-                                            status = ChatMessageStatus.SENDING
-                                        )
+                            } else if (category.contains("audio")) {
+
+                                val fileMetadata = messageData.getJSONObject("file_meta_data")
+                                val originalFileName = fileMetadata.getString("original_file_name")
+                                val downloadUrl = fileMetadata.getString("download_url")
+                                val fileSize = fileMetadata.getLong("file_size")
+                                val contentType = fileMetadata.getString("content_type")
+                                val extension = fileMetadata.getString("extension")
+                                val totalDuration = fileMetadata.getLong("total_duration")
+
+
+                                messageDao.insertMessageAndMetadata(
+                                    Message(
+                                        chatId = chatUser.chatId,
+                                        senderId = senderId,
+                                        recipientId = userId,
+                                        content = encryptedMessage,
+                                        timestamp = System.currentTimeMillis(),
+                                        senderMessageId = messageId,
+                                        replyId = replyId,
+                                        status = ChatMessageStatus.SENDING,
+                                        type = ChatMessageType.AUDIO,
+                                    ),
+                                    fileMetadataDao,
+                                    MessageMediaMetadata(
+                                        messageId = -1,
+                                        fileSize = fileSize,
+                                        fileMimeType = contentType,
+                                        fileExtension = extension,
+                                        originalFileName = originalFileName,
+                                        totalDuration = totalDuration,
+                                        fileDownloadUrl = downloadUrl,
                                     )
+                                )
+
+
+                            } else if (category.contains("file")) {
+
+
+                                val fileMetadata = messageData.getJSONObject("file_meta_data")
+                                val originalFileName = fileMetadata.getString("original_file_name")
+                                val downloadUrl = fileMetadata.getString("download_url")
+                                val fileSize = fileMetadata.getLong("file_size")
+                                val contentType = fileMetadata.getString("content_type")
+                                val extension = fileMetadata.getString("extension")
+
+                                messageDao.insertMessageAndMetadata(
+                                    Message(
+                                        chatId = chatUser.chatId,
+                                        senderId = senderId,
+                                        recipientId = userId,
+                                        content = encryptedMessage,
+                                        timestamp = System.currentTimeMillis(),
+                                        senderMessageId = messageId,
+                                        replyId = replyId,
+                                        status = ChatMessageStatus.SENDING,
+                                        type = ChatMessageType.FILE,
+                                    ),
+                                    fileMetadataDao,
+                                    MessageMediaMetadata(
+                                        messageId = -1,
+                                        fileSize = fileSize,
+                                        fileMimeType = contentType,
+                                        fileExtension = extension,
+                                        originalFileName = originalFileName,
+                                        fileDownloadUrl = downloadUrl
+                                    )
+                                )
+
+
+                            } else if (category.contains("others")) {
+
+                                val fileMetadata = messageData.getJSONObject("file_meta_data")
+                                val originalFileName = fileMetadata.getString("original_file_name")
+                                val downloadUrl = fileMetadata.getString("download_url")
+                                val fileSize = fileMetadata.getLong("file_size")
+                                val contentType = fileMetadata.getString("content_type")
+                                val extension = fileMetadata.getString("extension")
+
+                                messageDao.insertMessageAndMetadata(
+                                    Message(
+                                        chatId = chatUser.chatId,
+                                        senderId = senderId,
+                                        recipientId = userId,
+                                        content = encryptedMessage,
+                                        timestamp = System.currentTimeMillis(),
+                                        senderMessageId = messageId,
+                                        replyId = replyId,
+                                        status = ChatMessageStatus.SENDING,
+                                        type = ChatMessageType.FILE
+                                    ),
+                                    fileMetadataDao,
+                                    MessageMediaMetadata(
+                                        messageId = -1,
+                                        fileSize = fileSize,
+                                        fileMimeType = contentType,
+                                        fileExtension = extension,
+                                        originalFileName = originalFileName,
+                                        fileDownloadUrl = downloadUrl
+                                    )
+                                )
+
+                            } else {
+                                when (val decryptionStatus = decryptMessage(encryptedMessage)) {
+
+                                    is DecryptionStatus.DecryptionFailed -> {
+                                        withContext(Dispatchers.IO) {
+                                            messageDao.insertMessage(
+                                                Message(
+                                                    chatId = chatUser.chatId,
+                                                    senderId = senderId,
+                                                    recipientId = userId,
+                                                    content = "",
+                                                    timestamp = System.currentTimeMillis(),
+                                                    senderMessageId = messageId,
+                                                    replyId = replyId,
+                                                    status = ChatMessageStatus.FAILED_TO_DISPLAY_REASON_DECRYPTION_FAILED
+                                                )
+                                            )
+                                        }
+                                    }
+
+                                    is DecryptionStatus.UnknownError -> {
+                                        withContext(Dispatchers.IO) {
+                                            messageDao.insertMessage(
+                                                Message(
+                                                    chatId = chatUser.chatId,
+                                                    senderId = senderId,
+                                                    recipientId = userId,
+                                                    content = "",
+                                                    timestamp = System.currentTimeMillis(),
+                                                    senderMessageId = messageId,
+                                                    replyId = replyId,
+                                                    status = ChatMessageStatus.FAILED_TO_DISPLAY_REASON_UNKNOWN
+                                                )
+                                            )
+                                        }
+                                    }
+
+                                    is DecryptionStatus.Success -> {
+                                        withContext(Dispatchers.IO) {
+                                            messageDao.insertMessage(
+                                                Message(
+                                                    chatId = chatUser.chatId,
+                                                    senderId = senderId,
+                                                    recipientId = userId,
+                                                    content = decryptionStatus.decryptedMessage,
+                                                    timestamp = System.currentTimeMillis(),
+                                                    senderMessageId = messageId,
+                                                    replyId = replyId,
+                                                    status = ChatMessageStatus.SENDING
+                                                )
+                                            )
+                                        }
+                                    }
                                 }
                             }
-                        }
 
+                        }
 
                         val lastUnreadMessages = withContext(Dispatchers.IO) {
-                            messageDao.getLastSixUnreadMessage(senderId, chatUser.chatId).reversed()
+                            messageDao.getLastSixUnreadMessage(fcmSenderId, chatUser.chatId)
+                                .reversed()
                         }
+
                         val unreadMessageCount = withContext(Dispatchers.IO) {
                             messageDao.countAllUnreadMessages()
                         }
@@ -622,55 +655,13 @@ class FetchUserProfileWorker @AssistedInject constructor(
                         if (!App.isAppInForeground) {
                             buildAndShowChatNotification(
                                 context,
-                                senderId,
+                                fcmSenderId,
                                 "${chatUserProfile.firstName} ${chatUserProfile.lastName ?: ""}",
                                 lastUnreadMessages,
                                 chatUserProfile.profilePicUrl,
                                 unreadMessageCount
                             )
                         }
-
-
-
-                        if (socket.connected()) {
-
-                            val timeoutDuration = 20000L // 30 seconds timeout in milliseconds
-
-                            // Create the acknowledgment promise
-                            val acknowledgmentReceived = CompletableDeferred<Unit>()
-
-                            // Emit the message
-                            socket.emit("chat:acknowledgment", JSONObject().apply {
-                                put("status", "delivered")
-                                put("sender", senderId)
-                                put("recipient_id", userId)
-                                put("message_id", messageId) // Add the inserted message ID to JSON
-                            }, Ack {
-                                // This callback will be triggered when the acknowledgment is received
-                                acknowledgmentReceived.complete(Unit)
-                                Log.e(TAG, "Text message acknowledgment received by client ${messageId}")
-                            })
-
-                            // Wait for the acknowledgment or timeout
-                          try {
-                                withTimeout(timeoutDuration) {
-                                    // Await the acknowledgment response
-                                    acknowledgmentReceived.await()
-                                }
-                            } catch (e: TimeoutCancellationException) {
-                              e.printStackTrace()
-
-                              Log.e(TAG, "Acknowledgment not received within $timeoutDuration milliseconds")
-                                return Result.retry()
-                                // Handle timeout logic here (e.g., retry, show an error message, etc.)
-                            }
-
-                        } else {
-                            throw SocketConnectionException("Socket connect error")
-                        }
-
-
-                        cleanCacheFile(cacheFile)
 
                         Result.success()
 
@@ -679,25 +670,22 @@ class FetchUserProfileWorker @AssistedInject constructor(
                         throw SocketConnectionException("Socket is not connected")
                     }
 
-                }catch (e:Exception){
+                } catch (e: Exception) {
                     e.printStackTrace()
                     Result.retry()
                 }
 
-            }else{
-                Log.e(TAG,"Socket is not connected")
+            } else {
+                Log.e(TAG, "Socket is not connected")
                 throw SocketConnectionException("Socket is not connected")
             }
 
 
-        } catch (e: SocketConnectionException) {
-            // If the socket connection error occurs, retry the work
+        } catch (_: SocketConnectionException) {
             Log.e(TAG, "Socket connection failed. Retrying...")
             finalizeSocket()
-            Result.retry() // Request retry in case of socket connection failure
+            Result.retry()
         } catch (e: Exception) {
-
-            cleanCacheFile(cacheFile)
             finalizeSocket()
             e.printStackTrace()
             Log.e(TAG, "Error processing message: ${e.message}")
@@ -707,7 +695,11 @@ class FetchUserProfileWorker @AssistedInject constructor(
     }
 
 
-    private suspend fun cacheProfilePic(context: Context, imageUrl: String, fileName: String): String? {
+    private suspend fun cacheProfilePic(
+        context: Context,
+        imageUrl: String,
+        fileName: String
+    ): String? {
         val imageLoader = ImageLoader(context)
         val request = ImageRequest.Builder(context)
             .data(imageUrl)
@@ -735,7 +727,7 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
                 return Uri.fromFile(file).toString()
 
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 return null
             }
         } else {
@@ -744,18 +736,12 @@ class FetchUserProfileWorker @AssistedInject constructor(
         }
     }
 
-   suspend private fun finalizeSocket() {
+    private suspend fun finalizeSocket() {
         if (socketManager.isBackgroundSocket) {
             socketManager.destroySocket()
             if (App.isAppInForeground) {
                 socketManager.initSocket()
             }
-        }
-    }
-    private fun cleanCacheFile(cacheFile: File){
-
-        if(cacheFile.exists()){
-            cacheFile.delete()
         }
     }
 

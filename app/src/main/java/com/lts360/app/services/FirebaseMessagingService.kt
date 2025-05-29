@@ -21,7 +21,6 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         val totalParts = remoteMessageData["totalParts"]?.toInt() ?: return
         val chunkData = remoteMessageData["data"] ?: return
 
-
         if (partNumber == 1 && totalParts == 1) {
             fcmMessageHandlerRepository.processMessage(applicationContext, userId, chunkData)
         } else {

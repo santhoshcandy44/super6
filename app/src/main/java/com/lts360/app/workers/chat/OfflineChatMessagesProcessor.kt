@@ -21,7 +21,6 @@ import com.lts360.app.workers.chat.download.downloadMediaAndCache
 import com.lts360.app.workers.chat.utils.awaitConnectToSocket
 import com.lts360.app.workers.chat.utils.cacheThumbnailToAppSpecificFolder
 import com.lts360.app.workers.helpers.ChatMessageHandlerWorkerHelper
-import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
 import com.lts360.compose.ui.auth.repos.DecryptionStatus
 import com.lts360.compose.ui.auth.repos.decryptFile
@@ -56,7 +55,6 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
     private lateinit var socket: Socket
 
     companion object {
-
         private const val TAG = "SUPER6_APP_OFFLINE_MESSAGES_PROCESSOR"
     }
 
@@ -104,17 +102,15 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
         userId: Long,
     ): Result {
         return when {
-            data != null && type == "new_chat_message" -> handleChatMessage(data, userId)
+            data != null && type == "new_chat_message" -> handleChatMessage(type, data, userId)
             else -> Result.failure()
         }
     }
 
-    private suspend fun handleChatMessage(data: String, userId: Long): Result {
+    private suspend fun handleChatMessage(type:String, data: String, userId: Long): Result {
 
         val fcmPayloadData = JSONObject(data)
-        errorLogger(fcmPayloadData.toString())
         val fcmSenderId = fcmPayloadData.getLong("sender_id")
-        val fcmMessageId = fcmPayloadData.getLong("message_id")
 
         val chatUser = chatUserDao.getChatUserByRecipientId(fcmSenderId)
 
@@ -130,13 +126,11 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                             val data = args[0] as JSONObject
                             val messagesJsonArray = data.getJSONArray("offline_messages")
 
-                            cont.resume(messagesJsonArray, { cause, _, _ -> })
+                            cont.resume(messagesJsonArray) { cause, _, _ -> }
                         } catch (e: Exception) {
                             cont.resumeWithException(e)
                         }
-                    } else {
-                        cont.resume(JSONArray(), { cause, _, _ -> })
-                    }
+                    } else cont.resume(JSONArray()) { cause, _, _ -> }
                 })
 
                 socket.emit("chat:requestOfflineMessages", JSONObject().apply {
@@ -148,7 +142,6 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
             val messagesList = List(messagesJsonArray.length()) { i ->
                 messagesJsonArray.getJSONObject(i)
             }
-
 
             messagesList.forEach { messageData ->
 
@@ -172,7 +165,7 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                                     },
                                     Ack {
                                         Log.e(TAG, "Acknowledgment received by client")
-                                        cont.resume(Unit, { cause, _, _ -> })
+                                        cont.resume(Unit) { cause, _, _ -> }
                                     }
                                 )
                             }
@@ -370,11 +363,10 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                             }
 
 
-                        } catch (t: TimeoutCancellationException) {
+                        } catch (_: TimeoutCancellationException) {
 
                             return Result.retry()
-                        } catch (e: Exception) {
-                            // Handle any unexpected errors
+                        } catch (_: Exception) {
                             return Result.failure()
                         }
 
@@ -523,7 +515,6 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                         }
 
                         is DecryptionStatus.Success -> {
-                            errorLogger(decryptionStatus.decryptedMessage)
                             withContext(Dispatchers.IO) {
                                 messageDao.insertMessage(
                                     Message(
@@ -573,7 +564,7 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
                 context.applicationContext as App,
                 userId,
                 fcmSenderId,
-                fcmMessageId,
+                type,
                 data
             )
         }

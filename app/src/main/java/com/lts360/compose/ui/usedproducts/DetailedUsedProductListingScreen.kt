@@ -1,6 +1,7 @@
 package com.lts360.compose.ui.usedproducts
 
 import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -84,6 +85,7 @@ import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.utils.ExpandableText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 @Composable
 fun DetailedUsedProductListingScreen(
@@ -243,9 +245,7 @@ fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
     viewModel: SecondsOwnerProfileViewModel
-
 ) {
-
 
     val userId = viewModel.userId
     val signInMethod = viewModel.signInMethod
@@ -253,15 +253,12 @@ fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
 
     val selectedItem by viewModel.selectedItem.collectAsState()
 
-
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) }
-
 
     val item = selectedItem
 
     if (item !is UsedProductListing) return
-
 
     DetailedUsedProductListingContent(
         userId,
@@ -313,14 +310,11 @@ private fun DetailedUsedProductListingContent(
 
     val coroutineScope = rememberCoroutineScope()
 
-
-
     BackHandler(bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
         coroutineScope.launch {
             bottomSheetScaffoldState.bottomSheetState.hide()
         }
     }
-
 
     BottomSheetScaffold(
         sheetDragHandle = null,
@@ -411,6 +405,8 @@ private fun DetailedUsedProductListingInfo(
     chatButtonClicked: () -> Unit
 ) {
 
+    val context = LocalContext.current
+
     Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
@@ -445,10 +441,9 @@ private fun DetailedUsedProductListingInfo(
                     )
                 )
             }
-
-
         }
-        if(item.user.userId != userId){
+
+        if (item.user.userId != userId) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
@@ -457,9 +452,15 @@ private fun DetailedUsedProductListingInfo(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
-                    CallButton(onClick = {
-
-                    }, modifier = Modifier.weight(1f))
+                    if (item.user.phoneCountryCode != null && item.user.phoneNumber != null) {
+                        CallButton(onClick = {
+                            val phoneNumber =
+                                "${item.user.phoneCountryCode} ${item.user.phoneNumber}"
+                            context.startActivity(Intent(Intent.ACTION_DIAL).apply {
+                                data = "tel:$phoneNumber".toUri()
+                            })
+                        }, modifier = Modifier.weight(1f))
+                    }
 
                     SendMessageButton(chatButtonClicked, modifier = Modifier.weight(1f))
                 }
@@ -780,7 +781,7 @@ private fun CallButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             contentColor = Color.White
         ),
 
-    ) {
+        ) {
         Text("Call")
     }
 }

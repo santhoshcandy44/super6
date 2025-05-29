@@ -187,7 +187,6 @@ suspend fun buildAndShowChatNotification(
                 }
             }
             .setOnlyAlertOnce(true)
-            .setNumber(100)
             .setStyle(style)
 
         val notificationId = NotificationIdManager.getNotificationIdForChatNotification(senderId)

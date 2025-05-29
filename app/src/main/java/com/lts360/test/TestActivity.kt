@@ -59,6 +59,7 @@ import com.lts360.compose.ui.profile.EditProfileLastNameScreen
 import com.lts360.compose.ui.profile.EditProfileSettingsScreen
 import com.lts360.compose.ui.settings.SettingsScreen
 import com.lts360.compose.ui.theme.AppTheme
+import com.lts360.compose.ui.usedproducts.DetailedUsedProductListingScreen
 import com.lts360.compose.ui.usedproducts.manage.ManageUsedProductListingScreen
 import com.lts360.compose.utils.ExpandableText
 import dagger.hilt.android.AndroidEntryPoint
