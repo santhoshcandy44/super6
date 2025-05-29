@@ -16,6 +16,7 @@ import com.lts360.app.database.models.profile.UserLocation
 import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.app.database.models.profile.UserProfileSettingsInfo
 import com.lts360.components.utils.errorLogger
+import com.lts360.compose.ui.auth.viewmodels.LogInViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

@@ -77,12 +77,9 @@ class LogInViewModel @Inject constructor(
     }
 
 
-    // Validate all fields
     fun validateFields(): Boolean {
         var isValid = true
 
-
-        // Validate Email
         if (_email.value.isEmpty()) {
             _emailError.value = "Email is required"
             isValid = false
@@ -90,10 +87,9 @@ class LogInViewModel @Inject constructor(
             _emailError.value = "Invalid email format"
             isValid = false
         } else {
-            _emailError.value = null // Clear error if valid
+            _emailError.value = null
         }
 
-        // Validate Password
         if (_password.value.isEmpty()) {
             _passwordError.value = "Password is required"
             isValid = false
@@ -101,7 +97,7 @@ class LogInViewModel @Inject constructor(
             _passwordError.value = "Password must be at least 8 characters"
             isValid = false
         } else {
-            _passwordError.value = null // Clear error if valid
+            _passwordError.value = null
         }
 
 
@@ -109,7 +105,6 @@ class LogInViewModel @Inject constructor(
     }
 
 
-    // Helper function to validate email format
     private fun isValidEmail(email: String): Boolean {
         return EMAIL_ADDRESS.matcher(email).matches()
     }
@@ -240,7 +235,6 @@ class LogInViewModel @Inject constructor(
         }
     }
 
-    // Method to handle registration
     private suspend fun googleSignIn(idToken: String): Result<ResponseReply> {
 
 
@@ -249,7 +243,6 @@ class LogInViewModel @Inject constructor(
                 AuthClient.instance.create(AuthService::class.java).googleLogin(idToken, "google")
 
             if (response.isSuccessful) {
-                // Handle successful response
                 val loginResponse = response.body()
 
                 if (loginResponse != null && loginResponse.isSuccessful) {
@@ -259,7 +252,7 @@ class LogInViewModel @Inject constructor(
                         FirebaseAuth.getInstance().signInWithCredential(firebaseCredential)
                             .await()
                         Result.Success(loginResponse)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         Result.Error(Exception("Failed to log in try again"))
                     }
 

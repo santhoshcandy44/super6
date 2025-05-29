@@ -51,6 +51,7 @@ import com.lts360.compose.ui.bookmarks.BookmarksActivity
 import com.lts360.compose.ui.chat.ChatPanel
 import com.lts360.compose.ui.chat.panel.message.ChatOtherMessageItem
 import com.lts360.compose.ui.chat.viewmodels.ChatViewModel
+import com.lts360.compose.ui.localjobs.DetailedLocalJobScreen
 import com.lts360.compose.ui.localjobs.manage.CreateLocalJobScreen
 import com.lts360.compose.ui.localjobs.manage.ManagePublishedLocalJobApplicantsScreen
 import com.lts360.compose.ui.main.prefs.BoardsSetupActivity

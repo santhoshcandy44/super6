@@ -465,7 +465,7 @@ private fun DetailedLocalJobInfo(
                 ) {
 
                     ApplyButton(onClick = {
-                        if (isPhoneNumberVerified)
+                        if (!isPhoneNumberVerified)
                             bottomPhoneNumberVerifyState = true
                         else
                             if (!isDontAskAgainChecked) {
@@ -485,23 +485,23 @@ private fun DetailedLocalJobInfo(
 
 
 
-        if (bottomPhoneNumberVerifyState) {
+        if (bottomProfileInfoShareState) {
             LocalJobApplyPromptSheet(
                 isDontAskAgainChecked = isDontAskAgainChecked,
                 onApplyClick = {
-                    bottomPhoneNumberVerifyState = false
+                    bottomProfileInfoShareState = false
                     onApplyClick()
                 }, onDismiss = {
-                    bottomPhoneNumberVerifyState = false
+                    bottomProfileInfoShareState = false
                 }, onDontAskAgainCheckedChanged = onDontAskAgainCheckedChanged
             )
         }
 
-        if (bottomProfileInfoShareState) {
+        if (bottomPhoneNumberVerifyState) {
             EditPhoneBottomSheet(onVerifyClick = {
 
             }, onDismiss = {
-                bottomProfileInfoShareState = false
+                bottomPhoneNumberVerifyState = false
             })
         }
 
