@@ -80,7 +80,6 @@ class TestActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-
         /* setContent {
               AppTheme {
                   Surface {
