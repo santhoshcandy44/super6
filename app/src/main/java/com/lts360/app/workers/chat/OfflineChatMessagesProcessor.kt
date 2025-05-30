@@ -121,7 +121,7 @@ class OfflineChatMessagesProcessor @AssistedInject constructor(
 
             val messagesJsonArray = suspendCancellableCoroutine { cont ->
 
-                socket.once("chat:offlineMessages", Emitter.Listener { args ->
+                socket.once("chat:bgOfflineMessages", Emitter.Listener { args ->
                     if (args.isNotEmpty()) {
                         try {
                             val data = args[0] as JSONObject

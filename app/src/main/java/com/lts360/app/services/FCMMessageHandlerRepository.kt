@@ -78,7 +78,7 @@ class FCMMessageHandlerRepository @Inject constructor(
 
         val remoteMessageData = Gson().fromJson(chunkData, JsonObject::class.java)
         val remoteMessageType = remoteMessageData.get("type").asString
-        
+
         if (remoteMessageType == "general") {
 
             val title = remoteMessageData.get("title").asString

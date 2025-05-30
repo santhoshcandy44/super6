@@ -1833,7 +1833,6 @@ class ChatViewModel @Inject constructor(
                         put("recipient_id", recipientId)
                     }
 
-                    // Check if the socket is connected
                     if (nonNullSocket.connected()) {
 
                         e2eeCredentials?.let {
@@ -1847,9 +1846,8 @@ class ChatViewModel @Inject constructor(
                                 jsonData.put("type", if (replyId != -1L) "reply" else "normal")
                                 jsonData.put("category", "text")
 
-                                // Emit the chat message with an acknowledgment callback
                                 nonNullSocket.emit("chat:chatMessage", jsonData, Ack { args ->
-                                    // Handle the acknowledgment from the server
+
                                     if (args.isNotEmpty()) {
                                         val response = args[0] as String
                                         val data = args[1] as? JSONObject
@@ -1860,7 +1858,6 @@ class ChatViewModel @Inject constructor(
                                             val recipientId = data.getLong("recipient_id")
                                             val publicKey = data.getString("publicKey")
                                             val keyVersion = data.getLong("keyVersion")
-
 
                                             viewModelScope.launch {
                                                 repository.updatePublicKeyByRecipientId(
@@ -1945,7 +1942,8 @@ class ChatViewModel @Inject constructor(
                                             }
 
 
-                                        } else if (status != null && status == "USER_NOT_ACTIVE_ERROR") {
+                                        }
+                                        else if (status != null && status == "USER_NOT_ACTIVE_ERROR") {
                                             viewModelScope.launch {
                                                 repository.updateMessage(
                                                     insertedId,
@@ -1960,10 +1958,7 @@ class ChatViewModel @Inject constructor(
                                                 )
                                                 updateLazyListState(0)
                                             }
-
                                         }
-
-
                                     }
                                 })
 

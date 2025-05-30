@@ -79,7 +79,6 @@ class TestActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-
         /* setContent {
               AppTheme {
                   Surface {

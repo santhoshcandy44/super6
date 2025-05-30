@@ -76,17 +76,14 @@ class FetchUserProfileWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-
         val fcmData = JSONObject(data)
         val fcmSenderId = fcmData.getLong("sender_id")
-        val messageId = fcmData.getLong("message_id")
 
-        val queryString = "sender_id=$fcmSenderId&message_id=$messageId&recipient_id=$userId"
-
+        val queryString = "sender_id=$fcmSenderId&recipient_id=$userId"
 
         return try {
 
-            socket = awaitConnectToSocket(socketManager, !App.isAppInForeground, true, queryString)
+            socket = awaitConnectToSocket(socketManager, true, true, queryString)
 
             if (socket.connected()) {
 
@@ -216,7 +213,7 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
                         val messagesJsonArray = suspendCancellableCoroutine { cont ->
 
-                            socket.once("chat:offlineMessages", Emitter.Listener { args ->
+                            socket.once("chat:bgOfflineMessages", Emitter.Listener { args ->
                                 if (args.isNotEmpty()) {
                                     try {
                                         val data = args[0] as JSONObject
@@ -243,7 +240,6 @@ class FetchUserProfileWorker @AssistedInject constructor(
                         }
 
                         messagesList.forEach { messageData ->
-
 
                             val senderId = messageData.getLong("sender_id")
                             val messageId = messageData.getLong("message_id")
@@ -479,7 +475,7 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
                             } else if (category.contains("audio")) {
 
-                                val fileMetadata = messageData.getJSONObject("file_meta_data")
+                                val fileMetadata = messageData.getJSONObject("file_metadata")
                                 val originalFileName = fileMetadata.getString("original_file_name")
                                 val downloadUrl = fileMetadata.getString("download_url")
                                 val fileSize = fileMetadata.getLong("file_size")
@@ -516,7 +512,7 @@ class FetchUserProfileWorker @AssistedInject constructor(
                             } else if (category.contains("file")) {
 
 
-                                val fileMetadata = messageData.getJSONObject("file_meta_data")
+                                val fileMetadata = messageData.getJSONObject("file_metadata")
                                 val originalFileName = fileMetadata.getString("original_file_name")
                                 val downloadUrl = fileMetadata.getString("download_url")
                                 val fileSize = fileMetadata.getLong("file_size")
@@ -549,7 +545,7 @@ class FetchUserProfileWorker @AssistedInject constructor(
 
                             } else if (category.contains("others")) {
 
-                                val fileMetadata = messageData.getJSONObject("file_meta_data")
+                                val fileMetadata = messageData.getJSONObject("file_metadata")
                                 val originalFileName = fileMetadata.getString("original_file_name")
                                 val downloadUrl = fileMetadata.getString("download_url")
                                 val fileSize = fileMetadata.getLong("file_size")
@@ -673,16 +669,15 @@ class FetchUserProfileWorker @AssistedInject constructor(
                 throw SocketConnectionException("Socket is not connected")
             }
 
-
         } catch (_: SocketConnectionException) {
             Log.e(TAG, "Socket connection failed. Retrying...")
-            finalizeSocket()
             Result.retry()
         } catch (e: Exception) {
-            finalizeSocket()
             e.printStackTrace()
             Log.e(TAG, "Error processing message: ${e.message}")
             Result.failure()
+        }finally {
+            finalizeSocket()
         }
 
     }
