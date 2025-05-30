@@ -13,7 +13,6 @@ import com.lts360.app.workers.chat.FetchUserProfileWorker
 import com.lts360.app.workers.chat.OfflineChatMessagesProcessor
 import com.lts360.app.workers.chat.VisualMediaChatMessageProcessor
 import org.json.JSONObject
-import java.io.File
 import java.util.concurrent.TimeUnit
 
 
@@ -58,7 +57,6 @@ object ChatMessageHandlerWorkerHelper {
                 ExistingWorkPolicy.APPEND_OR_REPLACE,
                 fetchProfileWork
             )
-
 
     }
 
