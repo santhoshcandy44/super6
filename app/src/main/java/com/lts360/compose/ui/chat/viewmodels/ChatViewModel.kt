@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -33,7 +32,6 @@ import com.lts360.app.workers.chat.utils.getFolderTypeByExtension
 import com.lts360.app.workers.helpers.MediaUploadWorkerHelper
 import com.lts360.app.workers.helpers.VisualMediaUploadWorkerHelper
 import com.lts360.app.workers.chat.upload.models.FileUploadInfo
-import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.components.utils.compressImageAsByteArray
 import com.lts360.components.utils.isUriExist
 import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
@@ -83,6 +81,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.CancellationException
 import javax.inject.Inject
+import androidx.core.net.toUri
 
 @Serializable
 sealed class MediaDownloadState {
@@ -252,7 +251,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             if (sender == recipientId) {
                 _onlineStatus.value = if (isTyping) "typing..." else "online"
-                _isTyping.value = if (isTyping) true else false
+                _isTyping.value = isTyping
             }
         }
     }
@@ -569,10 +568,10 @@ class ChatViewModel @Inject constructor(
 
         val category = getFileCategoryByExtension(fileMetadata.fileExtension)
 
-        if (!isUriExist(context, Uri.parse(absolutePath))) {
+        if (!isUriExist(context, absolutePath.toUri())) {
             onFailed()
             viewModelScope.launch {
-                repository.updateMessage(messageId, ChatMessageStatus.FAILED)
+            repository.updateMessage(messageId, ChatMessageStatus.FAILED)
             }
             return
         }
@@ -602,7 +601,7 @@ class ChatViewModel @Inject constructor(
                 )
             )
 
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             onFailed()
         }
 
@@ -623,7 +622,7 @@ class ChatViewModel @Inject constructor(
 
         val category = getFileCategoryByExtension(fileMetadata.fileExtension)
 
-        if (!isUriExist(context, Uri.parse(absolutePath))) {
+        if (!isUriExist(context, absolutePath.toUri())) {
             onFailed()
 
             viewModelScope.launch {
@@ -652,7 +651,7 @@ class ChatViewModel @Inject constructor(
                 )
             )
 
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             onFailed()
         }
     }
@@ -779,7 +778,6 @@ class ChatViewModel @Inject constructor(
                                                 )
                                             ) {
                                                 repository.updateVisualMediaMessageDownloadedMediaInfo(
-                                                    messageId,
                                                     it.absolutePath,
                                                     null,
                                                     fileMetadata
@@ -817,10 +815,10 @@ class ChatViewModel @Inject constructor(
                                 }
 
 
-                            } catch (t: TimeoutCancellationException) {
+                            } catch (_: TimeoutCancellationException) {
                                 // Log timeout failure
                                 updateDownloadState(messageId, MediaDownloadState.Failed)
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 // Handle any unexpected errors
                                 updateDownloadState(messageId, MediaDownloadState.Failed)
                             }
@@ -940,7 +938,6 @@ class ChatViewModel @Inject constructor(
                                             )
                                         ) {
                                             repository.updateVisualMediaMessageDownloadedMediaInfo(
-                                                messageId,
                                                 it.absolutePath,
                                                 null,
                                                 fileMetadata
@@ -978,10 +975,10 @@ class ChatViewModel @Inject constructor(
                                 }
                             }
 
-                        } catch (t: TimeoutCancellationException) {
+                        } catch (_: TimeoutCancellationException) {
                             // Log timeout failure
                             updateDownloadState(messageId, MediaDownloadState.Failed)
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             // Handle any unexpected errors
                             updateDownloadState(messageId, MediaDownloadState.Failed)
                         }
@@ -1180,7 +1177,7 @@ class ChatViewModel @Inject constructor(
                         Bitmap.CompressFormat.WEBP
                     }
                 else
-                    throw UnsupportedOperationException("Unsupported file format ${mediaExtension}"),
+                    throw UnsupportedOperationException("Unsupported file format $mediaExtension"),
                 100,
                 byteArrayOutputStream
             )
@@ -1310,7 +1307,7 @@ class ChatViewModel @Inject constructor(
                         Bitmap.CompressFormat.WEBP
                     }
                 else
-                    throw UnsupportedOperationException("Unsupported file format ${mediaExtension}"),
+                    throw UnsupportedOperationException("Unsupported file format $mediaExtension"),
                 100,
                 byteArrayOutputStream
             )
@@ -1849,12 +1846,11 @@ class ChatViewModel @Inject constructor(
                                 nonNullSocket.emit("chat:chatMessage", jsonData, Ack { args ->
 
                                     if (args.isNotEmpty()) {
-                                        val response = args[0] as String
                                         val data = args[1] as? JSONObject
 
                                         val status = data?.optString("status")
-                                        if (status != null && status == "KEY_ERROR") {
 
+                                        if (status != null && status == "KEY_ERROR") {
                                             val recipientId = data.getLong("recipient_id")
                                             val publicKey = data.getString("publicKey")
                                             val keyVersion = data.getLong("keyVersion")
@@ -1899,9 +1895,6 @@ class ChatViewModel @Inject constructor(
                                                             Ack { args ->
                                                                 // Handle the acknowledgment from the server
                                                                 if (args.isNotEmpty()) {
-                                                                    val queuedResponse =
-                                                                        args[0] as String
-
 
                                                                     val queuedReceivedData =
                                                                         args[1] as? JSONObject
@@ -2017,7 +2010,7 @@ class ChatViewModel @Inject constructor(
                                                     Ack { args ->
                                                         // Handle the acknowledgment from the server
                                                         if (args.isNotEmpty()) {
-                                                            val queuedResponse = args[0] as String
+
                                                             val queuedReceivedData =
                                                                 args[1] as? JSONObject
                                                             val queuedStatus =

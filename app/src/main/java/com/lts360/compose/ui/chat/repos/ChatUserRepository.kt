@@ -3,7 +3,11 @@ package com.lts360.compose.ui.chat.repos
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
-import com.lts360.App
+import coil3.ImageLoader
+import coil3.disk.DiskCache
+import coil3.gif.AnimatedImageDecoder
+import coil3.request.CachePolicy
+import coil3.request.allowHardware
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.daos.chat.MessageDao
 import com.lts360.app.database.daos.chat.MessageMediaMetaDataDao
@@ -22,6 +26,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import okio.Path.Companion.toOkioPath
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -80,14 +85,6 @@ class UploadWorkerUtilRepository @Inject constructor(
         }
     }
 
-    suspend fun getLastSentChunkIndex(messageId: Long): Int {
-        return withContext(Dispatchers.IO) {
-            val result = messageProcessingDataDao.getLastChunkIndexByMessageId(messageId)
-            if (result == -1) 0 else result
-        }
-    }
-
-
     suspend fun getLastSentThumbnailByteOffsetByMessageId(messageId: Long): Long {
         return withContext(Dispatchers.IO) {
             val result =
@@ -95,15 +92,6 @@ class UploadWorkerUtilRepository @Inject constructor(
             if (result == -1L) 0 else result
         }
     }
-
-    suspend fun getLastSentThumbnailChunkIndexByMessageId(messageId: Long): Int {
-        return withContext(Dispatchers.IO) {
-            val result =
-                messageProcessingDataDao.getLastSentThumbnailChunkIndexByMessageId(messageId)
-            if (result == -1) 0 else result
-        }
-    }
-
 
     suspend fun insertOrUpdateMessageProcessingData(messageProcessingData: MessageProcessingData) {
         return withContext(Dispatchers.IO) {
@@ -120,12 +108,6 @@ class UploadWorkerUtilRepository @Inject constructor(
     suspend fun getFileIdByMessageId(messageId: Long): String? {
         return withContext(Dispatchers.IO) {
             messageProcessingDataDao.getFileIdByMessageId(messageId)
-        }
-    }
-
-    suspend fun getMessageById(messageId: Long): Message? {
-        return withContext(Dispatchers.IO) {
-            messageDao.getMessageById(messageId)
         }
     }
 
@@ -265,12 +247,20 @@ class ChatUserRepository @Inject constructor(
     val messageMediaMetaDataDao: MessageMediaMetaDataDao
 ) {
 
-
-    val chatUsersProfileImageLoader = (context as App).chatUsersImageLoader
-
-    suspend fun getMessageMediaMetaDataByMessageId(messageId: Long): MessageMediaMetadata? {
-        return messageMediaMetaDataDao.getMessageMediaMetaDataByMessageId(messageId)
-    }
+    val chatUsersProfileImageLoader =  ImageLoader.Builder(context)
+        .diskCache {
+            DiskCache.Builder()
+                .directory(File(context.filesDir, "chat_users_profile_image_files").toOkioPath())
+                .maxSizePercent(0.02)
+                .build()
+        }
+        .diskCachePolicy(CachePolicy.ENABLED)
+        .memoryCachePolicy(CachePolicy.ENABLED)
+        .allowHardware(false)
+        .components {
+            add(AnimatedImageDecoder.Factory())
+        }
+        .build()
 
     suspend fun updatePublicKeyByRecipientId(
         recipientId: Long,
@@ -283,17 +273,6 @@ class ChatUserRepository @Inject constructor(
         }
     }
 
-
-    fun getLastMessageFlow(chatId: Int): Flow<Message?> {
-        return messageDao.getLastMessageFlow(chatId)
-    }
-
-
-    fun countUnreadMessages(recipientId: Long, chatId: Int): Flow<Int> {
-        return messageDao.countUnreadMessagesByChatIdFlow(recipientId, chatId)
-    }
-
-
     suspend fun getPublicKeyWithVersionByRecipientId(recipientId: Long): Flow<PublicKeyVersion?> {
 
         return withContext(Dispatchers.IO) {
@@ -302,14 +281,6 @@ class ChatUserRepository @Inject constructor(
     }
 
     suspend fun getQueuedMessages(): List<Message> = messageDao.getQueuedMessages()
-
-    suspend fun getChatMessagesWithReplies(chatId: Int): Flow<List<MessageWithReply>> {
-
-        return withContext(Dispatchers.IO) {
-            messageDao.getMessagesWithRepliesFlow(chatId)
-        }
-    }
-
 
     suspend fun insertMessageAndMetadata(
         message: Message,
@@ -343,9 +314,7 @@ class ChatUserRepository @Inject constructor(
         }
     }
 
-
     suspend fun updateVisualMediaMessageDownloadedMediaInfo(
-        id: Long,
         fileAbsPath: String,
         fileCachedPath: String?,
         fileMetadata: MessageMediaMetadata

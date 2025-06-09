@@ -47,7 +47,6 @@ import javax.inject.Inject
 @HiltAndroidApp
 class App : Application(), Configuration.Provider, SingletonImageLoader.Factory {
 
-
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
@@ -73,11 +72,9 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
     @Inject
     lateinit var networkConnectivityManager: NetworkConnectivityManager
 
-
     private var activityCount = 0
 
     private var job: Job? = null
-
 
     companion object {
         var isAppInForeground = false
@@ -85,48 +82,17 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
 
     var isInitialStart = true
 
-
-    // Returns whether the app is in the foreground
     fun isAppInForeground(): Boolean {
         return isAppInForeground
     }
 
-
-    lateinit var chatUsersImageLoader: ImageLoader
-        private set
-
-
     override fun onCreate() {
         super.onCreate()
-
-
-
         if(BuildConfig.DEBUG){
-            // Set the global exception handler
             val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
             Thread.setDefaultUncaughtExceptionHandler(AppExceptionHandler(applicationContext, defaultHandler))
         }
-
-
-        chatUsersImageLoader =  ImageLoader.Builder(this)
-            .diskCache {
-                DiskCache.Builder()
-                    .directory(File(filesDir, "chat_users_profile_image_files").toOkioPath())
-                    .maxSizePercent(0.02)
-                    .build()
-            }
-            .diskCachePolicy(CachePolicy.ENABLED)  // Enable disk cache
-            .memoryCachePolicy(CachePolicy.ENABLED)  // Enable memory cache
-            .allowHardware(false)
-            .components {
-                // Add appropriate decoder based on the Android version
-                add(AnimatedImageDecoder.Factory()) // Use ImageDecoder for Android P and above
-            }
-            .build()
-
-
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
-
             override fun onStart(owner: LifecycleOwner) {
                 super.onStart(owner)
                 isAppInForeground = true
@@ -147,7 +113,6 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
 
             }
         })
-
         UserSharedPreferencesManager.initialize(applicationContext)
         AuthClient.init(applicationContext)
         CommonClient.init(applicationContext)
@@ -156,17 +121,14 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
                     Places.initialize(applicationContext, "<YOUR_GOOGLE_API_KEY>")
                 }*/
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
-
-
             override fun onActivityResumed(activity: Activity) {}
 
             override fun onActivityPaused(activity: Activity) {}
 
-            // Implement other lifecycle methods as needed
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
                 isAppInForeground = true
 
-                activityCount++ // Increment when an activity is created
+                activityCount++
 
                 if (activity is MainActivity && !activity.isChangingConfigurations) {
 
@@ -176,14 +138,10 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
                         CoroutineScope(Dispatchers.IO).launch{
                             socketManager.initSocket()
                         }
-
                     }
                 }
 
-
-
                 if (activity is MainActivity && !activity.isChangingConfigurations) {
-
 
                     if (tokenManager.isValidSignInMethod()) {
 
@@ -208,27 +166,22 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
 
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
 
-
             override fun onActivityDestroyed(activity: Activity) {
-                activityCount-- // Decrement when an activity is destroyed
-
-
+                activityCount--
                 if (activityCount == 0) {
                     if (activity is MainActivity && !activity.isChangingConfigurations) {
                         if (tokenManager.isValidSignInMethod()) {
                             if (tokenManager.isValidSignInMethodFeaturesEnabled()) {
                                 socketManager.destroySocket()
-                                job?.cancel() // Cancel the coroutine job
-                                job = null // Clear the job reference
+                                job?.cancel()
+                                job = null
                             }
                             networkConnectivityManager.unregisterNetworkCallback()
                         }
                         AppClient.clear()
                         isAppInForeground = false
                     }
-
                 }
-
             }
         })
     }
