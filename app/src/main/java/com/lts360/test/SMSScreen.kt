@@ -1,6 +1,7 @@
 package com.lts360.test
 
 import android.Manifest
+import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -83,7 +84,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -96,8 +99,6 @@ import com.lts360.compose.ui.chat.panel.StateSyncingModifier
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.utils.ScrollBarConfig
 import com.lts360.compose.utils.verticalScrollWithScrollbar
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -108,7 +109,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
 
 
 /*    val controller = rememberNavController()
@@ -142,8 +142,7 @@ data class SmsMessageData(
 )
 
 
-@HiltViewModel
-class SmsViewModel @Inject constructor(@ApplicationContext val context:Context): ViewModel() {
+class SmsViewModel (application: Application): AndroidViewModel(application) {
 
     private val _activeSubscriptions = MutableStateFlow<List<SubscriptionInfo>>(emptyList())
     val activeSubscriptions = _activeSubscriptions.asStateFlow()
@@ -207,17 +206,9 @@ class SmsViewModel @Inject constructor(@ApplicationContext val context:Context):
 
     @RequiresPermission(Manifest.permission.READ_PHONE_STATE)
     private fun fetchActiveSubscriptions() {
-
-
-        val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
-
-
-        val subscriptions = subscriptionManager?.activeSubscriptionInfoList ?: emptyList()
-
+        val subscriptionManager =application.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+        val subscriptions = subscriptionManager.activeSubscriptionInfoList ?: emptyList()
         _activeSubscriptions.value = subscriptions
-
-
-        // Default to the first subscription if available
         if (subscriptions.isNotEmpty()) {
             _selectedSubscription.value = subscriptions.first()
         }

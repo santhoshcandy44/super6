@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -46,13 +45,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.profile.viewmodels.ChangePasswordViewModel
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.utils.NavigatorSubmitButton
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,7 +60,8 @@ fun ChangePasswordScreen(
     onForgotPasswordNavigateUp: () -> Unit,
     onNavigatePop: () -> Unit,
     onPopStack : () -> Unit,
-    viewModel: ChangePasswordViewModel = hiltViewModel()) {
+    viewModel: ChangePasswordViewModel = koinViewModel()
+) {
 
 
     val userId = viewModel.userId

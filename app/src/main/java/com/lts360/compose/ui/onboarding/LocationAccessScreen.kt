@@ -31,7 +31,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.lts360.compose.ui.main.OnBoardGuestUserLocationAccessBottomSheetScreen
 import com.lts360.compose.ui.main.OnBoardUserLocationBottomSheetScreen
 import com.lts360.compose.ui.main.models.CurrentLocation
@@ -39,13 +38,14 @@ import com.lts360.compose.ui.onboarding.viewmodels.LocationAccessViewModel
 import com.lts360.compose.ui.theme.icons
 import com.lts360.libs.ui.ShortToast
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationAccessScreen(
     type: String,
-    viewModel: LocationAccessViewModel = hiltViewModel(),
+    viewModel: LocationAccessViewModel = koinViewModel(),
     onLocationUpdated: () -> Unit = {}
 ) {
 

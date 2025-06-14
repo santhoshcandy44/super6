@@ -17,7 +17,6 @@ import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserGeneralPreferencesManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.profile.repos.UserProfileRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,20 +25,19 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
 
-
-@HiltViewModel
-class LocalJobsViewmodel @Inject constructor(
+@KoinViewModel
+class LocalJobsViewmodel(
     val userProfileDao: UserProfileDao,
     private val guestUserLocationDao: UserLocationDao,
     val chatUserDao: ChatUserDao,
     val tokenManager: TokenManager,
     userProfileRepository: UserProfileRepository,
     val chatUserRepository: ChatUserRepository,
-    val networkConnectivityManager: NetworkConnectivityManager,
-    private val userGeneralPreferencesManager: UserGeneralPreferencesManager
-) : ViewModel() {
+    private val userGeneralPreferencesManager: UserGeneralPreferencesManager,
+    val networkConnectivityManager: NetworkConnectivityManager
+    ) : ViewModel() {
 
     val userId = UserSharedPreferencesManager.userId
 

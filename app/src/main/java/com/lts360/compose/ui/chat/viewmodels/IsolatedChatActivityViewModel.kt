@@ -10,8 +10,6 @@ import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.app.database.models.chat.Message
 import com.lts360.app.database.models.chat.MessageWithReply
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,10 +20,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-
-@HiltViewModel
 class IsolatedChatActivityViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
+    val context: Context,
     private val messageDao: MessageDao,
     private val chatUserDao: ChatUserDao,
     private val repository: ChatUserRepository

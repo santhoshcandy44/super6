@@ -12,23 +12,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.currentBackStackEntryAsState
-import com.lts360.compose.ui.auth.navhost.slideComposable
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.profile.EditProfileSettingsScreen
 import com.lts360.compose.ui.profile.viewmodels.ProfileSettingsViewModel
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.usedproducts.manage.navhost.ManageUsedProductListingRoutes
-import com.lts360.compose.ui.usedproducts.manage.navhost.rememberManageUsedProductListingCustomNavController
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.compose.utils.SafeDrawingBox
-import dagger.hilt.android.AndroidEntryPoint
+import org.koin.androidx.compose.koinViewModel
 
-
-@AndroidEntryPoint
 class UsedProductListingActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,96 +56,85 @@ private fun ManageUsedProductListingNavHost(
     defaultValue: ManageUsedProductListingRoutes = ManageUsedProductListingRoutes.ManageUsedProductListing,
     onFinishActivity: () -> Unit
 ) {
+    val usedProductsListingWorkflowViewModel: UsedProductsListingWorkflowViewModel = koinViewModel()
+    val publishedUsedProductsListingViewModel: PublishedUsedProductsListingViewModel = koinViewModel()
+    val profileSettingViewModel: ProfileSettingsViewModel = koinViewModel()
 
+    val backStack = rememberNavBackStack(defaultValue)
 
-    val usedProductsListingWorkflowViewModel: UsedProductsListingWorkflowViewModel = hiltViewModel()
-    val publishedUsedProductsListingViewModel: PublishedUsedProductsListingViewModel =
-        hiltViewModel()
-
-    var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
-    val navController = rememberManageUsedProductListingCustomNavController(
-        lastEntry,
-        publishedUsedProductsListingViewModel.isSelectedUsedProductListingNull()
-    )
-
-    val currentBackStackEntryAsState by navController.currentBackStackEntryAsState()
-
-    LaunchedEffect(currentBackStackEntryAsState) {
-        lastEntry = navController.currentBackStackEntry?.destination?.route
-    }
-
-    val profileSettingViewModel: ProfileSettingsViewModel = hiltViewModel()
-
-
-    NavHost(
-        navController = navController,
-        startDestination = defaultValue
-    ) {
-
-        slideComposable<ManageUsedProductListingRoutes.ManageUsedProductListing> {
-            ManageUsedProductListingScreen(
-                navController,
-                publishedUsedProductsListingViewModel,
-                {
-                    usedProductsListingWorkflowViewModel.clearSelectedDraft()
-                    navController.navigate(ManageUsedProductListingRoutes.CreateUsedProductListing)
-                }, {
-                    navController.navigate(ManageUsedProductListingRoutes.ManagePublishedUsedProductListing)
-                },
-                {
-                    navController.navigate(AccountAndProfileSettingsRoutes.PersonalSettings)
-                },
-                onFinishActivity
-            )
-
-        }
-
-        slideComposable<ManageUsedProductListingRoutes.CreateUsedProductListing> {
-            CreateUsedProductListingScreen({
-                navController.previousBackStackEntry?.savedStateHandle?.set(
-                    "is_used_product_listing_created",
-                    true
-                )
-                navController.popBackStack()
-            }, {
-                navController.popBackStack()
-            }, usedProductsListingWorkflowViewModel)
-        }
-
-
-        slideComposable<ManageUsedProductListingRoutes.ManagePublishedUsedProductListing> {
-
-            val viewModel: PublishedUsedProductsListingViewModel =
-                publishedUsedProductsListingViewModel
-            val editableSelectedUsedProductListing by viewModel.selectedUsedProductListing.collectAsState()
-
-            editableSelectedUsedProductListing?.let {
-
-                ManagePublishedUsedProductListingScreen(
-                    {
-                        navController.popBackStack()
+    NavDisplay(
+        backStack = backStack,
+        entryDecorators = listOf(
+            rememberSceneSetupNavEntryDecorator(),
+            rememberSavedStateNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator()
+        ),
+        entryProvider = entryProvider {
+            entry<ManageUsedProductListingRoutes.ManageUsedProductListing> {
+                ManageUsedProductListingScreen(
+                    onAddNewUsedProductListingClick = {
+                        usedProductsListingWorkflowViewModel.clearSelectedDraft()
+                        backStack.add(ManageUsedProductListingRoutes.CreateUsedProductListing)
                     },
-                    viewModel
+                    onNavigateUpManagePublishedUsedProductListing = {
+                        backStack.add(ManageUsedProductListingRoutes.ManagePublishedUsedProductListing)
+                    },
+                    onNavigateProfileSettings = {
+                        backStack.add(AccountAndProfileSettingsRoutes.PersonalSettings)
+                    },
+                    onPopBackStack = onFinishActivity,
+                    viewModel = publishedUsedProductsListingViewModel
                 )
-
             }
 
-        }
+            entry<ManageUsedProductListingRoutes.CreateUsedProductListing> {
+                CreateUsedProductListingScreen(
+                    onUsedProductListingCreated = {
+                        backStack.removeLastOrNull()
+                    },
+                    onPopBackStack = {
+                        backStack.removeLastOrNull()
+                    },
+                    viewModel = usedProductsListingWorkflowViewModel
+                )
+            }
 
-        slideComposable<AccountAndProfileSettingsRoutes.PersonalSettings> {
-            EditProfileSettingsScreen({
-                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileFirstName)
-            }, {
-                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileLastName)
-            }, {
-                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileAbout("complete_about"))
-            }, {
-                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileEmail)
-            }, {
-                navController.popBackStack()
-            }, profileSettingViewModel)
+            entry<ManageUsedProductListingRoutes.ManagePublishedUsedProductListing> {
+                val viewModel: PublishedUsedProductsListingViewModel = publishedUsedProductsListingViewModel
+                val editableSelectedUsedProductListing by viewModel.selectedUsedProductListing.collectAsState()
+
+                editableSelectedUsedProductListing?.let {
+                    ManagePublishedUsedProductListingScreen(
+                        onPopBackStack = {
+                            backStack.removeLastOrNull()
+                        },
+                        viewModel = viewModel
+                    )
+                }
+            }
+
+            entry<AccountAndProfileSettingsRoutes.PersonalSettings> {
+                EditProfileSettingsScreen(
+                    onEditFirstNameNavigateUp = {
+                        backStack.add(AccountAndProfileSettingsRoutes.EditProfileFirstName)
+                    },
+                    onEditLastNameNavigateUp = {
+                        backStack.add(AccountAndProfileSettingsRoutes.EditProfileLastName)
+                    },
+                    onEditAboutNavigateUp = {
+                        backStack.add(AccountAndProfileSettingsRoutes.EditProfileAbout("complete_about"))
+                    },
+                    onEditEmailNavigateUp = {
+                        backStack.add(AccountAndProfileSettingsRoutes.EditProfileEmail)
+                    },
+                    onPopBakStack = {
+                        backStack.removeLastOrNull()
+                    },
+                    viewModel = profileSettingViewModel
+                )
+            }
         }
-    }
+    )
 }
 
 

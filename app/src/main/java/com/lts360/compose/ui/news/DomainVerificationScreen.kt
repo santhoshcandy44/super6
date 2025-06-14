@@ -52,15 +52,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.ui.theme.customColorScheme
+import org.koin.androidx.compose.koinViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DomainVerificationScreen(viewModel: DomainVerificationViewModel = hiltViewModel()) {
+fun DomainVerificationScreen(viewModel: DomainVerificationViewModel = koinViewModel()) {
 
     val domain by viewModel.domain.collectAsState()
     val domainError by viewModel.domainError.collectAsState()

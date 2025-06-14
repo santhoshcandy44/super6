@@ -12,14 +12,12 @@ import com.lts360.app.database.models.notification.Notification
 import com.lts360.app.notifications.buildAndShowGeneralNotification
 import com.lts360.app.workers.helpers.ChatMessageHandlerWorkerHelper
 import com.lts360.app.notifications.buildAndShowLocalJobApplicationNotification
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-class FCMMessageHandlerRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
+class FCMMessageHandlerRepository (
+    private val context: Context,
     private val notificationDao: NotificationDao
 ) {
 

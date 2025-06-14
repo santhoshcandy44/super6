@@ -2,9 +2,7 @@ package com.lts360.compose.ui.auth.viewmodels
 
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.lts360.App
 import com.lts360.api.auth.AuthClient
@@ -18,24 +16,20 @@ import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.auth.AccountType
 import com.lts360.compose.ui.auth.navhost.AuthScreen
 import com.lts360.compose.ui.auth.repos.AuthRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
 
-@HiltViewModel
-class RegisterEmailOTPVerificationViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
+@KoinViewModel
+class RegisterEmailOTPVerificationViewModel(
+    val applicationContext: Context,
     authRepository: AuthRepository,
-    savedStateHandle: SavedStateHandle,
+    @InjectedParam val args : AuthScreen.RegisterEmailOtpVerification
 ) : EmailOTPVerificationViewModel(authRepository) {
-
-    private val args = savedStateHandle.toRoute<AuthScreen.RegisterEmailOtpVerification>()
-
 
     val accountType: AccountType = args.accountType
     val firstName: String = args.firstName
@@ -85,7 +79,7 @@ class RegisterEmailOTPVerificationViewModel @Inject constructor(
                     is Result.Success -> {
 
                         val data = Gson().fromJson(result.data.data, LogInResponse::class.java)
-                        (context.applicationContext as App).setIsInvalidSession(false)
+                        (applicationContext.applicationContext as App).setIsInvalidSession(false)
                         withContext(Dispatchers.IO) {
                             Log.e(TAG,"${data.boards}")
                             authRepository.boardDao.clearAndInsertSelectedBoards(data.boards)
@@ -156,7 +150,7 @@ class RegisterEmailOTPVerificationViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))

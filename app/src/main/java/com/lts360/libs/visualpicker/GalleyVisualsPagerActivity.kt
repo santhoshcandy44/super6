@@ -29,19 +29,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
-import com.lts360.compose.ui.auth.navhost.slideComposable
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
 import com.lts360.libs.imagepicker.routes.GalleyImagesPagerRoutes
 import com.lts360.libs.visualpicker.ui.LoadVisualGalleryWithPermissions
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
-@AndroidEntryPoint
 class GalleyVisualsPagerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,154 +79,114 @@ class GalleyVisualsPagerActivity : ComponentActivity() {
                         containerColor = Color.Black
                     ) { contentPadding ->
 
-
                         LoadVisualGalleryWithPermissions(modifier = Modifier.padding(contentPadding)) {
 
-                            val navController = rememberNavController()
-
-                            val viewModel: VisualMediaPickerViewModel = hiltViewModel()
-
-                            val MAX_ITEMS = maxItems
-
+                            val viewModel: VisualMediaPickerViewModel = koinViewModel()
                             val mediaItems by viewModel.mediaItems.collectAsState()
+                            val selectedMediaItems = mediaItems.filter { it.isSelected }.map { it.uri }
 
-                            val selectedMediaItems =
-                                mediaItems.filter { it.isSelected }
-                                    .map { it.uri }
+                            val backStack = rememberNavBackStack(GalleyImagesPagerRoutes.GalleyImagesPager)
 
                             Column(modifier = Modifier.fillMaxSize()) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .weight(1f)
-                                ) {
-                                    NavHost(
-                                        navController = navController,
-                                        startDestination = GalleyImagesPagerRoutes.GalleyImagesPager
-                                    ) {
-
-                                        slideComposable<GalleyImagesPagerRoutes.GalleyImagesPager> {
-
-                                            if (isSingle) {
-                                                GallerySingleVisualPickerScreen(
-                                                    {
-                                                        setResult(
-                                                            RESULT_OK, Intent()
-                                                                .apply {
-                                                                    putExtra("data", it.toString())
-                                                                })
-                                                        finish()
-                                                    },
-                                                    {
-                                                        navController.navigate(
-                                                            GalleyImagesPagerRoutes.SelectedAlbumImages(
-                                                                it
-                                                            )
-                                                        )
-                                                    },
-                                                    viewModel
-                                                )
-                                            } else {
-                                                GalleryMultipleVisualsPickerScreen(
-                                                    { imageMediaData ->
-
-                                                        if (imageMediaData.isSelected || selectedMediaItems.size < MAX_ITEMS) {
-                                                            viewModel.updateImageMediaIsSelected(
-                                                                imageMediaData.id
-                                                            )
-                                                        } else {
-                                                            scope.launch {
-                                                                snackbarHostState.showSnackbar(
-                                                                    "You can select up to $MAX_ITEMS",
-                                                                    duration = SnackbarDuration.Short
-                                                                )
-                                                            }
-                                                        }
-                                                    },
-                                                    {
-                                                        navController.navigate(
-                                                            GalleyImagesPagerRoutes.SelectedAlbumImages(
-                                                                it
-                                                            )
-                                                        )
-                                                    },
-                                                    viewModel
-                                                )
-                                            }
-                                        }
-
-                                        slideComposable<GalleyImagesPagerRoutes.SelectedAlbumImages> { backStackEntry ->
-
-                                            val args =
-                                                backStackEntry.toRoute<GalleyImagesPagerRoutes.SelectedAlbumImages>()
-
-                                            val groupedByFolderMediaItems =
-                                                viewModel.groupMediaFolders(mediaItems)
-                                            val album = groupedByFolderMediaItems[args.album]
-
-                                            album?.let { nonNullAlbum ->
-
+                                Column(modifier = Modifier.fillMaxSize().weight(1f)) {
+                                    NavDisplay(
+                                        backStack = backStack,
+                                        entryDecorators = listOf(
+                                            rememberSceneSetupNavEntryDecorator(),
+                                            rememberSavedStateNavEntryDecorator(),
+                                            rememberViewModelStoreNavEntryDecorator()
+                                        ),
+                                        entryProvider = entryProvider {
+                                            entry<GalleyImagesPagerRoutes.GalleyImagesPager> {
                                                 if (isSingle) {
-                                                    ShowAlbumVisualsPickerScreen(args.album,
-                                                        viewModel.groupMediaDate(
-                                                            nonNullAlbum
-                                                        ),
-                                                        {
-                                                            navController.popBackStack()
-                                                        }) {
-                                                        setResult(
-                                                            RESULT_OK, Intent()
-                                                                .apply {
-                                                                    putExtra("data", it.toString())
-                                                                })
-                                                        finish()
-                                                    }
+                                                    GallerySingleVisualPickerScreen(
+                                                        onImagePicked = {
+                                                            setResult(RESULT_OK, Intent().apply {
+                                                                putExtra("data", it.toString())
+                                                            })
+                                                            finish()
+                                                        },
+                                                        onNavigateUpAlbum = {
+                                                            backStack.add(GalleyImagesPagerRoutes.SelectedAlbumImages(it))
+                                                        },
+                                                        viewModel = viewModel
+                                                    )
                                                 } else {
-
-                                                    GalleryMultipleVisualsPickerShowAlbumVisualsScreen(
-                                                        args.album,
-                                                        viewModel.groupMediaDate(
-                                                            nonNullAlbum
-                                                        ),
-                                                        { imageMediaData ->
-                                                            if (imageMediaData.isSelected || selectedMediaItems.size < MAX_ITEMS) {
-                                                                viewModel.updateImageMediaIsSelected(
-                                                                    imageMediaData.id
-                                                                )
+                                                    GalleryMultipleVisualsPickerScreen(
+                                                        onImagePicked = { imageMediaData ->
+                                                            if (imageMediaData.isSelected || selectedMediaItems.size < maxItems) {
+                                                                viewModel.updateImageMediaIsSelected(imageMediaData.id)
                                                             } else {
                                                                 scope.launch {
                                                                     snackbarHostState.showSnackbar(
-                                                                        "You can select up to $MAX_ITEMS",
+                                                                        "You can select up to $maxItems",
                                                                         duration = SnackbarDuration.Short
                                                                     )
                                                                 }
                                                             }
                                                         },
-                                                        {
-                                                            navController.popBackStack()
-                                                        })
+                                                        onNavigateUpAlbum = {
+                                                            backStack.add(GalleyImagesPagerRoutes.SelectedAlbumImages(it))
+                                                        },
+                                                        viewModel = viewModel
+                                                    )
                                                 }
-
-
                                             }
 
+                                            entry<GalleyImagesPagerRoutes.SelectedAlbumImages> { entry ->
 
+                                                val groupedByFolder = viewModel.groupMediaFolders(mediaItems)
+                                                val album = groupedByFolder[entry.album]
+
+                                                album?.let { nonNullAlbum ->
+                                                    if (isSingle) {
+                                                        ShowAlbumVisualsPickerScreen(
+                                                            album = entry.album,
+                                                            items = viewModel.groupMediaDate(nonNullAlbum),
+                                                            onPopStack = {
+                                                                backStack.removeLastOrNull()
+                                                            },
+                                                            onImagePicked = {
+                                                                setResult(RESULT_OK, Intent().apply {
+                                                                    putExtra("data", it.toString())
+                                                                })
+                                                                finish()
+                                                            }
+                                                        )
+                                                    } else {
+                                                        GalleryMultipleVisualsPickerShowAlbumVisualsScreen(
+                                                            album = entry.album,
+                                                            items = viewModel.groupMediaDate(nonNullAlbum),
+                                                            onImagePicked = { imageMediaData ->
+                                                                if (imageMediaData.isSelected || selectedMediaItems.size < maxItems) {
+                                                                    viewModel.updateImageMediaIsSelected(imageMediaData.id)
+                                                                } else {
+                                                                    scope.launch {
+                                                                        snackbarHostState.showSnackbar(
+                                                                            "You can select up to $maxItems",
+                                                                            duration = SnackbarDuration.Short
+                                                                        )
+                                                                    }
+                                                                }
+                                                            },
+                                                            onPopStack = {
+                                                                backStack.removeLastOrNull()
+                                                            }
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
-                                    }
-
+                                    )
                                 }
 
                                 selectedMediaItems.takeIf { it.isNotEmpty() }?.let {
                                     OutlinedButton(
                                         onClick = {
                                             setResult(
-                                                RESULT_OK, Intent()
-                                                    .apply {
-                                                        putParcelableArrayListExtra(
-                                                            "data",
-                                                            it as ArrayList<Uri>
-                                                        )
-                                                    })
+                                                RESULT_OK, Intent().apply {
+                                                    putParcelableArrayListExtra("data", it as ArrayList<Uri>)
+                                                })
                                             finish()
                                         },
                                         shape = RoundedCornerShape(4.dp),
@@ -233,26 +194,16 @@ class GalleyVisualsPagerActivity : ComponentActivity() {
                                             .wrapContentSize()
                                             .padding(horizontal = 16.dp, vertical = 8.dp)
                                     ) {
-                                        // "Add" Text
                                         Text("Add", color = Color.White)
-
-                                        // Spacer for spacing between the text and the count box
                                         Spacer(Modifier.width(8.dp))
-
-                                        // Rounded box for showing the count of selected items
-                                        Text(
-                                            text = it.size.toString(),  // Show the count
-                                            color = Color.White
-                                        )
+                                        Text(text = it.size.toString(), color = Color.White)
                                     }
                                 }
-
                             }
                         }
+
                     }
                 }
-
-
             }
         }
     }

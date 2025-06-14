@@ -12,7 +12,6 @@ import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.ProfileSettingsService
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,12 +21,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
-@HiltViewModel
-class EditFirstNameViewModel @Inject constructor(
+class EditFirstNameViewModel (
     private val userProfileDao: UserProfileDao
 ) : ViewModel() {
 
-    // Retrieve the argument from the navigation
     val userId: Long = UserSharedPreferencesManager.userId
 
 

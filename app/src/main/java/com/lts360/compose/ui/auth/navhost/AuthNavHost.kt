@@ -5,9 +5,13 @@ import android.app.ActivityOptions
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.lts360.R
 import com.lts360.compose.ui.auth.AccountType
 import com.lts360.compose.ui.auth.ForgotPasswordEmailOtpVerification
@@ -22,142 +26,125 @@ import com.lts360.compose.ui.auth.WelcomeScreen
 import com.lts360.compose.ui.onboarding.OnBoardingActivity
 import kotlin.reflect.typeOf
 
-
 @Composable
 fun AuthNavHost(defaultEntry: AuthScreen = AuthScreen.Welcome) {
-
-    val navController = rememberNavController()
+    val backStacks = rememberNavBackStack(defaultEntry)
     val context = LocalContext.current
 
-    // Define the AnimatedNavHost
-    NavHost(
-        navController = navController,
-        startDestination = defaultEntry
-    ) {
-        // Entry Screen
-        slideComposableRoot<AuthScreen.Welcome> {
-            WelcomeScreen(onLogInNavigate = {
-                navController.navigate(AuthScreen.Login)
-            }, onSelectAccountNavigate = {
-
-                navController.navigate(AuthScreen.SelectAccountType)
-            }) {
-                context.startActivity(
-                    Intent(context, OnBoardingActivity::class.java).apply {
-                        flags=Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                        putExtra("type","guest")
-                    },
-                    ActivityOptions.makeCustomAnimation(
-                        context,
-                        R.anim.slide_in_right,
-                        R.anim.slide_out_left
-                    ).toBundle()
-                )
-            }
-        }
-
-
-        // Choose Account Type Screen
-        slideComposable<AuthScreen.SelectAccountType> {
-            SelectAccountTypeScreen {
-                navController.navigate(AuthScreen.Register(it))
-            }
-        }
-
-        // Register Screen
-        slideComposable<AuthScreen.Register>(
-            typeMap = mapOf(typeOf<AccountType>() to NavType.EnumType(AccountType::class.java))
-        ) {
-            RegisterScreen(onNavigateUpRegisterEmailOtpVerification = { firstName, lastName, email, password, accountType ->
-                navController.navigate(AuthScreen.RegisterEmailOtpVerification(
-                       firstName, lastName, email, password, accountType
-                    ))
-            }) {
-                context.startActivity(
-                    Intent(context, OnBoardingActivity::class.java).apply {
-                        flags=Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                    },
-                    ActivityOptions.makeCustomAnimation(
-                        context,
-                        R.anim.slide_in_right,
-                        R.anim.slide_out_left
-                    ).toBundle()
-                )
-                (context as Activity).finishAffinity()
-
-            }
-        }
-
-        // Reset Password Screen
-        slideComposable<AuthScreen.Verified> {
-            VerifiedScreen {
-                context.startActivity(
-                    Intent(context, OnBoardingActivity::class.java).apply {
-                        flags=Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                    },
-                    ActivityOptions.makeCustomAnimation(
-                        context,
-                        R.anim.slide_in_right,
-                        R.anim.slide_out_left
-                    ).toBundle()
-                )
-                (context as Activity).finishAffinity()
-            }
-        }
-
-        // Login Screen
-        slideComposable<AuthScreen.Login> {
-            LoginScreen(onNavigateUpForgotPassword = {
-                navController.navigate(AuthScreen.ForgotPassword)
-            }) {
-                navController.navigate(AuthScreen.SelectAccountType)
-
-            }
-        }
-
-        //  Email OTP Verification Screen
-        slideComposable<AuthScreen.RegisterEmailOtpVerification> {
-
-            RegisterEmailOtpVerificationScreen({
-                navController.popBackStack()
-            })
-        }
-
-        // Forgot Password Screen
-        slideComposable<AuthScreen.ForgotPassword> {
-            ForgotPasswordScreen { email ->
-                navController.navigate(
-                    AuthScreen.ForgotPasswordEmailOtpVerification(
-                        email
-                    )
-                )
-            }
-        }
-
-        // Forgot Password Validate Email Screen
-        slideComposable<AuthScreen.ForgotPasswordEmailOtpVerification> {
-            ForgotPasswordEmailOtpVerification(
-                { email,accessToken ->
-                    navController.navigate(AuthScreen.ResetPassword(accessToken,email)){
-                        popUpTo(AuthScreen.Login) { inclusive = false } // Pops up to 'Login' screen and removes it from the backstack
-                        launchSingleTop = true // Ensures only one instance of the destination is in the backstack
+    NavDisplay(
+        backStack = backStacks,
+        entryDecorators = listOf(
+            rememberSceneSetupNavEntryDecorator(),
+            rememberSavedStateNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator()
+        ),
+        entryProvider = entryProvider {
+            entry<AuthScreen.Welcome> {
+                WelcomeScreen(
+                    onLogInNavigate = { backStacks.add(AuthScreen.Login) },
+                    onSelectAccountNavigate = { backStacks.add(AuthScreen.SelectAccountType) },
+                    onGuestLogin = {
+                        context.startActivity(
+                            Intent(context, OnBoardingActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                putExtra("type", "guest")
+                            },
+                            ActivityOptions.makeCustomAnimation(
+                                context,
+                                R.anim.slide_in_right,
+                                R.anim.slide_out_left
+                            ).toBundle()
+                        )
                     }
-                }, {
-                    navController.popBackStack()
+                )
+            }
+
+            entry<AuthScreen.SelectAccountType> {
+                SelectAccountTypeScreen { accountType ->
+                    backStacks.add(AuthScreen.Register(accountType))
                 }
-            )
-        }
+            }
 
+            entry<AuthScreen.Register> { entry ->
+                RegisterScreen(
+                    onNavigateUpRegisterEmailOtpVerification = { firstName, lastName, email, password, accountType ->
+                        backStacks.add(
+                            AuthScreen.RegisterEmailOtpVerification(
+                                firstName,
+                                lastName,
+                                email,
+                                password,
+                                accountType
+                            )
+                        )
+                    },
+                    onNavigateUpOnBoarding = {
+                        context.startActivity(
+                            Intent(context, OnBoardingActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                            },
+                            ActivityOptions.makeCustomAnimation(
+                                context,
+                                R.anim.slide_in_right,
+                                R.anim.slide_out_left
+                            ).toBundle()
+                        )
+                        (context as Activity).finishAffinity()
+                    }
+                )
+            }
 
-        // Reset Password Screen
-        slideComposable<AuthScreen.ResetPassword> {
-            ResetPasswordScreen {
-                navController.navigate(AuthScreen.Login) {
-                    // Clear the back stack
-                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+            entry<AuthScreen.Verified> {
+                VerifiedScreen {
+                    context.startActivity(
+                        Intent(context, OnBoardingActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        },
+                        ActivityOptions.makeCustomAnimation(
+                            context,
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left
+                        ).toBundle()
+                    )
+                    (context as Activity).finishAffinity()
+                }
+            }
+
+            entry<AuthScreen.Login> {
+                LoginScreen(
+                    onNavigateUpForgotPassword = { backStacks.add(AuthScreen.ForgotPassword) },
+                    onNavigateUpCreateAccount = { backStacks.add(AuthScreen.SelectAccountType) }
+                )
+            }
+
+            entry<AuthScreen.RegisterEmailOtpVerification> {
+                RegisterEmailOtpVerificationScreen(
+                    onPopBackStack = { backStacks.removeLastOrNull() }
+                )
+            }
+
+            entry<AuthScreen.ForgotPassword> {
+                ForgotPasswordScreen { email ->
+                    backStacks.add(AuthScreen.ForgotPasswordEmailOtpVerification(email))
+                }
+            }
+
+            entry<AuthScreen.ForgotPasswordEmailOtpVerification> { entry ->
+                ForgotPasswordEmailOtpVerification(
+                    onNavigateUp = { email, accessToken ->
+                        backStacks.removeAll { it != AuthScreen.Welcome }
+                        backStacks.add(AuthScreen.ResetPassword(accessToken, email))
+                    },
+                    onPopBackStack = { backStacks.removeLastOrNull() }
+                )
+            }
+
+            entry<AuthScreen.ResetPassword> {
+                ResetPasswordScreen {
+                    backStacks.removeAll { true }
+                    backStacks.add(AuthScreen.Login)
                 }
             }
         }
-    }
+    )
 }
-

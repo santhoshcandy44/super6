@@ -1,9 +1,9 @@
 package com.lts360.compose.ui.usedproducts.manage.navhost
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-@Serializable
-sealed class ManageUsedProductListingRoutes  {
+sealed class ManageUsedProductListingRoutes: NavKey {
 
     @Serializable
     data object ManageUsedProductListing: ManageUsedProductListingRoutes()
@@ -13,7 +13,5 @@ sealed class ManageUsedProductListingRoutes  {
 
     @Serializable
     data object ManagePublishedUsedProductListing: ManageUsedProductListingRoutes()
-
-
 }
 

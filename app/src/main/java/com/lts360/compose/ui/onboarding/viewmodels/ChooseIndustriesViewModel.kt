@@ -16,36 +16,29 @@ import com.lts360.api.models.service.GuestIndustryDao
 import com.lts360.api.models.service.Industry
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
 
-
-@HiltViewModel
-class ChooseIndustriesViewModel @Inject constructor(
+@KoinViewModel
+class ChooseIndustriesViewModel(
     networkConnectivityManager: NetworkConnectivityManager
 ) : ViewModel() {
-
-
 
     val connectivityManager = networkConnectivityManager
 
     val userId: Long = UserSharedPreferencesManager.userId
 
-
     private val _industryItems = mutableStateListOf<Industry>()
 
     val itemList: List<Industry> = _industryItems
 
-
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
-
 
     private val _isUpdating = MutableStateFlow(false)
     val isUpdating = _isUpdating.asStateFlow()
@@ -273,11 +266,7 @@ class ChooseIndustriesViewModel @Inject constructor(
     }
 }
 
-
-
-
-@HiltViewModel
-class GuestChooseIndustriesViewModel @Inject constructor(
+class GuestChooseIndustriesViewModel(
     networkConnectivityManager: NetworkConnectivityManager,
     private val guestIndustryDao: GuestIndustryDao
 ) : ViewModel() {

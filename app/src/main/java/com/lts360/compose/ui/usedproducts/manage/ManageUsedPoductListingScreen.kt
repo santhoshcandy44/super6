@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavController
 import com.lts360.api.models.service.EditableUsedProductListing
 import com.lts360.compose.ui.common.ProfileNotCompletedPromptSheet
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
@@ -35,17 +34,14 @@ import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProduct
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageUsedProductListingScreen(
-    navController: NavController,
-    viewModel: PublishedUsedProductsListingViewModel,
     onAddNewUsedProductListingClick: () -> Unit,
     onNavigateUpManagePublishedUsedProductListing: (EditableUsedProductListing) -> Unit,
     onNavigateProfileSettings:()-> Unit,
-    onPopBackStack: () -> Unit
-) {
+    onPopBackStack: () -> Unit,
+    viewModel: PublishedUsedProductsListingViewModel
+    ) {
 
-    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-    val isUsedProductListingCreated =
-        savedStateHandle?.get<Boolean>("is_used_product_listing_created")
+    val isUsedProductListingCreated = false
 
     var isShowingProfileNotCompletedBottomSheet by remember { mutableStateOf(false) }
 
@@ -117,7 +113,7 @@ fun ManageUsedProductListingScreen(
                 isUsedProductListingCreated,
                 {
                     isUsedProductListingCreated?.let {
-                        savedStateHandle.remove<String>("is_used_product_listing_created")
+
                     }
                 },
                 onNavigateUpManagePublishedUsedProductListing,

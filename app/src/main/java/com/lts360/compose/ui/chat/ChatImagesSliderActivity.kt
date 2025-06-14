@@ -57,10 +57,8 @@ import com.lts360.compose.ui.enterFullScreenMode
 import com.lts360.compose.ui.exitFullScreenMode
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
-import dagger.hilt.android.AndroidEntryPoint
 
 
-@AndroidEntryPoint
 class ChatImagesSliderActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

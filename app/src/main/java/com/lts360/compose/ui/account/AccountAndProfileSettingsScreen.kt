@@ -53,13 +53,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.compose.ui.auth.AccountType
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.main.viewmodels.AccountAndProfileSettingsViewModel
 import com.lts360.compose.ui.theme.icons
+import org.koin.androidx.compose.koinViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,12 +68,12 @@ fun AccountAndProfileSettingsScreen(
     onChangePasswordNavigateUp: () -> Unit,
     onSelectAccountType: (AccountType) -> Unit,
     onPopStack: () -> Unit,
-    viewModel: AccountAndProfileSettingsViewModel = hiltViewModel()) {
+    viewModel: AccountAndProfileSettingsViewModel = koinViewModel()
+) {
 
     val accountType by viewModel.accountType.collectAsState()
 
     var bottomSheetState by rememberSaveable { mutableStateOf(false) }
-
 
     val sheetState = rememberModalBottomSheetState()
 

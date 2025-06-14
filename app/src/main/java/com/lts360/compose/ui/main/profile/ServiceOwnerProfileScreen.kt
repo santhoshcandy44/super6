@@ -56,7 +56,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavHostController
 import com.lts360.R
 import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.api.models.service.Service
@@ -74,10 +73,10 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ServiceOwnerProfileScreen(
-    navHostController: NavHostController,
     key: Int,
     onNavigateUpChat: (ChatUser, Int, Long) -> Unit,
     onNavigateUpDetailedService: (Int) -> Unit,
+    onPopBackStack: () -> Unit,
     servicesViewModel: ServicesViewModel,
     viewModel: ServiceOwnerProfileViewModel
 ) {
@@ -115,9 +114,7 @@ fun ServiceOwnerProfileScreen(
             servicesViewModel.setNestedServiceOwnerProfileSelectedItem(key, it)
             onNavigateUpDetailedService(key)
         },
-        {
-            navHostController.popBackStack()
-        },
+        onPopBackStack,
         viewModel
     )
 
@@ -126,9 +123,9 @@ fun ServiceOwnerProfileScreen(
 
 @Composable
 fun BookmarkedServiceOwnerProfileScreen(
-    navHostController: NavHostController,
     onNavigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpDetailedService: () -> Unit,
+    onPopBackStack: () -> Unit,
     servicesViewModel: BookmarksViewModel,
     viewModel: ServiceOwnerProfileViewModel
 ) {
@@ -169,9 +166,7 @@ fun BookmarkedServiceOwnerProfileScreen(
         }, {
             onNavigateUpDetailedService()
         },
-        {
-            navHostController.popBackStack()
-        },
+        onPopBackStack,
         viewModel
     )
 

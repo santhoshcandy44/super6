@@ -26,13 +26,13 @@ import com.lts360.compose.ui.main.models.ServiceReviewReply
 import com.lts360.compose.ui.main.viewmodels.PageSource
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.android.annotation.KoinViewModel
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 import kotlin.text.toInt
@@ -470,14 +470,14 @@ class ServicesRepository @Inject constructor(
 }
 
 
-@HiltViewModel
-class ServicesViewModel @Inject constructor(
+@KoinViewModel
+class ServicesViewModel(
     val userProfileDao: UserProfileDao,
     private val guestIndustryDao: GuestIndustryDao,
     private val guestUserLocationDao: UserLocationDao,
     val chatUserDao: ChatUserDao,
-    val tokenManager: TokenManager,
     val chatUserRepository: ChatUserRepository,
+    val tokenManager: TokenManager,
     val networkConnectivityManager: NetworkConnectivityManager,
 ) : ViewModel() {
 

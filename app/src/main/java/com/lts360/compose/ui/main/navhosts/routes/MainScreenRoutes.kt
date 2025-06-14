@@ -1,23 +1,21 @@
 package com.lts360.compose.ui.main.navhosts.routes
 
-import com.lts360.api.models.service.FeedUserProfileInfo
+import androidx.navigation3.runtime.NavKey
 import com.lts360.app.database.models.profile.RecentLocation
-import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.compose.ui.auth.AccountType
 import com.lts360.compose.ui.main.State
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-@Serializable
-sealed class MainRoutes  {
+sealed class MainRoutes : NavKey{
+
     @Serializable
     data object Main : MainRoutes()
 
     @Serializable
     data class ChatWindow(
         val chatId: Int,
-        val recipientId: Long)
+        val recipientId: Long) : MainRoutes()
 
     @Serializable
     data object ChooseIndustries : MainRoutes()
@@ -27,8 +25,8 @@ sealed class MainRoutes  {
 
 }
 
-@Serializable
-sealed class BottomNavRoutes {
+
+sealed class BottomNavRoutes: NavKey {
 
     @Serializable
     data class DetailedService(val key: Int) : BottomNavRoutes()
@@ -45,10 +43,8 @@ sealed class BottomNavRoutes {
     @Serializable
     data class DetailedServiceFeedUserImagesSlider(val selectedImagePosition: Int) : BottomNavRoutes()
 
-
     @Serializable
     data class DetailedSeconds(val key: Int) : BottomNavRoutes()
-
 
     @Serializable
     data class SecondsOwnerProfile(val serviceOwnerId: Long, val key: Int = -1) : BottomNavRoutes()
@@ -64,12 +60,13 @@ sealed class BottomNavRoutes {
 
     @Serializable
     data class DetailedLocalJob(val key: Int) : BottomNavRoutes()
+
     @Serializable
     data class DetailedLocalJobsImagesSlider(val key: Int, val selectedImagePosition: Int) : BottomNavRoutes()
 }
 
-@Serializable
-sealed class  BookMarkRoutes{
+sealed class  BookMarkRoutes: NavKey{
+
     @Serializable
     data object BookmarkedDetailedService : BookMarkRoutes()
 
@@ -112,14 +109,13 @@ sealed class  BookMarkRoutes{
     data class DetailedSecondsFeedUserImagesSlider(val selectedImagePosition: Int): BookMarkRoutes()
 }
 
-@Serializable
-sealed class AccountAndProfileSettingsRoutes{
+sealed class AccountAndProfileSettingsRoutes: NavKey{
 
     @Serializable
-    data class SwitchAccountType(val accountType: AccountType)
+    data class SwitchAccountType(val accountType: AccountType): AccountAndProfileSettingsRoutes()
 
     @Serializable
-    data class AccountAndProfileSettings(val accountType: String)
+    data class AccountAndProfileSettings(val accountType: String) : AccountAndProfileSettingsRoutes()
 
     @Serializable
     data object PersonalSettings : AccountAndProfileSettingsRoutes()
@@ -144,13 +140,12 @@ sealed class AccountAndProfileSettingsRoutes{
 
 }
 
-@Serializable
-sealed class LocationSetUpRoutes{
+sealed class LocationSetUpRoutes: NavKey {
     @Serializable
-    data class LocationChooser(val locationStatesEnabled:Boolean=true)
+    data class LocationChooser(val locationStatesEnabled:Boolean=true):LocationSetUpRoutes()
 
     @Serializable
-    data object Districts
+    data object Districts:LocationSetUpRoutes()
 }
 
 
@@ -174,26 +169,6 @@ object RecentLocationSerializer{
     fun deserializeLocationsList(recentLocation: String): List<RecentLocation>{
         return Json.decodeFromString(recentLocation)
     }
-}
-
-object UserProfileSerializer{
-
-    fun serializeUserProfile(userProfile: UserProfile): String {
-        return Json.encodeToString(userProfile)
-    }
-
-    fun deserializeUserProfile(userProfileString: String): UserProfile {
-        return Json.decodeFromString(userProfileString)
-    }
-
-    fun serializeFeedUserProfileInfo(feedUserProfileInfo: FeedUserProfileInfo): String {
-        return Json.encodeToString(feedUserProfileInfo)
-    }
-
-    fun deserializeFeedUserProfile(feedUserProfileString: String): FeedUserProfileInfo {
-        return Json.decodeFromString(feedUserProfileString)
-    }
-
 }
 
 

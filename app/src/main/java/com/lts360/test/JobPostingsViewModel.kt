@@ -10,7 +10,6 @@ import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.settings.viewmodels.RegionalSettingsRepository
 import com.lts360.test.job.JobsPageSource
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,20 +19,18 @@ import kotlinx.serialization.Serializable
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import javax.inject.Inject
 
-@HiltViewModel
-class JobPostingsViewModel @Inject constructor(
+class JobPostingsViewModel (
     val savedStateHandle: SavedStateHandle,
     tokenManager: TokenManager,
     private val guestUserLocationDao: UserLocationDao,
     networkConnectivityManager: NetworkConnectivityManager,
-    private val regionalSettingsRepository: RegionalSettingsRepository
+    regionalSettingsRepository: RegionalSettingsRepository
 
 ) : ViewModel() {
 
     val submittedQuery = savedStateHandle.get<String?>("submittedQuery")
-    val onlySearchBar = savedStateHandle.get<Boolean>("onlySearchBar") ?: false
+    val onlySearchBar = savedStateHandle.get<Boolean>("onlySearchBar") == true
     private val key = savedStateHandle.get<Int>("key") ?: 0
 
     val userId = UserSharedPreferencesManager.userId

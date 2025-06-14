@@ -4,38 +4,32 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lts360.app.database.daos.notification.NotificationDao
 import com.lts360.app.database.models.notification.Notification
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.koin.android.annotation.KoinViewModel
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-
-@HiltViewModel
-class NotificationViewModel @Inject constructor (private val notificationDao: NotificationDao) : ViewModel() {
-
+@KoinViewModel
+class NotificationViewModel(private val notificationDao: NotificationDao) : ViewModel() {
 
     private val _selectedItem = MutableStateFlow<Notification?>(null)
-    val selectedItem: StateFlow<Notification?> get() = _selectedItem
+    val selectedItem = _selectedItem.asStateFlow()
 
-    // Loading state
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
 
     private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications: StateFlow<List<Notification>> = _notifications
 
     init {
-
         viewModelScope.launch(Dispatchers.IO){
-            // Fetch all notifications and emit them to the StateFlow
             notificationDao.getAllNotifications().collectLatest { notificationList ->
-                _isLoading.value = false // Data is loaded, set loading to false
+                _isLoading.value = false
                 _notifications.value = notificationList
             }
         }

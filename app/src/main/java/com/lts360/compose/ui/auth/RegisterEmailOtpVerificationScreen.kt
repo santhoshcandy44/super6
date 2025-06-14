@@ -8,16 +8,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.lts360.R
 import com.lts360.compose.ui.auth.viewmodels.RegisterEmailOTPVerificationViewModel
 import com.lts360.compose.ui.onboarding.OnBoardingActivity
+import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
 fun RegisterEmailOtpVerificationScreen(
     onPopBackStack:()-> Unit,
-    viewModel: RegisterEmailOTPVerificationViewModel = hiltViewModel()) {
+    viewModel: RegisterEmailOTPVerificationViewModel = koinViewModel()
+) {
 
     val context = LocalContext.current
     val isLoading: Boolean by viewModel.loading.collectAsState()

@@ -63,10 +63,8 @@ import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.usedproducts.DetailedUsedProductListingScreen
 import com.lts360.compose.ui.usedproducts.manage.ManageUsedProductListingScreen
 import com.lts360.compose.utils.ExpandableText
-import dagger.hilt.android.AndroidEntryPoint
 
 
-@AndroidEntryPoint
 class TestActivity : ComponentActivity() {
 
     companion object {

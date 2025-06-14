@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavController
 import com.lts360.api.models.service.EditableService
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.common.ProfileNotCompletedPromptSheet
@@ -53,18 +52,16 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageServicesScreen(
-    navController:NavController,
-    onAddNewServiceClick: () -> Unit,
+    onCreatedNewService: () -> Unit,
     onNavigateUpCreateService: (String, Long) -> Unit,
-    onNavigateUpManagePublishedService: (EditableService) -> Unit,
-    onNavigateProfileSettings:()-> Unit,
-    onPopBackStack:()->Unit,
+    onManagePublishedService: (EditableService) -> Unit,
+    onProfileSettings:()-> Unit,
+    onBack:()->Unit,
     draftServicesViewModel: ServicesWorkflowViewModel,
     publishedServicesViewModel: PublishedServicesViewModel,
     tabTitles: List<String> = listOf("Draft", "Published")) {
 
-    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-    val isServiceCreated = savedStateHandle?.get<Boolean>("is_service_created")
+    val isServiceCreated = false
 
 
     val pagerState = rememberPagerState(pageCount = { tabTitles.size }, initialPage = 0)
@@ -81,7 +78,7 @@ fun ManageServicesScreen(
         Scaffold(topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onPopBackStack ) {
+                    IconButton(onClick = onBack ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back Icon"
@@ -117,7 +114,7 @@ fun ManageServicesScreen(
                     OutlinedButton(
                         onClick =  if (isProfileCompleted) {
                             dropUnlessResumed {
-                                onAddNewServiceClick()
+                                onCreatedNewService()
                             }
                         } else {
                             {
@@ -216,12 +213,11 @@ fun ManageServicesScreen(
                                 isServiceCreated,
                                 {
                                     isServiceCreated?.let {
-                                        savedStateHandle.remove<String>("is_service_created")
+
                                     }
                                 },
-                               onNavigateUpManagePublishedService,
+                                onManagePublishedService,
                                 publishedServicesViewModel
-
                             )
                         }
                     }
@@ -232,7 +228,7 @@ fun ManageServicesScreen(
             if (isShowingProfileNotCompletedBottomSheet) {
                 ProfileNotCompletedPromptSheet(
                     unCompletedProfileFields = unCompletedProfileFieldsFlow,
-                    onProfileCompleteClick = onNavigateProfileSettings,
+                    onProfileCompleteClick = onProfileSettings,
                     onDismiss = {
                         isShowingProfileNotCompletedBottomSheet = false
                     })

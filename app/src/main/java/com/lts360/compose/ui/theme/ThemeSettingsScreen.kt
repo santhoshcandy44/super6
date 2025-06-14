@@ -3,9 +3,7 @@ package com.lts360.compose.ui.theme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,15 +32,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.compose.ui.theme.viewmodels.ThemeMode
 import com.lts360.compose.ui.theme.viewmodels.ThemeViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ThemeSettingsScreen(viewModel: ThemeViewModel = hiltViewModel(),
-    onPopBackStack:()-> Unit) {
+fun ThemeSettingsScreen(viewModel: ThemeViewModel = koinViewModel(),
+                        onPopBackStack:()-> Unit) {
 
     val themeMode by viewModel.themeMode.collectAsState()
 

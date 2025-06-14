@@ -7,29 +7,24 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.google.firebase.auth.FirebaseAuth
 import com.lts360.components.utils.LogUtils.TAG
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
 import androidx.core.content.edit
+import org.koin.core.annotation.Factory
 
-
-class TokenManager @Inject constructor(@ApplicationContext  context: Context) {
-
+@Factory
+class TokenManager (applicationContext: Context) {
 
     companion object{
-
         private const val  SIGN_IN_METHOD= "sign_in_method"
         private const val ACCESS_TOKEN_KEY = "access_token"
         private const val REFRESH_TOKEN_KEY = "refresh_token"
-
     }
 
-    private val masterKey: MasterKey = MasterKey.Builder(context)
+    private val masterKey: MasterKey = MasterKey.Builder(applicationContext)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
 
-
     private val encryptedSharedPreferences: SharedPreferences = EncryptedSharedPreferences.create(
-        context,
+        applicationContext,
         "encrypted_data_store",
         masterKey,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,

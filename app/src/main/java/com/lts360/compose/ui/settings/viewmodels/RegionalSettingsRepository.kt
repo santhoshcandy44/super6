@@ -4,11 +4,10 @@ import android.content.Context
 import android.telephony.TelephonyManager
 import androidx.core.content.edit
 import com.lts360.compose.ui.settings.Country
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
+import org.koin.core.annotation.Factory
 
-class RegionalSettingsRepository @Inject constructor(@ApplicationContext val context: Context) {
-
+@Factory
+class RegionalSettingsRepository (val context: Context) {
 
     private val telephonyManager =
         context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager

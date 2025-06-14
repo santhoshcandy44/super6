@@ -6,7 +6,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
@@ -30,24 +30,23 @@ import com.lts360.compose.ui.main.models.LocationRepository
 import com.lts360.compose.ui.main.models.SearchTerm
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.koin.android.annotation.KoinViewModel
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 
-@HiltViewModel
-class HomeViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
+@KoinViewModel
+class HomeViewModel(
     val savedStateHandle: SavedStateHandle,
-    private val locationRepository: LocationRepository,
+    val applicationContext: Context,
     userProfileDao: UserProfileDao,
+    private val locationRepository: LocationRepository,
     tokenManager: TokenManager) : ViewModel() {
 
     val userId = UserSharedPreferencesManager.userId
@@ -55,10 +54,8 @@ class HomeViewModel @Inject constructor(
 
     val type = if (tokenManager.isVerifiedUser()) "verified_user" else "guest"
 
-
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
-
 
     private val _selectedLocationType = MutableStateFlow<String?>(null)
     val locationType = _selectedLocationType.asStateFlow()
@@ -176,10 +173,10 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    fun navigateToOverlay(navController: NavController, route: BottomBar) {
+    fun navigateToOverlay(backStack: NavBackStack, navEntry: BottomBar) {
         viewModelScope.launch {
-            navController.navigate(
-                route
+            backStack.add(
+                navEntry
             )
         }
         setEmptySuggestions()

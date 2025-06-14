@@ -40,20 +40,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.exoplayer.ExoPlayer
 import com.lts360.R
 import com.lts360.components.utils.LogUtils.TAG
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
-import javax.inject.Inject
 import kotlin.math.roundToInt
 
-@HiltViewModel
-class ChatCameraXViewModel @Inject constructor(@ApplicationContext val context: Context) :
+class ChatCameraXViewModel(val context: Context) :
     ViewModel() {
-
 
     private val _isCameraPermissionGranted = MutableStateFlow(hasCameraPermissionGranted())
     val isCameraPermissionGranted = _isCameraPermissionGranted.asStateFlow()

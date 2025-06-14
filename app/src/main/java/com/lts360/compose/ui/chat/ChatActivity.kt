@@ -31,14 +31,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -56,9 +54,6 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -66,7 +61,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -98,8 +92,13 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -119,7 +118,6 @@ import com.lts360.app.database.models.chat.ThumbnailLoader.getThumbnailBitmap
 import com.lts360.app.workers.chat.utils.getFileExtension
 import com.lts360.components.findActivity
 import com.lts360.components.utils.compressImageAsByteArray
-import com.lts360.compose.ui.auth.navhost.noTransitionComposable
 import com.lts360.compose.ui.chat.camera.CameraVisualPickerActivityContracts
 import com.lts360.compose.ui.chat.panel.ChatTopBarScreen
 import com.lts360.compose.ui.chat.panel.CustomWavyTypingIndicator
@@ -156,32 +154,19 @@ import com.lts360.compose.utils.ChatMessageLinkPreviewHeader
 import com.lts360.compose.utils.ChatMessageLinkPreviewHeaderLoading
 import com.lts360.compose.utils.SafeDrawingBox
 import com.lts360.libs.visualpicker.GalleryVisualPagerActivityResultContracts
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
+import org.koin.android.ext.android.inject
 
-
-@AndroidEntryPoint
 class ChatActivity : ChatUtilNativeBaseActivity() {
 
-    @Inject
-    lateinit var chatUserDao: ChatUserDao
-
-    @Inject
-    lateinit var messageDao: MessageDao
-
-    @Inject
-    lateinit var messageMediaMetadataDao: MessageMediaMetaDataDao
-
-    @Inject
-    lateinit var chatUserRepository: ChatUserRepository
-
-    @Inject
-    lateinit var socketManager: SocketManager
-
+    val chatUserDao: ChatUserDao by inject()
+    val messageDao: MessageDao by inject()
+    val messageMediaMetadataDao: MessageMediaMetaDataDao by inject()
+    val chatUserRepository: ChatUserRepository by inject()
+    val socketManager: SocketManager by inject()
 
     private lateinit var chatActivityViewModel: ChatActivityViewModel
 
@@ -222,37 +207,47 @@ class ChatActivity : ChatUtilNativeBaseActivity() {
                                 modifier = Modifier.fillMaxSize()
                             ) {
 
+                                val backStack = rememberNavBackStack(
+                                    MainRoutes.ChatWindow(
+                                        userState.chatUser.chatId,
+                                        senderId
+                                    )
+                                )
 
-                                val navHostController = rememberNavController()
-                                NavHost(
-                                    navHostController,
-                                    MainRoutes.ChatWindow(userState.chatUser.chatId, senderId)
-                                ) {
-                                    noTransitionComposable<MainRoutes.ChatWindow> {
-                                        NotificationChatScreen(
-                                            { uri, videoWidth, videoHeight, totalDuration ->
-                                                openPlayerActivity(
-                                                    this@ChatActivity,
-                                                    uri,
-                                                    videoWidth,
-                                                    videoHeight,
-                                                    totalDuration
-                                                )
-                                            },
-                                            { uri, imageWidth, imageHeight ->
-                                                openImageSliderActivity(
-                                                    this@ChatActivity,
-                                                    uri,
-                                                    imageWidth,
-                                                    imageHeight
-                                                )
-                                            },
-                                            chatActivityViewModel,
-                                            userState.firstVisibleItemIndex,
-                                            { navHostController.popBackStack() }
-                                        )
+                                NavDisplay(
+                                    backStack = backStack,
+                                    entryDecorators = listOf(
+                                        rememberSceneSetupNavEntryDecorator(),
+                                        rememberSavedStateNavEntryDecorator(),
+                                        rememberViewModelStoreNavEntryDecorator()
+                                    ),
+                                    entryProvider = entryProvider {
+                                        entry<MainRoutes.ChatWindow> {
+                                            NotificationChatScreen(
+                                                onNavigateUpVideoPlayer = { uri, videoWidth, videoHeight, totalDuration ->
+                                                    openPlayerActivity(
+                                                        this@ChatActivity,
+                                                        uri,
+                                                        videoWidth,
+                                                        videoHeight,
+                                                        totalDuration
+                                                    )
+                                                },
+                                                onNavigateImageSlider = { uri, imageWidth, imageHeight ->
+                                                    openImageSliderActivity(
+                                                        this@ChatActivity,
+                                                        uri,
+                                                        imageWidth,
+                                                        imageHeight
+                                                    )
+                                                },
+                                                onPopBackStack = { backStack.removeLastOrNull() },
+                                                chatActivityViewModel = chatActivityViewModel,
+                                                firstVisibleItemIndex = userState.firstVisibleItemIndex,
+                                            )
+                                        }
                                     }
-                                }
+                                )
 
                             }
                         }

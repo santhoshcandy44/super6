@@ -2,8 +2,6 @@ package com.lts360.compose.ui.auth
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,7 +54,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.lts360.R
 import com.lts360.components.utils.openUrlInCustomTab
 import com.lts360.compose.ui.auth.viewmodels.RegisterViewModel
@@ -65,16 +62,16 @@ import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.utils.NavigatorSubmitButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
 fun RegisterScreen(
-    viewModel: RegisterViewModel = hiltViewModel(),
+    viewModel: RegisterViewModel = koinViewModel(),
     onNavigateUpRegisterEmailOtpVerification: (String, String, String, String, AccountType) -> Unit,
     onNavigateUpOnBoarding: () -> Unit,
 ) {
-
-
+    
     val context = LocalContext.current
 
     val focusManager = LocalFocusManager.current

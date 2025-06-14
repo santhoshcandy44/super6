@@ -1,9 +1,10 @@
 package com.lts360.compose.ui.localjobs.manage.navhost
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-@Serializable
-sealed class ManageLocalJobRoutes  {
+
+sealed class ManageLocalJobRoutes : NavKey{
 
     @Serializable
     data object ManageLocalJob: ManageLocalJobRoutes()

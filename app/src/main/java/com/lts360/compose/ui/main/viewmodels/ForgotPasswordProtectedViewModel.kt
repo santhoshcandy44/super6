@@ -1,6 +1,5 @@
 package com.lts360.compose.ui.main.viewmodels
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -12,7 +11,6 @@ import com.lts360.api.utils.Result
 import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.app.AccountSettingsService
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,17 +22,10 @@ import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 
-@HiltViewModel
-class ForgotPasswordProtectedViewModel @Inject constructor(
-    userProfileDao: UserProfileDao,
-    savedStateHandle: SavedStateHandle,
-) : ViewModel() {
-
+class ForgotPasswordProtectedViewModel (userProfileDao: UserProfileDao,) : ViewModel() {
 
     val userId = UserSharedPreferencesManager.userId
 
-
-    // MutableStateFlow to hold the email value
     private val _email = MutableStateFlow<String>("")
     val email  = _email.asStateFlow()
 

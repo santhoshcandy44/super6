@@ -1,9 +1,9 @@
 package com.lts360.compose.ui.main.navhosts.routes
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-@Serializable
-sealed class BottomBar{
+sealed class BottomBar : NavKey{
 
     @Serializable
     data class Home(

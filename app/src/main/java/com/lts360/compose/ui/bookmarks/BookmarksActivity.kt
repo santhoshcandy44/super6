@@ -1,29 +1,27 @@
 package com.lts360.compose.ui.bookmarks
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavOptions
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.toRoute
-import com.lts360.compose.ui.auth.navhost.slideComposable
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
+import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.compose.ui.chat.IsolatedChatActivity
 import com.lts360.compose.ui.localjobs.BookmarkedDetailedLocalJobInfoScreen
 import com.lts360.compose.ui.localjobs.manage.BookmarkedLocalJobsImagesSliderScreen
 import com.lts360.compose.ui.main.navhosts.routes.BookMarkRoutes
-import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.main.profile.BookmarkedServiceOwnerProfileScreen
 import com.lts360.compose.ui.services.BookmarkedDetailedServiceInfoScreen
 import com.lts360.compose.ui.services.BookmarkedFeedUserDetailedServiceInfoScreen
@@ -38,10 +36,20 @@ import com.lts360.compose.ui.usedproducts.manage.BookmarkedSecondsOwnerProfileSc
 import com.lts360.compose.ui.usedproducts.manage.BookmarkedSecondsSliderScreen
 import com.lts360.compose.ui.usedproducts.manage.FeedUserSecondsImagesSliderScreen
 import com.lts360.compose.utils.SafeDrawingBox
-import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.serialization.json.Json
+import org.koin.androidx.compose.koinViewModel
 
+object UserProfileSerializer {
 
-@AndroidEntryPoint
+    fun serializeFeedUserProfileInfo(feedUserProfile: FeedUserProfileInfo): String {
+        return Json.encodeToString(feedUserProfile)
+    }
+
+    fun deserializeFeedUserProfile(serialized: String): FeedUserProfileInfo {
+        return Json.decodeFromString(serialized)
+    }
+}
+
 class BookmarksActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,276 +59,97 @@ class BookmarksActivity : ComponentActivity() {
             AppTheme {
                 Surface {
                     SafeDrawingBox {
-
-                        val bookmarksViewModel: BookmarksViewModel = hiltViewModel()
-                        val secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel = hiltViewModel()
-                        val servicesOwnerProfileViewModel: ServiceOwnerProfileViewModel = hiltViewModel()
-
+                        val bookmarksViewModel: BookmarksViewModel = koinViewModel()
+                        val secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel =
+                            koinViewModel()
+                        val servicesOwnerProfileViewModel: ServiceOwnerProfileViewModel =
+                            koinViewModel()
                         val context = LocalContext.current
 
-                        var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
+                        val backStack = rememberNavBackStack(BookMarkRoutes.BookmarkedServices)
 
-                        val navController = rememberBookMarksCustomNavController(
-                            lastEntry,
-                            bookmarksViewModel.isSelectedBookmarkNull(),
-                            secondsOwnerProfileViewModel.isSelectedUsedProductListingNull(),
-                            servicesOwnerProfileViewModel.isSelectedServiceNull()
-                        )
-
-                        val currentBackStackEntryAsState by navController.currentBackStackEntryAsState()
-
-                        LaunchedEffect(currentBackStackEntryAsState) {
-
-                            lastEntry = navController.currentBackStackEntry?.destination?.route
-                        }
-
-                        NavHost(navController, BookMarkRoutes.BookmarkedServices) {
-
-                            slideComposable<BookMarkRoutes.BookmarkedServices> {
-                                BookmarksScreen(
-                                    {
-                                        navController.navigate(BookMarkRoutes.BookmarkedDetailedService)
-                                    },
-                                    {
-                                        navController.navigate(BookMarkRoutes.ServiceOwnerProfile(it),
-                                            NavOptions.Builder().setLaunchSingleTop(true).build())
-                                    },
-                                    {
-                                        navController.navigate(BookMarkRoutes.BookmarkedDetailedUsedProductListing)
-                                    },
-                                    {
-                                        navController.navigate(BookMarkRoutes.BookmarkedDetailedLocalJob)
-                                    },
-                                    {
-                                        this@BookmarksActivity.finish()
-
-                                    },
-                                    bookmarksViewModel
-                                )
-                            }
-
-                            slideComposable<BookMarkRoutes.BookmarkedDetailedService> {
-
-                                BookmarkedDetailedServiceInfoScreen(
-                                    navController,
-                                    onNavigateUpSlider = {
-                                        navController.navigate(
-                                            BookMarkRoutes.BookmarkedDetailedServiceImagesSlider(
-                                                it
-                                            )
-                                        )
-                                    },
-                                    navigateUpChat = { chatId, recipientId, feedUserProfile ->
-                                        context.startActivity(
-                                            Intent(context, IsolatedChatActivity::class.java)
-                                                .apply {
-                                                    putExtra(
-                                                        "feed_user_profile",
-                                                        UserProfileSerializer.serializeFeedUserProfileInfo(
-                                                            feedUserProfile
-                                                        )
-                                                    )
-                                                    putExtra("chat_id", chatId)
-                                                    putExtra("recipient_id", recipientId)
-
-                                                })
-                                    }, bookmarksViewModel
-                                )
-                            }
-
-                            slideComposable<BookMarkRoutes.BookmarkedDetailedServiceImagesSlider> {
-                                val selectedImagePosition =
-                                    it.toRoute<BookMarkRoutes.BookmarkedDetailedServiceImagesSlider>().selectedImagePosition
-
-                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
-
-                                selectedItem?.let {
-                                    BookmarkedImagesSliderScreen(
-                                        selectedImagePosition,
+                        NavDisplay(
+                            backStack = backStack,
+                            entryDecorators = listOf(
+                                rememberSceneSetupNavEntryDecorator(),
+                                rememberSavedStateNavEntryDecorator(),
+                                rememberViewModelStoreNavEntryDecorator()
+                            ),
+                            entryProvider = entryProvider {
+                                entry<BookMarkRoutes.BookmarkedServices> {
+                                    BookmarksScreen(
+                                        {
+                                            backStack.add(BookMarkRoutes.BookmarkedDetailedService)
+                                        },
+                                        {
+                                            backStack.add(BookMarkRoutes.ServiceOwnerProfile(it))
+                                        },
+                                        {
+                                            backStack.add(BookMarkRoutes.BookmarkedDetailedUsedProductListing)
+                                        },
+                                        {
+                                            backStack.add(BookMarkRoutes.BookmarkedDetailedLocalJob)
+                                        },
+                                        {
+                                            (context as Activity).finish()
+                                        },
                                         bookmarksViewModel
-                                    ) { navController.popBackStack() }
-                                }
-                            }
-
-                            slideComposable<BookMarkRoutes.ServiceOwnerProfile> {
-
-                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
-                                selectedItem?.let {
-                                    BookmarkedServiceOwnerProfileScreen(
-                                        navController,
-                                        onNavigateUpChat = { chatId, recipientId, feedUserProfile ->
-                                            context.startActivity(
-                                                Intent(context, IsolatedChatActivity::class.java)
-                                                    .apply {
-                                                        putExtra(
-                                                            "feed_user_profile",
-                                                            UserProfileSerializer.serializeFeedUserProfileInfo(
-                                                                feedUserProfile
-                                                            )
-                                                        )
-                                                        putExtra("chat_id", chatId)
-                                                        putExtra("recipient_id", recipientId)
-
-                                                    })
-                                        },
-                                        {
-                                            navController.navigate(BookMarkRoutes.DetailedServiceFeedUser())
-                                        }, bookmarksViewModel,
-                                        servicesOwnerProfileViewModel
                                     )
                                 }
 
-                            }
-
-                            slideComposable<BookMarkRoutes.DetailedServiceFeedUser> {
-
-                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
-
-                                selectedItem?.let {
-                                    BookmarkedFeedUserDetailedServiceInfoScreen(
-                                        navController,
+                                entry<BookMarkRoutes.BookmarkedDetailedService> {
+                                    BookmarkedDetailedServiceInfoScreen(
                                         {
-                                            navController.navigate(
-                                                BookMarkRoutes.DetailedServiceFeedUserImagesSlider(it)
-                                            )
-                                        },
-                                        { chatId, recipientId, feedUserProfile ->
-
-                                            context.startActivity(
-                                                Intent(context, IsolatedChatActivity::class.java)
-                                                    .apply {
-                                                        putExtra(
-                                                            "feed_user_profile",
-                                                            UserProfileSerializer.serializeFeedUserProfileInfo(
-                                                                feedUserProfile
-                                                            )
-                                                        )
-                                                        putExtra("chat_id", chatId)
-                                                        putExtra("recipient_id", recipientId)
-
-                                                    })
-
-                                        }, servicesOwnerProfileViewModel
-                                    )
-                                }
-
-                            }
-
-                            slideComposable<BookMarkRoutes.DetailedServiceFeedUserImagesSlider> {
-                                val selectedImagePosition =
-                                    it.toRoute<BookMarkRoutes.DetailedServiceFeedUserImagesSlider>().selectedImagePosition
-
-                                val selectedItem by servicesOwnerProfileViewModel.selectedItem.collectAsState()
-                                selectedItem?.let {
-                                    FeedUserImagesSliderScreen(
-                                        selectedImagePosition,
-                                        servicesOwnerProfileViewModel
-                                    ) { navController.popBackStack() }
-                                }
-
-                            }
-
-
-                            slideComposable<BookMarkRoutes.BookmarkedDetailedUsedProductListing> {
-
-                                BookmarkedDetailedUsedProductListingInfoScreen(
-                                    navController,
-                                    onNavigateUpSlider = {
-                                        navController.navigate(
-                                            BookMarkRoutes.BookmarkedDetailedUsedProductListingImagesSlider(
-                                                it
-                                            )
-                                        )
-                                    },
-                                    navigateUpChat = { chatId, recipientId, feedUserProfile ->
-                                        context.startActivity(
-                                            Intent(context, IsolatedChatActivity::class.java)
-                                                .apply {
-                                                    putExtra(
-                                                        "feed_user_profile",
-                                                        UserProfileSerializer.serializeFeedUserProfileInfo(
-                                                            feedUserProfile
-                                                        )
-                                                    )
-                                                    putExtra("chat_id", chatId)
-                                                    putExtra("recipient_id", recipientId)
-
-                                                })
-                                    },
-                                    {
-                                        navController.navigate(
-                                            BookMarkRoutes.SecondsOwnerProfile(
-                                                it
-                                            )
-                                        )
-                                    },
-
-                                    bookmarksViewModel
-                                )
-                            }
-
-                            slideComposable<BookMarkRoutes.BookmarkedDetailedUsedProductListingImagesSlider> {
-                                val selectedImagePosition =
-                                    it.toRoute<BookMarkRoutes.BookmarkedDetailedUsedProductListingImagesSlider>().selectedImagePosition
-
-                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
-
-                                selectedItem?.let {
-                                    BookmarkedSecondsSliderScreen(
-                                        selectedImagePosition,
-                                        bookmarksViewModel
-                                    ) { navController.popBackStack() }
-                                }
-                            }
-
-                            slideComposable<BookMarkRoutes.SecondsOwnerProfile> {
-                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
-                                selectedItem?.let {
-                                    BookmarkedSecondsOwnerProfileScreen(
-                                        navController,
-                                        onNavigateUpChat = { chatId, recipientId, feedUserProfile ->
-                                            context.startActivity(
-                                                Intent(context, IsolatedChatActivity::class.java)
-                                                    .apply {
-                                                        putExtra(
-                                                            "feed_user_profile",
-                                                            UserProfileSerializer.serializeFeedUserProfileInfo(
-                                                                feedUserProfile
-                                                            )
-                                                        )
-                                                        putExtra("chat_id", chatId)
-                                                        putExtra("recipient_id", recipientId)
-
-                                                    })
-                                        },
-                                        {
-                                            navController.navigate(BookMarkRoutes.DetailedSecondsFeedUser())
-                                        }, bookmarksViewModel,
-                                        secondsOwnerProfileViewModel
-                                    )
-                                }
-                            }
-
-
-                            slideComposable<BookMarkRoutes.DetailedSecondsFeedUser> {
-
-                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
-
-                                selectedItem?.let {
-                                    BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
-                                        navController,
-                                        {
-                                            navController.navigate(
-                                                BookMarkRoutes.DetailedSecondsFeedUserImagesSlider(
+                                            backStack.add(
+                                                BookMarkRoutes.BookmarkedDetailedServiceImagesSlider(
                                                     it
                                                 )
                                             )
                                         },
                                         { chatId, recipientId, feedUserProfile ->
-
                                             context.startActivity(
-                                                Intent(context, IsolatedChatActivity::class.java)
-                                                    .apply {
+                                                Intent(
+                                                    context,
+                                                    IsolatedChatActivity::class.java
+                                                ).apply {
+                                                    putExtra(
+                                                        "feed_user_profile",
+                                                        UserProfileSerializer.serializeFeedUserProfileInfo(
+                                                            feedUserProfile
+                                                        )
+                                                    )
+                                                    putExtra("chat_id", chatId)
+                                                    putExtra(
+                                                        "recipient_id",
+                                                        recipientId
+                                                    )
+                                                })
+                                        },
+                                        {backStack.removeLastOrNull()},
+                                        bookmarksViewModel
+                                    )
+                                }
+
+                                entry<BookMarkRoutes.BookmarkedDetailedServiceImagesSlider> {
+                                    val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
+                                    selectedItem?.let { nonNullSelectedItem ->
+                                        BookmarkedImagesSliderScreen(
+                                            it.selectedImagePosition,
+                                            bookmarksViewModel
+                                        ) { backStack.removeLastOrNull() }
+                                    }
+                                }
+
+                                entry<BookMarkRoutes.ServiceOwnerProfile> {
+                                    val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
+                                    selectedItem?.let {
+                                        BookmarkedServiceOwnerProfileScreen(
+                                            { chatId, recipientId, feedUserProfile ->
+                                                context.startActivity(
+                                                    Intent(
+                                                        context,
+                                                        IsolatedChatActivity::class.java
+                                                    ).apply {
                                                         putExtra(
                                                             "feed_user_profile",
                                                             UserProfileSerializer.serializeFeedUserProfileInfo(
@@ -329,47 +158,78 @@ class BookmarksActivity : ComponentActivity() {
                                                         )
                                                         putExtra("chat_id", chatId)
                                                         putExtra("recipient_id", recipientId)
-
                                                     })
-
-                                        },
-                                        secondsOwnerProfileViewModel
-                                    )
-                                }
-
-                            }
-
-
-                            slideComposable<BookMarkRoutes.DetailedSecondsFeedUserImagesSlider> {
-                                val selectedImagePosition =
-                                    it.toRoute<BookMarkRoutes.DetailedSecondsFeedUserImagesSlider>().selectedImagePosition
-
-                                val selectedItem by secondsOwnerProfileViewModel.selectedItem.collectAsState()
-                                selectedItem?.let {
-                                    FeedUserSecondsImagesSliderScreen(
-                                        selectedImagePosition,
-                                        secondsOwnerProfileViewModel
-                                    ) { navController.popBackStack() }
-                                }
-
-                            }
-
-
-                            slideComposable<BookMarkRoutes.BookmarkedDetailedLocalJob> {
-
-                                BookmarkedDetailedLocalJobInfoScreen(
-                                    navController,
-                                    onNavigateUpSlider = {
-                                        navController.navigate(
-                                            BookMarkRoutes.BookmarkedDetailedLocalJobImagesSlider(
-                                                it
-                                            )
+                                            },
+                                            {
+                                                backStack.add(BookMarkRoutes.DetailedServiceFeedUser())
+                                            },
+                                            { backStack.removeLastOrNull() },
+                                            bookmarksViewModel,
+                                            servicesOwnerProfileViewModel
                                         )
-                                    },
-                                    navigateUpChat = { chatId, recipientId, feedUserProfile ->
-                                        context.startActivity(
-                                            Intent(context, IsolatedChatActivity::class.java)
-                                                .apply {
+                                    }
+                                }
+
+                                entry<BookMarkRoutes.DetailedServiceFeedUser> {
+                                    val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
+                                    selectedItem?.let {
+                                        BookmarkedFeedUserDetailedServiceInfoScreen(
+                                            {
+                                                backStack.add(
+                                                    BookMarkRoutes.DetailedServiceFeedUserImagesSlider(
+                                                        it
+                                                    )
+                                                )
+                                            },
+                                            { chatId, recipientId, feedUserProfile ->
+                                                context.startActivity(
+                                                    Intent(
+                                                        context,
+                                                        IsolatedChatActivity::class.java
+                                                    ).apply {
+                                                        putExtra(
+                                                            "feed_user_profile",
+                                                            UserProfileSerializer.serializeFeedUserProfileInfo(
+                                                                feedUserProfile
+                                                            )
+                                                        )
+                                                        putExtra("chat_id", chatId)
+                                                        putExtra("recipient_id", recipientId)
+                                                    })
+                                            },
+                                            {
+                                                backStack.removeLastOrNull()
+                                            },
+                                            servicesOwnerProfileViewModel
+                                        )
+                                    }
+                                }
+
+                                entry<BookMarkRoutes.DetailedServiceFeedUserImagesSlider> { navEntry ->
+                                    val selectedItem by servicesOwnerProfileViewModel.selectedItem.collectAsState()
+                                    selectedItem?.let {
+                                        FeedUserImagesSliderScreen(
+                                            navEntry.selectedImagePosition,
+                                            servicesOwnerProfileViewModel
+                                        ) { backStack.removeLastOrNull() }
+                                    }
+                                }
+
+                                entry<BookMarkRoutes.BookmarkedDetailedUsedProductListing> {
+                                    BookmarkedDetailedUsedProductListingInfoScreen(
+                                        {
+                                            backStack.add(
+                                                BookMarkRoutes.BookmarkedDetailedUsedProductListingImagesSlider(
+                                                    it
+                                                )
+                                            )
+                                        },
+                                        { chatId, recipientId, feedUserProfile ->
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    IsolatedChatActivity::class.java
+                                                ).apply {
                                                     putExtra(
                                                         "feed_user_profile",
                                                         UserProfileSerializer.serializeFeedUserProfileInfo(
@@ -378,33 +238,147 @@ class BookmarksActivity : ComponentActivity() {
                                                     )
                                                     putExtra("chat_id", chatId)
                                                     putExtra("recipient_id", recipientId)
-
                                                 })
-                                    },
-
-                                    bookmarksViewModel
-                                )
-                            }
-
-                            slideComposable<BookMarkRoutes.BookmarkedDetailedLocalJobImagesSlider> {
-                                val selectedImagePosition =
-                                    it.toRoute<BookMarkRoutes.BookmarkedDetailedUsedProductListingImagesSlider>().selectedImagePosition
-
-                                val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
-
-                                selectedItem?.let {
-                                    BookmarkedLocalJobsImagesSliderScreen(
-                                        selectedImagePosition,
+                                        },
+                                        {
+                                            backStack.add(BookMarkRoutes.SecondsOwnerProfile(it))
+                                        },
+                                        {
+                                            backStack.removeLastOrNull()
+                                        },
                                         bookmarksViewModel
-                                    ) { navController.popBackStack() }
+                                    )
+                                }
+
+                                entry<BookMarkRoutes.BookmarkedDetailedUsedProductListingImagesSlider> { navEntry ->
+
+                                    val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
+                                    selectedItem?.let {
+                                        BookmarkedSecondsSliderScreen(
+                                            navEntry.selectedImagePosition,
+                                            bookmarksViewModel
+                                        ) { backStack.removeLastOrNull() }
+                                    }
+                                }
+
+                                entry<BookMarkRoutes.SecondsOwnerProfile> {
+                                    val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
+                                    selectedItem?.let {
+                                        BookmarkedSecondsOwnerProfileScreen(
+                                            { chatId, recipientId, feedUserProfile ->
+                                                context.startActivity(
+                                                    Intent(
+                                                        context,
+                                                        IsolatedChatActivity::class.java
+                                                    ).apply {
+                                                        putExtra(
+                                                            "feed_user_profile",
+                                                            UserProfileSerializer.serializeFeedUserProfileInfo(
+                                                                feedUserProfile
+                                                            )
+                                                        )
+                                                        putExtra("chat_id", chatId)
+                                                        putExtra("recipient_id", recipientId)
+                                                    })
+                                            },
+                                            {
+                                                backStack.add(BookMarkRoutes.DetailedSecondsFeedUser())
+                                            },
+                                            { backStack.removeLastOrNull() },
+                                            bookmarksViewModel,
+                                            secondsOwnerProfileViewModel
+                                        )
+                                    }
+                                }
+
+                                entry<BookMarkRoutes.DetailedSecondsFeedUser> {
+                                    val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
+                                    selectedItem?.let {
+                                        BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
+                                            {
+                                                backStack.add(
+                                                    BookMarkRoutes.DetailedSecondsFeedUserImagesSlider(
+                                                        it
+                                                    )
+                                                )
+                                            },
+                                            { chatId, recipientId, feedUserProfile ->
+                                                context.startActivity(
+                                                    Intent(
+                                                        context,
+                                                        IsolatedChatActivity::class.java
+                                                    ).apply {
+                                                        putExtra(
+                                                            "feed_user_profile",
+                                                            UserProfileSerializer.serializeFeedUserProfileInfo(
+                                                                feedUserProfile
+                                                            )
+                                                        )
+                                                        putExtra("chat_id", chatId)
+                                                        putExtra("recipient_id", recipientId)
+                                                    })
+                                            },
+                                            {
+                                                backStack.removeLastOrNull()
+                                            },
+                                            secondsOwnerProfileViewModel
+                                        )
+                                    }
+                                }
+
+                                entry<BookMarkRoutes.DetailedSecondsFeedUserImagesSlider> { navEntry ->
+                                    val selectedItem by secondsOwnerProfileViewModel.selectedItem.collectAsState()
+                                    selectedItem?.let {
+                                        FeedUserSecondsImagesSliderScreen(
+                                            navEntry.selectedImagePosition,
+                                            secondsOwnerProfileViewModel
+                                        ) { backStack.removeLastOrNull() }
+                                    }
+                                }
+
+                                entry<BookMarkRoutes.BookmarkedDetailedLocalJob> {
+                                    BookmarkedDetailedLocalJobInfoScreen(
+                                        {
+                                            backStack.add(
+                                                BookMarkRoutes.BookmarkedDetailedLocalJobImagesSlider(
+                                                    it
+                                                )
+                                            )
+                                        },
+                                        { chatId, recipientId, feedUserProfile ->
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    IsolatedChatActivity::class.java
+                                                ).apply {
+                                                    putExtra(
+                                                        "feed_user_profile",
+                                                        UserProfileSerializer.serializeFeedUserProfileInfo(
+                                                            feedUserProfile
+                                                        )
+                                                    )
+                                                    putExtra("chat_id", chatId)
+                                                    putExtra("recipient_id", recipientId)
+                                                })
+                                        },
+                                        { backStack.removeLastOrNull() },
+                                        bookmarksViewModel
+                                    )
+                                }
+
+                                entry<BookMarkRoutes.BookmarkedDetailedLocalJobImagesSlider> { navEntry ->
+                                    val selectedItem by bookmarksViewModel.selectedItem.collectAsState()
+                                    selectedItem?.let {
+                                        BookmarkedLocalJobsImagesSliderScreen(
+                                            navEntry.selectedImagePosition,
+                                            bookmarksViewModel
+                                        ) { backStack.removeLastOrNull() }
+                                    }
                                 }
                             }
-
-                        }
-
+                        )
                     }
                 }
-
             }
         }
     }

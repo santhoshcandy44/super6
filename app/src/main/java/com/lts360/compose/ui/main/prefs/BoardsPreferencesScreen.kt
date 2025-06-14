@@ -68,7 +68,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.api.utils.ResultError
@@ -79,13 +78,14 @@ import com.lts360.compose.ui.main.prefs.viewmodels.BoardPreferencesViewModel
 import com.lts360.compose.ui.main.prefs.viewmodels.GuestBoardPreferencesViewModel
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.libs.ui.ShortToast
+import org.koin.androidx.compose.koinViewModel
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GuestBoardsPreferencesScreen(viewModel: GuestBoardPreferencesViewModel = hiltViewModel(), onBackGo: () -> Unit) {
+fun GuestBoardsPreferencesScreen(viewModel: GuestBoardPreferencesViewModel = koinViewModel(), onBackGo: () -> Unit) {
 
     val context = LocalContext.current
 
@@ -274,10 +274,9 @@ fun GuestBoardsPreferencesScreen(viewModel: GuestBoardPreferencesViewModel = hil
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BoardsPreferencesScreen(
-    viewModel: BoardPreferencesViewModel = hiltViewModel(),
+    viewModel: BoardPreferencesViewModel = koinViewModel(),
     onBackGo: () -> Unit
 ) {
-
 
     val context = LocalContext.current
 

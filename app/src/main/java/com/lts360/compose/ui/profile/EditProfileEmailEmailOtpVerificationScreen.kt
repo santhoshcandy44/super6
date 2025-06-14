@@ -5,17 +5,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.lts360.compose.ui.auth.OtpVerificationScreen
 import com.lts360.compose.ui.profile.viewmodels.EditEmailEmailOTPVerificationViewModel
-
+import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
 fun EditEmailEmailOtpVerificationScreen(
     onNavigatePop:()->Unit,
     onPopBackStack:()-> Unit,
-    viewModel: EditEmailEmailOTPVerificationViewModel = hiltViewModel(),
+    viewModel: EditEmailEmailOTPVerificationViewModel = koinViewModel(),
 
     ){
 

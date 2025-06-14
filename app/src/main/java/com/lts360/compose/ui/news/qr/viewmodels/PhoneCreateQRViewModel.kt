@@ -3,15 +3,12 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lts360.compose.ui.news.qr.viewmodels.repos.QRCodeRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 
-@HiltViewModel
-class PhoneCreateQRViewModel @Inject constructor(private val qrCodeRepository: QRCodeRepository) :
+class PhoneCreateQRViewModel(private val qrCodeRepository: QRCodeRepository) :
     ViewModel() {
 
     // Phone number input state

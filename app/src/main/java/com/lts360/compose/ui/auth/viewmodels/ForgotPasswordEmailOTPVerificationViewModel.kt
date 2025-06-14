@@ -1,8 +1,6 @@
 package com.lts360.compose.ui.auth.viewmodels
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.lts360.api.app.AppClient
@@ -16,20 +14,19 @@ import com.lts360.api.auth.services.AuthService
 import com.lts360.compose.ui.auth.navhost.AuthScreen
 import com.lts360.compose.ui.auth.repos.AuthRepository
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
 
-@HiltViewModel
-class ForgotPasswordEmailOTPVerificationViewModel @Inject constructor(
+
+@KoinViewModel
+class ForgotPasswordEmailOTPVerificationViewModel(
     authRepository: AuthRepository,
-    savedStateHandle: SavedStateHandle,
+    @InjectedParam val args:AuthScreen.ForgotPasswordEmailOtpVerification,
 ) : EmailOTPVerificationViewModel(authRepository) {
 
-
-    val args = savedStateHandle.toRoute<AuthScreen.ForgotPasswordEmailOtpVerification>()
     val email: String = args.email
 
     val userId = UserSharedPreferencesManager.userId
@@ -121,7 +118,7 @@ class ForgotPasswordEmailOTPVerificationViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))
@@ -208,7 +205,7 @@ class ForgotPasswordEmailOTPVerificationViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))

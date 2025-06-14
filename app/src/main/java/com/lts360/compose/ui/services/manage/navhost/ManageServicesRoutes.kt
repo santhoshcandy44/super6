@@ -1,34 +1,32 @@
 package com.lts360.compose.ui.services.manage.navhost
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-
-@Serializable
-sealed class ManageServicesRoutes  {
+sealed class ManageServicesRoutes : NavKey{
 
     @Serializable
     data object ManageServices: ManageServicesRoutes()
 
     @Serializable
-    data object CreateService
+    data object CreateService: ManageServicesRoutes()
 
     @Serializable
     data object ManagePublishedService: ManageServicesRoutes()
 
     @Serializable
-    data object ManagePublishedServiceInfo
+    data object ManagePublishedServiceInfo: ManageServicesRoutes()
 
     @Serializable
-    data object ManagePublishedServicePlans
+    data object ManagePublishedServicePlans: ManageServicesRoutes()
 
     @Serializable
-    data object ManagePublishedServiceImages
+    data object ManagePublishedServiceImages: ManageServicesRoutes()
 
     @Serializable
-    data object ManagePublishedServiceThumbnail
-
+    data object ManagePublishedServiceThumbnail: ManageServicesRoutes()
 
     @Serializable
-    data object ManagePublishedServiceLocation
+    data object ManagePublishedServiceLocation: ManageServicesRoutes()
 }
 

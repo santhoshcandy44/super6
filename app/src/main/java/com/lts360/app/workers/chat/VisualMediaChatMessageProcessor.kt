@@ -2,7 +2,6 @@ package com.lts360.app.workers.chat
 
 import android.content.Context
 import android.util.Log
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.lts360.App
@@ -25,11 +24,8 @@ import com.lts360.app.workers.chat.utils.awaitConnectToSocket
 import com.lts360.app.workers.chat.utils.cacheThumbnailToAppSpecificFolder
 import com.lts360.app.workers.chat.utils.getFolderTypeByExtension
 import com.lts360.components.utils.LogUtils
-import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
 import com.lts360.compose.ui.auth.repos.decryptFile
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import io.socket.client.Ack
 import io.socket.client.Socket
 import kotlinx.coroutines.CompletableDeferred
@@ -41,23 +37,22 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
+import org.koin.android.annotation.KoinWorker
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 
-
-@HiltWorker
-class VisualMediaChatMessageProcessor @AssistedInject constructor(
-    @Assisted val context: Context,
-    @Assisted workerParams: WorkerParameters,
+@KoinWorker
+class VisualMediaChatMessageProcessor (
+    val context: Context,
+    workerParams: WorkerParameters,
     val notificationDao: NotificationDao,
     val chatUserDao: ChatUserDao,
     val messageDao: MessageDao,
     val fileMetaDataDao: MessageMediaMetaDataDao,
     val userProfileDao: UserProfileDao,
     val socketManager: SocketManager
-
 ) : CoroutineWorker(context, workerParams) {
 
     companion object {

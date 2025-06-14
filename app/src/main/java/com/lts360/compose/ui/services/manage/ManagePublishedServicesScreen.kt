@@ -2,7 +2,6 @@ package com.lts360.compose.ui.services.manage
 
 
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +52,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavHostController
 import com.lts360.R
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
@@ -62,13 +60,11 @@ import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewMod
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManagePublishedServicesScreen(
-    navHostController: NavHostController,
     onNavigateUpManageServiceInfo: () -> Unit,
     onNavigateUpManageServiceThumbnail: () -> Unit,
     onNavigateUpManageServiceImages: () -> Unit,
     onNavigateUpManageServicePlans: () -> Unit,
     onNavigateUpManageServiceLocation: () -> Unit,
-    onNavigatePop: () -> Unit,
     onPopBackStack: () -> Unit,
     viewModel: PublishedServicesViewModel
 ) {
@@ -76,14 +72,6 @@ fun ManagePublishedServicesScreen(
     val userId = viewModel.userId
 
     val editableService by viewModel.selectedService.collectAsState()
-
-
-    BackHandler {
-        /* editableService?.let {
-             viewModel.inValidateSelectedService()
-         }*/
-        navHostController.popBackStack()
-    }
 
     val context = LocalContext.current
 
@@ -190,7 +178,7 @@ fun ManagePublishedServicesScreen(
                                 viewModel.onDeleteService(userId, editableService!!.serviceId, {
                                     viewModel.removeSelectedService(editableServiceNonNull.serviceId)
                                     Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                                    onNavigatePop()
+                                    onPopBackStack()
 
                                 }) {
                                     Toast.makeText(context, it, Toast.LENGTH_SHORT)

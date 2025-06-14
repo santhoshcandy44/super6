@@ -2,23 +2,20 @@ package com.lts360.compose.ui.news
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
-import javax.inject.Inject
 
 
 data class VerificationResult(val isValid:Boolean, val domain:String, val status:String,  val errorMessage:String?, val rejectedReason : String?=null)
 
-@HiltViewModel
-class DomainVerificationViewModel  @Inject constructor() : ViewModel() {
+class DomainVerificationViewModel : ViewModel() {
 
     private val _verificationResult = MutableStateFlow<VerificationResult?>(VerificationResult(true,
-        "cinemapettai.com", "Rejected" ,"Your verification code is not found.", rejectedReason = "Low value content"))
+        "example.com", "Rejected" ,"Your verification code is not found.", rejectedReason = "Low value content"))
     val verificationResult: StateFlow<VerificationResult?> = _verificationResult
 
     private val _domain = MutableStateFlow<String>(_verificationResult.value?.takeIf {

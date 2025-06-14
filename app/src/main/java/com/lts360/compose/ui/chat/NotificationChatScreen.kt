@@ -7,20 +7,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.lts360.compose.ui.chat.viewmodels.ChatActivityViewModel
 import com.lts360.compose.ui.chat.viewmodels.ChatViewModel
 import com.lts360.compose.ui.chat.viewmodels.ItemType
-
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun NotificationChatScreen(
     onNavigateUpVideoPlayer: (Uri, Int, Int, Long) -> Unit,
     onNavigateImageSlider: (Uri, Int, Int) -> Unit,
+    onPopBackStack: () -> Unit,
     chatActivityViewModel: ChatActivityViewModel,
     firstVisibleItemIndex: Int = 0,
-    onPopBackStack: () -> Unit,
-    viewModel: ChatViewModel = hiltViewModel()
+    viewModel: ChatViewModel = koinViewModel()
 ) {
 
 
@@ -28,7 +27,6 @@ fun NotificationChatScreen(
     val userState by chatActivityViewModel.selectedChatUser.collectAsState()
 
     userState?.let {
-
 
         val messages = userState?.messages ?: emptyMap()
         val allMessages = viewModel.flattenMessagesWithHeaders(messages)

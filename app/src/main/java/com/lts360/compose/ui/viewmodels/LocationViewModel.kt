@@ -10,7 +10,6 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
@@ -37,8 +36,6 @@ import com.lts360.compose.ui.managers.LocationManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.settings.viewmodels.RegionalSettingsRepository
 import com.lts360.libs.ui.ShortToast
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,45 +44,39 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
-import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-
-@HiltViewModel
-class LocationViewModel @Inject constructor(
-    val savedStateHandle: SavedStateHandle,
-    @ApplicationContext
+@KoinViewModel
+class LocationViewModel(
     context: Context,
     val userProfileDao: UserProfileDao,
     private val recentLocationDao: RecentLocationDao,
     val repository: LocationRepository,
-    regionalSettingsRepository: RegionalSettingsRepository
-) : ViewModel() {
+    regionalSettingsRepository: RegionalSettingsRepository,
+    @InjectedParam args: LocationSetUpRoutes.LocationChooser,
+    val savedStateHandle: SavedStateHandle
+    ) : ViewModel() {
 
     private  val countryCode = regionalSettingsRepository.getCountryFromPreferences()?.code
         ?: regionalSettingsRepository.getCountryFromSim()?.code
 
-
-    private val args = savedStateHandle.toRoute<LocationSetUpRoutes.LocationChooser>()
     val isLocationStatesEnabled = args.locationStatesEnabled
-
 
     val userId = UserSharedPreferencesManager.userId
 
     private val _currentLocation = MutableStateFlow<CurrentLocation?>(null)
     val currentLocation = _currentLocation.asStateFlow()
 
-
     private val _recentLocations = MutableStateFlow<List<RecentLocation>>(emptyList())
     val recentLocations = _recentLocations.asStateFlow()
 
-
     private var isAnyLocationCaptured = false
-
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()

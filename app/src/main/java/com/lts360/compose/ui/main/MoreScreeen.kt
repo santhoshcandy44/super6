@@ -2,7 +2,6 @@ package com.lts360.compose.ui.main
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,27 +40,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.lts360.BuildConfig
 import com.lts360.R
 import com.lts360.app.database.models.app.Board
 import com.lts360.components.utils.openUrlInCustomTab
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.auth.AccountType
-import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.shimmerLoadingAnimation
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.viewmodels.MoreViewModel
 import androidx.core.net.toUri
 import com.lts360.libs.ui.ShortToast
 
-
 @Composable
 fun MoreScreen(
-    navController: NavHostController,
     boardItems: List<Board>,
     onProfileNavigateUp: () -> Unit,
     onAccountAndProfileSettingsNavigateUp: (String) -> Unit,
@@ -80,27 +72,6 @@ fun MoreScreen(
 
     val isServicesEnabled = boardItems.any { it.boardLabel == "services" }
 
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-
-    BackHandler {
-
-        val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
-        val hierarchy = navBackStackEntry?.destination?.hierarchy
-
-        if (hierarchy?.any { nonNullDestination -> allowedScreens.any { nonNullDestination.hasRoute(it::class) } } == true) {
-
-            navController.navigate(BottomBar.Home()) {
-                launchSingleTop = true
-                restoreState = true
-                popUpTo(BottomBar.Home()) {
-                    saveState = true
-                }
-            }
-        } else {
-            navController.popBackStack()
-        }
-
-    }
 
 
     val context = LocalContext.current

@@ -9,30 +9,30 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.lts360.app.database.daos.chat.ChatUserDao
-import com.lts360.compose.ui.auth.navhost.slideComposable
 import com.lts360.compose.ui.chat.viewmodels.ChatViewModel
 import com.lts360.compose.ui.chat.viewmodels.IsolatedChatActivityViewModel
 import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
+import org.koin.android.ext.android.inject
+import org.koin.androidx.compose.koinViewModel
 
 
-@AndroidEntryPoint
 class IsolatedChatActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var chatUserDao: ChatUserDao
+    val chatUserDao: ChatUserDao by inject()
 
     private val isolatedChatActivityViewModel: IsolatedChatActivityViewModel by viewModels()
 
@@ -63,47 +63,48 @@ class IsolatedChatActivity : ComponentActivity() {
                     Surface {
                         SafeDrawingBox {
                             val context = LocalContext.current
-                            val navController = rememberNavController()
-                            NavHost(
-                                navController, MainRoutes.ChatWindow(
-                                    chatId, recipientId
-                                )
-                            ) {
-                                slideComposable<MainRoutes.ChatWindow> { backStackEntry ->
+                            val backStack = rememberNavBackStack(MainRoutes.ChatWindow(chatId, recipientId))
 
-                                    val chatViewModel: ChatViewModel = hiltViewModel()
-                                    val args = backStackEntry.toRoute<MainRoutes.ChatWindow>()
-                                    val userState by isolatedChatActivityViewModel.selectedChatUser.collectAsState()
+                            NavDisplay(
+                                backStack = backStack,
+                                entryDecorators = listOf(
+                                    rememberSceneSetupNavEntryDecorator(),
+                                    rememberSavedStateNavEntryDecorator(),
+                                    rememberViewModelStoreNavEntryDecorator()
+                                ),
+                                entryProvider = entryProvider {
+                                    entry<MainRoutes.ChatWindow> { entry ->
+                                        val chatViewModel: ChatViewModel = koinViewModel()
+                                        val userState by isolatedChatActivityViewModel.selectedChatUser.collectAsState()
 
-                                    userState?.let {
-
-                                        IsolatedChatScreen(
-                                            { uri, videoWidth, videoHeight, totalDuration ->
-                                                openPlayerActivity(
-                                                    context,
-                                                    uri,
-                                                    videoWidth,
-                                                    videoHeight,
-                                                    totalDuration
-                                                )
-                                            },
-
-                                            { uri, imageWidth, imageHeight ->
-                                                openImageSliderActivity(
-                                                    context,
-                                                    uri,
-                                                    imageWidth,
-                                                    imageHeight
-                                                )
-                                            },
-                                            it,
-                                            isolatedChatActivityViewModel,
-                                            { navController.popBackStack() },
-                                            chatViewModel,
-                                        )
+                                        userState?.let { chatUser ->
+                                            IsolatedChatScreen(
+                                                onNavigateUpVideoPlayer = { uri, width, height, duration ->
+                                                    openPlayerActivity(
+                                                        context,
+                                                        uri,
+                                                        width,
+                                                        height,
+                                                        duration
+                                                    )
+                                                },
+                                                onNavigateImageSlider = { uri, width, height ->
+                                                    openImageSliderActivity(
+                                                        context,
+                                                        uri,
+                                                        width,
+                                                        height
+                                                    )
+                                                },
+                                                userState = chatUser,
+                                                isolatedChatActivityViewModel = isolatedChatActivityViewModel,
+                                                onPopBackStack = { backStack.removeLastOrNull() },
+                                                viewModel = chatViewModel
+                                            )
+                                        }
                                     }
                                 }
-                            }
+                            )
                         }
                     }
                 }

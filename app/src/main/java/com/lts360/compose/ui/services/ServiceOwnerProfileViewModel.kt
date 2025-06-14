@@ -16,11 +16,9 @@ import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.api.models.service.Service
 import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.models.chat.ChatUser
+import com.lts360.compose.ui.bookmarks.UserProfileSerializer
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
-import com.lts360.compose.ui.main.navhosts.routes.UserProfileSerializer
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,9 +29,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
-@HiltViewModel
-class ServiceOwnerProfileViewModel @Inject constructor(
-    @ApplicationContext
+class ServiceOwnerProfileViewModel(
     context: Context,
     val savedStateHandle: SavedStateHandle,
     private val chatUserDao: ChatUserDao,

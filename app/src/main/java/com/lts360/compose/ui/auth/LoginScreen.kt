@@ -56,7 +56,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lts360.R
 import com.lts360.compose.dropUnlessResumedV2
@@ -65,12 +64,13 @@ import com.lts360.compose.ui.main.MainActivity
 import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.utils.NavigatorSubmitButton
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun LoginScreen(
-    viewModel: LogInViewModel = hiltViewModel(),
+    viewModel: LogInViewModel = koinViewModel(),
     onNavigateUpForgotPassword: () -> Unit,
-    onNavigateUpCreateAccountClicked: () -> Unit,
+    onNavigateUpCreateAccount: () -> Unit,
 ) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -220,13 +220,12 @@ fun LoginScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.clickable {
                             dropUnlessResumedV2(lifecycleOwner){
-                                onNavigateUpCreateAccountClicked()
+                                onNavigateUpCreateAccount()
                             }
                         }
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                // "Or" TextView
                 Text(
                     style = MaterialTheme.typography.bodyMedium,
                     text = "Or",

@@ -19,9 +19,9 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.lts360.R
 import com.lts360.compose.ui.theme.viewmodels.ThemeViewModel
+import org.koin.androidx.compose.koinViewModel
 
 
 private val Shapes = Shapes(
@@ -164,7 +164,7 @@ val customTypography = Typography(
 fun AppTheme(
     content: @Composable () -> Unit
 ) {
-    val viewModel: ThemeViewModel = hiltViewModel()
+    val viewModel: ThemeViewModel = koinViewModel()
     val themeMode by viewModel.themeMode.collectAsState()
 
     val darkTheme = when (themeMode) {

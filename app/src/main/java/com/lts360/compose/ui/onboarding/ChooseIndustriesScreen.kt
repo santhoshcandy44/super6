@@ -51,7 +51,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.api.utils.ResultError
 import com.lts360.api.models.service.Industry
@@ -61,11 +60,12 @@ import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.onboarding.viewmodels.ChooseIndustriesViewModel
 import com.lts360.compose.ui.onboarding.viewmodels.GuestChooseIndustriesViewModel
 import com.lts360.compose.ui.theme.customColorScheme
+import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
 fun GuestChooseIndustryInfo(
-    viewModel: GuestChooseIndustriesViewModel = hiltViewModel(),
+    viewModel: GuestChooseIndustriesViewModel = koinViewModel(),
     onIndustriesUpdated: () -> Unit
 ) {
 
@@ -193,7 +193,7 @@ fun GuestChooseIndustryInfo(
 
 @Composable
 fun ChooseIndustryInfo(
-    viewModel: ChooseIndustriesViewModel = hiltViewModel(),
+    viewModel: ChooseIndustriesViewModel = koinViewModel(),
     onIndustriesUpdated: () -> Unit
 ) {
 
@@ -304,7 +304,7 @@ fun ChooseIndustryInfo(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuestChooseIndustryScreen(
-    viewModel: GuestChooseIndustriesViewModel = hiltViewModel(),
+    viewModel: GuestChooseIndustriesViewModel = koinViewModel(),
     onPopBackStack: () -> Unit,
 
     ) {
@@ -452,15 +452,13 @@ fun GuestChooseIndustryScreen(
             LoadingDialog()
         }
     }
-
-
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChooseIndustryScreen(
-    viewModel: ChooseIndustriesViewModel = hiltViewModel(),
+    viewModel: ChooseIndustriesViewModel = koinViewModel(),
     onPopBackStack: () -> Unit
 ) {
 

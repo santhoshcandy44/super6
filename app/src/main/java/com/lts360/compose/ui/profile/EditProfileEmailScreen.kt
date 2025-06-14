@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -38,7 +37,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.compose.transformations.PlaceholderTransformation
@@ -46,6 +44,7 @@ import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.profile.viewmodels.EditEmailViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,7 +52,7 @@ import kotlinx.coroutines.launch
 fun EditProfileEmailScreen(
     onEditEmailOtpVerificationNavigateUp:(String)->Unit,
     onPopBackStack:() -> Unit,
-    viewModel: EditEmailViewModel = hiltViewModel()
+    viewModel: EditEmailViewModel = koinViewModel()
 
     ) {
 

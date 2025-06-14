@@ -42,9 +42,8 @@ import com.lts360.compose.ui.theme.icons
 fun WelcomeScreen(
     onLogInNavigate: () -> Unit,
     onSelectAccountNavigate: () -> Unit,
-    onGoGuestNavigateUp: () -> Unit,
+    onGuestLogin: () -> Unit,
 ) {
-
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -153,7 +152,7 @@ fun WelcomeScreen(
                     Text(
                         modifier = Modifier.clickable {
                             dropUnlessResumedV2(lifecycleOwner){
-                                onGoGuestNavigateUp()
+                                onGuestLogin()
                             }
                         },
                         text = "Go as Guest",

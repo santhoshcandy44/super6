@@ -2,7 +2,6 @@ package com.lts360.app.workers.chat
 
 import android.content.Context
 import android.util.Log
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.lts360.App
@@ -21,13 +20,10 @@ import com.lts360.app.workers.chat.download.downloadMediaAndCache
 import com.lts360.app.workers.chat.utils.awaitConnectToSocket
 import com.lts360.app.workers.chat.utils.cacheThumbnailToAppSpecificFolder
 import com.lts360.app.workers.helpers.ChatMessageHandlerWorkerHelper
-import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.auth.repos.DecryptionFileStatus
 import com.lts360.compose.ui.auth.repos.DecryptionStatus
 import com.lts360.compose.ui.auth.repos.decryptFile
 import com.lts360.compose.ui.auth.repos.decryptMessage
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import io.socket.client.Ack
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
@@ -38,20 +34,20 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.json.JSONArray
 import org.json.JSONObject
+import org.koin.android.annotation.KoinWorker
 import java.io.File
 import kotlin.coroutines.resumeWithException
 
-@HiltWorker
-class OfflineChatMessagesProcessor @AssistedInject constructor(
-    @Assisted val context: Context,
-    @Assisted workerParams: WorkerParameters,
+@KoinWorker
+class OfflineChatMessagesProcessor(
+    val context: Context,
+    workerParams: WorkerParameters,
     val socketManager: SocketManager,
     val notificationDao: NotificationDao,
     val chatUserDao: ChatUserDao,
     val messageDao: MessageDao,
     val fileMetadataDao: MessageMediaMetaDataDao
 ) : CoroutineWorker(context, workerParams) {
-
 
     private lateinit var socket: Socket
 

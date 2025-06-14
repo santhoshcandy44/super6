@@ -1,6 +1,5 @@
 package com.lts360.compose.ui.main
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,15 +51,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import coil3.compose.AsyncImage
 import com.google.gson.Gson
 import com.lts360.R
 import com.lts360.app.database.models.notification.Notification
-import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 import com.lts360.compose.ui.theme.customColorScheme
 import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
@@ -70,33 +64,7 @@ import com.lts360.app.notifications.LocalJobApplicantNotification
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationScreen(navController: NavHostController, viewModel: NotificationViewModel) {
-
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-
-    BackHandler {
-
-        val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
-        val hierarchy = navBackStackEntry?.destination?.hierarchy
-
-        if (hierarchy?.any { nonNullDestination ->
-                allowedScreens.any {
-                    nonNullDestination.hasRoute(
-                        it::class
-                    )
-                }
-            } == true) {
-            navController.navigate(BottomBar.Home()) {
-                launchSingleTop = true
-                restoreState = true
-                popUpTo(BottomBar.Home()) {
-                    saveState = true
-                }
-            }
-        } else {
-            navController.popBackStack()
-        }
-    }
+fun NotificationScreen(viewModel: NotificationViewModel) {
 
     val notifications by viewModel.notifications.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()

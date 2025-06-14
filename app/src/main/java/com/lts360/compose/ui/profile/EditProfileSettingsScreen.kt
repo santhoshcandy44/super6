@@ -76,7 +76,7 @@ fun EditProfileSettingsScreen(
     onEditLastNameNavigateUp: () -> Unit,
     onEditAboutNavigateUp: () -> Unit,
     onEditEmailNavigateUp: () -> Unit,
-    onPopStack: () -> Unit,
+    onPopBakStack: () -> Unit,
     viewModel: ProfileSettingsViewModel
 ) {
 
@@ -195,7 +195,7 @@ fun EditProfileSettingsScreen(
     Scaffold(topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = dropUnlessResumed { onPopStack() }) {
+                    IconButton(onClick = dropUnlessResumed { onPopBakStack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back Icon"

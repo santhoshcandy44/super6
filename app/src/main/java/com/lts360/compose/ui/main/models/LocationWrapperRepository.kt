@@ -11,15 +11,16 @@ import com.lts360.app.database.daos.profile.RecentLocationDao
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.app.database.models.profile.UserLocation
 import com.lts360.compose.ui.managers.LocationManager
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.Factory
 import javax.inject.Inject
 
 
-
-class LocationRepository @Inject constructor(
+@Factory
+class LocationRepository(
     val userLocationDao: UserLocationDao,
     private val recentLocationDao: RecentLocationDao,
 ) {
-
 
     suspend fun insertUserLocation(userLocation: UserLocation) {
         userLocationDao.insert(userLocation)
@@ -29,8 +30,6 @@ class LocationRepository @Inject constructor(
         recentLocationDao.insert(recentLocation)
         LocationManager
     }
-
-
 
     suspend fun onGuestSaveLocationCoordinates(
         userId: Long,

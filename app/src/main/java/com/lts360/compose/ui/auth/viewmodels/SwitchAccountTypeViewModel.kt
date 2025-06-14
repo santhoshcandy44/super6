@@ -1,9 +1,7 @@
 package com.lts360.compose.ui.auth.viewmodels
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.lts360.api.utils.Result
@@ -16,20 +14,18 @@ import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.compose.ui.auth.AccountType
 import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
 import kotlin.coroutines.cancellation.CancellationException
 
-@HiltViewModel
-class SwitchAccountTypeViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+@KoinViewModel
+class SwitchAccountTypeViewModel(
     private val userProfileDao: UserProfileDao,
+    @InjectedParam val args : AccountAndProfileSettingsRoutes.SwitchAccountType
 ) : ViewModel() {
-
-    private val args = savedStateHandle.toRoute<AccountAndProfileSettingsRoutes.SwitchAccountType>()
 
     val accountType = args.accountType
 
@@ -119,7 +115,7 @@ class SwitchAccountTypeViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))

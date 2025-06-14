@@ -7,10 +7,8 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.lts360.App
 import com.lts360.api.app.AppClient
 import com.lts360.api.auth.managers.socket.SocketManager
@@ -41,9 +39,6 @@ import com.lts360.compose.ui.chat.ChatUtilNativeBaseActivity
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
 import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import io.socket.client.Ack
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
@@ -62,7 +57,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody
 import org.json.JSONObject
@@ -80,8 +74,8 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.CancellationException
-import javax.inject.Inject
 import androidx.core.net.toUri
+import org.koin.core.annotation.InjectedParam
 
 @Serializable
 sealed class MediaDownloadState {
@@ -144,31 +138,24 @@ fun serializeFileUploadState(state: FileUploadState): String {
 fun deserializeFileUploadState(jsonString: String): FileUploadState {
     return Json.decodeFromString(jsonString)
 }
-
-
-@HiltViewModel
-class ChatViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
+class ChatViewModel(
+    val applicationContext: Context,
     socketManager: SocketManager,
-    val savedStateHandle: SavedStateHandle,
     val repository: ChatUserRepository,
     val chatUserDao: ChatUserDao,
-    val messageDao: MessageDao
+    val messageDao: MessageDao,
+    @InjectedParam val args : MainRoutes.ChatWindow
 ) : ViewModel() {
-
 
     val chatUsersProfileImageLoader = repository.chatUsersProfileImageLoader
 
     val userId = UserSharedPreferencesManager.userId
-    val args = savedStateHandle.toRoute<MainRoutes.ChatWindow>()
-
 
     private val _lastLoadedItemId = MutableStateFlow<Long>(-1L)
     val lastLoadedItemId = _lastLoadedItemId.asStateFlow()
 
     private val _firstItemId = MutableStateFlow<Long>(-1L)
     val firstItemId = _firstItemId.asStateFlow()
-
 
     private val _beforeTotalItemsCount = MutableStateFlow<Int>(-1)
     val beforeTotalItemsCount = _beforeTotalItemsCount.asStateFlow()
@@ -438,7 +425,7 @@ class ChatViewModel @Inject constructor(
 
 
                 VisualMediaUploadWorkerHelper.doVisualMediaUpload(
-                    (context.applicationContext as App),
+                    (applicationContext.applicationContext as App),
                     FileUploadInfo(
                         chatId = chatId,
                         senderId = senderId,
@@ -527,7 +514,7 @@ class ChatViewModel @Inject constructor(
                 )
 
                 MediaUploadWorkerHelper.doMediaUpload(
-                    (context.applicationContext as App),
+                    (applicationContext.applicationContext as App),
                     FileUploadInfo(
                         chatId = chatId,
                         senderId = senderId,
@@ -622,7 +609,7 @@ class ChatViewModel @Inject constructor(
 
         val category = getFileCategoryByExtension(fileMetadata.fileExtension)
 
-        if (!isUriExist(context, absolutePath.toUri())) {
+        if (!isUriExist(applicationContext, absolutePath.toUri())) {
             onFailed()
 
             viewModelScope.launch {
@@ -634,7 +621,7 @@ class ChatViewModel @Inject constructor(
         try {
             onRetry()
             MediaUploadWorkerHelper.doMediaUpload(
-                (context.applicationContext as App),
+                (applicationContext.applicationContext as App),
                 FileUploadInfo(
                     chatId = chatId,
                     senderId = senderId,
@@ -999,7 +986,7 @@ class ChatViewModel @Inject constructor(
 
     fun cancelVisualMediaUpload(chatId: Int, messageId: Long) {
         VisualMediaUploadWorkerHelper.cancelVisualMediaUploadWorker(
-            (context.applicationContext) as App,
+            (applicationContext.applicationContext) as App,
             chatId,
             messageId
         )
@@ -1009,7 +996,7 @@ class ChatViewModel @Inject constructor(
     fun cancelMediaUpload(chatId: Int, messageId: Long) {
 
         MediaUploadWorkerHelper.cancelMediaUploadWorker(
-            (context.applicationContext) as App,
+            (applicationContext.applicationContext) as App,
             chatId,
             messageId
         )

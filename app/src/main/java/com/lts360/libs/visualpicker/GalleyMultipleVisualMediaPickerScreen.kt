@@ -289,8 +289,6 @@ fun GalleryMultipleVisualsPickerShowAlbumVisualsScreen(
     onImagePicked: (ImageMediaData) -> Unit,
     onPopStack: () -> Unit
 ) {
-
-
     Scaffold(
         topBar = {
             TopAppBar(

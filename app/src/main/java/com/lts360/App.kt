@@ -7,7 +7,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.core.content.edit
-import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -16,7 +15,6 @@ import androidx.work.WorkManager
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
-import coil3.disk.DiskCache
 import coil3.gif.AnimatedImageDecoder
 import coil3.request.CachePolicy
 import coil3.request.allowHardware
@@ -27,53 +25,45 @@ import com.lts360.api.auth.managers.socket.SocketManager
 import com.lts360.api.common.CommonClient
 import com.lts360.app.AppExceptionHandler
 import com.lts360.app.database.AppDatabase
+import com.lts360.app.di.AppModule
+import com.lts360.app.di.DatabaseModule
+import com.lts360.app.di.databaseModule
 import com.lts360.components.isAuthActivityInStack
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.main.MainActivity
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.settings.viewmodels.RegionalSettingsRepository
-import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okio.Path.Companion.toOkioPath
-import java.io.File
-import javax.inject.Inject
+import org.koin.android.ext.android.inject
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.androidx.workmanager.factory.KoinWorkerFactory
+import org.koin.core.context.startKoin
+import org.koin.ksp.generated.defaultModule
+import org.koin.ksp.generated.module
 
-@HiltAndroidApp
 class App : Application(), Configuration.Provider, SingletonImageLoader.Factory {
-
-    @Inject
-    lateinit var workerFactory: HiltWorkerFactory
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setMinimumLoggingLevel(Log.DEBUG)
-            .setWorkerFactory(workerFactory)
+            .setWorkerFactory(KoinWorkerFactory())
             .setDefaultProcessName(BuildConfig.APPLICATION_ID)
             .build()
 
-    @Inject
-    lateinit var tokenManager: TokenManager
-
-    @Inject
-    lateinit var regionalSettingsRepository: RegionalSettingsRepository
-
-    @Inject
-    lateinit var appDatabase: AppDatabase
-
-    @Inject
-    lateinit var socketManager: SocketManager
-
-    @Inject
-    lateinit var networkConnectivityManager: NetworkConnectivityManager
+    private val tokenManager: TokenManager by inject()
+    private val regionalSettingsRepository: RegionalSettingsRepository by inject()
+    private val appDatabase: AppDatabase by inject()
+    private val socketManager: SocketManager by inject()
+    private val networkConnectivityManager: NetworkConnectivityManager by inject()
 
     private var activityCount = 0
-
     private var job: Job? = null
 
     companion object {
@@ -88,6 +78,11 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
 
     override fun onCreate() {
         super.onCreate()
+        startKoin {
+            androidLogger()
+            androidContext(applicationContext)
+            modules(defaultModule, databaseModule, DatabaseModule().module, AppModule().module)
+        }
         if(BuildConfig.DEBUG){
             val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
             Thread.setDefaultUncaughtExceptionHandler(AppExceptionHandler(applicationContext, defaultHandler))
@@ -197,7 +192,6 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
         socketManager.destroySocket()
     }
 
-
     suspend fun setIsInvalidSession(value: Boolean) {
         withContext(Dispatchers.Main) {
 
@@ -233,16 +227,12 @@ class App : Application(), Configuration.Provider, SingletonImageLoader.Factory 
                     }
                 })
 
-
-
             }
         }
     }
 
     suspend fun logout(method: String) {
 
-
-        // Navigate to AuthActivity
         withContext(Dispatchers.Main) {
 
             val userId = UserSharedPreferencesManager.userId

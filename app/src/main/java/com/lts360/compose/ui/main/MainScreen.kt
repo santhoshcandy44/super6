@@ -67,10 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.rememberNavBackStack
 import com.lts360.R
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.components.utils.PermissionsUtils.Companion.isNotificationPermissionGranted
@@ -115,21 +112,18 @@ fun MainScreen(
     onNavigateUpDetailedLocalJobs:(Int)-> Unit
 ) {
 
-
     val boards by viewModel.boards.collectAsState()
 
     val messageCount by viewModel.messageCount.collectAsState(0)
     val notificationCount by viewModel.notificationCount.collectAsState(0)
-
 
     var wasConnected by rememberSaveable { mutableStateOf(false) }
     var isDismissed by rememberSaveable { mutableStateOf(false) }
 
     val isConnected by viewModel.isConnectedEvent.collectAsState(null)
 
-
     val context = LocalContext.current
-
+    val backStack = rememberNavBackStack(BottomBar.Home())
 
     val signInMethod = viewModel.signInMethod
 
@@ -164,40 +158,9 @@ fun MainScreen(
     }
 
 
-    val allowedScreens: List<BottomBar> = listOf(
-        BottomBar.Home(),
-        BottomBar.NestedServices(),
-        BottomBar.NestedSeconds(),
-        BottomBar.Chats,
-        BottomBar.Notifications,
-        BottomBar.More
-    )
-
-    val navController = rememberNavController()
-
-    val currentBackStackEntry by navController.currentBackStackEntryAsState()
-
     var isHomeScreen by rememberSaveable { mutableStateOf(false) }
 
-
-    var currentScreen by remember { mutableStateOf<BottomBar?>(null) }
-
-
-    LaunchedEffect(currentBackStackEntry) {
-        val hierarchy = currentBackStackEntry?.destination?.hierarchy
-
-        currentScreen = allowedScreens.find { screen ->
-            hierarchy?.firstOrNull()?.hasRoute(screen::class) == true
-        }
-
-        isHomeScreen = hierarchy?.any { nonNullDestination ->
-            nonNullDestination.hasRoute(BottomBar.Home::class)
-        } == true
-
-    }
-
     var dockedFloatingActionButtonVisibility by rememberSaveable { mutableStateOf(false) }
-
 
     Scaffold(
         floatingActionButton = {
@@ -223,35 +186,23 @@ fun MainScreen(
         bottomBar = {
 
             BottomBar(
-                navController,
+                backStack,
                 signInMethod,
                 messageCount,
-                notificationCount,
-                currentScreen
-
+                notificationCount
             ) {
                 coroutineScope.launch {
                     modalBottomSheetState.expand()
                 }
             }
 
-
         }) { contentPadding ->
 
         BottomNavHost(
-            navController,
-            homeViewModel,
-            servicesViewModel,
-            secondsViewModel,
-            localJobsViewModel,
-            chatListViewModel,
-            notificationViewModel,
-            moreViewModel,
-            boards,
+            backStack = backStack,
+            boards = boards,
             modifier = Modifier.padding(contentPadding),
-            onProfileNavigateUp = {
-                onProfileNavigateUp()
-            },
+            onProfileNavigateUp = onProfileNavigateUp,
             onAccountAndProfileSettingsNavigateUp = onAccountAndProfileSettingsNavigateUp,
             onManageIndustriesAndInterestsNavigateUp = onManageIndustriesAndInterestsNavigateUp,
             onManageServiceNavigateUp = {
@@ -264,13 +215,12 @@ fun MainScreen(
                 )
             },
             onNavigateUpBookmarkedServices = onNavigateUpBookmarkedServices,
-            {
+            onNavigateUpWelcomeScreenSheet = {
                 coroutineScope.launch {
                     modalBottomSheetState.expand()
                 }
             },
-
-            {
+            onNavigateUpLogInSheet = {
                 context.startActivity(
                     Intent(context, AuthActivity::class.java)
                         .apply {
@@ -279,14 +229,21 @@ fun MainScreen(
                             putExtra("force_type", "force_login")
                         })
             },
-            onNavigateUpChatWindow,
+            onNavigateUpChatScreen = onNavigateUpChatWindow,
             {
                 dockedFloatingActionButtonVisibility = it
             }, onNavigateUpGuestManageIndustriesAndInterests,
             onNavigateUpDetailedService,
             onNavigateUpServiceOwnerProfile,
             onNavigateUpDetailedSeconds,
-            onNavigateUpDetailedLocalJobs
+            onNavigateUpDetailedLocalJobs,
+            homeViewModel = homeViewModel,
+            servicesViewModel = servicesViewModel,
+            secondsViewModel = secondsViewModel,
+            localJobsViewModel,
+            chatListViewModel,
+            notificationViewModel,
+            moreViewModel,
         )
 
     }
@@ -299,7 +256,6 @@ fun MainScreen(
                     wasConnected = true
                     isDismissed = false
                 }
-
             }
 
             !connectionState && !isDismissed -> {

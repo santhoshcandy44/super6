@@ -12,21 +12,15 @@ import com.lts360.api.auth.managers.TokenManager
 import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.profile.repos.UserProfileRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
 
-
-
-
-@HiltViewModel
-class MoreViewModel @Inject constructor(
-    @ApplicationContext
+@KoinViewModel
+class MoreViewModel(
     context: Context,
     private val userProfileRepository: UserProfileRepository,
     tokenManager: TokenManager

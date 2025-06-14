@@ -18,33 +18,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
-import com.lts360.compose.ui.main.navhosts.routes.LocationSetUpRoutes
 import com.lts360.compose.ui.viewmodels.LocationViewModel
 import com.lts360.compose.utils.NavigatorCard
-
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun DistrictsScreen(
-    navHostController: NavHostController,
     isLoading: Boolean = false,
-    onDistrictClicked: (District) -> Unit,
+    onDistrictSelected: (District) -> Unit,
     onPopDown: () -> Unit,
 ) {
 
-    val backStackEntry = remember {
-        navHostController.getBackStackEntry<LocationSetUpRoutes.LocationChooser>()
-    }
-
-    val locationViewModel: LocationViewModel = hiltViewModel(backStackEntry)
-
+    val locationViewModel: LocationViewModel = koinViewModel()
     val districts by locationViewModel.districts.collectAsState()
-
 
     BackHandler {
         if (!isLoading) {
@@ -79,8 +68,7 @@ fun DistrictsScreen(
                     NavigatorCard(
                         isLoading = isLoading,
                         onCardClicked = {
-                            onDistrictClicked(districtItem)
-
+                            onDistrictSelected(districtItem)
                         }) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),

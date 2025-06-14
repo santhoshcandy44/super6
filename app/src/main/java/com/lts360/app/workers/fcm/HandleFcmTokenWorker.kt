@@ -2,20 +2,15 @@ package com.lts360.app.workers.fcm
 
 import android.content.Context
 import android.util.Log
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.lts360.api.app.ApiService
 import com.lts360.api.app.AppClient
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 
-
-@HiltWorker
-class HandleFcmTokenWorker @AssistedInject constructor(
-    @Assisted context: Context,
-    @Assisted workerParams: WorkerParameters
+class HandleFcmTokenWorker(
+    context: Context,
+    workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
 
     companion object{

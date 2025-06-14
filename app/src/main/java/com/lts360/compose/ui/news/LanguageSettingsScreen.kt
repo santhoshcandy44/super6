@@ -34,33 +34,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import javax.inject.Singleton
-
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LanguageSettingsScreen(viewModel: LanguageViewModel = hiltViewModel()) {
-
-/*
-    val context = LocalContext.current
-*/
+fun LanguageSettingsScreen(viewModel: LanguageViewModel = koinViewModel()) {
 
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
 
@@ -204,11 +194,9 @@ fun LanguageSettingsScreen(viewModel: LanguageViewModel = hiltViewModel()) {
     }
 }
 
-@HiltViewModel
-class LanguageViewModel @Inject constructor(private val languageSettingsDataStore: LanguageDataStore) :
+class LanguageViewModel(private val languageSettingsDataStore: LanguageDataStore) :
     ViewModel() {
 
-    // Collecting the selected language from DataStore
     val selectedLanguage = languageSettingsDataStore.languageFlow.stateIn(
         viewModelScope,
         SharingStarted.Eagerly,
@@ -227,11 +215,9 @@ class LanguageViewModel @Inject constructor(private val languageSettingsDataStor
 // Extension function to create DataStore
 private val Context.languageSettingsDataStore by preferencesDataStore(name = "language_settings")
 
-@Singleton
-class LanguageDataStore @Inject constructor(@ApplicationContext context: Context) {
+class LanguageDataStore(context: Context) {
     private val dataStore = context.languageSettingsDataStore
 
-    // Flow to read the selected language
     val languageFlow: Flow<String> = dataStore.data.map { prefs ->
         prefs[PreferencesKeys.SELECTED_LANGUAGE] ?: "en"
     }

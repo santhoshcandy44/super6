@@ -110,7 +110,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.lts360.BuildConfig
 import com.lts360.R
@@ -128,6 +127,7 @@ import com.lts360.libs.imagecrop.CropProfilePicActivityContracts
 import com.lts360.libs.imagepicker.GalleryPagerActivityResultContracts
 import com.lts360.libs.ui.ShortToast
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 import java.io.File
 import java.io.InputStream
 import java.text.SimpleDateFormat
@@ -136,7 +136,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ApplicantProfileForm(viewModel: ApplicantProfileViewModel = hiltViewModel()) {
+fun ApplicantProfileForm(viewModel: ApplicantProfileViewModel = koinViewModel()) {
 
     val step by viewModel.step.collectAsState()
     val completedStep by viewModel.completedStep.collectAsState()

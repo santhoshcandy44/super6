@@ -4,9 +4,8 @@ package com.lts360.compose.ui.theme.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lts360.compose.ui.theme.ThemePreferences
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
 
 sealed class ThemeMode {
     data object SystemDefault : ThemeMode()
@@ -14,8 +13,8 @@ sealed class ThemeMode {
     data object Light : ThemeMode()
 }
 
-@HiltViewModel
-class ThemeViewModel @Inject constructor(private val themePreferences: ThemePreferences) : ViewModel() {
+@KoinViewModel
+class ThemeViewModel (private val themePreferences: ThemePreferences) : ViewModel() {
 
     val themeMode = themePreferences.themeFlow
 

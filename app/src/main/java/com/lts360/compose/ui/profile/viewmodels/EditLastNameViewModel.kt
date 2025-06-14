@@ -12,22 +12,18 @@ import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 
-@HiltViewModel
-class EditLastNameViewModel @Inject constructor(
+class EditLastNameViewModel(
     private val userProfileDao: UserProfileDao
 ) : ViewModel() {
 
-    // Retrieve the argument from the navigation
     val userId: Long = UserSharedPreferencesManager.userId
 
     private val _isLoading = MutableStateFlow(false)

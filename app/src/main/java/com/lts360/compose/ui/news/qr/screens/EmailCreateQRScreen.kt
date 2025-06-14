@@ -39,16 +39,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavController
 import com.lts360.compose.ui.news.qr.viewmodels.EmailCreateQRViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EmailCreateQRScreen(navController: NavController) {
+fun EmailCreateQRScreen(onPopBackStack:()-> Unit) {
 
-    val viewModel: EmailCreateQRViewModel = hiltViewModel()
+    val viewModel: EmailCreateQRViewModel = koinViewModel()
     val email by viewModel.email.collectAsState()
     val subject by viewModel.subject.collectAsState()
     val content by viewModel.content.collectAsState()
@@ -66,7 +65,7 @@ fun EmailCreateQRScreen(navController: NavController) {
                 },
                 navigationIcon = {
                     IconButton(onClick = dropUnlessResumed {
-                        navController.popBackStack()
+                        onPopBackStack()
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Default.ArrowBack,

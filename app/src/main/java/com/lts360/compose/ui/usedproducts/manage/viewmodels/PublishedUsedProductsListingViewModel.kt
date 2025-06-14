@@ -20,8 +20,6 @@ import com.lts360.compose.ui.profile.repos.UserProfileRepository
 import com.lts360.compose.ui.services.manage.models.CombinedContainer
 import com.lts360.compose.ui.services.manage.models.CombinedContainerFactory
 import com.lts360.compose.ui.usedproducts.manage.UsedProductListingsRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,9 +34,8 @@ import java.util.Currency
 import java.util.Locale
 import javax.inject.Inject
 
-@HiltViewModel
 class PublishedUsedProductsListingViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
+    val context: Context,
     val savedStateHandle: SavedStateHandle,
     private val repository: UsedProductListingsRepository,
     val userProfileRepository: UserProfileRepository

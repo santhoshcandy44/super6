@@ -8,8 +8,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lts360.libs.imagepicker.models.ImageMediaData
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,13 +20,7 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 
-@HiltViewModel
-class VisualMediaPickerViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
-    savedStateHandle: SavedStateHandle
-) :
-    ViewModel() {
-
+class VisualMediaPickerViewModel @Inject constructor(val context: Context) : ViewModel() {
 
     private val _mediaItems = MutableStateFlow<List<ImageMediaData>>(emptyList())
     val mediaItems = _mediaItems.asStateFlow()
@@ -37,12 +29,8 @@ class VisualMediaPickerViewModel @Inject constructor(
         loadMediaItems(context)
     }
 
-
-    // Function to load and group media items
     private fun loadMediaItems(context: Context) {
-        // Launch a coroutine to fetch and process images
         viewModelScope.launch(Dispatchers.IO) {
-            // Fetch media items (sorted by descending dateAdded)
             val mediaItems = getImagesAndVideosFromGallery(context).sortedByDescending { it.dateAdded }
             _mediaItems.value = mediaItems
         }

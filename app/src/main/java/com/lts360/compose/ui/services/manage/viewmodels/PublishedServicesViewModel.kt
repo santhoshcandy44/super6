@@ -30,14 +30,10 @@ import com.lts360.compose.ui.services.ThumbnailContainer
 import com.lts360.compose.ui.services.ValidatedPlan
 import com.lts360.compose.ui.services.manage.models.Container
 import com.lts360.compose.ui.services.manage.models.ContainerFactory
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -46,7 +42,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.math.BigDecimal
 import javax.inject.Inject
 
-@HiltViewModel
 class PublishedServicesViewModel @Inject constructor(
     private val repository: PublishedServiceRepository,
     val savedStateHandle: SavedStateHandle,
@@ -105,7 +100,6 @@ class PublishedServicesViewModel @Inject constructor(
     private val _longDescriptionError = MutableStateFlow<String?>(null)
     val longDescriptionError = _longDescriptionError.asStateFlow()
 
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _selectedIndustryError = MutableStateFlow<String?>(null)
     val selectedIndustryError = _selectedIndustryError.asStateFlow()
 
@@ -120,30 +114,21 @@ class PublishedServicesViewModel @Inject constructor(
     private val _isUpdating = MutableStateFlow(false)
     val isUpdating = _isUpdating.asStateFlow()
 
-
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _editablePlans = MutableStateFlow<List<ValidatedPlan>>(emptyList())
     val editablePlans = _editablePlans.asStateFlow()
 
     private val _plansError = MutableStateFlow<String?>(null)
     val plansError = _plansError.asStateFlow()
 
-
-    // MutableStateFlow to manage the location bottom sheet visibility state
     private val _editableLocation = MutableStateFlow<EditableLocation?>(null)
     val editableLocation = _editableLocation.asStateFlow()
-
 
     private val _selectedLocationError = MutableStateFlow<String?>(null)
     val selectedLocationError = _selectedLocationError.asStateFlow()
 
-
-    // Define a MutableStateFlow for the containers list
     private val _thumbnailContainer = MutableStateFlow<ThumbnailContainer?>(null)
     val thumbnailContainer = _thumbnailContainer.asStateFlow()
 
-
-    // Define StateFlow variables
     private val _refreshImageIndex = MutableStateFlow(-1)
     val refreshImageIndex = _refreshImageIndex.asStateFlow()
 

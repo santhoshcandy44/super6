@@ -1,6 +1,5 @@
 package com.lts360.compose.ui.main.prefs.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -14,13 +13,9 @@ import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.prefs.BoardPreferenceApiService
 import com.lts360.app.database.daos.prefs.BoardDao
-import com.lts360.app.database.models.app.Board
 import com.lts360.app.database.models.app.toBoardPref
-import com.lts360.components.utils.LogUtils.TAG
-import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +23,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.Factory
 import javax.inject.Inject
 
 
@@ -44,9 +41,8 @@ data class BoardPref(
     val displayOrder: Int
 )
 
-
-@HiltViewModel
-class BoardPreferencesViewModel @Inject constructor(
+@KoinViewModel
+class BoardPreferencesViewModel(
     private val boardDao: BoardDao,
     val repository: BoardsPreferencesRepository,
     networkConnectivityManager: NetworkConnectivityManager
@@ -304,9 +300,7 @@ class BoardPreferencesViewModel @Inject constructor(
 
 }
 
-
-@HiltViewModel
-class GuestBoardPreferencesViewModel @Inject constructor(
+class GuestBoardPreferencesViewModel(
     private val boardDao: BoardDao,
     val repository: BoardsPreferencesRepository,
     networkConnectivityManager: NetworkConnectivityManager
@@ -575,9 +569,8 @@ class GuestBoardPreferencesViewModel @Inject constructor(
 
 }
 
-
-class BoardsPreferencesRepository @Inject constructor() {
-
+@Factory
+class BoardsPreferencesRepository {
 
     suspend fun getBoards(userId: Long): Result<ResponseReply> {
         return try {

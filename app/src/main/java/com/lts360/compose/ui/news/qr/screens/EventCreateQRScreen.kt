@@ -49,20 +49,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
-import com.lts360.compose.ui.news.qr.viewmodels.ContactCreateQRViewModel
 import com.lts360.compose.ui.news.qr.viewmodels.EventCreateQRViewModel
 import com.lts360.compose.ui.theme.customColorScheme
-import java.util.Calendar
+import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EventCreateQRScreen(navController: NavController) {
+fun EventCreateQRScreen(onPopBackStack:()-> Unit) {
 
-    val viewModel: EventCreateQRViewModel = hiltViewModel()
+    val viewModel: EventCreateQRViewModel = koinViewModel()
     val startDate by viewModel.startDate.collectAsState()
     val endDate by viewModel.endDate.collectAsState()
     val title by viewModel.title.collectAsState()
@@ -145,7 +142,7 @@ fun EventCreateQRScreen(navController: NavController) {
 
                 navigationIcon = {
                     IconButton(onClick = {
-                        navController.popBackStack()
+                        onPopBackStack()
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Default.ArrowBack,

@@ -17,20 +17,17 @@ import com.lts360.app.workers.helpers.SendFcmTokenWorkerHelper
 import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
 
 
-@HiltViewModel
-class HomeActivityViewModel @Inject constructor(
-    @ApplicationContext
+@KoinViewModel
+class HomeActivityViewModel (
     context: Context,
     val application: Application,
     val userProfileDao: UserProfileDao,

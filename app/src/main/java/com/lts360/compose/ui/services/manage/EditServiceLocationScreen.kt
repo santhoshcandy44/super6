@@ -42,7 +42,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.main.EditLocationBottomSheetScreen
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel

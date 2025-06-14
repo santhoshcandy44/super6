@@ -31,11 +31,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import com.lts360.compose.transformations.PlaceholderTransformation
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,13 +42,11 @@ fun EditServiceInfoScreen(
     viewModel: PublishedServicesViewModel
 ) {
 
-
     val userId = viewModel.userId
 
     val isUpdating by viewModel.isUpdating.collectAsState()
 
     val selectedService by viewModel.selectedService.collectAsState()
-
 
     val serviceTitle by viewModel.serviceTitle.collectAsState()
     val serviceShortDescription by viewModel.shortDescription.collectAsState()

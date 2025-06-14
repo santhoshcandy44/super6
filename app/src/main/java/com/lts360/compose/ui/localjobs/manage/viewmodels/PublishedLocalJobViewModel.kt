@@ -26,8 +26,6 @@ import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.profile.repos.UserProfileRepository
 import com.lts360.compose.ui.services.manage.models.CombinedContainer
 import com.lts360.compose.ui.services.manage.models.CombinedContainerFactory
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,16 +38,13 @@ import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import java.time.ZonedDateTime
-import java.time.chrono.ChronoZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Currency
 import java.util.Locale
-import javax.inject.Inject
 import kotlin.collections.map
 
-@HiltViewModel
-class PublishedLocalJobViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
+class PublishedLocalJobViewModel(
+    val context: Context,
     val savedStateHandle: SavedStateHandle,
     private val repository: PublishedLocalJobsRepository,
     networkConnectivityManager: NetworkConnectivityManager,

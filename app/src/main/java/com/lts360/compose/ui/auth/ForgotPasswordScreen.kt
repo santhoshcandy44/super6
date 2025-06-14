@@ -41,7 +41,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.compose.ui.auth.viewmodels.ForgotPasswordViewModel
 import com.lts360.compose.ui.main.viewmodels.ForgotPasswordProtectedViewModel
@@ -50,11 +49,12 @@ import com.lts360.compose.utils.NavigatorOutlinedCard
 import com.lts360.compose.utils.NavigatorSubmitButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
 fun ForgotPasswordScreen(
-    viewModel: ForgotPasswordViewModel = hiltViewModel(),
+    viewModel: ForgotPasswordViewModel = koinViewModel(),
     onNavigateUp: (String) -> Unit) {
 
     val context = LocalContext.current
@@ -95,7 +95,7 @@ fun ForgotPasswordScreen(
 fun ForgotPasswordScreenProtected(
     onNavigateUp: (String) -> Unit,
     onPopStack: () -> Unit,
-    viewModel: ForgotPasswordProtectedViewModel = hiltViewModel(),
+    viewModel: ForgotPasswordProtectedViewModel = koinViewModel(),
 
     ) {
 

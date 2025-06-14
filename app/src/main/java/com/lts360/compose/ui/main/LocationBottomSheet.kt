@@ -29,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,7 +51,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.app.database.models.profile.RecentLocation
@@ -70,6 +68,7 @@ import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingW
 import com.lts360.compose.ui.viewmodels.LocationViewModel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.koin.androidx.compose.koinViewModel
 
 @Serializable
 data class State(
@@ -310,11 +309,10 @@ private fun LocationBottomSheetContent(
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onStateClick: (String) -> Unit = {},
-    locationViewModel: LocationViewModel = hiltViewModel(),
+    locationViewModel: LocationViewModel = koinViewModel(),
 ) {
 
     if (bottomSheetValue != null) {
-
         LaunchedEffect(bottomSheetValue) {
             if (bottomSheetValue == SheetValue.Hidden) {
                 locationViewModel.removeLocationUpdates()

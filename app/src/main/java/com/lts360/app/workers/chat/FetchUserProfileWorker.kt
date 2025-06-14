@@ -5,7 +5,6 @@ import android.content.res.Resources.NotFoundException
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import coil3.ImageLoader
@@ -34,8 +33,6 @@ import com.lts360.compose.ui.auth.repos.DecryptionStatus
 import com.lts360.compose.ui.auth.repos.decryptFile
 import com.lts360.compose.ui.auth.repos.decryptMessage
 import com.lts360.app.notifications.buildAndShowChatNotification
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import io.socket.client.Ack
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
@@ -46,24 +43,22 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.json.JSONArray
 import org.json.JSONObject
+import org.koin.android.annotation.KoinWorker
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.coroutines.resumeWithException
 
-
-@HiltWorker
-class FetchUserProfileWorker @AssistedInject constructor(
-    @Assisted context: Context,
-    @Assisted workerParams: WorkerParameters,
+@KoinWorker
+class FetchUserProfileWorker(
+    context: Context,
+    workerParams: WorkerParameters,
     private val chatUserDao: ChatUserDao,
     private val messageDao: MessageDao,
     private val fileMetadataDao: MessageMediaMetaDataDao,
     val socketManager: SocketManager
 ) : CoroutineWorker(context, workerParams) {
 
-
     private lateinit var socket: Socket
-
 
     override suspend fun doWork(): Result {
 
@@ -72,7 +67,6 @@ class FetchUserProfileWorker @AssistedInject constructor(
         val type = inputData.getString("type")
 
         if (userId == -1L || type == null || data == null) {
-            Log.e(TAG, "Missing required input data")
             return Result.failure()
         }
 

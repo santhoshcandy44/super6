@@ -1,9 +1,9 @@
 package com.lts360.compose.ui.onboarding.navhost
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-@Serializable
-sealed class OnBoardingScreen  {
+sealed class OnBoardingScreen: NavKey{
 
     @Serializable
     data class CompleteAbout(val type:String?): OnBoardingScreen()

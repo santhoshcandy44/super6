@@ -28,27 +28,26 @@ import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.UserLocation
 import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.koin.core.annotation.Factory
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.UUID
-import javax.inject.Inject
 
-class AuthRepository @Inject constructor(
-    @ApplicationContext
-    context: Context,
+@Factory
+class AuthRepository (
+    applicationContext: Context,
     private val tokenManager: TokenManager,
     val userProfileDao: UserProfileDao,
     val userLocationDao: UserLocationDao,
     val boardDao: BoardDao
 ) {
 
-    private val filesDir = context.filesDir
+    private val filesDir = applicationContext.filesDir
 
     suspend fun googleSignInOAuth(
         context: Context,

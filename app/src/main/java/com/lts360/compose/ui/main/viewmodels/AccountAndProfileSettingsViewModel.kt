@@ -1,10 +1,8 @@
 package com.lts360.compose.ui.main.viewmodels
 
 import android.content.Context
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.lts360.App
 import com.lts360.api.utils.Result
@@ -17,48 +15,39 @@ import com.lts360.api.common.responses.ResponseReply
 import com.lts360.compose.ui.auth.AccountType
 import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
 
-@HiltViewModel
-class  AccountAndProfileSettingsViewModel @Inject constructor(savedStateHandle: SavedStateHandle,
-                                                              val tokenManager: TokenManager
-): ViewModel(){
-
-
+@KoinViewModel
+class AccountAndProfileSettingsViewModel(
+    val tokenManager: TokenManager,
+    @InjectedParam val args: AccountAndProfileSettingsRoutes.AccountAndProfileSettings
+) : ViewModel() {
 
     val userId = UserSharedPreferencesManager.userId
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-
-
-    // Retrieve arguments from SavedStateHandle
-    private val args = savedStateHandle.toRoute<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>()
-
-
-
     private var error: String = ""
 
 
-    // Initialize MutableStateFlow with a default value from args
     private val _accountType = MutableStateFlow(
         when (args.accountType) {
             AccountType.Personal.name -> AccountType.Personal
             AccountType.Business.name -> AccountType.Business
-            else -> AccountType.Personal // or any default value you choose
+            else -> AccountType.Personal
         }
     )
 
     val accountType = _accountType.asStateFlow()
 
-        // Function to update the account type
+    // Function to update the account type
     fun setAccountType(accountTypeString: String) {
         _accountType.value = when (accountTypeString) {
             AccountType.Personal.name -> AccountType.Personal
@@ -68,25 +57,24 @@ class  AccountAndProfileSettingsViewModel @Inject constructor(savedStateHandle: 
     }
 
 
-
-
-    fun logOutAccount(context:Context){
+    fun logOutAccount(context: Context) {
         viewModelScope.launch {
             ((context.applicationContext) as App).logout(tokenManager.getSignInMethod())
         }
     }
 
-    fun onLogout(userId: Long, onSuccess:(String)-> Unit, onError:(String) -> Unit){
-        _isLoading.value=true
+    fun onLogout(userId: Long, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+        _isLoading.value = true
         viewModelScope.launch {
 
             try {
-                when(val result = logout(userId)){
-                    is Result.Success ->{
+                when (val result = logout(userId)) {
+                    is Result.Success -> {
                         onSuccess(result.data.message)
                     }
+
                     is Result.Error -> {
-                        if(result.error is CancellationException){
+                        if (result.error is CancellationException) {
                             return@launch
                         }
 
@@ -94,25 +82,25 @@ class  AccountAndProfileSettingsViewModel @Inject constructor(savedStateHandle: 
                         onError(error)
                     }
                 }
-            }catch (t:Throwable){
+            } catch (t: Throwable) {
                 t.printStackTrace()
                 error = "Something went wrong"
                 onError(error)
-            }finally {
-                _isLoading.value=false
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
     private suspend fun logout(userId: Long): Result<ResponseReply> {
 
-        return  try {
+        return try {
             val response = AppClient.instance.create(ProfileService::class.java)
                 .logout(userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null && body.isSuccessful) {
-                   Result.Success(body)
+                    Result.Success(body)
                 } else {
                     val errorMessage = "Failed, try again later..."
                     Result.Error(Exception(errorMessage))
@@ -120,9 +108,9 @@ class  AccountAndProfileSettingsViewModel @Inject constructor(savedStateHandle: 
             } else {
 
                 val errorBody = response.errorBody()?.string()
-                val errorMessage= try {
+                val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))

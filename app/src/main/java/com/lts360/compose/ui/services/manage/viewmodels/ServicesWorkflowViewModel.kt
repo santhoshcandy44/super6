@@ -41,8 +41,6 @@ import com.lts360.compose.ui.services.BitmapContainer
 import com.lts360.compose.ui.services.BitmapContainerFactory
 import com.lts360.compose.ui.services.ThumbnailContainer
 import com.lts360.compose.ui.services.ValidatedPlan
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,9 +62,8 @@ import com.lts360.components.utils.LogUtils.TAG
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.profile.repos.UserProfileRepository
 
-@HiltViewModel
 class ServicesWorkflowViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
+    val context: Context,
     val savedStateHandle: SavedStateHandle,
     private val draftServicesDao: DraftServiceDao,
     private val draftLocationDao: DraftLocationDao,

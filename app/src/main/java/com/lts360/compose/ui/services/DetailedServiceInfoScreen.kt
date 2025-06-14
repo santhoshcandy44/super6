@@ -64,10 +64,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.error
@@ -84,20 +82,20 @@ import com.lts360.compose.ui.ShimmerBox
 import com.lts360.compose.ui.auth.AuthActivity
 import com.lts360.compose.ui.auth.ForceWelcomeScreen
 import com.lts360.compose.ui.bookmarks.BookmarksViewModel
-import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
 import com.lts360.compose.ui.utils.FormatterUtils.formatCurrency
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
 import com.lts360.compose.utils.ExpandableText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
 fun DetailedServiceScreen(
-    navHostController: NavHostController,
     key: Int,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long) -> Unit,
+    onPopBackStack: () -> Unit,
     viewModel: ServicesViewModel
 ) {
     val userId = viewModel.userId
@@ -128,22 +126,21 @@ fun DetailedServiceScreen(
                     )
                 }
             }
-        }
-    ) {
-        navHostController.popBackStack()
-    }
+        },
+        onPopBackStack
+    )
 
 }
 
 
 @Composable
 fun FeedUserDetailedServiceInfoScreen(
-    navHostController: NavHostController,
     key: Int,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long) -> Unit,
+    onPopBackStack: () -> Unit,
     servicesViewModel: ServicesViewModel,
-    viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navHostController.getBackStackEntry<BottomNavRoutes.ServiceOwnerProfile>() })
+    viewModel: ServiceOwnerProfileViewModel = koinViewModel()
 ) {
 
     val userId = viewModel.userId
@@ -174,18 +171,17 @@ fun FeedUserDetailedServiceInfoScreen(
                     )
                 }
             }
-        }
-    ) {
-        navHostController.popBackStack()
-    }
+        },
+        onPopBackStack
+    )
 }
 
 
 @Composable
 fun BookmarkedFeedUserDetailedServiceInfoScreen(
-    navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
+    onPopBackStack: () -> Unit,
     viewModel: ServiceOwnerProfileViewModel
 ) {
 
@@ -223,18 +219,17 @@ fun BookmarkedFeedUserDetailedServiceInfoScreen(
                 }
             }
 
-        }
-    ) {
-        navHostController.popBackStack()
-    }
+        },
+        onPopBackStack
+    )
 }
 
 
 @Composable
 fun BookmarkedDetailedServiceInfoScreen(
-    navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
+    onPopBackStack: () -> Unit,
     viewModel: BookmarksViewModel
 ) {
 
@@ -270,10 +265,9 @@ fun BookmarkedDetailedServiceInfoScreen(
                     item.user
                 )
             }
-        }
-    ) {
-        navHostController.popBackStack()
-    }
+        },
+        onPopBackStack
+    )
 }
 
 

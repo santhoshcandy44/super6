@@ -53,7 +53,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.lts360.R
 import com.lts360.compose.ui.chat.panel.StateSyncingModifier
@@ -69,7 +68,6 @@ import com.lts360.compose.utils.verticalScrollWithScrollbar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommentsList(
-    navController: NavHostController,
     isReviewsLoading: Boolean,
     isReviewsPosting: Boolean,
     serviceReviews: List<ServiceReview>,

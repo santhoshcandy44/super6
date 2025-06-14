@@ -1,20 +1,11 @@
 package com.lts360.compose.ui.auth.navhost
 
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.runtime.Composable
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavType
-import androidx.navigation.compose.composable
+import androidx.navigation3.runtime.NavKey
 import com.lts360.compose.ui.auth.AccountType
-import com.lts360.compose.ui.managers.ScreenTransitionManager
 import kotlinx.serialization.Serializable
-import kotlin.reflect.KType
 
-@Serializable
-sealed class AuthScreen  {
+
+sealed class AuthScreen: NavKey{
     @Serializable
     data object Welcome : AuthScreen()
 
@@ -44,57 +35,5 @@ sealed class AuthScreen  {
     data class ResetPassword(val accessToken: String,val email: String ): AuthScreen()
 
 
-}
-
-
-val screenTransitionManager = ScreenTransitionManager()
-
-
-
-inline fun <reified T : Any> NavGraphBuilder.noTransitionComposable(
-    typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
-    noinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit)
-{
-    composable<T>(
-        typeMap=typeMap,
-        exitTransition = {ExitTransition.None},
-        enterTransition = {EnterTransition.None},
-        popExitTransition =  {ExitTransition.None},
-        popEnterTransition = {EnterTransition.None},
-    ){
-        content(it)
-    }
-
-}
-
-
-inline fun <reified T : Any> NavGraphBuilder.slideComposable(
-    typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
-    noinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit)
-{
-    composable<T>(
-        typeMap=typeMap,
-        exitTransition = screenTransitionManager.exitTransition,
-        enterTransition = screenTransitionManager.enterTransition,
-        popExitTransition = screenTransitionManager.popExitTransition,
-        popEnterTransition = screenTransitionManager.popEnterTransition,
-    ){
-        content(it)
-    }
-
-}
-
-
-inline fun <reified T : Any> NavGraphBuilder.slideComposableRoot(
-    typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
-    noinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit)
-{
-    composable<T>(
-        typeMap=typeMap,
-        exitTransition = screenTransitionManager.exitTransition,
-        popEnterTransition = screenTransitionManager.popEnterTransition
-    ){
-        content(it)
-    }
 }
 

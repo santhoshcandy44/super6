@@ -87,10 +87,8 @@ import com.lts360.compose.ui.exitFullScreenMode
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.ui.utils.FormatterUtils.formatTimeSeconds
 import com.lts360.compose.utils.SafeDrawingBox
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 
-@AndroidEntryPoint
 class ChatPlayerActivity : ComponentActivity(){
 
     private lateinit var exoPlayer:ExoPlayer

@@ -22,7 +22,6 @@ import com.lts360.compose.ui.main.prefs.viewmodels.BoardsPreferencesRepository
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.onboarding.GuestIdUtil.generateGuestId
 import com.lts360.compose.ui.settings.viewmodels.RegionalSettingsRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +30,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-@HiltViewModel
 class LocationAccessViewModel @Inject constructor(
     val userProfileDao: UserProfileDao,
     val boardDao: BoardDao,

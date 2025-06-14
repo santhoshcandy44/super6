@@ -97,11 +97,10 @@ import androidx.core.net.toUri
 fun CreateServiceScreen(
     onServiceCreated: () -> Unit,
     onServiceDeleted: () -> Unit,
-    onPopBackStack: () -> Unit,
+    onBack: () -> Unit,
     viewModel: ServicesWorkflowViewModel
 
 ) {
-
 
     val status by viewModel.status.collectAsState()
     val draftId by viewModel.draftId.collectAsState()
@@ -257,7 +256,7 @@ fun CreateServiceScreen(
                 bottomSheetScaffoldState.bottomSheetState.hide()
             }
         } else {
-            onPopBackStack()
+            onBack()
         }
     }
 
@@ -331,7 +330,7 @@ fun CreateServiceScreen(
             topBar = {
                 TopAppBar(
                     navigationIcon = {
-                        IconButton(onClick = onPopBackStack) {
+                        IconButton(onClick = onBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back Icon"

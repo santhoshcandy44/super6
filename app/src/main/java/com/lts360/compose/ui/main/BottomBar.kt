@@ -19,8 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavBackStack
 import com.lts360.R
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.NoRippleInteractionSource
@@ -29,15 +28,12 @@ import kotlinx.serialization.Serializable
 
 @Composable
 fun BottomBar(
-    navController: NavHostController,
+    backStack: NavBackStack,
     signInMethod: String?,
     messageCount: Int,
     notificationCount: Int,
-    selectedScreen: BottomBar?,
     onNavigateUpWelcomeScreenSheet: () -> Unit
 ) {
-
-
 
     val bottomBarItems = listOf(
         BottomBarItem(
@@ -73,7 +69,6 @@ fun BottomBar(
 
         bottomBarItems.forEachIndexed { _, item ->
 
-
             val screen = when (item.title) {
                 "Home" -> BottomBar.Home()
                 "Chats" -> BottomBar.Chats
@@ -82,28 +77,27 @@ fun BottomBar(
                 else -> throw IllegalArgumentException("Unknown screen")
             }
 
-
             val badgeCount = when (screen) {
                 BottomBar.Chats -> messageCount
                 BottomBar.Notifications -> notificationCount
                 else -> 0
             }
 
-            val isSelected = selectedScreen?.let {
+            val isSelected = backStack.lastOrNull()?.let {
                 if (screen == BottomBar.Home())
                     it == screen || it == BottomBar.NestedServices() || it == BottomBar.NestedSeconds()
                 else
                     it == screen
-            } ?: false
+            } == true
 
 
             AddItem(
+                backStack = backStack,
                 signInMethod = signInMethod,
                 bottomBarItem = item,
                 screen = screen,
                 isSelected = isSelected,
-                navController = navController,
-                badgeCount = badgeCount, // Pass badgeCount directly
+                badgeCount = badgeCount,
                 onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet
             )
         }
@@ -114,23 +108,19 @@ fun BottomBar(
 @Composable
 fun RowScope.AddItem(
     signInMethod: String?,
+    backStack: NavBackStack,
     bottomBarItem: BottomBarItem,
     screen: BottomBar,
     isSelected: Boolean,
-    navController: NavHostController,
     badgeCount: Int = 0,
-    onNavigateUpWelcomeScreenSheet: () -> Unit,
+    onNavigateUpWelcomeScreenSheet: () -> Unit
 ) {
 
-
-
     val lifecycleOwner = LocalLifecycleOwner.current
-
 
     NavigationBarItem(
         interactionSource = remember { NoRippleInteractionSource() },
         icon = {
-
             Box(modifier = Modifier.padding(4.dp)) {
                 BadgedBox(
                     badge = {
@@ -173,26 +163,23 @@ fun RowScope.AddItem(
         ),
 
         onClick = {
-
-
             if ((signInMethod != null && signInMethod == "guest") && (screen is BottomBar.Notifications || screen is BottomBar.Chats)) {
                 onNavigateUpWelcomeScreenSheet()
-
             } else {
-
                 dropUnlessResumedV2(lifecycleOwner) {
-                    navController.navigate(screen) {
-                        launchSingleTop = true
-                        restoreState = true // Restore previous state
-                        // Optionally pop up to a specific destination if needed
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true // Save the state of the destination
+                    if(backStack.lastOrNull() != screen){
+                        if(screen in backStack){
+                            val index = backStack.indexOfFirst { it == screen }
+                            if(index==-1) return@dropUnlessResumedV2
+                            val item = backStack.removeAt(index)
+                            backStack.add(item)
+                        }else{
+                            backStack.add(screen)
                         }
                     }
+                    backStack.add(screen)
                 }
-
             }
-
         }
     )
 }

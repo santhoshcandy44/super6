@@ -40,35 +40,33 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavController
 import com.lts360.compose.ui.news.qr.viewmodels.TextCreateQRViewModel
 import com.lts360.compose.ui.theme.customColorScheme
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TextCreateQRScreen(navController: NavController) {
+fun TextCreateQRScreen(onPopBackStack:()->Unit) {
 
-    val textCreateQRViewModel: TextCreateQRViewModel = hiltViewModel()
+    val textCreateQRViewModel: TextCreateQRViewModel = koinViewModel()
     val text by textCreateQRViewModel.textState.collectAsState()
 
     val context = LocalContext.current
 
-    // Scaffold with Back Button, Title, and QR Code Generation Logic
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Text", // Set your title text here
+                        text = "Text",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 },
 
                 navigationIcon = {
                     IconButton(onClick = dropUnlessResumed {
-                        navController.popBackStack()
+                        onPopBackStack()
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Default.ArrowBack,

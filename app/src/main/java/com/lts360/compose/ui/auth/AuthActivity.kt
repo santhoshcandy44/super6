@@ -17,16 +17,12 @@ import com.lts360.compose.ui.main.MainActivity
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
-import com.lts360.test.TestActivity
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import org.koin.android.ext.android.inject
 
 
-@AndroidEntryPoint
 class AuthActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var tokenManager: TokenManager
+   val tokenManager: TokenManager by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

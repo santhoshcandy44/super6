@@ -1,8 +1,6 @@
 package com.lts360.compose.ui.profile.viewmodels
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.lts360.api.utils.Result
@@ -16,32 +14,27 @@ import com.lts360.compose.ui.auth.repos.AuthRepository
 import com.lts360.compose.ui.auth.viewmodels.EmailOTPVerificationViewModel
 import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
 
-@HiltViewModel
-class EditEmailEmailOTPVerificationViewModel @Inject constructor(
+@KoinViewModel
+class EditEmailEmailOTPVerificationViewModel(
     private val userProfileDao: UserProfileDao,
-    savedStateHandle: SavedStateHandle,
     authRepository: AuthRepository,
+    @InjectedParam val args :AccountAndProfileSettingsRoutes.EditEmailOtpVerification
 ) : EmailOTPVerificationViewModel(authRepository){
 
-
-    private val args = savedStateHandle.toRoute<AccountAndProfileSettingsRoutes.EditEmailOtpVerification>()
     val userId: Long = UserSharedPreferencesManager.userId
 
     val email: String = args.email
 
-
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading
 
-
     private var verificationEmailErrorMessage = ""
-
 
     fun onResendOtp(userId: Long,email: String,onSuccess: () -> Unit,onError: (String) -> Unit){
         super.onEditEmailReSendEmailVerificationOTPValidUser(
@@ -135,7 +128,7 @@ class EditEmailEmailOTPVerificationViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage= try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))

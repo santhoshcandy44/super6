@@ -52,32 +52,24 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavController
 import com.lts360.R
 import com.lts360.compose.ui.auth.viewmodels.SwitchAccountTypeViewModel
-import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoutes
 import com.lts360.compose.ui.main.viewmodels.AccountAndProfileSettingsViewModel
 import com.lts360.compose.ui.theme.icons
 import com.lts360.compose.utils.NavigatorSubmitButton
-
+import org.koin.androidx.compose.koinViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwitchAccountTypeScreen(
-    navController: NavController,
     onNavigateUp: () -> Unit,
     onPopBackStack: () -> Unit,
-    viewModel: SwitchAccountTypeViewModel = hiltViewModel(),
+    viewModel: SwitchAccountTypeViewModel = koinViewModel()
+) {
 
-    ) {
-    val backStackEntry = remember {
-        navController.getBackStackEntry<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>()
-    }
-
-    val sharedViewModel: AccountAndProfileSettingsViewModel = hiltViewModel(backStackEntry)
+    val accountAndProfileSettingsViewModel: AccountAndProfileSettingsViewModel = koinViewModel()
 
     val userId = viewModel.userId
 
@@ -125,7 +117,7 @@ fun SwitchAccountTypeScreen(
                             updatedAccountType,message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT)
                                 .show()
-                            sharedViewModel.setAccountType(updatedAccountType)
+                            accountAndProfileSettingsViewModel.setAccountType(updatedAccountType)
                             onNavigateUp()
                         }) {
                             Toast.makeText(context, it, Toast.LENGTH_SHORT)

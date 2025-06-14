@@ -1,4 +1,4 @@
-package com.lts360.app.hilt.modules.migrations
+package com.lts360.app.database
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase

@@ -5,13 +5,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.toRoute
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.lts360.app.database.models.app.Board
 import com.lts360.app.database.models.chat.ChatUser
-import com.lts360.compose.dropUnlessResumedV2
-import com.lts360.compose.ui.auth.navhost.noTransitionComposable
 import com.lts360.compose.ui.chat.ChatUsersScreen
 import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
 import com.lts360.compose.ui.localjobs.LocalJobsViewmodel
@@ -35,14 +38,7 @@ import com.lts360.compose.ui.viewmodels.ServicesViewModel
 
 @Composable
 fun BottomNavHost(
-    navController: NavHostController,
-    homeViewModel: HomeViewModel,
-    servicesViewModel: ServicesViewModel,
-    secondsViewModel: SecondsViewmodel,
-    localJobsViewModel: LocalJobsViewmodel,
-    chatListViewModel: ChatListViewModel,
-    notificationViewModel: NotificationViewModel,
-    moreViewModel: MoreViewModel,
+    backStack: NavBackStack,
     boards: List<Board>,
     modifier: Modifier = Modifier,
     onProfileNavigateUp: () -> Unit,
@@ -58,207 +54,176 @@ fun BottomNavHost(
     onNavigateUpDetailedService: (Int) -> Unit,
     onNavigateUpServiceOwnerProfile: (Int, Long) -> Unit,
     onNavigateUpDetailedSeconds: (Int) -> Unit,
-    onNavigateUpDetailedLocalJob: (Int) -> Unit
-
+    onNavigateUpDetailedLocalJob: (Int) -> Unit,
+    homeViewModel: HomeViewModel,
+    servicesViewModel: ServicesViewModel,
+    secondsViewModel: SecondsViewmodel,
+    localJobsViewModel: LocalJobsViewmodel,
+    chatListViewModel: ChatListViewModel,
+    notificationViewModel: NotificationViewModel,
+    moreViewModel: MoreViewModel,
 ) {
-
-
     val context = LocalContext.current
 
-
-
-
-    NavHost(
+    NavDisplay(
         modifier = modifier,
-        navController = navController,
-        startDestination = BottomBar.Home()
-    ) {
+        backStack = backStack,
+        entryDecorators = listOf(
+            rememberSceneSetupNavEntryDecorator(),
+            rememberSavedStateNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator()
+        ),
+        entryProvider = entryProvider {
 
+            entry<BottomBar.Home> { entry ->
+                val key = entry.key
+                val submittedQuery = entry.submittedQuery
 
-        noTransitionComposable<BottomBar.Home> { backstackEntry ->
+                LaunchedEffect(entry) {
+                    homeViewModel.setSearchQuery(submittedQuery ?: "")
+                    homeViewModel.collapseSearchAction()
+                }
 
-            val args = backstackEntry.toRoute<BottomBar.Home>()
-
-
-            LaunchedEffect(backstackEntry) {
-                homeViewModel.setSearchQuery(args.submittedQuery ?: "")
-                homeViewModel.collapseSearchAction()
+                HomeScreen(
+                    backStack = backStack,
+                    boardItems = boards,
+                    onNavigateUpServiceDetailedScreen = { onNavigateUpDetailedService(key) },
+                    onNavigateUpServiceOwnerProfile = { ownerId ->
+                        onNavigateUpServiceOwnerProfile(key, ownerId)
+                    },
+                    onNavigateUpUsedProductListingDetailedScreen = {  onNavigateUpDetailedSeconds(key) },
+                    onNavigateUpLocalJobDetailedScreen = { onNavigateUpDetailedLocalJob(key) },
+                    onPopBackStack = { backStack.removeLastOrNull() },
+                    viewModel = homeViewModel,
+                    servicesViewModel = servicesViewModel,
+                    secondsViewModel = secondsViewModel,
+                    localJobsViewModel = localJobsViewModel,
+                    onDockedFabAddNewSecondsVisibility = onDockedFabAddNewSecondsChanged
+                )
             }
 
-            HomeScreen(
-                navController,
-                boards,
-                {
-                    onNavigateUpDetailedService(args.key)
-                },
-                { serviceOwnerId ->
-                    onNavigateUpServiceOwnerProfile(args.key, serviceOwnerId)
-                },
-                {
-                    onNavigateUpDetailedSeconds(args.key)
-                },
-                {
-                    onNavigateUpDetailedLocalJob(args.key)
-                },
-                { dropUnlessResumedV2(backstackEntry) { navController.popBackStack() } },
-                homeViewModel,
-                servicesViewModel,
-                secondsViewModel,
-                localJobsViewModel,
-                onDockedFabAddNewSecondsChanged
-            )
-        }
+            entry<BottomBar.NestedServices> { entry ->
 
-        noTransitionComposable<BottomBar.NestedServices> { backstackEntry ->
+                val key = entry.key
+                val onlySearchBar = entry.onlySearchBar
+                val submittedQuery = entry.submittedQuery
 
-            val args = backstackEntry.toRoute<BottomBar.NestedServices>()
-            LaunchedEffect(backstackEntry) {
-                homeViewModel.setSearchQuery(args.submittedQuery ?: "")
-                homeViewModel.collapseSearchAction()
+                LaunchedEffect(entry) {
+                    homeViewModel.setSearchQuery(submittedQuery ?: "")
+                    homeViewModel.collapseSearchAction()
+                }
+
+                NestedServicesScreen(
+                    backStack = backStack,
+                    key = key,
+                    onNavigateUpServiceDetailedScreen = { onNavigateUpDetailedService(key) },
+                    onNavigateUpServiceOwnerProfile = { ownerId ->
+                        onNavigateUpServiceOwnerProfile(key, ownerId)
+                    },
+                    onPopBackStack = { backStack.removeLastOrNull() },
+                    viewModel = homeViewModel,
+                    servicesViewModel = servicesViewModel,
+                    onlySearchBar = onlySearchBar
+                )
             }
 
-            NestedServicesScreen(
-                navController,
-                args.key,
-                {
-                    onNavigateUpDetailedService(args.key)
-                },
-                { serviceOwnerId ->
-                    onNavigateUpServiceOwnerProfile(args.key, serviceOwnerId)
-                },
-                { dropUnlessResumedV2(backstackEntry) { navController.popBackStack() } },
-                homeViewModel,
-                servicesViewModel,
-                args.onlySearchBar
-            )
+            entry<BottomBar.NestedSeconds> { entry ->
 
-        }
+                val key = entry.key
+                val onlySearchBar = entry.onlySearchBar
+                val submittedQuery = entry.submittedQuery
 
-        noTransitionComposable<BottomBar.NestedSeconds> { backstackEntry ->
+                LaunchedEffect(entry) {
+                    homeViewModel.setSearchQuery(submittedQuery ?: "")
+                    homeViewModel.collapseSearchAction()
+                }
 
-            val args = backstackEntry.toRoute<BottomBar.NestedSeconds>()
-
-            LaunchedEffect(backstackEntry) {
-                homeViewModel.setSearchQuery(args.submittedQuery ?: "")
-                homeViewModel.collapseSearchAction()
+                NestedSecondsScreen(
+                    backStack = backStack,
+                    key = key,
+                    onNavigateUpUsedProductListingDetailedScreen = { onNavigateUpDetailedSeconds(key) },
+                    onPopBackStack = { backStack.removeLastOrNull() },
+                    viewModel = homeViewModel,
+                    secondsViewModel = secondsViewModel,
+                    onlySearchBar = onlySearchBar
+                )
             }
 
-            NestedSecondsScreen(
-                navController,
-                args.key,
-                {
-                    onNavigateUpDetailedSeconds(args.key)
-                },
+            entry<BottomBar.NestedLocalJobs> { entry ->
 
-                { dropUnlessResumedV2(backstackEntry) { navController.popBackStack() } },
-                homeViewModel,
-                secondsViewModel,
-                args.onlySearchBar,
-            )
+                val key = entry.key
+                val onlySearchBar = entry.onlySearchBar
+                val submittedQuery = entry.submittedQuery
 
-        }
+                LaunchedEffect(entry) {
+                    homeViewModel.setSearchQuery(submittedQuery ?: "")
+                    homeViewModel.collapseSearchAction()
+                }
 
-        noTransitionComposable<BottomBar.NestedLocalJobs> { backstackEntry ->
-
-            val args = backstackEntry.toRoute<BottomBar.NestedLocalJobs>()
-
-
-            LaunchedEffect(backstackEntry) {
-                homeViewModel.setSearchQuery(args.submittedQuery ?: "")
-                homeViewModel.collapseSearchAction()
+                NestedLocalJobsScreen(
+                    backStack = backStack,
+                    key = key,
+                    onNavigateUpLocalJobDetailedScreen = { onNavigateUpDetailedLocalJob(key) },
+                    onPopBackStack = { backStack.removeLastOrNull() },
+                    viewModel = homeViewModel,
+                    localJobsViewModel = localJobsViewModel,
+                    onlySearchBar = onlySearchBar
+                )
             }
 
-            NestedLocalJobsScreen(
-                navController,
-                args.key,
-                {
-                    onNavigateUpDetailedLocalJob(args.key)
-                },
+            entry<BottomBar.Chats> {
+                ChatUsersScreen(
+                    onNavigateUpChat = { chatUser, chatId, recipientId ->
+                        onNavigateUpChatScreen(chatUser, chatId, recipientId)
+                    },
+                    viewModel = chatListViewModel
+                )
+            }
 
-                { dropUnlessResumedV2(backstackEntry) { navController.popBackStack() } },
-                homeViewModel,
-                localJobsViewModel,
-                args.onlySearchBar
-            )
+            entry<BottomBar.Notifications> {
+                NotificationScreen(
+                    viewModel = notificationViewModel
+                )
+            }
 
+            entry<BottomBar.More> {
+                MoreScreen(
+                    boardItems = boards,
+                    onProfileNavigateUp = onProfileNavigateUp,
+                    onAccountAndProfileSettingsNavigateUp = onAccountAndProfileSettingsNavigateUp,
+                    onSetupBoardsSettingsNavigateUp = {
+                        context.startActivity(
+                            Intent(context, BoardsSetupActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            })
+                    },
+                    onManageIndustriesAndInterestsNavigateUp = onManageIndustriesAndInterestsNavigateUp,
+                    onManageServiceNavigateUp = onManageServiceNavigateUp,
+                    onManageSecondsNavigateUp = {
+                        context.startActivity(
+                            Intent(context, UsedProductListingActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            })
+                    },
+                    onManageLocalJobNavigateUp = {
+                        context.startActivity(
+                            Intent(context, LocalJobsActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            })
+                    },
+                    onNavigateUpBookmarks = onNavigateUpBookmarkedServices,
+                    onNavigateUpThemeModeSettings = {
+                        context.startActivity(
+                            Intent(context, SettingsActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            })
+                    },
+                    onNavigateUpGuestManageIndustriesAndInterests = onNavigateUpGuestManageIndustriesAndInterests,
+                    onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet,
+                    onNavigateUpLogInSheet = onNavigateUpLogInSheet,
+                    viewModel = moreViewModel
+                )
+            }
         }
-
-
-
-        noTransitionComposable<BottomBar.Chats> {
-            ChatUsersScreen(
-                navController, { chatUser, chatId, recipientId ->
-                    onNavigateUpChatScreen(
-                        chatUser,
-                        chatId,
-                        recipientId
-                    )
-                },
-                chatListViewModel
-            )
-        }
-
-        noTransitionComposable<BottomBar.Notifications> {
-            NotificationScreen(
-                navController,
-                notificationViewModel
-            )
-        }
-
-        noTransitionComposable<BottomBar.More> {
-
-            MoreScreen(
-                navController,
-                boards,
-                onProfileNavigateUp = onProfileNavigateUp,
-                onAccountAndProfileSettingsNavigateUp = { accountType ->
-                    onAccountAndProfileSettingsNavigateUp(accountType)
-                },
-                onSetupBoardsSettingsNavigateUp = {
-                    context.startActivity(
-                        Intent(
-                            context,
-                            BoardsSetupActivity::class.java
-                        ).apply {
-                            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        })
-                },
-                onManageIndustriesAndInterestsNavigateUp = onManageIndustriesAndInterestsNavigateUp,
-                onManageServiceNavigateUp = onManageServiceNavigateUp,
-                onManageSecondsNavigateUp = {
-                    context.startActivity(
-                        Intent(
-                            context,
-                            UsedProductListingActivity::class.java
-                        ).apply {
-                            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        })
-                },
-                onManageLocalJobNavigateUp = {
-                    context.startActivity(
-                        Intent(
-                            context, LocalJobsActivity::class.java
-                        ).apply {
-                            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        })
-                },
-                onNavigateUpBookmarks = onNavigateUpBookmarkedServices,
-                onNavigateUpThemeModeSettings = {
-                    context.startActivity(
-                        Intent(
-                            context,
-                            SettingsActivity::class.java
-                        ).apply {
-                            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        })
-                },
-                onNavigateUpGuestManageIndustriesAndInterests =
-                    onNavigateUpGuestManageIndustriesAndInterests,
-                onNavigateUpWelcomeScreenSheet = onNavigateUpWelcomeScreenSheet,
-                onNavigateUpLogInSheet = onNavigateUpLogInSheet,
-                viewModel = moreViewModel
-            )
-        }
-
-    }
+    )
 }

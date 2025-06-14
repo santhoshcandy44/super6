@@ -17,20 +17,18 @@ import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.app.database.daos.prefs.BoardDao
 import com.lts360.compose.ui.auth.repos.AuthRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import org.koin.android.annotation.KoinViewModel
 import javax.inject.Inject
 
-@HiltViewModel
+@KoinViewModel
 class LogInViewModel @Inject constructor(
-    @ApplicationContext
-    val context: Context,
+    val applicationContext: Context,
     val boardDao:BoardDao,
     private val authRepository: AuthRepository,
 ) : ViewModel() {
@@ -127,7 +125,7 @@ class LogInViewModel @Inject constructor(
                 when (val result = legacyEmailLogin(email, password)) {
                     is Result.Success -> {
                         val data = Gson().fromJson(result.data.data, LogInResponse::class.java)
-                        (context.applicationContext as App).setIsInvalidSession(false)
+                        (applicationContext.applicationContext as App).setIsInvalidSession(false)
                         withContext(Dispatchers.IO) {
                             boardDao.clearAndInsertSelectedBoards(data.boards)
                             authRepository.updateProfileIfNeeded(data.userDetails)
@@ -162,7 +160,7 @@ class LogInViewModel @Inject constructor(
                     is Result.Success -> {
 
                         val data = Gson().fromJson(result.data.data, LogInResponse::class.java)
-                        (context.applicationContext as App).setIsInvalidSession(false)
+                        (applicationContext.applicationContext as App).setIsInvalidSession(false)
                         withContext(Dispatchers.IO) {
                             boardDao.clearAndInsertSelectedBoards(data.boards)
                             authRepository.updateProfileIfNeeded(data.userDetails)
@@ -213,7 +211,7 @@ class LogInViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))
@@ -264,7 +262,7 @@ class LogInViewModel @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = try {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "An unknown error occurred"
                 }
                 Result.Error(Exception(errorMessage))

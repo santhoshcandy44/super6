@@ -74,7 +74,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun messageFileProcessingDao(): MessageProcessingDataDao
     abstract fun chatUserDao(): ChatUserDao
     abstract fun notificationDao(): NotificationDao
-    abstract fun draftServicesDao(): DraftServiceDao
+    abstract fun draftServiceDao(): DraftServiceDao
     abstract fun draftImageDao(): DraftImageDao
     abstract fun draftPlanDao(): DraftPlanDao
     abstract fun draftLocationDao(): DraftLocationDao

@@ -19,12 +19,10 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.lts360.BuildConfig
 import com.lts360.compose.ui.theme.AppTheme
 import com.lts360.compose.utils.SafeDrawingBox
-import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
-@AndroidEntryPoint
 class CropProfilePicActivity : ComponentActivity() {
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {

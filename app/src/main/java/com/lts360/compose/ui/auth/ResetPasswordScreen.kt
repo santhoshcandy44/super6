@@ -37,17 +37,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.lts360.compose.ui.auth.viewmodels.ResetPasswordViewModel
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.services.manage.ErrorText
 import com.lts360.compose.utils.NavigatorSubmitButton
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
 fun ResetPasswordScreen(
-    viewModel: ResetPasswordViewModel = hiltViewModel(),
+    viewModel: ResetPasswordViewModel = koinViewModel(),
     onNavigateDown: () -> Unit,
 ) {
 
@@ -102,7 +102,7 @@ fun ResetPasswordScreen(
 
 @Composable
 fun ResetPasswordScreenProtected(
-    viewModel: ResetPasswordViewModel = hiltViewModel(),
+    viewModel: ResetPasswordViewModel = koinViewModel(),
     onNavigateDown: () -> Unit,
 ) {
 

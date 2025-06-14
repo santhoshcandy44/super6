@@ -1,20 +1,12 @@
 package com.lts360.libs.imagepicker
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.provider.MediaStore
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.lts360.libs.imagepicker.models.ImageMediaData
-import com.lts360.libs.imagepicker.routes.GalleyImagesPagerRoutes
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,13 +19,7 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 
-@HiltViewModel
-class ImagePickerViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
-    savedStateHandle: SavedStateHandle
-) :
-    ViewModel() {
-
+class ImagePickerViewModel @Inject constructor(val context: Context) : ViewModel() {
 
     private val _mediaItems = MutableStateFlow<List<ImageMediaData>>(emptyList())
     val mediaItems = _mediaItems.asStateFlow()

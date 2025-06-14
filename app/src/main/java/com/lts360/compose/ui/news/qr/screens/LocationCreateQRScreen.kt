@@ -40,23 +40,21 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavController
 import com.lts360.compose.ui.news.qr.viewmodels.LocationCreateQRViewModel
 import com.lts360.compose.ui.theme.customColorScheme
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LocationCreateQRScreen(navController: NavController) {
+fun LocationCreateQRScreen(onPopBackStack:()-> Unit) {
 
-    val viewModel: LocationCreateQRViewModel = hiltViewModel()
+    val viewModel: LocationCreateQRViewModel = koinViewModel()
     val latitude by viewModel.latitude.collectAsState()
     val longitude by viewModel.longitude.collectAsState()
 
     val context = LocalContext.current
 
-    // Scaffold with Back Button, Title, and QR Code Generation Logic
     Scaffold(
         topBar = {
             TopAppBar(
@@ -69,7 +67,7 @@ fun LocationCreateQRScreen(navController: NavController) {
 
                 navigationIcon = {
                     IconButton(onClick = dropUnlessResumed {
-                        navController.popBackStack()
+                        onPopBackStack()
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Default.ArrowBack,

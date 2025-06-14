@@ -3,15 +3,12 @@ package com.lts360.compose.ui.profile
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -29,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -39,7 +35,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.compose.transformations.PlaceholderTransformation
@@ -47,6 +42,7 @@ import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.profile.viewmodels.EditFirstNameViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +50,7 @@ import kotlinx.coroutines.launch
 fun EditProfileFirstNameScreen(
     navigatePop: () -> Unit,
     onPopBackStack: () -> Unit,
-    viewModel: EditFirstNameViewModel = hiltViewModel()
+    viewModel: EditFirstNameViewModel = koinViewModel()
 ) {
 
     val context = LocalContext.current
@@ -66,8 +62,6 @@ fun EditProfileFirstNameScreen(
 
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
-
-
 
     Box(
         modifier = Modifier

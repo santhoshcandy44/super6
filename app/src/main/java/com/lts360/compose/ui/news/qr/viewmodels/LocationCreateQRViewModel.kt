@@ -4,30 +4,22 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lts360.compose.ui.news.qr.viewmodels.repos.QRCodeRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class LocationCreateQRViewModel @Inject constructor(private val qrCodeRepository: QRCodeRepository) :
+class LocationCreateQRViewModel(private val qrCodeRepository: QRCodeRepository) :
     ViewModel() {
 
-
-
-    // Latitude and Longitude input states
     private val _latitude = MutableStateFlow("")
     val latitude = _latitude.asStateFlow()
 
     private val _longitude = MutableStateFlow("")
     val longitude = _longitude.asStateFlow()
 
-    // Bitmap for generated QR code
     private val _qrCodeLocationBitmap = MutableStateFlow<Bitmap?>(null)
     val qrCodeLocationBitmap = _qrCodeLocationBitmap.asStateFlow()
 
-    // Function to update latitude
     fun updateLatitude(newLatitude: String) {
         _latitude.value = newLatitude
     }

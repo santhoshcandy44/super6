@@ -2,7 +2,6 @@ package com.lts360.app.workers.chat.upload
 
 import android.app.NotificationManager
 import android.content.Context
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
@@ -17,8 +16,6 @@ import com.lts360.compose.ui.chat.repos.UploadWorkerUtilRepository
 import com.lts360.compose.ui.chat.viewmodels.FileUploadState
 import com.lts360.compose.ui.chat.viewmodels.serializeFileUploadState
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import io.socket.client.Ack
 import io.socket.client.Socket
 import kotlinx.coroutines.CompletableDeferred
@@ -39,19 +36,16 @@ import java.io.File
 import java.io.IOException
 import kotlin.coroutines.resumeWithException
 import androidx.core.net.toUri
+import org.koin.android.annotation.KoinWorker
 
-@HiltWorker
-class MediaUploadWorker @AssistedInject constructor(
-    @Assisted context: Context,
-    @Assisted workerParams: WorkerParameters,
+@KoinWorker
+class MediaUploadWorker(
+    context: Context,
+    workerParams: WorkerParameters,
     private val chatUserRepository: ChatUserRepository,
     private val uploadWorkerUtilRepository: UploadWorkerUtilRepository,
     val socketManager: SocketManager
-
 ) : CoroutineWorker(context, workerParams) {
-
-
-
 
     companion object {
         private const val CHUNK_SIZE = 1024 * 1024

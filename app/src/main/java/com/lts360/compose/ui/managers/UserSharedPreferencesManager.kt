@@ -6,12 +6,9 @@ import androidx.core.content.edit
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
-import com.lts360.compose.ui.managers.UserSharedPreferencesManager.sharedPreferences
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
+import org.koin.core.annotation.Factory
 
 
 object UserSharedPreferencesManager {
@@ -103,10 +100,8 @@ object UserSharedPreferencesManager {
 
 private val Context.userGeneralDataStore by preferencesDataStore(name = "user_general_preferences")
 
-@Singleton
-class UserGeneralPreferencesManager @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+@Factory
+class UserGeneralPreferencesManager(private val context: Context) {
 
     companion object {
         private val KEY_LOCAL_JOB_ATTENTION_PROMPT_VISIBILITY = booleanPreferencesKey("local_job_attention_prompt_visibility")

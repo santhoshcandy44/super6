@@ -19,13 +19,13 @@ import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
 import com.lts360.compose.ui.managers.NetworkConnectivityManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.android.annotation.KoinViewModel
 import javax.inject.Inject
 
 
@@ -204,9 +204,8 @@ class SecondsRepository @Inject constructor(
 
 }
 
-
-@HiltViewModel
-class SecondsViewmodel @Inject constructor(
+@KoinViewModel
+class SecondsViewmodel(
     val userProfileDao: UserProfileDao,
     private val guestUserLocationDao: UserLocationDao,
     val chatUserDao: ChatUserDao,

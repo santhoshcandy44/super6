@@ -103,7 +103,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -125,9 +124,9 @@ import com.lts360.libs.imagepicker.utils.redirectToAppSettings
 import com.lts360.libs.media.ui.permissions.MultiplePermissionsRationaleRequestDialog
 import com.lts360.libs.media.ui.permissions.PermissionRationaleRequestDialog
 import com.lts360.libs.media.ui.permissions.PermissionRequestDialog
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -145,7 +144,6 @@ class CameraVisualPickerActivityContracts {
 }
 
 
-@AndroidEntryPoint
 class ChatCameraActivity : ComponentActivity() {
     @OptIn(UnstableApi::class)
     @SuppressLint("SourceLockedOrientationActivity")
@@ -162,7 +160,7 @@ class ChatCameraActivity : ComponentActivity() {
                 Surface {
                     val context = LocalContext.current
 
-                    val cameraViewModel: ChatCameraXViewModel = hiltViewModel()
+                    val cameraViewModel: ChatCameraXViewModel = koinViewModel()
                     val capturedUri by cameraViewModel.lastCapturedUri.collectAsState()
 
                     /*BackHandler(capturedUri != null) {

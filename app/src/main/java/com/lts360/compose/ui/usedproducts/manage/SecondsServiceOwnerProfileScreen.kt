@@ -50,7 +50,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavHostController
 import com.lts360.R
 import com.lts360.api.models.service.FeedUserProfileInfo
 import com.lts360.api.models.service.UsedProductListing
@@ -71,10 +70,10 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SecondsServiceOwnerProfileScreen(
-    navHostController: NavHostController,
     key: Int,
     onNavigateUpChat: (ChatUser, Int, Long) -> Unit,
     onNavigateUpDetailedSeconds: (Int, UsedProductListing) -> Unit,
+    onPopBackStack: () -> Unit,
     secondsViewModel: SecondsViewmodel,
     secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel
 ) {
@@ -97,12 +96,14 @@ fun SecondsServiceOwnerProfileScreen(
             job = scope.launch {
                 selectedParentService?.let { nonNullSelectedService ->
 
-                    val selectedChatUser = secondsViewModel.getChatUser(userId, nonNullSelectedService.user)
+                    val selectedChatUser =
+                        secondsViewModel.getChatUser(userId, nonNullSelectedService.user)
                     val selectedChatId = selectedChatUser.chatId
                     onNavigateUpChat(
                         selectedChatUser,
                         selectedChatId,
-                        nonNullSelectedService.user.userId)
+                        nonNullSelectedService.user.userId
+                    )
                 }
             }
 
@@ -111,9 +112,7 @@ fun SecondsServiceOwnerProfileScreen(
             secondsViewModel.setNestedSecondsOwnerProfileSelectedItem(key, it)
             onNavigateUpDetailedSeconds(key, it)
         },
-        {
-            navHostController.popBackStack()
-        },
+        onPopBackStack,
         secondsOwnerProfileViewModel
     )
 
@@ -122,13 +121,12 @@ fun SecondsServiceOwnerProfileScreen(
 
 @Composable
 fun BookmarkedSecondsOwnerProfileScreen(
-    navHostController: NavHostController,
     onNavigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpDetailedService: () -> Unit,
+    onPopBackStack: () -> Unit,
     servicesViewModel: BookmarksViewModel,
     secondsOwnerProfileViewModel: SecondsOwnerProfileViewModel
 ) {
-
 
     val userId = servicesViewModel.userId
     val selectedParentService by servicesViewModel.selectedItem.collectAsState()
@@ -144,28 +142,26 @@ fun BookmarkedSecondsOwnerProfileScreen(
     SecondsOwnerProfileScreenContent(
         item, {
 
-        if (job?.isActive == true) {
-            return@SecondsOwnerProfileScreenContent
-        }
+            if (job?.isActive == true) {
+                return@SecondsOwnerProfileScreenContent
+            }
 
-        job = scope.launch {
-            val selectedChatUser =
-                servicesViewModel.getChatUser(userId, item.user)
-            val selectedChatId = selectedChatUser.chatId
+            job = scope.launch {
+                val selectedChatUser =
+                    servicesViewModel.getChatUser(userId, item.user)
+                val selectedChatId = selectedChatUser.chatId
 
-            onNavigateUpChat(
-                selectedChatId,
-                item.user.userId,
-                item.user
-            )
-        }
+                onNavigateUpChat(
+                    selectedChatId,
+                    item.user.userId,
+                    item.user
+                )
+            }
 
-    }, {
-        onNavigateUpDetailedService()
-    },
-        {
-            navHostController.popBackStack()
+        }, {
+            onNavigateUpDetailedService()
         },
+        onPopBackStack,
         secondsOwnerProfileViewModel
     )
 
@@ -256,7 +252,7 @@ private fun SecondsOwnerProfileScreenContent(
         sheetSwipeEnabled = true,
     ) { innerPadding ->
 
-        Column (modifier = Modifier.padding(innerPadding)) {
+        Column(modifier = Modifier.padding(innerPadding)) {
 
             TopAppBar(
                 navigationIcon = {
@@ -331,7 +327,11 @@ private fun SecondsOwnerProfileScreenContent(
                                         .clickable {
                                             if (nonNullSelectedItem.isBookmarked) {
 
-                                                viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = false))
+                                                viewModel.setSelectedItem(
+                                                    nonNullSelectedItem.copy(
+                                                        isBookmarked = false
+                                                    )
+                                                )
 
                                                 viewModel.onRemoveBookmark(
                                                     viewModel.userId,
@@ -345,33 +345,58 @@ private fun SecondsOwnerProfileScreenContent(
                                                             nonNullSelectedItem.productId,
                                                             false
                                                         )
-                                                        ShortToast(context = context, message = "Bookmark removed")
+                                                        ShortToast(
+                                                            context = context,
+                                                            message = "Bookmark removed"
+                                                        )
 
                                                     }, onError = {
-                                                        viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = true))
-                                                        ShortToast(context = context, message = "Something wrong")
+                                                        viewModel.setSelectedItem(
+                                                            nonNullSelectedItem.copy(isBookmarked = true)
+                                                        )
+                                                        ShortToast(
+                                                            context = context,
+                                                            message = "Something wrong"
+                                                        )
                                                     })
 
 
                                             } else {
 
-                                                viewModel.setSelectedItem(selectedItem?.copy(isBookmarked = true))
+                                                viewModel.setSelectedItem(
+                                                    selectedItem?.copy(
+                                                        isBookmarked = true
+                                                    )
+                                                )
 
                                                 viewModel.onBookmark(
                                                     viewModel.userId,
                                                     nonNullSelectedItem,
                                                     onSuccess = {
 
-                                                        viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = true))
-                                                        viewModel.directUpdateServiceIsBookMarked(nonNullSelectedItem.productId, true)
+                                                        viewModel.setSelectedItem(
+                                                            nonNullSelectedItem.copy(isBookmarked = true)
+                                                        )
+                                                        viewModel.directUpdateServiceIsBookMarked(
+                                                            nonNullSelectedItem.productId,
+                                                            true
+                                                        )
 
-                                                        ShortToast(context = context, message = "Bookmarked")
+                                                        ShortToast(
+                                                            context = context,
+                                                            message = "Bookmarked"
+                                                        )
 
                                                     },
                                                     onError = {
-                                                        ShortToast(context = context, message = "Something wrong")
+                                                        ShortToast(
+                                                            context = context,
+                                                            message = "Something wrong"
+                                                        )
 
-                                                        viewModel.setSelectedItem(nonNullSelectedItem.copy(isBookmarked = false))
+                                                        viewModel.setSelectedItem(
+                                                            nonNullSelectedItem.copy(isBookmarked = false)
+                                                        )
                                                     })
                                             }
 
@@ -423,7 +448,10 @@ private fun SecondsOwnerProfileScreenContent(
                                                     )
                                                 )
                                             } catch (_: ActivityNotFoundException) {
-                                                ShortToast(context = context, message = "No app to open")
+                                                ShortToast(
+                                                    context = context,
+                                                    message = "No app to open"
+                                                )
                                             }
 
                                         }
@@ -432,12 +460,14 @@ private fun SecondsOwnerProfileScreenContent(
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
 
-                                Icon(Icons.Default.Share,
+                                Icon(
+                                    Icons.Default.Share,
                                     contentDescription = "Share",
                                     modifier = Modifier.size(24.dp)
                                 )
 
-                                Text(text = "Share",
+                                Text(
+                                    text = "Share",
                                     modifier = Modifier.padding(horizontal = 4.dp)
                                 )
                             }
@@ -467,7 +497,7 @@ private fun SecondsOwnerProfile(
 ) {
 
 
-    Box(modifier = Modifier.fillMaxSize()){
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             contentPadding = PaddingValues(
                 top = 16.dp,

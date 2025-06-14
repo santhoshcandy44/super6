@@ -32,7 +32,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -41,16 +40,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
+import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.compose.ui.news.qr.viewmodels.ContactCreateQRViewModel
 import com.lts360.compose.ui.theme.customColorScheme
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ContactVcardCreateQRScreen(navController: NavController) {
+fun ContactVcardCreateQRScreen(onPopBackStack:()-> Unit) {
 
-    val viewModel: ContactCreateQRViewModel = hiltViewModel()
+    val viewModel: ContactCreateQRViewModel = koinViewModel()
     val firstName by viewModel.firstName.collectAsState()
     val lastName by viewModel.lastName.collectAsState()
     val mobile by viewModel.mobile.collectAsState()
@@ -80,9 +79,7 @@ fun ContactVcardCreateQRScreen(navController: NavController) {
                 },
 
                 navigationIcon = {
-                    IconButton(onClick = {
-                        navController.popBackStack()
-                    }) {
+                    IconButton(onClick = dropUnlessResumed {  }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Default.ArrowBack,
                             contentDescription = "Back",

@@ -233,7 +233,6 @@
         </provider>
 
 
-
         <activity
             android:name="com.lts360.test.TestActivity"
             android:exported="true"

@@ -10,16 +10,12 @@ import com.lts360.api.common.responses.ResponseReply
 import com.lts360.api.utils.Result
 import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.auth.services.AuthService
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class ForgotPasswordViewModel @Inject constructor() : ViewModel() {
-
+class ForgotPasswordViewModel : ViewModel() {
 
     private val _loadingState = MutableStateFlow(false)
     val loadingState: StateFlow<Boolean> = _loadingState.asStateFlow()

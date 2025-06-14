@@ -3,7 +3,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("com.google.gms.google-services")
-    id("com.google.dagger.hilt.android")
     id("kotlin-parcelize")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -12,12 +11,12 @@ plugins {
 
 android {
     namespace = "com.lts360"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.lts360"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
         multiDexEnabled = true
@@ -161,9 +160,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
 
-    // Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.9")
-
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
@@ -211,17 +207,6 @@ dependencies {
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("androidx.room:room-paging:2.6.1")
 
-    // Hilt for Dependency Injection
-    implementation("com.google.dagger:hilt-android:2.55")
-    ksp("com.google.dagger:hilt-compiler:2.55")
-    ksp("com.google.dagger:hilt-android-compiler:2.55")
-// Hilt Navigation for Jetpack Compose
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-
-    // WorkManager
-    implementation("androidx.work:work-runtime-ktx:2.10.0")
-    implementation("androidx.hilt:hilt-work:1.2.0")
-    ksp("androidx.hilt:hilt-compiler:1.2.0")
 
     // Paging
     implementation("androidx.paging:paging-runtime-ktx:3.3.6")
@@ -262,6 +247,23 @@ dependencies {
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
     implementation("org.apache.commons:commons-math3:3.6.1")
 
+    implementation("androidx.work:work-runtime:2.10.1")
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
+    androidTestImplementation("androidx.work:work-testing:2.10.1")
+    implementation("androidx.work:work-multiprocess:2.10.1")
+
+    //Koin
+    implementation("io.insert-koin:koin-android:4.1.0")
+    implementation("io.insert-koin:koin-androidx-compose:4.1.0")
+    implementation("io.insert-koin:koin-androidx-workmanager:4.1.0")
+    implementation("io.insert-koin:koin-annotations:2.0.0")
+    ksp("io.insert-koin:koin-ksp-compiler:2.0.0")
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+//    implementation(libs.androidx.material3.adaptive.navigation3)
+    implementation(libs.kotlinx.serialization.core)
+
 /*    implementation("io.ktor:ktor-client-core:3.1.2")
     implementation("io.ktor:ktor-client-android:3.1.2")
     implementation("io.ktor:ktor-client-content-negotiation:3.1.2")
@@ -276,3 +278,6 @@ java {
     }
 }
 
+ksp {
+    arg("KOIN_CONFIG_CHECK","true")
+}

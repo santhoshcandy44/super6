@@ -5,23 +5,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.lts360.compose.ui.auth.viewmodels.ForgotPasswordEmailOTPVerificationViewModel
+import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
 fun ForgotPasswordEmailOtpVerification(
     onNavigateUp: (String,String) -> Unit,
     onPopBackStack:()-> Unit,
-    viewModel: ForgotPasswordEmailOTPVerificationViewModel = hiltViewModel(),
-
-    ) {
+    viewModel: ForgotPasswordEmailOTPVerificationViewModel = koinViewModel()
+) {
 
     val context = LocalContext.current
     val isLoading by viewModel.loading.collectAsState()
     val email = viewModel.email
-
-
 
     OtpVerificationScreen(
         viewModel,
@@ -58,7 +55,7 @@ fun ForgotPasswordEmailOtpVerification(
 fun ForgotPasswordEmailOtpVerificationProtected(
     onNavigateUp: (String,String) -> Unit,
     onPopBackStack:()-> Unit,
-    viewModel: ForgotPasswordEmailOTPVerificationViewModel = hiltViewModel(),
+    viewModel: ForgotPasswordEmailOTPVerificationViewModel = koinViewModel(),
 
     ) {
 

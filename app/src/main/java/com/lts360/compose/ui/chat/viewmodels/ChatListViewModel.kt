@@ -14,8 +14,6 @@ import com.lts360.app.database.models.chat.Message
 import com.lts360.app.database.models.chat.MessageWithReply
 import com.lts360.compose.ui.chat.ChatUserEventsManager
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
 
 data class UserState(
     val chatUser: ChatUser,
@@ -45,15 +43,14 @@ data class UserState(
     val firstVisibleItemIndex: Int = 0,
 )
 
-
-@HiltViewModel
-class ChatListViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
+@KoinViewModel
+class ChatListViewModel(
+    val applicationContext: Context,
     private val chatUserDao: ChatUserDao,
     private val messageDao: MessageDao,
-    val socketManager: SocketManager,
     val repository: ChatUserRepository,
-    val savedStateHandle: SavedStateHandle,
+    val socketManager: SocketManager,
+    val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
 
@@ -118,7 +115,7 @@ class ChatListViewModel @Inject constructor(
                     val nonNullChatUser = userState.chatUser
                     if (profileInfoUserId == nonNullChatUser.recipientId) {
                         chatUsersProfileImageLoader.enqueue(
-                            ImageRequest.Builder(context)
+                            ImageRequest.Builder(applicationContext)
                                 .data(profilePicUrl96By96)
                                 .build()
                         )
@@ -174,7 +171,7 @@ class ChatListViewModel @Inject constructor(
                     val messages = chatUserWithDetails.messages
 
                     chatUsersProfileImageLoader.enqueue(
-                        ImageRequest.Builder(context).data(chatUser.userProfile.profilePicUrl96By96)
+                        ImageRequest.Builder(applicationContext).data(chatUser.userProfile.profilePicUrl96By96)
                             .build()
                     )
 
@@ -201,7 +198,7 @@ class ChatListViewModel @Inject constructor(
                 }
 
                 val chatUsers = chatUserDao.getAllChatUsersWithUnreadMessages(
-                    context, chatUsersProfileImageLoader,
+                    applicationContext, chatUsersProfileImageLoader,
                     messageDao, 10, 30
                 )
 
@@ -533,7 +530,7 @@ class ChatListViewModel @Inject constructor(
 
 
                             chatUsersProfileImageLoader.enqueue(
-                                ImageRequest.Builder(context)
+                                ImageRequest.Builder(applicationContext)
                                     .data(chatUser.userProfile.profilePicUrl96By96)
                                     .build()
                             )
@@ -580,7 +577,7 @@ class ChatListViewModel @Inject constructor(
 
 
                             chatUsersProfileImageLoader.enqueue(
-                                ImageRequest.Builder(context)
+                                ImageRequest.Builder(applicationContext)
                                     .data(chatUser.userProfile.profilePicUrl96By96)
                                     .build()
                             )

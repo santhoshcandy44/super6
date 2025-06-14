@@ -13,23 +13,19 @@ import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.utils.FormatterUtils.isValidEmail
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 
-@HiltViewModel
-class EditEmailViewModel @Inject constructor(
+class EditEmailViewModel(
     private val userProfileDao: UserProfileDao
 ) : ViewModel() {
 
-    // Retrieve the argument from the navigation
     val userId: Long = UserSharedPreferencesManager.userId
 
     private val _isLoading = MutableStateFlow(false)

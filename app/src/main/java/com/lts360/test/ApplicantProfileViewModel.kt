@@ -17,8 +17,6 @@ import com.lts360.api.utils.mapExceptionToError
 import com.lts360.components.utils.InputStreamRequestBody
 import com.lts360.components.utils.getFileNameForUri
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -31,7 +29,6 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.Date
-import javax.inject.Inject
 
 
 @Serializable
@@ -382,8 +379,7 @@ data class ApplicantProficiencyOption(
 )
 
 
-@HiltViewModel
-class ApplicantProfileViewModel @Inject constructor(@ApplicationContext val context: Context) :
+class ApplicantProfileViewModel  constructor(val context: Context) :
     ViewModel() {
 
     val userId = UserSharedPreferencesManager.userId

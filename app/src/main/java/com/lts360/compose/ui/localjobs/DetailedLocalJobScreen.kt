@@ -69,7 +69,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.error
@@ -96,13 +95,12 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun DetailedLocalJobScreen(
-    navHostController: NavHostController,
     key: Int,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long) -> Unit,
-    viewModel: LocalJobsViewmodel,
-
-    ) {
+    onPopBackStack: () -> Unit,
+    viewModel: LocalJobsViewmodel
+) {
 
     val userId = viewModel.userId
     val isGuest = viewModel.isGuest
@@ -147,9 +145,7 @@ fun DetailedLocalJobScreen(
                 }
             }
         },
-        {
-            navHostController.popBackStack()
-        },
+        onPopBackStack,
         {
             viewModel.setLocalJobPersonalInfoPromptIsDontAskAgainChecked(it)
         },
@@ -164,16 +160,14 @@ fun DetailedLocalJobScreen(
             }
         }
     )
-
 }
-
 
 @Composable
 fun BookmarkedDetailedLocalJobInfoScreen(
-    navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
-    viewModel: BookmarksViewModel,
+    onPopBackStack: () -> Unit,
+    viewModel: BookmarksViewModel
 ) {
 
     val userId = viewModel.userId
@@ -217,9 +211,7 @@ fun BookmarkedDetailedLocalJobInfoScreen(
                 }
             }
         },
-        {
-            navHostController.popBackStack()
-        },
+        onPopBackStack,
         {
             viewModel.setLocalJobPersonalInfoPromptIsDontAskAgainChecked(it)
         },

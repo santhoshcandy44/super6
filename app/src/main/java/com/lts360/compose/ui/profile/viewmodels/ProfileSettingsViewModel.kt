@@ -21,8 +21,6 @@ import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.app.database.models.profile.UserProfileSettingsInfo
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.profile.repos.UserProfileRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,11 +33,11 @@ import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
 import androidx.core.net.toUri
+import org.koin.android.annotation.KoinViewModel
 
 
-@HiltViewModel
-class ProfileSettingsViewModel @Inject constructor(
-    @ApplicationContext
+@KoinViewModel
+class ProfileSettingsViewModel(
     context: Context,
     private val userProfileDao: UserProfileDao,
     private val userProfileRepository: UserProfileRepository,

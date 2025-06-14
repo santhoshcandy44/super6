@@ -1,10 +1,8 @@
 package com.lts360.compose.ui.auth.viewmodels
 
 import android.content.Context
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.gson.Gson
@@ -18,28 +16,25 @@ import com.lts360.api.utils.mapExceptionToError
 import com.lts360.api.auth.services.AuthService
 import com.lts360.compose.ui.auth.navhost.AuthScreen
 import com.lts360.compose.ui.auth.repos.AuthRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
 
-@HiltViewModel
-class RegisterViewModel @Inject constructor(
-    @ApplicationContext val context:Context,
+
+@KoinViewModel
+class RegisterViewModel(
+    val applicationContext:Context,
     private val authRepository: AuthRepository,
-    savedStateHandle: SavedStateHandle,
+    @InjectedParam val args : AuthScreen.Register
 ) : ViewModel() {
 
-
-    private val args = savedStateHandle.toRoute<AuthScreen.Register>()
     val accountType = args.accountType
 
-    // State management using StateFlow
     private val _firstName = MutableStateFlow("")
     val firstName = _firstName.asStateFlow()
 
@@ -250,7 +245,7 @@ class RegisterViewModel @Inject constructor(
                 when (val result =googleSignUp(idToken, accountType)) { // Call the network function
                     is Result.Success -> {
                         val data = Gson().fromJson(result.data.data, LogInResponse::class.java)
-                        (context.applicationContext as App).setIsInvalidSession(false)
+                        (applicationContext.applicationContext as App).setIsInvalidSession(false)
                         authRepository.saveGoogleSignInInfo(data.accessToken,data.refreshToken)
                         authRepository.saveUserId(data.userId)
                         withContext(Dispatchers.IO) {

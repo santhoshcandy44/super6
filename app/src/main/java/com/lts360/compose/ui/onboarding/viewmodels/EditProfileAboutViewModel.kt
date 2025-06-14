@@ -1,9 +1,7 @@
 package com.lts360.compose.ui.onboarding.viewmodels
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.lts360.api.utils.Result
@@ -15,25 +13,21 @@ import com.lts360.api.common.responses.ResponseReply
 import com.lts360.app.database.daos.profile.UserProfileDao
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.onboarding.navhost.OnBoardingScreen
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
 import kotlin.coroutines.cancellation.CancellationException
 
-
-@HiltViewModel
-class EditProfileAboutViewModel @Inject constructor(
+@KoinViewModel
+class EditProfileAboutViewModel (
     private val userProfileDao: UserProfileDao,
-    savedStateHandle: SavedStateHandle
+    @InjectedParam val args:OnBoardingScreen.CompleteAbout
 ) : ViewModel() {
 
-    private val args = savedStateHandle.toRoute<OnBoardingScreen.CompleteAbout>()
-
-    // Retrieve the argument from the navigation
     val userId = UserSharedPreferencesManager.userId
     val type: String? = args.type
 

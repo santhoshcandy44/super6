@@ -42,7 +42,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.R
 import com.lts360.compose.transformations.PlaceholderTransformation
@@ -50,6 +49,7 @@ import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.onboarding.viewmodels.EditProfileAboutViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
@@ -57,7 +57,7 @@ fun EditProfileAboutScreen(
     onPopBackStack: () -> Unit,
     onUpdateSuccess: () -> Unit={},
     onSkipNowNavigateUp: () -> Unit={},
-    viewModel: EditProfileAboutViewModel = hiltViewModel()
+    viewModel: EditProfileAboutViewModel = koinViewModel()
 
 ) {
     val userId = viewModel.userId

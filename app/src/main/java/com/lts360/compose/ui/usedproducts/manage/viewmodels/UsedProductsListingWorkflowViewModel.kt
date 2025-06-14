@@ -16,8 +16,6 @@ import com.lts360.api.models.service.EditableLocation
 import com.lts360.compose.ui.chat.MAX_IMAGES
 import com.lts360.compose.ui.services.BitmapContainer
 import com.lts360.compose.ui.services.BitmapContainerFactory
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,13 +26,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import org.koin.android.annotation.KoinViewModel
 import java.util.Currency
 import java.util.Locale
-import javax.inject.Inject
 
-@HiltViewModel
-class UsedProductsListingWorkflowViewModel @Inject constructor(
-    @ApplicationContext val context: Context,
+@KoinViewModel
+class UsedProductsListingWorkflowViewModel(
+    val applicationContext: Context,
     val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 

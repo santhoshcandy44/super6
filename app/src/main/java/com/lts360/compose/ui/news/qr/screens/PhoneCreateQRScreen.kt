@@ -40,17 +40,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavController
 import com.lts360.compose.ui.news.qr.viewmodels.PhoneCreateQRViewModel
 import com.lts360.compose.ui.theme.customColorScheme
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PhoneCreateQRScreen(navController: NavController) {
+fun PhoneCreateQRScreen(onPopBackStack:()-> Unit) {
 
-    val viewModel: PhoneCreateQRViewModel = hiltViewModel()
+    val viewModel: PhoneCreateQRViewModel = koinViewModel()
     val phoneNumber by viewModel.phoneNumber.collectAsState()
 
     val context = LocalContext.current
@@ -68,7 +67,7 @@ fun PhoneCreateQRScreen(navController: NavController) {
 
                 navigationIcon = {
                     IconButton(onClick = dropUnlessResumed {
-                        navController.popBackStack()
+                        onPopBackStack()
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Default.ArrowBack,

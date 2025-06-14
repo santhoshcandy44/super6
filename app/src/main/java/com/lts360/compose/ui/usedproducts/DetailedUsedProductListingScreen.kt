@@ -1,7 +1,6 @@
 package com.lts360.compose.ui.usedproducts
 
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -59,10 +58,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.error
@@ -86,14 +83,15 @@ import com.lts360.compose.utils.ExpandableText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import androidx.core.net.toUri
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun DetailedUsedProductListingScreen(
-    navHostController: NavHostController,
     key: Int,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long) -> Unit,
     onUsedProductListingOwnerProfileClicked: (Long) -> Unit,
+    onPopBackStack: () -> Unit,
     viewModel: SecondsViewmodel
 ) {
 
@@ -129,25 +127,23 @@ fun DetailedUsedProductListingScreen(
                 }
             }
         },
+        onPopBackStack,
         {
             selectedItem?.let {
                 onUsedProductListingOwnerProfileClicked(it.user.userId)
             }
-        },
-    ) {
-        navHostController.popBackStack()
-    }
+        }
+
+    )
 
 }
 
 @Composable
 fun FeedUserDetailedSecondsInfoScreen(
-    navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (ChatUser, Int, Long) -> Unit,
-    viewModel: SecondsOwnerProfileViewModel = hiltViewModel(remember {
-        navHostController.getBackStackEntry<BottomNavRoutes.SecondsOwnerProfile>()
-    })
+    onPopBackStack: () -> Unit,
+    viewModel: SecondsOwnerProfileViewModel = koinViewModel()
 ) {
 
 
@@ -182,19 +178,17 @@ fun FeedUserDetailedSecondsInfoScreen(
                     )
                 }
             }
-
-        }
-    ) {
-        navHostController.popBackStack()
-    }
+        },
+        onPopBackStack
+    )
 }
 
 @Composable
 fun BookmarkedDetailedUsedProductListingInfoScreen(
-    navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
     onNavigateUpSecondsOwnerProfile: (Long) -> Unit,
+    onPopBackStack: () -> Unit,
     viewModel: BookmarksViewModel,
 ) {
 
@@ -231,19 +225,18 @@ fun BookmarkedDetailedUsedProductListingInfoScreen(
                 }
             }
         },
+        onPopBackStack,
         {
             onNavigateUpSecondsOwnerProfile(item.user.userId)
-        },
-    ) {
-        navHostController.popBackStack()
-    }
+        }
+    )
 }
 
 @Composable
 fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
-    navHostController: NavHostController,
     onNavigateUpSlider: (Int) -> Unit,
     navigateUpChat: (Int, Long, FeedUserProfileInfo) -> Unit,
+    onPopBackStack: () -> Unit,
     viewModel: SecondsOwnerProfileViewModel
 ) {
 
@@ -279,10 +272,9 @@ fun BookmarkedFeedUserDetailedUsedProductListingInfoScreen(
                     item.user
                 )
             }
-        }
-    ) {
-        navHostController.popBackStack()
-    }
+        },
+        onPopBackStack
+    )
 }
 
 
@@ -294,8 +286,8 @@ private fun DetailedUsedProductListingContent(
     selectedSeconds: UsedProductListing?,
     onNavigateUpSlider: (Int) -> Unit,
     onChatButtonClicked: () -> Unit,
-    onUsedProductListingOwnerProfileClicked: () -> Unit = {},
-    onPopBackStack: () -> Unit
+    onPopBackStack: () -> Unit,
+    onUsedProductListingOwnerProfileClicked: () -> Unit = {}
 ) {
 
     val context = LocalContext.current

@@ -22,11 +22,11 @@ import com.lts360.app.workers.chat.utils.getFolderTypeByExtension
 import com.lts360.compose.ui.auth.repos.encryptFile
 import com.lts360.compose.ui.chat.viewmodels.ItemType
 import com.lts360.compose.ui.chat.viewmodels.MessageItem
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import okio.Path.Companion.toOkioPath
+import org.koin.core.annotation.Factory
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -37,14 +37,12 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-
-class UploadWorkerUtilRepository @Inject constructor(
+@Factory
+class UploadWorkerUtilRepository(
     val messageDao: MessageDao,
     val messageProcessingDataDao: MessageProcessingDataDao,
     val messageMediaMetaDataDao: MessageMediaMetaDataDao
-
 ) {
-
 
     suspend fun updateLastSentByteOffsetByMessageId(messageId: Long, byteOffset: Long) {
         return withContext(Dispatchers.IO) {
@@ -236,12 +234,11 @@ class UploadWorkerUtilRepository @Inject constructor(
             }
         }
     }
-
 }
 
-
+@Factory
 class ChatUserRepository @Inject constructor(
-    @ApplicationContext val context: Context,
+    val context: Context,
     val messageDao: MessageDao,
     val chatUserDao: ChatUserDao,
     val messageMediaMetaDataDao: MessageMediaMetaDataDao

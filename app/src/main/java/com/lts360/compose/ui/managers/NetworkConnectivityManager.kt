@@ -6,23 +6,18 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Handler
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import javax.inject.Singleton
+import org.koin.core.annotation.Singleton
 
 @Singleton
-class NetworkConnectivityManager @Inject constructor(@ApplicationContext context: Context) {
-
-
+class NetworkConnectivityManager (context: Context) {
 
     private var _isConnectedEvent = MutableSharedFlow<Boolean>(1)
     val isConnectedEvent = _isConnectedEvent.asSharedFlow()
-
 
     var isConnectedInternet = false
 
@@ -32,9 +27,7 @@ class NetworkConnectivityManager @Inject constructor(@ApplicationContext context
 
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-
 
         override fun onAvailable(network: Network) {
             networkCapabilities = connectivityManager.getNetworkCapabilities(network)

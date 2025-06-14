@@ -5,14 +5,11 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.lts360.app.workers.helpers.SendFcmTokenWorkerHelper
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import org.koin.android.ext.android.inject
 
-@AndroidEntryPoint
 class FirebaseMessagingService : FirebaseMessagingService() {
 
-    @Inject
-    lateinit var fcmMessageHandlerRepository: FCMMessageHandlerRepository
+    val fcmMessageHandlerRepository: FCMMessageHandlerRepository by inject()
     val userId = UserSharedPreferencesManager.userId
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {

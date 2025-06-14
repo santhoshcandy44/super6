@@ -1,9 +1,9 @@
 package com.lts360.compose.ui.news.qr.navigation.routes
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-@Serializable
-sealed class CreateQRCodeRoutes {
+sealed class CreateQRCodeRoutes: NavKey{
     @Serializable
     data object Text : CreateQRCodeRoutes()
     @Serializable

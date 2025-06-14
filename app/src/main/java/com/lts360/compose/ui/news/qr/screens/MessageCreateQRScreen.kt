@@ -38,15 +38,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
+import androidx.lifecycle.compose.dropUnlessResumed
 import com.lts360.compose.ui.news.qr.viewmodels.MessageCreateQRViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MessageCreateQRScreen(navController: NavController) {
+fun MessageCreateQRScreen(onPopBackStack:()-> Unit) {
 
-    val viewModel: MessageCreateQRViewModel = hiltViewModel()
+    val viewModel: MessageCreateQRViewModel = koinViewModel()
     val phoneNumber by viewModel.phoneNumber.collectAsState()
     val subject by viewModel.subject.collectAsState()
     val message by viewModel.message.collectAsState()
@@ -63,7 +63,7 @@ fun MessageCreateQRScreen(navController: NavController) {
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = dropUnlessResumed { onPopBackStack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Default.ArrowBack,
                             contentDescription = "Back",

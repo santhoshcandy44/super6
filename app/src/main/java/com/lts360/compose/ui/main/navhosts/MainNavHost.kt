@@ -2,19 +2,19 @@ package com.lts360.compose.ui.main.navhosts
 
 import android.content.Intent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavOptions
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.toRoute
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.lts360.compose.dropUnlessResumedV2
 import com.lts360.compose.ui.account.AccountAndProfileSettingsScreen
 import com.lts360.compose.ui.auth.ForgotPasswordEmailOtpVerificationProtected
@@ -22,9 +22,6 @@ import com.lts360.compose.ui.auth.ForgotPasswordScreenProtected
 import com.lts360.compose.ui.auth.ResetPasswordScreenProtected
 import com.lts360.compose.ui.auth.SwitchAccountTypeScreen
 import com.lts360.compose.ui.auth.navhost.AuthScreen
-import com.lts360.compose.ui.auth.navhost.noTransitionComposable
-import com.lts360.compose.ui.auth.navhost.slideComposable
-import com.lts360.compose.ui.auth.navhost.slideComposableRoot
 import com.lts360.compose.ui.bookmarks.BookmarksActivity
 import com.lts360.compose.ui.chat.ChatScreen
 import com.lts360.compose.ui.chat.openImageSliderActivity
@@ -39,7 +36,6 @@ import com.lts360.compose.ui.main.navhosts.routes.AccountAndProfileSettingsRoute
 import com.lts360.compose.ui.main.navhosts.routes.BottomNavRoutes
 import com.lts360.compose.ui.main.navhosts.routes.MainRoutes
 import com.lts360.compose.ui.main.profile.ServiceOwnerProfileScreen
-import com.lts360.compose.ui.main.rememberCustomMainNavController
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.onboarding.ChooseIndustryScreen
@@ -68,522 +64,520 @@ import com.lts360.compose.ui.viewmodels.HomeActivityViewModel
 import com.lts360.compose.ui.viewmodels.MoreViewModel
 import com.lts360.compose.ui.viewmodels.NotificationViewModel
 import com.lts360.compose.ui.viewmodels.ServicesViewModel
+import org.koin.androidx.compose.koinViewModel
 
+
+fun NavBackStack.removeUpTo(
+    navKey: Any,
+    inclusive: Boolean = true
+): Boolean {
+    if(navKey !is NavKey) false
+    val index = this.indexOfFirst { it == navKey }
+    if (index == -1) return false
+
+    val removeIndex = if (inclusive) index else index + 1
+    if (removeIndex >= this.size) return false
+
+    this.removeAll { this.indexOf(it) >= removeIndex }
+    return true
+}
 
 @Composable
 fun MainNavHost() {
-
-
     val context = LocalContext.current
-    val homeActivityViewModel: HomeActivityViewModel = hiltViewModel()
-    val homeViewModel: HomeViewModel = hiltViewModel()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val homeActivityViewModel: HomeActivityViewModel = koinViewModel()
+    val homeViewModel: HomeViewModel = koinViewModel()
 
-    var lastEntry by rememberSaveable { mutableStateOf<String?>(null) }
+    val backStack = rememberNavBackStack<MainRoutes>(MainRoutes.Main)
 
-    val navController = rememberCustomMainNavController(
-        lastEntry,
-        homeViewModel.isSelectedServiceItemNull(),
-        homeViewModel.isSelectedServiceOwnerServiceItemNull(),
-        homeViewModel.isSelectedUsedProductListingItemNull(),
-        homeViewModel.isSelectedServiceOwnerUsedProductListingItemNull(),
-        homeViewModel.isSelectedLocalJobItemNull()
+    val chatListViewModel: ChatListViewModel = koinViewModel()
+    val notificationViewModel: NotificationViewModel = koinViewModel()
+    val moreViewModel: MoreViewModel = koinViewModel()
 
-    )
+    val profileSettingViewModel: ProfileSettingsViewModel = koinViewModel()
 
+    val servicesViewModel: ServicesViewModel = koinViewModel()
+    val secondsViewModel: SecondsViewmodel = koinViewModel()
 
-    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val localJobsViewModel: LocalJobsViewmodel = koinViewModel()
 
-    LaunchedEffect(currentBackStackEntry) {
-        lastEntry = navController.currentBackStackEntry?.destination?.route
-    }
+    NavDisplay(
+        backStack = backStack,
+        entryDecorators = listOf(
+            rememberSceneSetupNavEntryDecorator(),
+            rememberSavedStateNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator()
+        ),
+        entryProvider = entryProvider {
 
+            entry<BottomNavRoutes.DetailedService> { navEntry ->
 
+                val key = navEntry.key
+                val selectedItem by servicesViewModel.getServiceRepository(key).selectedItem.collectAsState()
 
-    val chatListViewModel: ChatListViewModel = hiltViewModel()
-    val notificationViewModel: NotificationViewModel = hiltViewModel()
-    val moreViewModel: MoreViewModel = hiltViewModel()
-
-    val profileSettingViewModel: ProfileSettingsViewModel = hiltViewModel()
-
-    val servicesViewModel: ServicesViewModel = hiltViewModel()
-    val secondsViewModel: SecondsViewmodel = hiltViewModel()
-
-    val localJobsViewModel: LocalJobsViewmodel = hiltViewModel()
-
-    NavHost(
-        navController = navController,
-        startDestination = MainRoutes.Main
-    ) {
-
-        noTransitionComposable<BottomNavRoutes.DetailedService> { backStackEntry ->
-
-            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedService>()
-            val key = args.key
-
-            val selectedItem by servicesViewModel.getServiceRepository(key).selectedItem.collectAsState()
-
-            selectedItem?.let {
-                DetailedServiceScreen(
-                    navController,
-                    key,
-                    onNavigateUpSlider = {
-                        navController.navigate(BottomNavRoutes.DetailedServiceImagesSlider(key, it))
-                    }, navigateUpChat = { chatUser, chatId, recipientId ->
-                        chatListViewModel.updateSelectedChatUser(chatUser)
-                        navController.navigate(MainRoutes.ChatWindow(chatId, recipientId))
-                    },
-                    servicesViewModel,
-                )
-            }
-        }
-
-        slideComposable<BottomNavRoutes.DetailedServiceImagesSlider> {
-
-
-            val args = it.toRoute<BottomNavRoutes.DetailedServiceImagesSlider>()
-            val selectedImagePosition = args.selectedImagePosition
-            val key = args.key
-
-            val selectedItem by servicesViewModel.getServiceRepository(key).selectedItem.collectAsState()
-
-            selectedItem?.let {
-                ImagesSliderScreen(
-                    key,
-                    selectedImagePosition,
-                    servicesViewModel
-                ) { navController.popBackStack() }
+                selectedItem?.let {
+                    DetailedServiceScreen(
+                        key,
+                        onNavigateUpSlider = {
+                            backStack.add(BottomNavRoutes.DetailedServiceImagesSlider(key, it))
+                        },
+                        navigateUpChat = { chatUser, chatId, recipientId ->
+                            chatListViewModel.updateSelectedChatUser(chatUser)
+                            backStack.add(MainRoutes.ChatWindow(chatId, recipientId))
+                        },
+                        {
+                            backStack.removeLastOrNull()
+                        },
+                        servicesViewModel,
+                    )
+                }
             }
 
-        }
+            entry<BottomNavRoutes.DetailedServiceImagesSlider> { navEntry ->
 
-        noTransitionComposable<BottomNavRoutes.ServiceOwnerProfile> { backStackEntry ->
+                val selectedImagePosition = navEntry.selectedImagePosition
+                val key = navEntry.key
 
-            val key = backStackEntry.toRoute<BottomNavRoutes.ServiceOwnerProfile>().key
+                val selectedItem by servicesViewModel.getServiceRepository(key).selectedItem.collectAsState()
 
+                selectedItem?.let {
+                    ImagesSliderScreen(
+                        key,
+                        selectedImagePosition,
+                        servicesViewModel
+                    ) { backStack.removeLastOrNull() }
+                }
 
-            val selectedItem by servicesViewModel.getServiceRepository(key).selectedItem.collectAsState()
-
-            val viewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navController.getBackStackEntry<BottomNavRoutes.ServiceOwnerProfile>() })
-
-
-            selectedItem?.let {
-                ServiceOwnerProfileScreen(
-                    navController,
-                    key,
-                    onNavigateUpChat = { chatUser, chatId, recipientId ->
-                        chatListViewModel.updateSelectedChatUser(chatUser)
-                        navController.navigate(MainRoutes.ChatWindow(chatId, recipientId))
-                    },
-                    {
-                        navController.navigate(BottomNavRoutes.DetailedServiceFeedUser(it))
-                    }, servicesViewModel,
-                    viewModel
-                )
             }
 
-        }
+            entry<BottomNavRoutes.ServiceOwnerProfile> { navEntry ->
 
-        slideComposable<BottomNavRoutes.DetailedServiceFeedUser> { backStackEntry ->
-            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedServiceFeedUser>()
+                val key = navEntry.key
 
-            val key = args.key
+                val selectedItem by servicesViewModel.getServiceRepository(key).selectedItem.collectAsState()
 
-            val selectedItem by servicesViewModel.getServiceRepository(key).selectedItem.collectAsState()
+                val viewModel: ServiceOwnerProfileViewModel = koinViewModel()
 
-            selectedItem?.let {
-                FeedUserDetailedServiceInfoScreen(
-                    navController,
-                    key,
-                    {
-                        navController.navigate(
-                            BottomNavRoutes.DetailedServiceFeedUserImagesSlider(
-                                it
+                selectedItem?.let {
+                    ServiceOwnerProfileScreen(
+                        key,
+                        onNavigateUpChat = { chatUser, chatId, recipientId ->
+                            chatListViewModel.updateSelectedChatUser(chatUser)
+                            backStack.add(MainRoutes.ChatWindow(chatId, recipientId))
+                        },
+                        {
+                            backStack.add(BottomNavRoutes.DetailedServiceFeedUser(it))
+                        },
+                        { backStack.removeLastOrNull() },
+                        servicesViewModel,
+                        viewModel
+                    )
+                }
+
+            }
+
+            entry<BottomNavRoutes.DetailedServiceFeedUser> { navEntry ->
+
+                val key = navEntry.key
+
+                val selectedItem by servicesViewModel.getServiceRepository(key).selectedItem.collectAsState()
+
+                selectedItem?.let {
+                    FeedUserDetailedServiceInfoScreen(
+                        key,
+                        {
+                            backStack.add(
+                                BottomNavRoutes.DetailedServiceFeedUserImagesSlider(
+                                    it
+                                )
                             )
-                        )
-                    },
-                    { chatUser, chatId, recipientId ->
-                        chatListViewModel.updateSelectedChatUser(chatUser)
-                        navController.navigate(MainRoutes.ChatWindow(chatId, recipientId))
+                        },
+                        { chatUser, chatId, recipientId ->
+                            chatListViewModel.updateSelectedChatUser(chatUser)
+                            backStack.add(MainRoutes.ChatWindow(chatId, recipientId))
 
-                    }, servicesViewModel
-                )
+                        },
+                        {
+                            backStack.removeLastOrNull()
+                        },
+                        servicesViewModel
+                    )
+                }
+
+
             }
 
+            entry<BottomNavRoutes.DetailedServiceFeedUserImagesSlider> { navEntry ->
 
-        }
+                val selectedImagePosition = navEntry.selectedImagePosition
+                val serviceOwnerProfileViewModel: ServiceOwnerProfileViewModel = koinViewModel()
 
-        slideComposable<BottomNavRoutes.DetailedServiceFeedUserImagesSlider> {
-
-            val selectedImagePosition = it.toRoute<BottomNavRoutes.DetailedServiceFeedUserImagesSlider>().selectedImagePosition
-            val serviceOwnerProfileViewModel: ServiceOwnerProfileViewModel = hiltViewModel(remember { navController.getBackStackEntry<BottomNavRoutes.ServiceOwnerProfile>() })
-
-            FeedUserImagesSliderScreen(selectedImagePosition, serviceOwnerProfileViewModel) { navController.popBackStack() }
-        }
-
-        noTransitionComposable<BottomNavRoutes.DetailedSeconds> { backStackEntry ->
-
-
-            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedSeconds>()
-            val key = args.key
-
-
-            val selectedItem by secondsViewModel.getSecondsRepository(key).selectedItem.collectAsState()
-
-            selectedItem?.let {
-                DetailedUsedProductListingScreen(
-                    navController,
-                    key,
-                    onNavigateUpSlider = {
-                        navController.navigate(BottomNavRoutes.DetailedSecondsImagesSlider(key, it))
-                    }, navigateUpChat = { chatUser, chatId, recipientId ->
-                        chatListViewModel.updateSelectedChatUser(chatUser)
-                        navController.navigate(MainRoutes.ChatWindow(chatId, recipientId))
-                    },
-
-                    onUsedProductListingOwnerProfileClicked = { serviceOwnerId ->
-                        navController.navigate(
-                            BottomNavRoutes.SecondsOwnerProfile(serviceOwnerId, args.key),
-                            NavOptions.Builder().setLaunchSingleTop(true).build()
-                        )
-                    },
-                    viewModel =  secondsViewModel
-                )
-            }
-        }
-
-        slideComposable<BottomNavRoutes.DetailedSecondsImagesSlider> {
-
-
-            val args = it.toRoute<BottomNavRoutes.DetailedSecondsImagesSlider>()
-            val selectedImagePosition = args.selectedImagePosition
-            val key = args.key
-
-
-            val selectedItem by secondsViewModel.getSecondsRepository(key).selectedItem.collectAsState()
-
-            selectedItem?.let {
-                SecondsImagesSliderScreen(
-                    key,
+                FeedUserImagesSliderScreen(
                     selectedImagePosition,
-                    secondsViewModel
-                ) { navController.popBackStack() }
+                    serviceOwnerProfileViewModel
+                ) { backStack.removeLastOrNull() }
             }
 
-        }
+            entry<BottomNavRoutes.DetailedSeconds> { navEntry ->
 
-        noTransitionComposable<BottomNavRoutes.SecondsOwnerProfile> { backStackEntry ->
-            val key = backStackEntry.toRoute<BottomNavRoutes.SecondsOwnerProfile>().key
+                val key = navEntry.key
+
+                val selectedItem by secondsViewModel.getSecondsRepository(key).selectedItem.collectAsState()
+
+                selectedItem?.let {
+                    DetailedUsedProductListingScreen(
+                        key,
+                        onNavigateUpSlider = {
+                            backStack.add(
+                                BottomNavRoutes.DetailedSecondsImagesSlider(
+                                    key,
+                                    it
+                                )
+                            )
+                        }, navigateUpChat = { chatUser, chatId, recipientId ->
+                            chatListViewModel.updateSelectedChatUser(chatUser)
+                            backStack.add(MainRoutes.ChatWindow(chatId, recipientId))
+                        },
+
+                        onUsedProductListingOwnerProfileClicked = { serviceOwnerId ->
+                            backStack.add(
+                                BottomNavRoutes.SecondsOwnerProfile(serviceOwnerId, key)
+                            )
+                        },
+                        { backStack.removeLastOrNull() },
+                        viewModel = secondsViewModel
+                    )
+                }
+            }
+
+            entry<BottomNavRoutes.DetailedSecondsImagesSlider> { navEntry ->
+
+                val selectedImagePosition = navEntry.selectedImagePosition
+                val key = navEntry.key
+
+                val selectedItem by secondsViewModel.getSecondsRepository(key).selectedItem.collectAsState()
+
+                selectedItem?.let {
+                    SecondsImagesSliderScreen(
+                        key,
+                        selectedImagePosition,
+                        secondsViewModel
+                    ) { backStack.removeLastOrNull() }
+                }
+
+            }
+
+            entry<BottomNavRoutes.SecondsOwnerProfile> { navEntry ->
+                val key = navEntry.key
+
+                val viewmodel: SecondsOwnerProfileViewModel = koinViewModel()
+
+                val selectedItem by secondsViewModel.getSecondsRepository(key).selectedItem.collectAsState()
+
+                selectedItem?.let {
+                    SecondsServiceOwnerProfileScreen(
+                        key,
+                        onNavigateUpChat = { chatUser, chatId, recipientId ->
+                            chatListViewModel.updateSelectedChatUser(chatUser)
+                            backStack.add(MainRoutes.ChatWindow(chatId, recipientId))
+                        },
+                        { key, usedProductListing ->
+                            viewmodel.setSelectedItem(usedProductListing)
+                            homeViewModel.setSelectedSecondsOwnerUsedProductListingIItem(
+                                usedProductListing
+                            )
+                            backStack.add(BottomNavRoutes.DetailedSecondsFeedUser(key))
+                        },
+                        { backStack.removeLastOrNull() },
+                        secondsViewModel,
+                        viewmodel
+                    )
+                }
+
+            }
+
+            entry<BottomNavRoutes.DetailedSecondsFeedUser> { navEntry ->
+
+                val key = navEntry.key
+
+                val selectedItem by secondsViewModel.getSecondsRepository(key).selectedItem.collectAsState()
+
+                selectedItem?.let {
+                    FeedUserDetailedSecondsInfoScreen(
+                        {
+                            backStack.add(
+                                BottomNavRoutes.DetailedSecondsFeedUserImagesSlider(
+                                    it
+                                )
+                            )
+                        },
+                        { chatUser, chatId, recipientId ->
+
+                            chatListViewModel.updateSelectedChatUser(chatUser)
+                            backStack.add(MainRoutes.ChatWindow(chatId, recipientId))
+                        }, {
+                            backStack.removeLastOrNull()
+                        }
+                    )
+                }
 
 
-            val viewmodel: SecondsOwnerProfileViewModel =
-                hiltViewModel(remember { navController.getBackStackEntry<BottomNavRoutes.SecondsOwnerProfile>() })
+            }
 
-            val selectedItem by secondsViewModel.getSecondsRepository(key).selectedItem.collectAsState()
+            entry<BottomNavRoutes.DetailedSecondsFeedUserImagesSlider> { navEntry ->
+                val selectedImagePosition = navEntry.selectedImagePosition
+                val viewmodel: SecondsOwnerProfileViewModel = koinViewModel()
 
-            selectedItem?.let {
-                SecondsServiceOwnerProfileScreen(
-                    navController,
-                    key,
-                    onNavigateUpChat = { chatUser, chatId, recipientId ->
-                        chatListViewModel.updateSelectedChatUser(chatUser)
-                        navController.navigate(MainRoutes.ChatWindow(chatId, recipientId))
-                    },
-                    { key, usedProductListing ->
-                        viewmodel.setSelectedItem(usedProductListing)
-                        homeViewModel.setSelectedSecondsOwnerUsedProductListingIItem(
-                            usedProductListing
-                        )
-                        navController.navigate(BottomNavRoutes.DetailedSecondsFeedUser(key))
-                    }, secondsViewModel,
+                FeedUserSecondsImagesSliderScreen(
+                    selectedImagePosition,
                     viewmodel
-                )
+                ) { backStack.removeLastOrNull() }
             }
 
-        }
+            entry<BottomNavRoutes.DetailedLocalJob> { navEntry ->
 
-        slideComposable<BottomNavRoutes.DetailedSecondsFeedUser> { backStackEntry ->
-            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedSecondsFeedUser>()
+                val key = navEntry.key
 
-            val key = args.key
+                val selectedItem by localJobsViewModel.getLocalJobsRepository(key).selectedItem.collectAsState()
 
-            val selectedItem by secondsViewModel.getSecondsRepository(key).selectedItem.collectAsState()
+                selectedItem?.let {
+                    DetailedLocalJobScreen(
+                        key,
+                        onNavigateUpSlider = {
+                            backStack.add(
+                                BottomNavRoutes.DetailedLocalJobsImagesSlider(
+                                    key,
+                                    it
+                                )
+                            )
+                        }, navigateUpChat = { chatUser, chatId, recipientId ->
+                            chatListViewModel.updateSelectedChatUser(chatUser)
+                            backStack.add(MainRoutes.ChatWindow(chatId, recipientId))
+                        },
+                        {
+                            backStack.removeLastOrNull()
+                        },
+                        localJobsViewModel
+                    )
+                }
+            }
 
-            selectedItem?.let {
-                FeedUserDetailedSecondsInfoScreen(
-                    navController,
-                    {
-                        navController.navigate(
-                            BottomNavRoutes.DetailedSecondsFeedUserImagesSlider(
-                                it
+            entry<BottomNavRoutes.DetailedLocalJobsImagesSlider> { navEntry ->
+
+                val selectedImagePosition = navEntry.selectedImagePosition
+                val key = navEntry.key
+
+                val selectedItem by localJobsViewModel.getLocalJobsRepository(key).selectedItem.collectAsState()
+
+                selectedItem?.let {
+                    LocalJobsImagesSliderScreen(
+                        key,
+                        selectedImagePosition,
+                        localJobsViewModel
+                    ) { backStack.removeLastOrNull() }
+                }
+
+            }
+
+            entry<MainRoutes.Main> {
+
+                MainScreen(
+                    homeActivityViewModel,
+                    homeViewModel,
+                    chatListViewModel,
+                    notificationViewModel,
+                    moreViewModel,
+                    servicesViewModel,
+                    secondsViewModel,
+                    localJobsViewModel,
+                    onProfileNavigateUp = {
+                        backStack.add(AccountAndProfileSettingsRoutes.PersonalSettings)
+                    }, onAccountAndProfileSettingsNavigateUp = { accountType ->
+                        backStack.add(
+                            AccountAndProfileSettingsRoutes.AccountAndProfileSettings(
+                                accountType
                             )
                         )
                     },
-                    { chatUser, chatId, recipientId ->
+                    onNavigateUpBookmarkedServices = {
 
-                        chatListViewModel.updateSelectedChatUser(chatUser)
-                        navController.navigate(MainRoutes.ChatWindow(chatId, recipientId))
-                    }
-                )
-            }
-
-
-        }
-
-        slideComposable<BottomNavRoutes.DetailedSecondsFeedUserImagesSlider> {
-
-            val selectedImagePosition =
-                it.toRoute<BottomNavRoutes.DetailedSecondsFeedUserImagesSlider>().selectedImagePosition
-            val viewmodel: SecondsOwnerProfileViewModel =
-                hiltViewModel(remember { navController.getBackStackEntry<BottomNavRoutes.SecondsOwnerProfile>() })
-
-            FeedUserSecondsImagesSliderScreen(
-                selectedImagePosition,
-                viewmodel
-            ) { navController.popBackStack() }
-        }
-
-
-        noTransitionComposable<BottomNavRoutes.DetailedLocalJob> { backStackEntry ->
-
-
-            val args = backStackEntry.toRoute<BottomNavRoutes.DetailedLocalJob>()
-            val key = args.key
-
-
-            val selectedItem by localJobsViewModel.getLocalJobsRepository(key).selectedItem.collectAsState()
-
-            selectedItem?.let {
-                DetailedLocalJobScreen(
-                    navController,
-                    key,
-                    onNavigateUpSlider = {
-                        navController.navigate(
-                            BottomNavRoutes.DetailedLocalJobsImagesSlider(
-                                key,
-                                it
-                            )
-                        )
-                    }, navigateUpChat = { chatUser, chatId, recipientId ->
-                        chatListViewModel.updateSelectedChatUser(chatUser)
-                        navController.navigate(MainRoutes.ChatWindow(chatId, recipientId))
-                    },
-
-                    localJobsViewModel
-                )
-            }
-        }
-
-        slideComposable<BottomNavRoutes.DetailedLocalJobsImagesSlider> {
-
-            val args = it.toRoute<BottomNavRoutes.DetailedLocalJobsImagesSlider>()
-            val selectedImagePosition = args.selectedImagePosition
-            val key = args.key
-
-
-            val selectedItem by localJobsViewModel.getLocalJobsRepository(key).selectedItem.collectAsState()
-
-            selectedItem?.let {
-                LocalJobsImagesSliderScreen(
-                    key,
-                    selectedImagePosition,
-                    localJobsViewModel
-                ) { navController.popBackStack() }
-            }
-
-        }
-
-
-        slideComposableRoot<MainRoutes.Main> {
-
-            MainScreen(
-                homeActivityViewModel,
-                homeViewModel,
-                chatListViewModel,
-                notificationViewModel,
-                moreViewModel,
-                servicesViewModel,
-                secondsViewModel,
-                localJobsViewModel,
-                onProfileNavigateUp = {
-                    navController.navigate(AccountAndProfileSettingsRoutes.PersonalSettings)
-                }, onAccountAndProfileSettingsNavigateUp = { accountType ->
-                    navController.navigate(
-                        AccountAndProfileSettingsRoutes.AccountAndProfileSettings(
-                            accountType
-                        )
-                    )
-                },
-                onNavigateUpBookmarkedServices = {
-
-                    context.startActivity(Intent(context, BookmarksActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    })
-
-                },
-                onManageIndustriesAndInterestsNavigateUp = {
-                    navController.navigate(MainRoutes.ChooseIndustries)
-                },
-
-                onNavigateUpGuestManageIndustriesAndInterests = {
-                    navController.navigate(MainRoutes.GuestChooseIndustries)
-                }, onNavigateUpChatWindow = { chatUser, chatId, recipientId ->
-
-                    chatListViewModel.updateSelectedChatUser(chatUser)
-
-                    navController.navigate(
-                        MainRoutes.ChatWindow(
-                            chatId,
-                            recipientId
-                        )
-                    )
-                }, onNavigateUpUsedProductListing = {
-
-                    context.startActivity(
-                        Intent(
-                            context,
-                            UsedProductListingActivity::class.java
-                        ).apply {
+                        context.startActivity(Intent(context, BookmarksActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                         })
 
-                },{
-                    navController.navigate(BottomNavRoutes.DetailedService(it))
-                },{ key, serviceOwnerId ->
-                    navController.navigate(
-                        BottomNavRoutes.ServiceOwnerProfile(serviceOwnerId, key),
-                        NavOptions.Builder().setLaunchSingleTop(true).build()
+                    },
+                    onManageIndustriesAndInterestsNavigateUp = {
+                        backStack.add(MainRoutes.ChooseIndustries)
+                    },
+                    onNavigateUpGuestManageIndustriesAndInterests = {
+                        backStack.add(MainRoutes.GuestChooseIndustries)
+                    },
+                    onNavigateUpChatWindow = { chatUser, chatId, recipientId ->
+
+                        chatListViewModel.updateSelectedChatUser(chatUser)
+
+                        backStack.add(
+                            MainRoutes.ChatWindow(
+                                chatId,
+                                recipientId
+                            )
+                        )
+                    }, onNavigateUpUsedProductListing = {
+
+                        context.startActivity(
+                            Intent(
+                                context,
+                                UsedProductListingActivity::class.java
+                            ).apply {
+                                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            })
+
+                    }, {
+                        backStack.add(BottomNavRoutes.DetailedService(it))
+                    }, { key, serviceOwnerId ->
+                        backStack.add(
+                            BottomNavRoutes.ServiceOwnerProfile(serviceOwnerId, key),
+                        )
+                    }, {
+                        backStack.add(BottomNavRoutes.DetailedSeconds(it))
+                    }, {
+                        backStack.add(BottomNavRoutes.DetailedLocalJob(it))
+                    })
+            }
+
+            entry<MainRoutes.ChatWindow> {
+                val chatViewModel: ChatViewModel = koinViewModel()
+                ChatScreen(
+                    { uri, videoWidth, videoHeight, totalDuration ->
+                        openPlayerActivity(context, uri, videoWidth, videoHeight, totalDuration)
+                    },
+                    chatListViewModel,
+                    chatViewModel,
+
+                    { uri, imageWidth, imageHeight ->
+                        openImageSliderActivity(context, uri, imageWidth, imageHeight)
+                    },
+                    { backStack.removeLastOrNull() }
+                )
+            }
+
+            entry<MainRoutes.GuestChooseIndustries> {
+                GuestChooseIndustryScreen { backStack.removeLastOrNull() }
+            }
+
+            entry<MainRoutes.ChooseIndustries> {
+                ChooseIndustryScreen { backStack.removeLastOrNull() }
+            }
+
+            entry<AccountAndProfileSettingsRoutes.AccountAndProfileSettings> {
+                AccountAndProfileSettingsScreen({
+                    backStack.add(AccountAndProfileSettingsRoutes.ChangeAccountPassword)
+                }, { accountType ->
+                    backStack.add(
+                        AccountAndProfileSettingsRoutes.SwitchAccountType(
+                            accountType
+                        )
                     )
                 }, {
-                    navController.navigate(BottomNavRoutes.DetailedSeconds(it))
-                },{
-                    navController.navigate(BottomNavRoutes.DetailedLocalJob(it))
+                    backStack.removeLastOrNull()
                 })
-        }
-
-        slideComposable<MainRoutes.ChatWindow> {
-
-            val chatViewModel: ChatViewModel = hiltViewModel()
-
-            ChatScreen(
-                { uri, videoWidth, videoHeight, totalDuration ->
-                    openPlayerActivity(context, uri, videoWidth, videoHeight, totalDuration)
-                },
-                chatListViewModel,
-                chatViewModel,
-
-                { uri, imageWidth, imageHeight ->
-                    openImageSliderActivity(context, uri, imageWidth, imageHeight)
-                },
-                { navController.popBackStack() }
-            )
-        }
-
-        slideComposable<MainRoutes.GuestChooseIndustries> {
-            GuestChooseIndustryScreen { navController.popBackStack() }
-        }
-
-
-        slideComposable<MainRoutes.ChooseIndustries> {
-            ChooseIndustryScreen { navController.popBackStack() }
-        }
-
-
-        slideComposable<AccountAndProfileSettingsRoutes.AccountAndProfileSettings> {
-            AccountAndProfileSettingsScreen({
-                navController.navigate(AccountAndProfileSettingsRoutes.ChangeAccountPassword)
-            }, { accountType ->
-                navController.navigate(AccountAndProfileSettingsRoutes.SwitchAccountType(accountType))
-            }, {
-                navController.popBackStack()
-            })
-        }
-
-        slideComposable<AccountAndProfileSettingsRoutes.PersonalSettings> {
-            EditProfileSettingsScreen({
-                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileFirstName)
-            }, {
-                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileLastName)
-            }, {
-                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileAbout("complete_about"))
-            }, {
-                navController.navigate(AccountAndProfileSettingsRoutes.EditProfileEmail)
-            }, {
-                navController.popBackStack()
-            }, profileSettingViewModel)
-        }
-
-        slideComposable<AccountAndProfileSettingsRoutes.EditProfileFirstName> {
-            EditProfileFirstNameScreen({
-                navController.popBackStack(AccountAndProfileSettingsRoutes.PersonalSettings, false)
-            }, { navController.popBackStack() })
-        }
-
-        slideComposable<AccountAndProfileSettingsRoutes.EditProfileLastName> {
-            EditProfileLastNameScreen({
-                navController.popBackStack(AccountAndProfileSettingsRoutes.PersonalSettings, false)
-            }, { navController.popBackStack() })
-        }
-
-        slideComposable<AccountAndProfileSettingsRoutes.EditProfileAbout> {
-            EditProfileAboutScreen({ navController.popBackStack() }, {
-                navController.popBackStack()
-            })
-        }
-
-        slideComposable<AccountAndProfileSettingsRoutes.EditProfileEmail> {
-            EditProfileEmailScreen({
-                navController.navigate(AccountAndProfileSettingsRoutes.EditEmailOtpVerification(it))
-            }, { navController.popBackStack() })
-        }
-
-        slideComposable<AccountAndProfileSettingsRoutes.EditEmailOtpVerification> {
-            EditEmailEmailOtpVerificationScreen({
-                navController.popBackStack(AccountAndProfileSettingsRoutes.PersonalSettings, false)
-            }, { navController.popBackStack() })
-        }
-
-        slideComposable<AccountAndProfileSettingsRoutes.ChangeAccountPassword> {
-            ChangePasswordScreen(onForgotPasswordNavigateUp = {
-                navController.navigate(AuthScreen.ForgotPassword)
-            }, {
-                navController.popBackStack<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>(
-                    false
-                )
-            }, { navController.popBackStack() })
-        }
-
-        slideComposable<AuthScreen.ForgotPassword> {
-            ForgotPasswordScreenProtected({ email ->
-                dropUnlessResumedV2(it) {
-                    navController.navigate(
-                        AuthScreen.ForgotPasswordEmailOtpVerification(email), NavOptions.Builder()
-                            .setLaunchSingleTop(true)
-                            .build()
-                    )
-                }
-            }, { navController.popBackStack() })
-        }
-
-        slideComposable<AuthScreen.ForgotPasswordEmailOtpVerification> {
-            ForgotPasswordEmailOtpVerificationProtected({ email, accessToken ->
-                navController.popBackStack<AccountAndProfileSettingsRoutes.AccountAndProfileSettings>(
-                    inclusive = false
-                )
-                navController.navigate(AuthScreen.ResetPassword(accessToken, email))
-            }, { navController.popBackStack() })
-        }
-
-        slideComposable<AuthScreen.ResetPassword> {
-            ResetPasswordScreenProtected {
-                navController.popBackStack()
             }
-        }
 
-        slideComposable<AccountAndProfileSettingsRoutes.SwitchAccountType> {
-            SwitchAccountTypeScreen(navController, { navController.popBackStack() }, {
-                navController.popBackStack()
-            })
-        }
+            entry<AccountAndProfileSettingsRoutes.PersonalSettings> {
+                EditProfileSettingsScreen({
+                    backStack.add(AccountAndProfileSettingsRoutes.EditProfileFirstName)
+                }, {
+                    backStack.add(AccountAndProfileSettingsRoutes.EditProfileLastName)
+                }, {
+                    backStack.add(AccountAndProfileSettingsRoutes.EditProfileAbout("complete_about"))
+                }, {
+                    backStack.add(AccountAndProfileSettingsRoutes.EditProfileEmail)
+                }, {
+                    backStack.removeLastOrNull()
+                }, profileSettingViewModel)
+            }
 
-    }
+            entry<AccountAndProfileSettingsRoutes.EditProfileFirstName> {
+                EditProfileFirstNameScreen({
+                    backStack.removeUpTo(
+                        AccountAndProfileSettingsRoutes.PersonalSettings,
+                        false
+                    )
+                }, { backStack.removeLastOrNull() })
+            }
+
+            entry<AccountAndProfileSettingsRoutes.EditProfileLastName> {
+                EditProfileLastNameScreen({
+                    backStack.removeUpTo(
+                        AccountAndProfileSettingsRoutes.PersonalSettings,
+                        false
+                    )
+                }, { backStack.removeLastOrNull() })
+            }
+
+            entry<AccountAndProfileSettingsRoutes.EditProfileAbout> {
+                EditProfileAboutScreen({ backStack.removeLastOrNull() }, {
+                    backStack.removeLastOrNull()
+                })
+            }
+
+            entry<AccountAndProfileSettingsRoutes.EditProfileEmail> {
+                EditProfileEmailScreen({
+                    backStack.add(
+                        AccountAndProfileSettingsRoutes.EditEmailOtpVerification(
+                            it
+                        )
+                    )
+                }, { backStack.removeLastOrNull() })
+            }
+
+            entry<AccountAndProfileSettingsRoutes.EditEmailOtpVerification> {
+                EditEmailEmailOtpVerificationScreen({
+                    backStack.removeUpTo(
+                        AccountAndProfileSettingsRoutes.PersonalSettings,
+                        false
+                    )
+                }, { backStack.removeLastOrNull() })
+            }
+
+            entry<AccountAndProfileSettingsRoutes.ChangeAccountPassword> {
+                ChangePasswordScreen(onForgotPasswordNavigateUp = {
+                    backStack.add(AuthScreen.ForgotPassword)
+                }, {
+                    backStack.removeUpTo(
+                        AccountAndProfileSettingsRoutes.AccountAndProfileSettings,
+                        false
+                    )
+                }, { backStack.removeLastOrNull() })
+            }
+
+            entry<AuthScreen.ForgotPassword> {
+                ForgotPasswordScreenProtected({ email ->
+                    dropUnlessResumedV2(lifecycleOwner) {
+                        backStack.add(AuthScreen.ForgotPasswordEmailOtpVerification(email))
+                    }
+                }, { backStack.removeLastOrNull() })
+            }
+
+            entry<AuthScreen.ForgotPasswordEmailOtpVerification> {
+                ForgotPasswordEmailOtpVerificationProtected({ email, accessToken ->
+                    backStack.add(AuthScreen.ResetPassword(accessToken, email))
+                }, { backStack.removeLastOrNull() })
+            }
+
+            entry<AuthScreen.ResetPassword> {
+                ResetPasswordScreenProtected {
+                    backStack.removeLastOrNull()
+                }
+            }
+
+            entry<AccountAndProfileSettingsRoutes.SwitchAccountType> {
+                SwitchAccountTypeScreen({ backStack.removeLastOrNull() }, {
+                    backStack.removeLastOrNull()
+                })
+            }
+
+        })
 }
+

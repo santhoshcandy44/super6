@@ -1,24 +1,19 @@
 package com.lts360.compose.ui.news.qr.viewmodels
 
-import javax.inject.Inject
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lts360.compose.ui.news.qr.viewmodels.repos.QRCodeRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-@HiltViewModel
-class MessageCreateQRViewModel @Inject constructor(private val qrCodeRepository: QRCodeRepository) :
+class MessageCreateQRViewModel(private val qrCodeRepository: QRCodeRepository) :
     ViewModel() {
 
-    // Phone number input state
     private val _phoneNumber = MutableStateFlow("")
     val phoneNumber = _phoneNumber.asStateFlow()
 
-    // Subject input state (optional for SMS QR codes)
     private val _subject = MutableStateFlow("")
     val subject = _subject.asStateFlow()
 

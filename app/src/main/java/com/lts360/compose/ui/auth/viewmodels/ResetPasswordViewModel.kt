@@ -1,10 +1,7 @@
 package com.lts360.compose.ui.auth.viewmodels
 
-
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.google.gson.Gson
 import com.lts360.api.utils.Result
 import com.lts360.api.utils.mapExceptionToError
@@ -15,21 +12,17 @@ import com.lts360.api.auth.services.AuthService
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.compose.ui.auth.navhost.AuthScreen
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
 
-@HiltViewModel
-class ResetPasswordViewModel @Inject constructor(savedStateHandle: SavedStateHandle): ViewModel() {
-
-
-    private val args=savedStateHandle.toRoute<AuthScreen.ResetPassword>()
+@KoinViewModel
+class ResetPasswordViewModel (@InjectedParam val args : AuthScreen.ResetPassword): ViewModel() {
 
     val accessToken: String = args.accessToken
     val email: String = args.email
-
 
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password

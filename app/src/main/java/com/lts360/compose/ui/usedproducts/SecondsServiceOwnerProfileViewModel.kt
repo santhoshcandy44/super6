@@ -16,7 +16,6 @@ import com.lts360.app.database.daos.chat.ChatUserDao
 import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.compose.ui.chat.repos.ChatUserRepository
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,8 +26,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
-@HiltViewModel
-class SecondsOwnerProfileViewModel @Inject constructor(
+class SecondsOwnerProfileViewModel(
     private val chatUserDao: ChatUserDao,
     val chatUserRepository: ChatUserRepository,
     tokenManager: TokenManager,

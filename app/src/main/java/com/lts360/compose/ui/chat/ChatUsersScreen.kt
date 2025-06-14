@@ -61,10 +61,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import coil3.compose.AsyncImage
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
@@ -77,7 +73,6 @@ import com.lts360.app.database.models.chat.ChatUser
 import com.lts360.app.workers.chat.utils.lastMessageTimestamp
 import com.lts360.compose.ui.chat.viewmodels.ChatListViewModel
 import com.lts360.compose.ui.chat.viewmodels.UserState
-import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 
 
 @OptIn(
@@ -85,42 +80,12 @@ import com.lts360.compose.ui.main.navhosts.routes.BottomBar
 )
 @Composable
 fun ChatUsersScreen(
-    navController: NavHostController,
     onNavigateUpChat: (ChatUser, Int, Long) -> Unit,
     viewModel: ChatListViewModel
 ) {
 
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-
-    BackHandler {
-
-        val allowedScreens = listOf(BottomBar.Chats, BottomBar.Notifications, BottomBar.More)
-        val hierarchy = navBackStackEntry?.destination?.hierarchy
-
-        if (hierarchy?.any { nonNullDestination ->
-                allowedScreens.any {
-                    nonNullDestination.hasRoute(
-                        it::class
-                    )
-                }
-            } == true) {
-
-            navController.navigate(BottomBar.Home()) {
-                launchSingleTop = true
-                restoreState = true
-                popUpTo(BottomBar.Home()) {
-                    saveState = true
-                }
-            }
-        } else {
-            navController.popBackStack()
-        }
-    }
-
-
     val userStates by viewModel.userStates.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-
 
     val lazyListState = rememberLazyListState()
 

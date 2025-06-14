@@ -20,7 +20,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -46,23 +45,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.lts360.compose.ui.news.qr.viewmodels.WifiCreateQRViewModel
-import com.lts360.compose.ui.services.manage.PlanItem
 import com.lts360.compose.ui.theme.customColorScheme
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WifiCreateQRScreen(navController: NavController) {
+fun WifiCreateQRScreen(onPopBackStack:()-> Unit) {
 
-    val viewModel: WifiCreateQRViewModel = hiltViewModel()
+    val viewModel: WifiCreateQRViewModel = koinViewModel()
     val ssid by viewModel.ssid.collectAsState()
     val password by viewModel.password.collectAsState()
     val encryptionType by viewModel.encryptionType.collectAsState()
@@ -71,10 +67,8 @@ fun WifiCreateQRScreen(navController: NavController) {
 
     val context = LocalContext.current
 
-    // Encryption types available
     val encryptionTypes = listOf("WPA", "WEP", "Open")
 
-    // State for controlling the dropdown expansion
     var expanded by remember { mutableStateOf(false) }
 
     // Scaffold with Back Button, Title, and QR Code Generation Logic
@@ -90,7 +84,7 @@ fun WifiCreateQRScreen(navController: NavController) {
 
                 navigationIcon = {
                     IconButton(onClick = {
-                        navController.popBackStack()
+                        onPopBackStack()
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Default.ArrowBack,

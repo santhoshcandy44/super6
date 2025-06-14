@@ -4,17 +4,13 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lts360.compose.ui.news.qr.viewmodels.repos.QRCodeRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class WifiCreateQRViewModel @Inject constructor(private val qrCodeRepository: QRCodeRepository) :
+class WifiCreateQRViewModel (private val qrCodeRepository: QRCodeRepository) :
     ViewModel() {
 
-    // State for the Wi-Fi SSID, password, encryption type, and hidden flag
     private val _ssid = MutableStateFlow("")
     val ssid = _ssid.asStateFlow()
 

@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
-import androidx.navigation.NavController
 import com.lts360.compose.ui.localjobs.manage.viewmodels.PublishedLocalJobViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,18 +33,15 @@ import com.lts360.compose.ui.common.ProfileNotCompletedPromptSheet
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageLocalJobScreen(
-    navController: NavController,
-    viewModel: PublishedLocalJobViewModel,
     onAddNewLocalJobClick: () -> Unit,
     onNavigateManagePublishedLocalJob: () -> Unit,
     onNavigatePublishedLocalJobViewApplicants: () -> Unit,
     onNavigateProfileSettings:()->Unit,
-    onPopBackStack: () -> Unit
-) {
+    onPopBackStack: () -> Unit,
+    viewModel: PublishedLocalJobViewModel
+    ) {
 
-    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-    val isLocalJobCreated = savedStateHandle?.get<Boolean>("is_local_job_created")
-
+    val isLocalJobCreated = false
 
     val isProfileCompleted by viewModel.isProfileCompletedFlow.collectAsState(initial = false)
     val unCompletedProfileFieldsFlow by viewModel.unCompletedProfileFieldsFlow.collectAsState(initial = listOf("EMAIL","PHONE"))
@@ -119,7 +115,6 @@ fun ManageLocalJobScreen(
                 isLocalJobCreated = isLocalJobCreated,
                 onRemoveLocalJobCreatedSavedState = {
                     isLocalJobCreated?.let {
-                        savedStateHandle.remove<String>("is_local_job_created")
                     }
                 },
                 onNavigateUpManagePublishedLocalJob = onNavigateManagePublishedLocalJob,

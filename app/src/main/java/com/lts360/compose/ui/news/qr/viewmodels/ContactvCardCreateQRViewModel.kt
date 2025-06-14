@@ -5,17 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lts360.compose.ui.news.qr.models.QRCodeEntity
 import com.lts360.compose.ui.news.qr.viewmodels.repos.QRCodeRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class ContactCreateQRViewModel @Inject constructor(private val qrCodeRepository: QRCodeRepository) :
+class ContactCreateQRViewModel(private val qrCodeRepository: QRCodeRepository) :
     ViewModel() {
 
-    // State for contact details (name, contact info, address, etc.)
     private val _firstName = MutableStateFlow("")
     val firstName = _firstName.asStateFlow()
 

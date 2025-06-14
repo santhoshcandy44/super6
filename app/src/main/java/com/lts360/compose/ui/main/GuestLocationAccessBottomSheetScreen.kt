@@ -9,11 +9,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.compose.ui.auth.LoadingDialog
-import com.lts360.compose.ui.auth.navhost.noTransitionComposable
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.navhosts.routes.LocationSetUpRoutes
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
@@ -31,44 +35,51 @@ fun OnBoardGuestUserLocationAccessBottomSheetScreen(
     isLoading: Boolean = false,
 ) {
 
-    val bottomSheetNavController = rememberNavController()
+    val backStacks = rememberNavBackStack(
+        if (locationStatesEnabled)
+            LocationSetUpRoutes.LocationChooser()
+        else
+            LocationSetUpRoutes.LocationChooser(false)
+    )
 
-    Box {
-        Scaffold { contentPadding ->
+
+    Box(modifier = Modifier.fillMaxSize()){
+        Scaffold(modifier = Modifier.fillMaxSize()){ contentPadding ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(contentPadding)
             ) {
-                // NavHost inside the bottom sheet
-                NavHost(
-                    navController = bottomSheetNavController,
-                    startDestination = if (locationStatesEnabled) LocationSetUpRoutes.LocationChooser()
-                    else LocationSetUpRoutes.LocationChooser(false),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
-                        OnBoardLocationBottomSheet(
-                            bottomSheetValue,
-                            onCloseClick = {
-                                onPopUpLocationBottomSheet()
-                            },
-                            onRecentLocationSelected = onRecentLocationSelected,
-                            onCurrentLocationSelected = onCurrentLocationSelected,
-                            onStateClick = {
-                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
-                            })
-                    }
+                NavDisplay(
+                    backStack = backStacks,
+                    entryDecorators = listOf(
+                        rememberSceneSetupNavEntryDecorator(),
+                        rememberSavedStateNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator(shouldRemoveStoreOwner = { false })
+                    ),
+                    entryProvider = entryProvider {
+                        entry<LocationSetUpRoutes.LocationChooser> { route ->
+                            OnBoardLocationBottomSheet(
+                                bottomSheetValue = bottomSheetValue,
+                                onCloseClick = { onPopUpLocationBottomSheet() },
+                                onRecentLocationSelected = onRecentLocationSelected,
+                                onCurrentLocationSelected = onCurrentLocationSelected,
+                                onStateClick = {
+                                    backStacks.add(LocationSetUpRoutes.Districts)
+                                }
+                            )
+                        }
 
-
-                    noTransitionComposable<LocationSetUpRoutes.Districts> {
-                        DistrictsScreen(bottomSheetNavController,
-                            isLoading,
-                            onDistrictSelected) {
-                            bottomSheetNavController.popBackStack()
+                        entry<LocationSetUpRoutes.Districts> {
+                            DistrictsScreen(
+                                isLoading = isLoading,
+                                onDistrictSelected = onDistrictSelected,
+                            ){
+                                backStacks.removeLastOrNull()
+                            }
                         }
                     }
-                }
+                )
 
             }
 
@@ -78,10 +89,7 @@ fun OnBoardGuestUserLocationAccessBottomSheetScreen(
             LoadingDialog()
         }
     }
-
-
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,9 +101,14 @@ fun GuestUserLocationAccessBottomSheetScreen(
     onPopUpLocationBottomSheet: () -> Unit,
     homeViewModel: HomeViewModel,
     locationStatesEnabled: Boolean = true,
-    isLoading: Boolean = false) {
-
-    val bottomSheetNavController = rememberNavController()
+    isLoading: Boolean = false
+) {
+    val backStack = rememberNavBackStack(
+        if (locationStatesEnabled)
+            LocationSetUpRoutes.LocationChooser()
+        else
+            LocationSetUpRoutes.LocationChooser(false)
+    )
 
     Box {
         Scaffold { contentPadding ->
@@ -104,44 +117,45 @@ fun GuestUserLocationAccessBottomSheetScreen(
                     .fillMaxSize()
                     .padding(contentPadding)
             ) {
-                // NavHost inside the bottom sheet
-                NavHost(
-                    navController = bottomSheetNavController,
-                    startDestination = if (locationStatesEnabled) LocationSetUpRoutes.LocationChooser()
-                    else LocationSetUpRoutes.LocationChooser(false),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    noTransitionComposable<LocationSetUpRoutes.LocationChooser> {
-                        GuestUserLocationBottomSheet(
-                            bottomSheetValue,
-                            onCloseClick = {
-                                onPopUpLocationBottomSheet()
-                            },
-                            onRecentLocationSelected = onRecentLocationSelected,
-                            onCurrentLocationSelected = onCurrentLocationSelected,
-                            onStateClick = {
-                                bottomSheetNavController.navigate(LocationSetUpRoutes.Districts)
-                            }, homeViewModel = homeViewModel)
-                    }
+                NavDisplay(
+                    backStack = backStack,
+                    modifier = Modifier.fillMaxSize(),
+                    entryDecorators = listOf(
+                        rememberSceneSetupNavEntryDecorator(),
+                        rememberSavedStateNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator(shouldRemoveStoreOwner = {false})
+                    ),
+                    entryProvider = entryProvider {
+                        entry<LocationSetUpRoutes.LocationChooser> {
+                            GuestUserLocationBottomSheet(
+                                bottomSheetValue = bottomSheetValue,
+                                onCloseClick = onPopUpLocationBottomSheet,
+                                onRecentLocationSelected = onRecentLocationSelected,
+                                onCurrentLocationSelected = onCurrentLocationSelected,
+                                onStateClick = {
+                                    backStack.add(LocationSetUpRoutes.Districts)
+                                },
+                                homeViewModel = homeViewModel
+                            )
+                        }
 
-
-                    noTransitionComposable<LocationSetUpRoutes.Districts> {
-                        DistrictsScreen(bottomSheetNavController,
-                            isLoading,
-                            onDistrictSelected) {
-                            bottomSheetNavController.popBackStack()
+                        entry<LocationSetUpRoutes.Districts> {
+                            DistrictsScreen(
+                                isLoading = isLoading,
+                                onDistrictSelected = onDistrictSelected,
+                            ){
+                                backStack.removeLastOrNull()
+                            }
                         }
                     }
-                }
-
+                )
             }
-
         }
 
         if (isLoading) {
             LoadingDialog()
         }
     }
-
-
 }
+
+

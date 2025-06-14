@@ -16,19 +16,19 @@ import com.lts360.app.database.models.profile.UserLocation
 import com.lts360.app.database.models.profile.UserProfile
 import com.lts360.app.database.models.profile.UserProfileSettingsInfo
 import com.lts360.components.utils.errorLogger
-import com.lts360.compose.ui.auth.viewmodels.LogInViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.Factory
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import javax.inject.Inject
 
-class UserProfileRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
+@Factory
+class UserProfileRepository(
+    private val context: Context,
     private val userProfileDao: UserProfileDao,
     private val userLocationDao: UserLocationDao
 ) {

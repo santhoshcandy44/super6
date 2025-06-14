@@ -52,17 +52,13 @@ fun GalleyMultipleImagesPickerScreen(
     onNavigateUpAlbum: (String) -> Unit,
     viewModel: ImagePickerViewModel
 ) {
-
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
 
-        // List of titles for the tabs
         val tabTitles = listOf("Photos", "Album")
-        // Pager state to track the current page
         val pagerState = rememberPagerState(pageCount = { tabTitles.size })
 
         val scope = rememberCoroutineScope()

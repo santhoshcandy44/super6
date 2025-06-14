@@ -10,26 +10,19 @@ import com.lts360.api.app.AppClient
 import com.lts360.api.common.errors.ErrorResponse
 import com.lts360.api.common.responses.ResponseReply
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.annotation.KoinViewModel
 
-
-@HiltViewModel
-class ChangePasswordViewModel @Inject constructor(): ViewModel() {
-
+@KoinViewModel
+class ChangePasswordViewModel(): ViewModel() {
 
     val userId: Long = UserSharedPreferencesManager.userId
 
-
-
     private val _currentPassword= MutableStateFlow("")
     val currentPassword: StateFlow<String> = _currentPassword
-
-
 
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password

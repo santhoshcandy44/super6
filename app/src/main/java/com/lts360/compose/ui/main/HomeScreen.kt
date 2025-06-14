@@ -33,7 +33,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -56,15 +55,15 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import com.lts360.app.database.models.app.Board
-import com.lts360.components.utils.errorLogger
 import com.lts360.compose.ui.common.CircularProgressIndicatorLegacy
 import com.lts360.compose.ui.localjobs.LocalJobsScreen
 import com.lts360.compose.ui.localjobs.LocalJobsViewmodel
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.navhosts.routes.BottomBar
+import com.lts360.compose.ui.main.navhosts.routes.LocationSetUpRoutes
 import com.lts360.compose.ui.main.viewmodels.HomeViewModel
 import com.lts360.compose.ui.main.viewmodels.SecondsViewmodel
 import com.lts360.compose.ui.services.ServicesScreen
@@ -77,7 +76,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    navController: NavController,
+    backStack: NavBackStack,
     boardItems: List<Board>,
     onNavigateUpServiceDetailedScreen: () -> Unit,
     onNavigateUpServiceOwnerProfile: (Long) -> Unit,
@@ -254,7 +253,7 @@ fun HomeScreen(
                             else -> return
                         }
 
-                        viewModel.navigateToOverlay(navController, destination)
+                        viewModel.navigateToOverlay(backStack, destination)
 
                     }
                 }
@@ -381,7 +380,7 @@ fun HomeScreen(
                                                             servicesViewModel.loadServices(servicesViewModel.getKey(initialServicesKey) + 1)
 
                                                             viewModel.navigateToOverlay(
-                                                                navController,
+                                                                backStack,
                                                                 BottomBar.NestedServices(
                                                                     servicesViewModel.getKey(initialServicesKey) + 1,
                                                                     it,
@@ -402,7 +401,7 @@ fun HomeScreen(
 
 
                                                             viewModel.navigateToOverlay(
-                                                                navController,
+                                                                backStack,
                                                                 BottomBar.NestedSeconds(
                                                                     servicesViewModel.getKey(initialServicesKey) + 1,
                                                                     it,
@@ -421,7 +420,7 @@ fun HomeScreen(
 
 
                                                             viewModel.navigateToOverlay(
-                                                                navController,
+                                                                backStack,
                                                                 BottomBar.NestedLocalJobs(
                                                                     localJobsViewModel.getKey(initialLocalJobsKey) + 1,
                                                                     it,
@@ -469,8 +468,7 @@ fun HomeScreen(
 
         if (modalBottomSheetState.isVisible) {
 
-            val bottomSheetNavController = rememberNavController()
-
+            val backStack = rememberNavBackStack(LocationSetUpRoutes.LocationChooser())
 
             ModalBottomSheet(
                 {
@@ -494,7 +492,7 @@ fun HomeScreen(
 
                     BackHandler(modalBottomSheetState.currentValue == SheetValue.Expanded) {
 
-                        if (bottomSheetNavController.previousBackStackEntry == null) {
+                        if (backStack.isNotEmpty()) {
                             coroutineScope.launch {
                                 modalBottomSheetState.hide()
                             }
@@ -578,7 +576,7 @@ fun HomeScreen(
                     } else {
 
                         UserLocationBottomSheetScreen(
-                            bottomSheetNavController,
+                            backStack,
                             modalBottomSheetState.currentValue,
                             { currentLocation ->
                                 viewModel.setCurrentLocation(currentLocation, {
@@ -636,7 +634,7 @@ fun HomeScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NestedServicesScreen(
-    navController: NavController,
+    backStack: NavBackStack,
     key:Int,
     onNavigateUpServiceDetailedScreen: () -> Unit,
     onNavigateUpServiceOwnerProfile: (Long) -> Unit,
@@ -767,7 +765,7 @@ fun NestedServicesScreen(
                         servicesViewModel.loadServices(servicesViewModel.getKey(key) + 1)
 
                         val destination = BottomBar.NestedServices(servicesViewModel.getKey(key) + 1, searchQuery.text, true)
-                        viewModel.navigateToOverlay(navController, destination)
+                        viewModel.navigateToOverlay(backStack, destination)
                     }
                 }
 
@@ -851,7 +849,7 @@ fun NestedServicesScreen(
                                                         servicesViewModel.loadServices(servicesViewModel.getKey(key) + 1)
 
                                                         viewModel.navigateToOverlay(
-                                                            navController,
+                                                            backStack,
                                                             BottomBar.NestedServices(
                                                                 servicesViewModel.getKey(key) + 1,
                                                                 it,
@@ -899,8 +897,7 @@ fun NestedServicesScreen(
 
         if (modalBottomSheetState.isVisible) {
 
-            val bottomSheetNavController = rememberNavController()
-
+            val backStack = rememberNavBackStack(LocationSetUpRoutes.LocationChooser())
 
             ModalBottomSheet(
                 {
@@ -924,7 +921,7 @@ fun NestedServicesScreen(
 
                     BackHandler(modalBottomSheetState.currentValue == SheetValue.Expanded) {
 
-                        if (bottomSheetNavController.previousBackStackEntry == null) {
+                        if (backStack.isEmpty()) {
                             coroutineScope.launch {
                                 modalBottomSheetState.hide()
                             }
@@ -998,7 +995,7 @@ fun NestedServicesScreen(
                     } else {
 
                         UserLocationBottomSheetScreen(
-                            bottomSheetNavController,
+                            backStack,
                             modalBottomSheetState.currentValue,
                             { currentLocation ->
                                 viewModel.setCurrentLocation(currentLocation, {
@@ -1055,7 +1052,7 @@ fun NestedServicesScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NestedSecondsScreen(
-    navController: NavController,
+    backStack: NavBackStack,
     key: Int,
     onNavigateUpUsedProductListingDetailedScreen: () -> Unit,
     onPopBackStack: () -> Unit,
@@ -1063,8 +1060,6 @@ fun NestedSecondsScreen(
     secondsViewModel: SecondsViewmodel,
     onlySearchBar: Boolean = false
 ) {
-
-
 
     val userId = viewModel.userId
     val isGuest = viewModel.isGuest
@@ -1188,7 +1183,7 @@ fun NestedSecondsScreen(
                         val destination = BottomBar.NestedSeconds(secondsViewModel.getKey(key) + 1, searchQuery.text, true)
 
 
-                        viewModel.navigateToOverlay(navController, destination)
+                        viewModel.navigateToOverlay(backStack, destination)
 
                     }
                 }
@@ -1267,7 +1262,7 @@ fun NestedSecondsScreen(
                                                         secondsViewModel.loadSeconds(secondsViewModel.getKey(key) + 1)
 
                                                         viewModel.navigateToOverlay(
-                                                            navController,
+                                                            backStack,
                                                             BottomBar.NestedSeconds(
                                                                 secondsViewModel.getKey(key) + 1,
                                                                 it,
@@ -1314,7 +1309,7 @@ fun NestedSecondsScreen(
 
         if (modalBottomSheetState.isVisible) {
 
-            val bottomSheetNavController = rememberNavController()
+            val backStack = rememberNavBackStack(LocationSetUpRoutes.LocationChooser())
 
 
             ModalBottomSheet(
@@ -1339,7 +1334,7 @@ fun NestedSecondsScreen(
 
                     BackHandler(modalBottomSheetState.currentValue == SheetValue.Expanded) {
 
-                        if (bottomSheetNavController.previousBackStackEntry == null) {
+                        if (backStack.isEmpty()) {
                             coroutineScope.launch {
                                 modalBottomSheetState.hide()
                             }
@@ -1413,7 +1408,7 @@ fun NestedSecondsScreen(
                     } else {
 
                         UserLocationBottomSheetScreen(
-                            bottomSheetNavController,
+                            backStack,
                             modalBottomSheetState.currentValue,
                             { currentLocation ->
                                 viewModel.setCurrentLocation(currentLocation, {
@@ -1469,7 +1464,7 @@ fun NestedSecondsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NestedLocalJobsScreen(
-    navController: NavController,
+    backStack: NavBackStack,
     key:Int,
     onNavigateUpLocalJobDetailedScreen: () -> Unit,
     onPopBackStack: () -> Unit,
@@ -1599,7 +1594,7 @@ fun NestedLocalJobsScreen(
                         localJobsViewModel.loadLocalJobs(localJobsViewModel.getKey(key) + 1)
 
                         val destination =  BottomBar.NestedLocalJobs(localJobsViewModel.getKey(key) + 1, searchQuery.text, true)
-                        viewModel.navigateToOverlay(navController, destination)
+                        viewModel.navigateToOverlay(backStack, destination)
 
                     }
                 }
@@ -1674,7 +1669,7 @@ fun NestedLocalJobsScreen(
 
                                                         localJobsViewModel.loadLocalJobs(localJobsViewModel.getKey(key) + 1)
                                                         viewModel.navigateToOverlay(
-                                                            navController,
+                                                            backStack,
                                                             BottomBar.NestedSeconds(
                                                                 localJobsViewModel.getKey(key) + 1,
                                                                 it,
@@ -1721,8 +1716,7 @@ fun NestedLocalJobsScreen(
 
         if (modalBottomSheetState.isVisible) {
 
-            val bottomSheetNavController = rememberNavController()
-
+            val backStack = rememberNavBackStack(LocationSetUpRoutes.LocationChooser())
 
             ModalBottomSheet(
                 {
@@ -1746,7 +1740,7 @@ fun NestedLocalJobsScreen(
 
                     BackHandler(modalBottomSheetState.currentValue == SheetValue.Expanded) {
 
-                        if (bottomSheetNavController.previousBackStackEntry == null) {
+                        if (backStack.isEmpty()) {
                             coroutineScope.launch {
                                 modalBottomSheetState.hide()
                             }
@@ -1809,7 +1803,7 @@ fun NestedLocalJobsScreen(
                     } else {
 
                         UserLocationBottomSheetScreen(
-                            bottomSheetNavController,
+                            backStack,
                             modalBottomSheetState.currentValue,
                             { currentLocation ->
                                 viewModel.setCurrentLocation(currentLocation, {

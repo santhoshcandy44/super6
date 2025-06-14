@@ -32,7 +32,6 @@ import com.lts360.compose.ui.localjobs.models.LocalJob
 import com.lts360.compose.ui.managers.UserGeneralPreferencesManager
 import com.lts360.compose.ui.managers.UserSharedPreferencesManager
 import com.lts360.compose.ui.profile.repos.UserProfileRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,8 +41,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.android.annotation.KoinViewModel
 import java.lang.reflect.Type
-import javax.inject.Inject
 
 class BookMarkedItemTypeAdapter : JsonDeserializer<BookMarkedItem?> {
 
@@ -68,8 +67,8 @@ class BookMarkedItemTypeAdapter : JsonDeserializer<BookMarkedItem?> {
 
 }
 
-@HiltViewModel
-class BookmarksViewModel @Inject constructor(
+@KoinViewModel
+class BookmarksViewModel(
     val savedStateHandle: SavedStateHandle,
     val tokenManager: TokenManager,
     private val chatUserDao: ChatUserDao,
