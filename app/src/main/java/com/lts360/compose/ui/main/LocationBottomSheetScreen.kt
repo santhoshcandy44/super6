@@ -6,11 +6,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -28,11 +28,13 @@ import com.lts360.compose.ui.services.manage.viewmodels.PublishedServicesViewMod
 import com.lts360.compose.ui.services.manage.viewmodels.ServicesWorkflowViewModel
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.UsedProductsListingWorkflowViewModel
 import com.lts360.compose.ui.usedproducts.manage.viewmodels.PublishedUsedProductsListingViewModel
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditLocationBottomSheetScreen(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -42,9 +44,8 @@ fun EditLocationBottomSheetScreen(
     isLoading: Boolean = false,
 ) {
 
-
     EditLocationBottomSheetContent(
-        bottomSheetValue,
+        onRemoveLocationUpdates,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onDistrictSelected,
@@ -53,15 +54,13 @@ fun EditLocationBottomSheetScreen(
         isLoading,
         publishedServicesViewModel
     )
-
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserLocationBottomSheetScreen(
-    backStack: NavBackStack,
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -71,10 +70,8 @@ fun UserLocationBottomSheetScreen(
     isLoading: Boolean = false
 ) {
 
-
     UserLocationBottomSheetContent(
-        backStack,
-        bottomSheetValue,
+        onRemoveLocationUpdates,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onDistrictSelected,
@@ -90,7 +87,7 @@ fun UserLocationBottomSheetScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateServiceLocationBottomSheetScreen(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -100,7 +97,7 @@ fun CreateServiceLocationBottomSheetScreen(
     isLoading: Boolean = false,
 ) {
     CreateServiceLocationBottomSheetContent(
-        bottomSheetValue,
+        onRemoveLocationUpdates,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onDistrictSelected,
@@ -114,7 +111,7 @@ fun CreateServiceLocationBottomSheetScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateLocalJobLocationBottomSheetScreen(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -124,7 +121,7 @@ fun CreateLocalJobLocationBottomSheetScreen(
     isLoading: Boolean = false,
 ) {
     CreateLocalJobBottomSheetContent(
-        bottomSheetValue,
+        onRemoveLocationUpdates,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onDistrictSelected,
@@ -138,7 +135,7 @@ fun CreateLocalJobLocationBottomSheetScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateUsedProductListingLocationBottomSheetScreen(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -150,7 +147,7 @@ fun CreateUsedProductListingLocationBottomSheetScreen(
 
 
     CreateUsedProductListingBottomSheetContent(
-        bottomSheetValue,
+        onRemoveLocationUpdates,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onDistrictSelected,
@@ -166,7 +163,7 @@ fun CreateUsedProductListingLocationBottomSheetScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManagePublishedLocalJobLocationBottomSheetScreen(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -176,7 +173,7 @@ fun ManagePublishedLocalJobLocationBottomSheetScreen(
     isLoading: Boolean = false,
 ) {
     PublishedLocalJobBottomSheetContent(
-        bottomSheetValue,
+        onRemoveLocationUpdates,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onDistrictSelected,
@@ -191,7 +188,7 @@ fun ManagePublishedLocalJobLocationBottomSheetScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManagePublishedUsedProductListingLocationBottomSheetScreen(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -201,7 +198,7 @@ fun ManagePublishedUsedProductListingLocationBottomSheetScreen(
     isLoading: Boolean = false,
 ) {
     PublishedUsedProductListingBottomSheetContent(
-        bottomSheetValue,
+        onRemoveLocationUpdates,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onDistrictSelected,
@@ -216,7 +213,7 @@ fun ManagePublishedUsedProductListingLocationBottomSheetScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnBoardUserLocationBottomSheetScreen(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -225,9 +222,8 @@ fun OnBoardUserLocationBottomSheetScreen(
     isLoading: Boolean = false
 ) {
 
-
     OnBoardLocationBottomSheetContent(
-        bottomSheetValue,
+        onRemoveLocationUpdates,
         onCurrentLocationSelected,
         onRecentLocationSelected,
         onDistrictSelected,
@@ -235,15 +231,13 @@ fun OnBoardUserLocationBottomSheetScreen(
         locationStatesEnabled,
         isLoading
     )
-
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserLocationBottomSheetContent(
-    backStack: NavBackStack,
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -253,61 +247,63 @@ fun UserLocationBottomSheetContent(
     homeViewModel: HomeViewModel
 ) {
 
+    val selectedLocationGeo by homeViewModel.selectedLocationGeo.collectAsState()
 
-    Box {
-        Scaffold { contentPadding ->
-            Box(
+    val backStack = rememberNavBackStack(
+        if (locationStatesEnabled)
+            LocationSetUpRoutes.LocationChooser()
+        else
+            LocationSetUpRoutes.LocationChooser(false)
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(modifier = Modifier.fillMaxSize()) { contentPadding ->
+            NavDisplay(
+                backStack = backStack,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding)
-            ) {
+                    .padding(contentPadding),
+                entryDecorators = listOf(
+                    rememberSceneSetupNavEntryDecorator(),
+                    rememberSavedStateNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator()
+                ),
+                entryProvider = entryProvider {
+                    entry<LocationSetUpRoutes.LocationChooser> { navEntry ->
 
-                NavDisplay(
-                    backStack = backStack,
-                    modifier = Modifier.fillMaxSize(),
-                    entryDecorators = listOf(
-                        rememberSceneSetupNavEntryDecorator(),
-                        rememberSavedStateNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator()
-                    ),
-                    entryProvider = entryProvider {
-                        entry<LocationSetUpRoutes.LocationChooser> {
-                            UserLocationBottomSheet(
-                                bottomSheetValue = bottomSheetValue,
-                                onCloseClick = { onPopUpLocationBottomSheet() },
-                                onCurrentLocationSelected = onCurrentLocationSelected,
-                                onRecentLocationSelected = onRecentLocationSelected,
-                                onStateClick = { backStack.add(LocationSetUpRoutes.Districts) },
-                                homeViewModel = homeViewModel
-                            )
-                        }
-
-                        entry<LocationSetUpRoutes.Districts> {
-                            DistrictsScreen(
-                                isLoading = isLoading,
-                                onDistrictSelected = onDistrictSelected,
-                                onPopDown = { backStack.removeLastOrNull() }
-                            )
-                        }
+                        UserLocationBottomSheet(
+                            locationViewModel = koinViewModel(parameters = { parametersOf(navEntry) }),
+                            selectedLocationGeo = selectedLocationGeo,
+                            onRemoveLocationUpdates = onRemoveLocationUpdates,
+                            onCloseClick = { onPopUpLocationBottomSheet() },
+                            onCurrentLocationSelected = onCurrentLocationSelected,
+                            onRecentLocationSelected = onRecentLocationSelected,
+                            onStateClick = { backStack.add(LocationSetUpRoutes.Districts) }
+                        )
                     }
-                )
 
-            }
+                    entry<LocationSetUpRoutes.Districts> {
+                        DistrictsScreen(
+                            isLoading = isLoading,
+                            onDistrictSelected = onDistrictSelected,
+                            onPopDown = { backStack.removeLastOrNull() }
+                        )
+                    }
+                }
+            )
         }
 
         if (isLoading) {
             LoadingDialog()
         }
     }
-
-
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PublishedLocalJobBottomSheetContent(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -339,9 +335,14 @@ fun PublishedLocalJobBottomSheetContent(
                         rememberViewModelStoreNavEntryDecorator()
                     ),
                     entryProvider = entryProvider {
-                        entry<LocationSetUpRoutes.LocationChooser> {
+                        entry<LocationSetUpRoutes.LocationChooser> { navEntry ->
                             EditPublishedLocalJobLocationBottomSheet(
-                                bottomSheetValue = bottomSheetValue,
+                                locationViewModel = koinViewModel(parameters = {
+                                    parametersOf(
+                                        navEntry
+                                    )
+                                }),
+                                onRemoveLocationUpdates = onRemoveLocationUpdates,
                                 onCloseClick = onPopUpLocationBottomSheet,
                                 onCurrentLocationSelected = onCurrentLocationSelected,
                                 onRecentLocationSelected = onRecentLocationSelected,
@@ -375,7 +376,7 @@ fun PublishedLocalJobBottomSheetContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PublishedUsedProductListingBottomSheetContent(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -407,9 +408,15 @@ fun PublishedUsedProductListingBottomSheetContent(
                         rememberViewModelStoreNavEntryDecorator()
                     ),
                     entryProvider = entryProvider {
-                        entry<LocationSetUpRoutes.LocationChooser> {
+                        entry<LocationSetUpRoutes.LocationChooser> { navEntry ->
                             EditPublishedUsedProductListingLocationBottomSheet(
-                                bottomSheetValue = bottomSheetValue,
+                                locationViewModel = koinViewModel(parameters = {
+                                    parametersOf(
+                                        navEntry
+                                    )
+                                }),
+
+                                onRemoveLocationUpdates = onRemoveLocationUpdates,
                                 onCloseClick = onPopUpLocationBottomSheet,
                                 onCurrentLocationSelected = onCurrentLocationSelected,
                                 onRecentLocationSelected = onRecentLocationSelected,
@@ -441,7 +448,7 @@ fun PublishedUsedProductListingBottomSheetContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateUsedProductListingBottomSheetContent(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -473,9 +480,14 @@ fun CreateUsedProductListingBottomSheetContent(
                         rememberViewModelStoreNavEntryDecorator()
                     ),
                     entryProvider = entryProvider {
-                        entry<LocationSetUpRoutes.LocationChooser> {
+                        entry<LocationSetUpRoutes.LocationChooser> { navEntry ->
                             CreateUsedProductListingLocationBottomSheet(
-                                bottomSheetValue = bottomSheetValue,
+                                locationViewModel = koinViewModel(parameters = {
+                                    parametersOf(
+                                        navEntry
+                                    )
+                                }),
+                                onRemoveLocationUpdates = onRemoveLocationUpdates,
                                 onCloseClick = onPopUpLocationBottomSheet,
                                 onCurrentLocationSelected = onCurrentLocationSelected,
                                 onRecentLocationSelected = onRecentLocationSelected,
@@ -508,7 +520,7 @@ fun CreateUsedProductListingBottomSheetContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateLocalJobBottomSheetContent(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -529,7 +541,8 @@ fun CreateLocalJobBottomSheetContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding))
+                    .padding(contentPadding)
+            )
             {
                 NavDisplay(
                     backStack = backStack,
@@ -540,9 +553,14 @@ fun CreateLocalJobBottomSheetContent(
                         rememberViewModelStoreNavEntryDecorator()
                     ),
                     entryProvider = entryProvider {
-                        entry<LocationSetUpRoutes.LocationChooser> {
+                        entry<LocationSetUpRoutes.LocationChooser> { navEntry ->
                             CreateLocalJobLocationBottomSheet(
-                                bottomSheetValue = bottomSheetValue,
+                                locationViewModel = koinViewModel(parameters = {
+                                    parametersOf(
+                                        navEntry
+                                    )
+                                }),
+                                onRemoveLocationUpdates = onRemoveLocationUpdates,
                                 onCloseClick = onPopUpLocationBottomSheet,
                                 onCurrentLocationSelected = onCurrentLocationSelected,
                                 onRecentLocationSelected = onRecentLocationSelected,
@@ -575,7 +593,7 @@ fun CreateLocalJobBottomSheetContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateServiceLocationBottomSheetContent(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -596,7 +614,8 @@ fun CreateServiceLocationBottomSheetContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding))
+                    .padding(contentPadding)
+            )
             {
                 NavDisplay(
                     backStack = backStack,
@@ -607,9 +626,14 @@ fun CreateServiceLocationBottomSheetContent(
                         rememberViewModelStoreNavEntryDecorator()
                     ),
                     entryProvider = entryProvider {
-                        entry<LocationSetUpRoutes.LocationChooser> {
+                        entry<LocationSetUpRoutes.LocationChooser> { navEntry ->
                             CreateServiceLocationBottomSheet(
-                                bottomSheetValue = bottomSheetValue,
+                                locationViewModel = koinViewModel(parameters = {
+                                    parametersOf(
+                                        navEntry
+                                    )
+                                }),
+                                onRemoveLocationUpdates = onRemoveLocationUpdates,
                                 onCloseClick = onPopUpLocationBottomSheet,
                                 onCurrentLocationSelected = onCurrentLocationSelected,
                                 onRecentLocationSelected = onRecentLocationSelected,
@@ -642,7 +666,7 @@ fun CreateServiceLocationBottomSheetContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnBoardLocationBottomSheetContent(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -673,9 +697,14 @@ fun OnBoardLocationBottomSheetContent(
                         rememberViewModelStoreNavEntryDecorator()
                     ),
                     entryProvider = entryProvider {
-                        entry<LocationSetUpRoutes.LocationChooser> {
+                        entry<LocationSetUpRoutes.LocationChooser> { navEntry ->
                             OnBoardLocationBottomSheet(
-                                bottomSheetValue = bottomSheetValue,
+                                locationViewModel = koinViewModel(parameters = {
+                                    parametersOf(
+                                        navEntry
+                                    )
+                                }),
+                                onRemoveLocationUpdates = onRemoveLocationUpdates,
                                 onCloseClick = onPopUpLocationBottomSheet,
                                 onCurrentLocationSelected = onCurrentLocationSelected,
                                 onRecentLocationSelected = onRecentLocationSelected,
@@ -706,7 +735,7 @@ fun OnBoardLocationBottomSheetContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditLocationBottomSheetContent(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates: Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
@@ -727,7 +756,8 @@ fun EditLocationBottomSheetContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding))
+                    .padding(contentPadding)
+            )
             {
                 NavDisplay(
                     backStack = backStack,
@@ -738,9 +768,14 @@ fun EditLocationBottomSheetContent(
                         rememberViewModelStoreNavEntryDecorator()
                     ),
                     entryProvider = entryProvider {
-                        entry<LocationSetUpRoutes.LocationChooser> {
+                        entry<LocationSetUpRoutes.LocationChooser> { navEntry ->
                             EditPublishedServiceLocationBottomSheet(
-                                bottomSheetValue = bottomSheetValue,
+                                locationViewModel = koinViewModel(parameters = {
+                                    parametersOf(
+                                        navEntry
+                                    )
+                                }),
+                                onRemoveLocationUpdates = onRemoveLocationUpdates,
                                 onCloseClick = onPopUpLocationBottomSheet,
                                 onCurrentLocationSelected = onCurrentLocationSelected,
                                 onRecentLocationSelected = onRecentLocationSelected,

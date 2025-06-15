@@ -3,13 +3,13 @@ package com.lts360.compose.ui.main.navhosts
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
@@ -65,9 +65,14 @@ fun BottomNavHost(
 ) {
     val context = LocalContext.current
 
+    val savableStateHolder = rememberSaveableStateHolder()
+
     NavDisplay(
         modifier = modifier,
         backStack = backStack,
+      /*  onBack = {
+            backStack.removeUpTo(BottomBar.Home, false)
+        },*/
         entryDecorators = listOf(
             rememberSceneSetupNavEntryDecorator(),
             rememberSavedStateNavEntryDecorator(),
@@ -76,30 +81,35 @@ fun BottomNavHost(
         entryProvider = entryProvider {
 
             entry<BottomBar.Home> { entry ->
-                val key = entry.key
-                val submittedQuery = entry.submittedQuery
 
-                LaunchedEffect(entry) {
-                    homeViewModel.setSearchQuery(submittedQuery ?: "")
-                    homeViewModel.collapseSearchAction()
+                savableStateHolder.SaveableStateProvider("home") {
+
+                    val key = entry.key
+                    val submittedQuery = entry.submittedQuery
+
+                 /*   LaunchedEffect(entry) {
+                        homeViewModel.setSearchQuery(submittedQuery ?: "")
+                        homeViewModel.collapseSearchAction()
+                    }*/
+
+                    HomeScreen(
+                        backStack = backStack,
+                        boardItems = boards,
+                        onNavigateUpServiceDetailedScreen = { onNavigateUpDetailedService(key) },
+                        onNavigateUpServiceOwnerProfile = { ownerId ->
+                            onNavigateUpServiceOwnerProfile(key, ownerId)
+                        },
+                        onNavigateUpUsedProductListingDetailedScreen = {  onNavigateUpDetailedSeconds(key) },
+                        onNavigateUpLocalJobDetailedScreen = { onNavigateUpDetailedLocalJob(key) },
+                        onPopBackStack = { backStack.removeLastOrNull() },
+                        viewModel = homeViewModel,
+                        servicesViewModel = servicesViewModel,
+                        secondsViewModel = secondsViewModel,
+                        localJobsViewModel = localJobsViewModel,
+                        onDockedFabAddNewSecondsVisibility = onDockedFabAddNewSecondsChanged
+                    )
                 }
 
-                HomeScreen(
-                    backStack = backStack,
-                    boardItems = boards,
-                    onNavigateUpServiceDetailedScreen = { onNavigateUpDetailedService(key) },
-                    onNavigateUpServiceOwnerProfile = { ownerId ->
-                        onNavigateUpServiceOwnerProfile(key, ownerId)
-                    },
-                    onNavigateUpUsedProductListingDetailedScreen = {  onNavigateUpDetailedSeconds(key) },
-                    onNavigateUpLocalJobDetailedScreen = { onNavigateUpDetailedLocalJob(key) },
-                    onPopBackStack = { backStack.removeLastOrNull() },
-                    viewModel = homeViewModel,
-                    servicesViewModel = servicesViewModel,
-                    secondsViewModel = secondsViewModel,
-                    localJobsViewModel = localJobsViewModel,
-                    onDockedFabAddNewSecondsVisibility = onDockedFabAddNewSecondsChanged
-                )
             }
 
             entry<BottomBar.NestedServices> { entry ->

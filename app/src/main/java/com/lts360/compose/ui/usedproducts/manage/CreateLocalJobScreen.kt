@@ -291,7 +291,8 @@ fun CreateUsedProductListingScreen(
 
             if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
                 CreateUsedProductListingLocationBottomSheetScreen(
-                    bottomSheetScaffoldState.bottomSheetState.currentValue, {
+                    bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Hidden,
+                    {
                         viewModel.updateLocation(
                             EditableLocation(
                                 serviceId = -1,
@@ -305,7 +306,8 @@ fun CreateUsedProductListingScreen(
                         coroutineScope.launch {
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
-                    }, {
+                    },
+                    {
 
                         viewModel.updateLocation(
                             EditableLocation(
@@ -321,7 +323,8 @@ fun CreateUsedProductListingScreen(
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
 
-                    }, { district ->
+                    },
+                    { district ->
 
                         viewModel.updateLocation(
                             EditableLocation(
@@ -341,7 +344,6 @@ fun CreateUsedProductListingScreen(
                     },
                     viewModel,
                     false
-
                 )
             }
 

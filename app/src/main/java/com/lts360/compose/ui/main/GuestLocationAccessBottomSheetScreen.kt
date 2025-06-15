@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -20,19 +19,19 @@ import com.lts360.app.database.models.profile.RecentLocation
 import com.lts360.compose.ui.auth.LoadingDialog
 import com.lts360.compose.ui.main.models.CurrentLocation
 import com.lts360.compose.ui.main.navhosts.routes.LocationSetUpRoutes
-import com.lts360.compose.ui.main.viewmodels.HomeViewModel
-
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnBoardGuestUserLocationAccessBottomSheetScreen(
-    bottomSheetValue: SheetValue? = null,
+    onRemoveLocationUpdates:Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
     onPopUpLocationBottomSheet: () -> Unit,
-    onRecentLocationSelected: (RecentLocation) -> Unit={},
     locationStatesEnabled: Boolean = true,
     isLoading: Boolean = false,
+    onRecentLocationSelected: (RecentLocation) -> Unit = {}
 ) {
 
     val backStacks = rememberNavBackStack(
@@ -42,9 +41,8 @@ fun OnBoardGuestUserLocationAccessBottomSheetScreen(
             LocationSetUpRoutes.LocationChooser(false)
     )
 
-
-    Box(modifier = Modifier.fillMaxSize()){
-        Scaffold(modifier = Modifier.fillMaxSize()){ contentPadding ->
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(modifier = Modifier.fillMaxSize()) { contentPadding ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -58,9 +56,14 @@ fun OnBoardGuestUserLocationAccessBottomSheetScreen(
                         rememberViewModelStoreNavEntryDecorator(shouldRemoveStoreOwner = { false })
                     ),
                     entryProvider = entryProvider {
-                        entry<LocationSetUpRoutes.LocationChooser> { route ->
+                        entry<LocationSetUpRoutes.LocationChooser> { navEntry ->
                             OnBoardLocationBottomSheet(
-                                bottomSheetValue = bottomSheetValue,
+                                locationViewModel = koinViewModel(parameters = {
+                                    parametersOf(
+                                        navEntry
+                                    )
+                                }),
+                                onRemoveLocationUpdates = onRemoveLocationUpdates,
                                 onCloseClick = { onPopUpLocationBottomSheet() },
                                 onRecentLocationSelected = onRecentLocationSelected,
                                 onCurrentLocationSelected = onCurrentLocationSelected,
@@ -74,7 +77,7 @@ fun OnBoardGuestUserLocationAccessBottomSheetScreen(
                             DistrictsScreen(
                                 isLoading = isLoading,
                                 onDistrictSelected = onDistrictSelected,
-                            ){
+                            ) {
                                 backStacks.removeLastOrNull()
                             }
                         }
@@ -94,15 +97,16 @@ fun OnBoardGuestUserLocationAccessBottomSheetScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuestUserLocationAccessBottomSheetScreen(
-    bottomSheetValue: SheetValue? = null,
+    selectedLocationGeo:String?,
+    onRemoveLocationUpdates:Boolean,
     onCurrentLocationSelected: (CurrentLocation) -> Unit,
     onRecentLocationSelected: (RecentLocation) -> Unit,
     onDistrictSelected: (District) -> Unit,
     onPopUpLocationBottomSheet: () -> Unit,
-    homeViewModel: HomeViewModel,
     locationStatesEnabled: Boolean = true,
     isLoading: Boolean = false
 ) {
+
     val backStack = rememberNavBackStack(
         if (locationStatesEnabled)
             LocationSetUpRoutes.LocationChooser()
@@ -110,46 +114,47 @@ fun GuestUserLocationAccessBottomSheetScreen(
             LocationSetUpRoutes.LocationChooser(false)
     )
 
-    Box {
-        Scaffold { contentPadding ->
-            Column(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(modifier = Modifier.fillMaxSize()) { contentPadding ->
+            NavDisplay(
+                backStack = backStack,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding)
-            ) {
-                NavDisplay(
-                    backStack = backStack,
-                    modifier = Modifier.fillMaxSize(),
-                    entryDecorators = listOf(
-                        rememberSceneSetupNavEntryDecorator(),
-                        rememberSavedStateNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator(shouldRemoveStoreOwner = {false})
-                    ),
-                    entryProvider = entryProvider {
-                        entry<LocationSetUpRoutes.LocationChooser> {
-                            GuestUserLocationBottomSheet(
-                                bottomSheetValue = bottomSheetValue,
-                                onCloseClick = onPopUpLocationBottomSheet,
-                                onRecentLocationSelected = onRecentLocationSelected,
-                                onCurrentLocationSelected = onCurrentLocationSelected,
-                                onStateClick = {
-                                    backStack.add(LocationSetUpRoutes.Districts)
-                                },
-                                homeViewModel = homeViewModel
-                            )
-                        }
+                    .padding(contentPadding),
+                entryDecorators = listOf(
+                    rememberSceneSetupNavEntryDecorator(),
+                    rememberSavedStateNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator(shouldRemoveStoreOwner = { false })
+                ),
+                entryProvider = entryProvider {
+                    entry<LocationSetUpRoutes.LocationChooser> { navEntry ->
+                        GuestUserLocationBottomSheet(
+                            locationViewModel = koinViewModel(parameters = {
+                                parametersOf(
+                                    navEntry
+                                )
+                            }),
+                            selectedLocationGeo = selectedLocationGeo,
+                            onRemoveLocationUpdates = onRemoveLocationUpdates,
+                            onCloseClick = onPopUpLocationBottomSheet,
+                            onRecentLocationSelected = onRecentLocationSelected,
+                            onCurrentLocationSelected = onCurrentLocationSelected,
+                            onStateClick = {
+                                backStack.add(LocationSetUpRoutes.Districts)
+                            },
+                        )
+                    }
 
-                        entry<LocationSetUpRoutes.Districts> {
-                            DistrictsScreen(
-                                isLoading = isLoading,
-                                onDistrictSelected = onDistrictSelected,
-                            ){
-                                backStack.removeLastOrNull()
-                            }
+                    entry<LocationSetUpRoutes.Districts> {
+                        DistrictsScreen(
+                            isLoading = isLoading,
+                            onDistrictSelected = onDistrictSelected,
+                        ) {
+                            backStack.removeLastOrNull()
                         }
                     }
-                )
-            }
+                }
+            )
         }
 
         if (isLoading) {

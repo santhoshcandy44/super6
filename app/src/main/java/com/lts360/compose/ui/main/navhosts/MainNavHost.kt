@@ -71,13 +71,14 @@ fun NavBackStack.removeUpTo(
     navKey: Any,
     inclusive: Boolean = true
 ): Boolean {
+
     if(navKey !is NavKey) false
-    val index = this.indexOfFirst { it == navKey }
+
+    val index = this.indexOfFirst { it::class.qualifiedName == navKey::class.qualifiedName }
     if (index == -1) return false
 
     val removeIndex = if (inclusive) index else index + 1
     if (removeIndex >= this.size) return false
-
     this.removeAll { this.indexOf(it) >= removeIndex }
     return true
 }

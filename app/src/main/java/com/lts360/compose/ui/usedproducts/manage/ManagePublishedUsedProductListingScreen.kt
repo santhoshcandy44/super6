@@ -302,8 +302,8 @@ fun ManagePublishedUsedProductListingScreen(
             if (bottomSheetScaffoldState.bottomSheetState.isVisible) {
 
                 ManagePublishedUsedProductListingLocationBottomSheetScreen(
-                    bottomSheetScaffoldState.bottomSheetState.currentValue, {
-
+                    bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Hidden,
+                    {
                         editableService?.let { nonNullableEditableService ->
                             viewModel.updateLocation(
                                 EditableLocation(
@@ -320,7 +320,8 @@ fun ManagePublishedUsedProductListingScreen(
                             }
                         }
 
-                    }, { recentLocation ->
+                    },
+                    { recentLocation ->
 
                         editableService?.let { nonNullableEditableService ->
 
@@ -339,11 +340,9 @@ fun ManagePublishedUsedProductListingScreen(
                             }
                         }
 
-                    }, { district ->
-
-
+                    },
+                    { district ->
                         editableService?.let { nonNullableEditableService ->
-
                             viewModel.updateLocation(
                                 EditableLocation(
                                     serviceId = nonNullableEditableService.productId,

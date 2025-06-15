@@ -74,7 +74,7 @@ fun LocationAccessScreen(
             if (bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
                 if (type == "guest") {
                     OnBoardGuestUserLocationAccessBottomSheetScreen(
-                        bottomSheetScaffoldState.bottomSheetState.currentValue,
+                        bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded,
                         { currentLocation ->
                             viewModel.setGuestCurrentLocationAndCreateAccount(
                                 context,
@@ -119,7 +119,7 @@ fun LocationAccessScreen(
                 } else {
 
                     OnBoardUserLocationBottomSheetScreen(
-                        bottomSheetScaffoldState.bottomSheetState.currentValue,
+                        bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded,
                         { currentLocation ->
                             viewModel.setCurrentLocation(currentLocation, { message ->
                                 onLocationUpdated()

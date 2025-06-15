@@ -58,8 +58,6 @@ fun BottomBar(
         )
     )
 
-
-
     NavigationBar(
         tonalElevation = 0.dp,
         modifier = Modifier
@@ -161,7 +159,6 @@ fun RowScope.AddItem(
             indicatorColor = Color.Transparent
 
         ),
-
         onClick = {
             if ((signInMethod != null && signInMethod == "guest") && (screen is BottomBar.Notifications || screen is BottomBar.Chats)) {
                 onNavigateUpWelcomeScreenSheet()
@@ -177,7 +174,6 @@ fun RowScope.AddItem(
                             backStack.add(screen)
                         }
                     }
-                    backStack.add(screen)
                 }
             }
         }

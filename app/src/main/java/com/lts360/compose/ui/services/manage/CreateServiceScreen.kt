@@ -268,7 +268,8 @@ fun CreateServiceScreen(
             if(bottomSheetScaffoldState.bottomSheetState.currentValue==SheetValue.Expanded){
 
                 CreateServiceLocationBottomSheetScreen(
-                    bottomSheetScaffoldState.bottomSheetState.currentValue, {
+                    bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Hidden,
+                    {
                         viewModel.updateLocation(
                             DraftLocation(
                                 latitude = it.latitude,
@@ -281,8 +282,8 @@ fun CreateServiceScreen(
                         coroutineScope.launch {
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
-                    }, {
-
+                    },
+                    {
                         viewModel.updateLocation(
                             DraftLocation(
                                 latitude = it.latitude,
@@ -296,7 +297,8 @@ fun CreateServiceScreen(
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
 
-                    }, { district ->
+                    },
+                    { district ->
 
                         viewModel.updateLocation(
                             DraftLocation(
@@ -1016,21 +1018,17 @@ fun ExposedDropdownIndustry(
     onSelected: (DraftIndustry) -> Unit,
 ) {
 
-
-    // Get access to context and resources
     val context = LocalContext.current
     val resources = context.resources
 
-    // Retrieve string-array and integer-array
     val industryNames: Array<String> = resources.getStringArray(R.array.dropdown_items)
     val industryValues: Array<Int> =
         resources.getIntArray(R.array.industry_values).toTypedArray()
 
-    // Pair the names and values
     val industries = industryNames.zip(industryValues) { name, value ->
         DraftIndustry(name = name, value = value)
     }
-    // Dropdown state management
+
     var expanded by remember { mutableStateOf(false) }
 
     var selectedIndustry by remember(selectedValue) {

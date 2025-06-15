@@ -157,10 +157,13 @@ fun MainScreen(
         }
     }
 
-
     var isHomeScreen by rememberSaveable { mutableStateOf(false) }
 
     var dockedFloatingActionButtonVisibility by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(backStack) {
+        isHomeScreen = backStack.lastOrNull()?.let { it::class.qualifiedName } == BottomBar.Home::class.qualifiedName
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -184,7 +187,6 @@ fun MainScreen(
         },
         floatingActionButtonPosition = FabPosition.Center,
         bottomBar = {
-
             BottomBar(
                 backStack,
                 signInMethod,
@@ -195,7 +197,6 @@ fun MainScreen(
                     modalBottomSheetState.expand()
                 }
             }
-
         }) { contentPadding ->
 
         BottomNavHost(

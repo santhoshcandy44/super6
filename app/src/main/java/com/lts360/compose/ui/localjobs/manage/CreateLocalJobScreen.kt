@@ -270,7 +270,8 @@ fun CreateLocalJobScreen(
         sheetContent = {
             if (bottomSheetScaffoldState.bottomSheetState.isVisible) {
                 CreateLocalJobLocationBottomSheetScreen(
-                    bottomSheetScaffoldState.bottomSheetState.currentValue, {
+                    bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Hidden,
+                    {
                         viewModel.updateLocation(
                             EditableLocation(
                                 serviceId = -1,
@@ -281,8 +282,8 @@ fun CreateLocalJobScreen(
                         coroutineScope.launch {
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
-                    }, {
-
+                    },
+                    {
                         viewModel.updateLocation(
                             EditableLocation(
                                 serviceId = -1,
@@ -297,8 +298,8 @@ fun CreateLocalJobScreen(
                             bottomSheetScaffoldState.bottomSheetState.hide()
                         }
 
-                    }, { district ->
-
+                    },
+                    { district ->
                         viewModel.updateLocation(
                             EditableLocation(
                                 serviceId = -1,
@@ -316,7 +317,6 @@ fun CreateLocalJobScreen(
                     },
                     viewModel,
                     false
-
                 )
             }
 

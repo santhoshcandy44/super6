@@ -125,8 +125,7 @@ class HomeViewModel(
     fun isSelectedServiceOwnerUsedProductListingItemNull() = selectedServiceOwnerUsedProductListingItem == null
 
     fun isSelectedLocalJobItemNull() = selectedLocalJobItem ==null
-
-
+    
     fun setSelectedServiceItem(item: Service?) {
         selectedServiceItem = item
     }

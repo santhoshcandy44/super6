@@ -292,8 +292,8 @@ fun ManagePublishedLocalJobScreen(
             if (bottomSheetScaffoldState.bottomSheetState.isVisible) {
 
                 ManagePublishedLocalJobLocationBottomSheetScreen(
-                    bottomSheetScaffoldState.bottomSheetState.currentValue, {
-
+                    bottomSheetScaffoldState.bottomSheetState.currentValue == SheetValue.Expanded,
+                    {
                         editableService?.let { nonNullableEditableService ->
                             viewModel.updateLocation(
                                 EditableLocation(
